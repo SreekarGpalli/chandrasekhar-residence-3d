@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chandrasekhar Residence · Walkthrough</title>
+<meta name="description" content="Photoreal first-person walkthrough — Mr Chandrasekhar Family Residence, G+2, Anantapur.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0f11; --panel:rgba(20,22,25,.74); --line:rgba(255,255,255,.10);
+    --ink:#ecebe6; --dim:#9b988f; --brass:#c9a36a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+    font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:default}
+
+  /* crosshair */
+  #cross{position:fixed;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;z-index:4;
+    pointer-events:none;opacity:0;transition:opacity .25s}
+  #cross.on{opacity:.7}
+  #cross::before,#cross::after{content:"";position:absolute;background:rgba(255,255,255,.85);
+    box-shadow:0 0 3px rgba(0,0,0,.6)}
+  #cross::before{left:50%;top:0;width:1.5px;height:100%;margin-left:-.75px}
+  #cross::after{top:50%;left:0;height:1.5px;width:100%;margin-top:-.75px}
+
+  /* HUD */
+  #hud{position:fixed;left:max(16px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));z-index:5;
+    pointer-events:none;user-select:none}
+  #hud .room{font-family:Archivo,Inter,sans-serif;font-weight:700;font-size:19px;letter-spacing:.18em;
+    text-shadow:0 2px 10px rgba(0,0,0,.6)}
+  #hud .flr{font-size:10.5px;letter-spacing:.32em;color:var(--brass);margin-top:3px}
+  #hud i{display:block;width:42px;height:2px;background:var(--brass);margin-top:8px;opacity:.85}
+
+  /* level pills */
+  #levels{position:fixed;right:max(16px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);z-index:5;
+    display:flex;flex-direction:column;gap:8px}
+  #levels button{appearance:none;cursor:pointer;width:46px;height:46px;border-radius:11px;
+    background:var(--panel);border:1px solid var(--line);color:var(--dim);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    font-family:Archivo,Inter,sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;
+    transition:color .18s,border-color .18s,background .18s}
+  #levels button:hover{color:var(--ink);border-color:rgba(201,163,106,.5)}
+  #levels button.on{color:#11140f;background:var(--brass);border-color:var(--brass)}
+  #levels button small{display:block;font-size:8px;letter-spacing:.14em;color:inherit;opacity:.8;margin-top:1px}
+
+  /* bottom controls strip */
+  #foot{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
+    display:flex;gap:14px;align-items:center;padding:9px 16px;border-radius:11px;
+    background:var(--panel);border:1px solid var(--line);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    font-size:10.5px;letter-spacing:.1em;color:var(--dim);white-space:nowrap;max-width:94vw;overflow:hidden}
+  #foot b{color:var(--ink);font-weight:600}
+  #foot .sep{width:1px;height:14px;background:var(--line)}
+  #foot .back-link{text-decoration:none;color:var(--brass);font-family:Archivo,Inter,sans-serif;
+    font-weight:600;font-size:10.5px;letter-spacing:.14em;display:flex;align-items:center;gap:5px;
+    transition:color .18s}
+  #foot .back-link:hover{color:#e0c48e}
+  #foot .back-link svg{width:12px;height:12px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  @media (max-width:720px){ #foot .d{display:none} }
+
+  /* start overlay */
+  #intro{position:fixed;inset:0;z-index:20;background:radial-gradient(120% 90% at 50% 38%,#15181c 0%,#0a0b0d 100%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    text-align:center;padding:24px;transition:opacity .6s}
+  #intro.done{opacity:0;pointer-events:none}
+  #intro .t{font-family:Archivo;font-weight:700;font-size:clamp(20px,4vw,30px);letter-spacing:.36em;text-indent:.36em}
+  #intro .s{font-size:11px;letter-spacing:.34em;color:var(--dim);margin-top:6px}
+  #intro .bar{width:160px;height:2px;background:rgba(255,255,255,.1);border-radius:1px;overflow:hidden;margin:22px 0 8px}
+  #intro .bar i{display:block;height:100%;width:0;background:var(--brass);transition:width .25s}
+  #enter{margin-top:18px;appearance:none;cursor:pointer;padding:14px 30px;border-radius:10px;
+    background:var(--brass);border:none;color:#15140f;font-family:Archivo,Inter,sans-serif;
+    font-weight:700;font-size:13px;letter-spacing:.18em;opacity:0;transform:translateY(6px);
+    transition:opacity .4s,transform .4s,filter .15s}
+  #enter.show{opacity:1;transform:translateY(0)}
+  #enter:hover{filter:brightness(1.07)}
+  #enter:disabled{opacity:.4;cursor:default}
+  #keys{margin-top:22px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center;
+    font-size:11px;letter-spacing:.06em;color:var(--dim);max-width:520px}
+  #keys span{display:inline-flex;align-items:center;gap:7px}
+  #keys kbd{font-family:inherit;font-size:10px;letter-spacing:.05em;color:var(--ink);
+    background:rgba(255,255,255,.06);border:1px solid var(--line);border-bottom-width:2px;
+    border-radius:5px;padding:3px 7px;min-width:20px;text-align:center}
+  #err{color:#e08b7a;font-size:11px;letter-spacing:.04em;margin-top:14px;max-width:360px;display:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="cross"></div>
+
+<div id="hud">
+  <div class="room" id="roomName">EXTERIOR</div>
+  <div class="flr" id="floorName">CHANDRASEKHAR RESIDENCE</div>
+  <i></i>
+</div>
+
+<div id="levels">
+  <button data-spawn="0" class="on">G<small>GROUND</small></button>
+  <button data-spawn="1">1<small>FIRST</small></button>
+  <button data-spawn="2">2<small>SECOND</small></button>
+  <button data-spawn="3">R<small>ROOF</small></button>
+  <button data-spawn="4">E<small>EXTERIOR</small></button>
+</div>
+
+<div id="foot">
+  <a href="index.html" class="back-link" title="Back to 3D model viewer"><svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>3D MODEL</a><span class="sep"></span>
+  <span><b>WASD</b> move</span><span class="sep"></span>
+  <span><b>Mouse</b> look</span><span class="sep d"></span>
+  <span class="d"><b>Shift</b> run</span><span class="sep d"></span>
+  <span class="d"><b>Space</b> jump</span><span class="sep"></span>
+  <span id="btnFly" style="cursor:pointer; transition: color 0.18s"><b>F</b> fly</span><span class="sep"></span>
+  <span><b>Esc</b> release</span>
+</div>
+
+<div id="intro">
+  <div class="t">CHANDRASEKHAR RESIDENCE</div>
+  <div class="s">ANANTAPUR · G+2 · PHOTOREAL WALKTHROUGH</div>
+  <div class="bar"><i id="barFill"></i></div>
+  <button id="enter" disabled>ENTER THE HOUSE</button>
+  <div id="keys">
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</span>
+    <span><kbd>Mouse</kbd> look around</span>
+    <span><kbd>Shift</kbd> run</span>
+    <span><kbd>Space</kbd> jump</span>
+    <span><kbd>F</kbd> fly (no collision)</span>
+    <span><kbd>1</kbd>-<kbd>5</kbd> floor / roof / ext</span>
+  </div>
+  <div id="err"></div>
+</div>
+
+<script>
+  function bootFail(msg){
+    var e=document.getElementById('err'); if(e){e.style.display='block';e.textContent=msg;}
+    var b=document.getElementById('barFill'); if(b)b.style.background='#e08b7a';
+  }
+</script>
+<!-- Three.js: served locally from the edge (fast, reliable); CDN as fallback -->
+<script src="lib/three.min.js"></script>
+<script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
+<script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
+<script src="perf.js"></script>
+<script src="houseScene.js"></script>
+<script>
+if(!window.THREE || !window.HouseScene){
+  bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
+}
+</script>
+
+<script>
+/* ============================================================
+   walkthrough.js — photoreal first-person layer.
+   Reuses the plan-faithful geometry from window.HouseScene and
+   re-skins it with PBR materials + procedural textures + IBL,
+   then adds a walk/fly camera with collision and stair climbing.
+   ============================================================ */
+(function () {
+  'use strict';
+  if (!window.THREE || !window.HouseScene) return;
+  const THREE = window.THREE;
+  const $ = id => document.getElementById(id);
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  /* ---------------- renderer ---------------- */
+  const canvas = $('c');
+  // adaptive quality: render settings chosen to match the device's hardware
+  const Q = window.Perf ? Perf.detect()
+    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7 };
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: Q.antialias, powerPreference: 'high-performance' });
+  if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
+  else renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.96;
+  const SHADOW_TYPE = { basic: THREE.BasicShadowMap, pcf: THREE.PCFShadowMap, pcfsoft: THREE.PCFSoftShadowMap };
+  renderer.shadowMap.enabled = Q.shadows;
+  renderer.shadowMap.type = SHADOW_TYPE[Q.shadowType] || THREE.PCFSoftShadowMap;
+  // scene + sun are static → render the shadow map ONCE, never per-frame
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = Q.shadows;
+  if ('physicallyCorrectLights' in renderer) renderer.physicallyCorrectLights = true;
+  // dynamic resolution scaler holds the framerate steady on any GPU
+  const scaler = window.Perf ? Perf.makeScaler(renderer, Q, { targetFps: 55, minFps: 30 })
+    : { sample: function () {}, apply: function () { renderer.setPixelRatio(Q.dpr); } };
+  scaler.apply();
+
+  const scene = new THREE.Scene();
+  // near/far kept tight (sky dome r=400) so the depth buffer keeps precision —
+  // a wide range (e.g. 0.05/600) makes near-coincident surfaces z-fight.
+  const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 460);
+  camera.rotation.order = 'YXZ';
+
+  /* ============================================================
+     procedural textures (canvas based) — give surfaces grain,
+     grout, weave and bump so PBR lighting has detail to react to
+     ============================================================ */
+  const texCache = {};
+  function cv(size) { const c = document.createElement('canvas'); c.width = c.height = size; return c; }
+  function asTex(canvas, srgb) {
+    const t = new THREE.CanvasTexture(canvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = Q.anisotropy;
+    if (srgb) { if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; else t.encoding = THREE.sRGBEncoding; }
+    return t;
+  }
+  // value-noise helper drawn straight onto a 2d context
+  function noise(ctx, size, n, alpha, spread, base) {
+    const img = ctx.getImageData(0, 0, size, size), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = (Math.random() - 0.5) * spread;
+      d[i] = clamp(d[i] + r, 0, 255); d[i + 1] = clamp(d[i + 1] + r, 0, 255); d[i + 2] = clamp(d[i + 2] + r, 0, 255);
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  function plasterTex() {
+    if (texCache.plaster) return texCache.plaster;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    noise(x, s, 0, 1, 10, 0);
+    // barely-there trowel mottling
+    x.globalAlpha = 0.015;
+    for (let i = 0; i < 28; i++) {
+      x.fillStyle = Math.random() > .5 ? '#000' : '#fff';
+      const r = 5 + Math.random() * 16;
+      x.beginPath(); x.arc(Math.random() * s, Math.random() * s, r, 0, 7); x.fill();
+    }
+    x.globalAlpha = 1;
+    return texCache.plaster = asTex(c, true);
+  }
+  function woodTex() {
+    if (texCache.wood) return texCache.wood;
+    const s = 512, c = cv(s), x = c.getContext('2d');
+    // warm mid-brown base; grain runs vertically (along the texture's V)
+    x.fillStyle = '#b89164'; x.fillRect(0, 0, s, s);
+    // soft, low-contrast vertical grain built from several gentle waves
+    for (let col = 0; col < s; col++) {
+      let g = 0;
+      g += Math.sin(col * 0.018 + 0.5) * 0.5;
+      g += Math.sin(col * 0.061 + 2.0) * 0.28;
+      g += Math.sin(col * 0.140 + 4.0) * 0.12;
+      g += (Math.random() - 0.5) * 0.18;
+      const t = clamp(0.5 + g * 0.32, 0, 1);
+      const r = (150 + t * 70) | 0, gg = (110 + t * 60) | 0, b = (70 + t * 44) | 0;
+      x.fillStyle = 'rgb(' + r + ',' + gg + ',' + b + ')';
+      x.fillRect(col, 0, 1, s);
+    }
+    // fine cathedral fibres, faint
+    x.globalAlpha = .08;
+    for (let i = 0; i < 90; i++) {
+      x.strokeStyle = i % 2 ? '#6e5236' : '#d8b483';
+      x.lineWidth = 0.5 + Math.random(); x.beginPath();
+      const px = Math.random() * s; x.moveTo(px, 0);
+      x.bezierCurveTo(px + 5, s / 3, px - 5, 2 * s / 3, px + (Math.random() - .5) * 6, s); x.stroke();
+    }
+    // a couple of plank seams
+    x.globalAlpha = .22; x.strokeStyle = '#4a371f'; x.lineWidth = 1.5;
+    for (const sx of [s * 0.5]) { x.beginPath(); x.moveTo(sx, 0); x.lineTo(sx, s); x.stroke(); }
+    x.globalAlpha = 1;
+    return texCache.wood = asTex(c, true);
+  }
+  function tileTex() {
+    if (texCache.tile) return texCache.tile;
+    const s = 512, c = cv(s), x = c.getContext('2d'), h = s / 2;
+    // 2x2 large-format tiles, each a subtly different off-white tone
+    const tones = ['#ffffff', '#fafafa', '#fdfdfd', '#f7f7f7'];
+    let ti = 0;
+    for (const ty of [0, h]) for (const tx of [0, h]) { x.fillStyle = tones[ti++]; x.fillRect(tx, ty, h, h); }
+    noise(x, s, 0, 1, 5, 0);
+    // soft cloudy mottling for a polished-stone feel
+    x.globalAlpha = 0.035;
+    for (let i = 0; i < 26; i++) { x.fillStyle = Math.random() > .5 ? '#000' : '#fff'; x.beginPath(); x.arc(Math.random() * s, Math.random() * s, 12 + Math.random() * 44, 0, 7); x.fill(); }
+    x.globalAlpha = 1;
+    // thin recessed grout lines
+    x.strokeStyle = 'rgba(92,92,98,.6)'; x.lineWidth = 2.5;
+    x.strokeRect(1, 1, h - 2, h - 2); x.strokeRect(h + 1, 1, h - 2, h - 2);
+    x.strokeRect(1, h + 1, h - 2, h - 2); x.strokeRect(h + 1, h + 1, h - 2, h - 2);
+    return texCache.tile = asTex(c, true);
+  }
+  function marbleTex() {
+    if (texCache.marble) return texCache.marble;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    noise(x, s, 0, 1, 10, 0);
+    x.globalAlpha = .35;
+    for (let i = 0; i < 22; i++) {
+      x.strokeStyle = i % 3 ? 'rgba(70,70,80,.5)' : 'rgba(140,140,150,.5)';
+      x.lineWidth = .5 + Math.random() * 1.5; x.beginPath();
+      let px = Math.random() * s, py = 0;
+      x.moveTo(px, py);
+      while (py < s) { px += (Math.random() - .5) * 30; py += 8 + Math.random() * 14; x.lineTo(px, py); }
+      x.stroke();
+    }
+    x.globalAlpha = 1;
+    return texCache.marble = asTex(c, true);
+  }
+  function grassTex() {
+    if (texCache.grass) return texCache.grass;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    for (let i = 0; i < 9000; i++) {
+      const g = 0.55 + Math.random() * 0.45;
+      x.fillStyle = 'rgba(' + ((120 * g) | 0) + ',' + ((150 * g) | 0) + ',' + ((90 * g) | 0) + ',.8)';
+      const px = Math.random() * s, py = Math.random() * s;
+      x.fillRect(px, py, 1.4, 2.4 + Math.random() * 2);
+    }
+    return texCache.grass = asTex(c, true);
+  }
+  function concreteTex() {
+    if (texCache.concrete) return texCache.concrete;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    noise(x, s, 0, 1, 22, 0);
+    x.globalAlpha = .06;
+    for (let i = 0; i < 60; i++) { x.fillStyle = Math.random() > .5 ? '#000' : '#fff'; const r = Math.random() * 3; x.beginPath(); x.arc(Math.random() * s, Math.random() * s, r, 0, 7); x.fill(); }
+    x.globalAlpha = 1;
+    return texCache.concrete = asTex(c, true);
+  }
+  function fabricTex() {
+    if (texCache.fabric) return texCache.fabric;
+    const s = 128, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = .10;
+    for (let i = 0; i < s; i += 2) { x.strokeStyle = '#000'; x.beginPath(); x.moveTo(i, 0); x.lineTo(i, s); x.stroke(); x.beginPath(); x.moveTo(0, i); x.lineTo(s, i); x.stroke(); }
+    x.globalAlpha = 1; noise(x, s, 0, 1, 12, 0);
+    return texCache.fabric = asTex(c, true);
+  }
+  // bump map shared by plaster / concrete / tile for micro-relief
+  function bumpTex() {
+    if (texCache.bump) return texCache.bump;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#808080'; x.fillRect(0, 0, s, s);
+    noise(x, s, 0, 1, 40, 128);
+    return texCache.bump = asTex(c, false);
+  }
+
+  /* ============================================================
+     material treatment table — keyed by palette name.
+     Returns PBR parameters + which texture to apply.
+     ============================================================ */
+  const C = window.HouseScene.COLORS;
+  const FLOORTINT = new Set(['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tOut', 'tCirc', 'tOffice', 'tPooja', 'tWalk']);
+
+  function treatment(name) {
+    if (name === 'glass' || name === 'carGlass') return { glass: true };
+    if (name === 'lamp') return { emissive: true };
+    if (FLOORTINT.has(name)) return { tex: 'tile', tile: 1.1, rough: 0.16, metal: 0.0, env: 1.15 };
+    switch (name) {
+      case 'white': case 'white2':
+        return { tex: 'plaster', tile: 2.6, rough: 0.92, metal: 0, env: 0.35, bump: 0.4 };
+      case 'charcoal': case 'charDark': case 'solarFrm':
+        return { tex: 'plaster', tile: 2.2, rough: 0.86, metal: 0, env: 0.4, bump: 0.5 };
+      case 'plinth':
+        return { tex: 'concrete', tile: 1.6, rough: 0.9, metal: 0, env: 0.3, bump: 0.7 };
+      case 'concrete': case 'paver': case 'paver2':
+        return { tex: 'concrete', tile: 1.3, rough: 0.95, metal: 0, env: 0.25, bump: 0.8 };
+      case 'terraceF': case 'balcTile':
+        return { tex: 'tile', tile: 1.0, rough: 0.5, metal: 0, env: 0.6, bump: 0.3 };
+      case 'walnut': case 'woodF': case 'woodD':
+        return { tex: 'wood', tile: 1.1, rough: 0.55, metal: 0, env: 0.5 };
+      case 'ms': return { rough: 0.5, metal: 0.7, env: 0.9 };
+      case 'steel': case 'liftDoor': return { rough: 0.34, metal: 0.85, env: 1.1 };
+      case 'brass': return { rough: 0.32, metal: 0.92, env: 1.2 };
+      case 'chrome': return { rough: 0.05, metal: 1.0, env: 1.4 };
+      case 'frame': return { rough: 0.42, metal: 0.6, env: 0.9 };
+      case 'counter': return { rough: 0.6, metal: 0, env: 0.4 };
+      case 'counterTop': return { tex: 'marble', tile: 1.4, rough: 0.18, metal: 0.05, env: 1.0 };
+      case 'whiteG': return { rough: 0.08, metal: 0.04, env: 1.2 };       // glazed ceramic
+      case 'tv': return { rough: 0.12, metal: 0.2, env: 1.0 };
+      case 'solar': return { rough: 0.18, metal: 0.3, env: 1.1 };
+      case 'tank': return { rough: 0.55, metal: 0, env: 0.4 };
+      case 'tharRed': case 'carBody': return { rough: 0.22, metal: 0.55, env: 1.3, clear: true };
+      case 'carDark': return { rough: 0.7, metal: 0.1, env: 0.4 };
+      case 'fabric': case 'fabric2': case 'rug':
+        return { tex: 'fabric', tile: 1.4, rough: 0.95, metal: 0, env: 0.2 };
+      case 'mattress': case 'pillow': case 'bedding':
+        return { tex: 'fabric', tile: 1.6, rough: 0.92, metal: 0, env: 0.2 };
+      case 'grass': return { tex: 'grass', tile: 0.9, rough: 1.0, metal: 0, env: 0.15 };
+      case 'green': case 'green2': case 'boug': case 'ixora':
+        return { rough: 0.85, metal: 0, env: 0.2 };
+      case 'ground': case 'plotPad':
+        return { tex: 'concrete', tile: 2.0, rough: 1.0, metal: 0, env: 0.1, bump: 0.5 };
+      default: return { rough: 0.85, metal: 0, env: 0.4 };
+    }
+  }
+  // hex -> name lookup so we can resolve a treatment from a mesh material's colour
+  const hex2name = {};
+  for (const k in C) { if (!(C[k] in hex2name)) hex2name[C[k]] = k; }
+
+  /* curated colour overrides — a warmer, more cohesive palette than the
+     original cool greys. Applied on top of the palette during re-skin;
+     for textured surfaces these tint the (light-based) texture. */
+  const COL = {
+    white: 0xece5d8, white2: 0xe7dece,                 // warm ivory plaster
+    charcoal: 0x3a3733, charDark: 0x2b2825, plinth: 0x3a3733, frame: 0x3b3e42,
+    // per-room vitrified floor tones (warm living spaces, cool baths)
+    tLiving: 0xd2c9b6, tBed: 0xdacfb9, tBath: 0xc5ced1, tKitch: 0xd3cdbf,
+    tUtil: 0xc7c7c1, tOut: 0x9a9d96, tCirc: 0xd2caba, tOffice: 0xd1cbbc,
+    tPooja: 0xe6dabf, tWalk: 0xd7cebd,
+    // furnishings (wood keeps its own brown texture, so it's not recoloured here)
+    fabric: 0x9c8f7b, fabric2: 0x6f6354, rug: 0xb6a98d, counterTop: 0x383a3e,
+    brass: 0xcaa15e, tank: 0xdedbd3,
+    // planting
+    green: 0x4c6838, green2: 0x607d45, grass: 0x4f6d3d, boug: 0xc44f86, ixora: 0xe16b39
+  };
+
+  /* world-aligned (box-projected) UVs for the merged geometry, which
+     ships with position+normal only. Faces are axis aligned, so the
+     dominant normal axis chooses a clean planar projection. */
+  function boxUV(geo, tile) {
+    if (!geo.attributes.position) return;
+    const p = geo.attributes.position, n = geo.attributes.normal;
+    const uv = new Float32Array(p.count * 2), inv = 1 / tile;
+    for (let i = 0; i < p.count; i++) {
+      const px = p.getX(i), py = p.getY(i), pz = p.getZ(i);
+      const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i));
+      let u, v;
+      if (ay >= ax && ay >= az) { u = px; v = pz; }
+      else if (ax >= az) { u = pz; v = py; }
+      else { u = px; v = py; }
+      uv[2 * i] = u * inv; uv[2 * i + 1] = v * inv;
+    }
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  }
+
+  /* ---------------- environment / sky / sun ---------------- */
+  // procedural sky gradient used both as background dome and IBL source
+  function skyMaterial() {
+    return new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false,
+      uniforms: {
+        top: { value: new THREE.Color(0x2f6cb0) },
+        mid: { value: new THREE.Color(0x9fc1da) },
+        bot: { value: new THREE.Color(0xe7e3d6) },
+        sunDir: { value: new THREE.Vector3(0.45, 0.6, 0.45).normalize() }
+      },
+      vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);} `,
+      fragmentShader: `
+        varying vec3 vDir; uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir;
+        void main(){
+          float h = clamp(vDir.y, -1.0, 1.0);
+          vec3 col = h > 0.0 ? mix(mid, top, pow(h, 0.7)) : mix(mid, bot, pow(-h, 0.5));
+          float s = max(dot(normalize(vDir), normalize(sunDir)), 0.0);
+          col += vec3(1.0,0.92,0.78) * pow(s, 220.0) * 1.4;          // sun disc
+          col += vec3(1.0,0.85,0.6) * pow(s, 6.0) * 0.18;            // halo
+          gl_FragColor = vec4(col, 1.0);
+        }`
+    });
+  }
+  const SUN_DIR = new THREE.Vector3(0.5, 0.62, 0.42).normalize();
+  const skyMat = skyMaterial(); skyMat.uniforms.sunDir.value.copy(SUN_DIR);
+  const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), skyMat);
+  scene.add(skyDome);
+
+  // image-based lighting from a matching equirectangular sky gradient.
+  // (fromEquirectangular is the robust path — a custom ShaderMaterial inside
+  //  pmrem.fromScene can yield a malformed env map that NaNs PBR shading.)
+  (function buildEnv() {
+    const w = 1024, h = 512, c = cv(w); c.height = h;
+    const x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0.00, '#2c66a8');   // zenith
+    g.addColorStop(0.42, '#8fb6d4');
+    g.addColorStop(0.50, '#d4dbdf');   // horizon haze
+    g.addColorStop(0.52, '#b9ad95');   // ground line
+    g.addColorStop(1.00, '#6f665a');   // ground bounce
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    // soft sun glow baked into the equirect so reflections catch it
+    const az = Math.atan2(SUN_DIR.x, SUN_DIR.z), el = Math.asin(SUN_DIR.y);
+    const sx = (az / (Math.PI * 2) + 0.5) * w, sy = (0.5 - el / Math.PI) * h;
+    const sg = x.createRadialGradient(sx, sy, 0, sx, sy, 120);
+    sg.addColorStop(0, 'rgba(255,246,224,0.95)'); sg.addColorStop(1, 'rgba(255,246,224,0)');
+    x.fillStyle = sg; x.fillRect(0, 0, w, h);
+    const eq = new THREE.CanvasTexture(c);
+    eq.mapping = THREE.EquirectangularReflectionMapping;
+    if ('colorSpace' in eq) eq.colorSpace = THREE.SRGBColorSpace; else eq.encoding = THREE.sRGBEncoding;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileEquirectangularShader();
+    try {
+      const rt = pmrem.fromEquirectangular(eq);
+      scene.environment = rt.texture;
+    } catch (e) { /* IBL optional */ }
+    eq.dispose(); pmrem.dispose();
+  })();
+
+  scene.fog = new THREE.Fog(0xcdd6dd, 55, 340);
+
+  // hemisphere ambient + warm directional sun with crisp soft shadows.
+  // (lower sky fill + stronger sun = more shape/contrast and less flat grey)
+  scene.add(new THREE.HemisphereLight(0xc6d2dc, 0x70614e, 0.42));
+  const sun = new THREE.DirectionalLight(0xfff1d8, 3.4);
+  sun.position.copy(SUN_DIR).multiplyScalar(80).add(new THREE.Vector3(9, 0, -5));
+  sun.castShadow = Q.shadows;
+  sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
+  const sc = sun.shadow.camera;
+  sc.left = -22; sc.right = 26; sc.top = 24; sc.bottom = -24; sc.near = 10; sc.far = 220;
+  sun.shadow.bias = -0.00035; sun.shadow.normalBias = 0.025;
+  const sunTarget = new THREE.Object3D(); sunTarget.position.set(9, 2, -5);
+  scene.add(sunTarget); sun.target = sunTarget; scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xb9c4d0, 0.28);
+  fill.position.set(-40, 30, -20); scene.add(fill);
+  // soft warm interior bounce so rooms away from windows don't read cold/grey
+  const warmFill = new THREE.HemisphereLight(0xf6e8d0, 0x3a3631, 0.32);
+  scene.add(warmFill);
+
+  /* ============================================================
+     build the house (verified geometry) and re-skin it
+     ============================================================ */
+  const data = window.HouseScene.build(THREE);
+  const L = data.LEVELS;
+  scene.add(data.root);
+  // everything visible at once → one continuous enclosed building
+  data.root.children.forEach(g => { g.visible = true; });
+
+  // 1) upgrade each unique material in place (shared instances)
+  const seen = new Set();
+  data.root.traverse(o => {
+    if (!o.isMesh || !o.material || seen.has(o.material)) return;
+    seen.add(o.material);
+    const m = o.material;
+    const name = hex2name[m.color ? m.color.getHex() : -1];
+    const t = treatment(name || '');
+    if (t.glass) {
+      m.roughness = 0.04; m.metalness = 0.0; m.envMapIntensity = 1.5;
+      m.transparent = true; m.opacity = Math.min(m.opacity != null ? m.opacity : 0.5, 0.32);
+      m.depthWrite = false; m.color.setHex(0xafc4d2);
+      m.needsUpdate = true; return;
+    }
+    if (t.emissive) { m.emissiveIntensity = Math.max(m.emissiveIntensity || 1.6, 2.2); m.envMapIntensity = 0.4; m.needsUpdate = true; return; }
+    if ('roughness' in m) m.roughness = t.rough;
+    if ('metalness' in m) m.metalness = t.metal;
+    m.envMapIntensity = t.env != null ? t.env : 0.5;
+    if (COL[name] != null && m.color) m.color.setHex(COL[name]);   // curated palette
+    if (t.tex) {
+      m.map = ({ plaster: plasterTex, wood: woodTex, tile: tileTex, marble: marbleTex, grass: grassTex, concrete: concreteTex, fabric: fabricTex })[t.tex]();
+      // albedo = original palette colour × texture detail (textures are light-based)
+    }
+    if (t.bump) { m.bumpMap = bumpTex(); m.bumpScale = t.bump * 0.012; }
+    m.needsUpdate = true;
+  });
+
+  // 2) compute world-aligned UVs per mesh geometry (so tiling textures sit right)
+  //    and clone+offset floor-group materials to defeat z-fighting where the
+  //    floor "shells" coincide with the exterior shell.
+  const FLOOR_GROUPS = new Set(['floor0', 'floor1', 'floor2']);
+  data.root.children.forEach(group => {
+    const isFloor = FLOOR_GROUPS.has(group.name);
+    group.traverse(o => {
+      if (!o.isMesh) return;
+      if (isFloor && o.material && !o.material.userData.poff) {
+        o.material = o.material.clone();
+        o.material.polygonOffset = true;
+        o.material.polygonOffsetFactor = -1.2;
+        o.material.polygonOffsetUnits = -1.2;
+        o.material.userData.poff = true;
+      }
+      const name = hex2name[o.material && o.material.color ? o.material.color.getHex() : -1];
+      const t = treatment(name || '');
+      if (t.tex) boxUV(o.geometry, t.tile);
+    });
+  });
+
+  /* collidable mesh list (everything solid; glass/doors excluded so you can walk through them). Built once. */
+  const colliders = [];
+  const nonCollidableMaterials = new Set(['glass', 'carGlass', 'walnut', 'liftDoor', 'woodD', 'woodF', 'frame', 'brass']);
+  data.root.traverse(o => {
+    if (o.isMesh && o !== skyDome) {
+      const name = hex2name[o.material && o.material.color ? o.material.color.getHex() : -1];
+      if (!nonCollidableMaterials.has(name)) {
+        colliders.push(o);
+      }
+    }
+  });
+
+  /* ============================================================
+     first-person controller — walk + fly, gravity, stair stepping
+     ============================================================ */
+  const SPAWNS = [
+    { name: 'GROUND',  pos: new THREE.Vector3(7.0, L.f0 + 0.05, -6.5),   yaw: -2.15,        fi: 0 },
+    { name: 'FIRST',   pos: new THREE.Vector3(7.3, L.f1 + 0.05, -6.4),   yaw: -2.15,        fi: 1 },
+    { name: 'SECOND',  pos: new THREE.Vector3(10.7, L.f2 + 0.05, -5.9),  yaw: 1.75,         fi: 2 },
+    { name: 'ROOF',    pos: new THREE.Vector3(8.5, L.roof + 0.05, -4.6), yaw: 2.5,          fi: -1 },
+    { name: 'EXTERIOR',pos: new THREE.Vector3(19.5, 0.08, -6.4),         yaw: -1.6,         fi: -2 }
+  ];
+
+  const player = {
+    pos: SPAWNS[0].pos.clone(),     // feet position
+    yaw: 0, pitch: 0, viewY: 0,
+    velY: 0, onGround: false, fly: false,
+    eye: 1.66, radius: 0.27, step: 0.42
+  };
+  const GRAV = 18, WALK = 3.0, RUN = 5.6, FLY = 7.5, ACCEL = 12;
+  const move = { f: 0, r: 0, up: 0 };
+  const moveVel = new THREE.Vector3();
+
+  const ray = new THREE.Raycaster();
+  const _o = new THREE.Vector3(), _d = new THREE.Vector3();
+
+  function groundAt(x, z, fromY) {
+    // highest surface at or below (fromY + step), searching downward
+    _o.set(x, fromY + player.step, z); _d.set(0, -1, 0);
+    ray.set(_o, _d); ray.far = player.step + 4.5;
+    const hit = ray.intersectObjects(colliders, false);
+    return hit.length ? hit[0].point.y : null;
+  }
+  function blockedDist(x, y, z, dirX, dirZ, max) {
+    _o.set(x, y, z); _d.set(dirX, 0, dirZ).normalize();
+    ray.set(_o, _d); ray.far = max;
+    const hit = ray.intersectObjects(colliders, false);
+    return hit.length ? hit[0].distance : Infinity;
+  }
+  function moveAxis(axis, delta) {
+    if (Math.abs(delta) < 1e-5) return;
+    const dir = delta > 0 ? 1 : -1, dist = Math.abs(delta);
+    const need = dist + player.radius;
+    // lowest ray must sit ABOVE the step-up height, otherwise the next
+    // stair tread reads as a wall and blocks the climb. Treads within
+    // step height are walked up via the downward ground-follow ray.
+    const heights = [player.step + 0.04, 1.05, player.eye - 0.05];
+    const lat = [-0.20, 0, 0.20];
+    let allow = dist;
+    for (const h of heights) for (const l of lat) {
+      const ox = player.pos.x + (axis === 'z' ? l : 0);
+      const oz = player.pos.z + (axis === 'x' ? l : 0);
+      const d = axis === 'x'
+        ? blockedDist(ox, player.pos.y + h, oz, dir, 0, need)
+        : blockedDist(ox, player.pos.y + h, oz, 0, dir, need);
+      if (d < need) allow = Math.min(allow, Math.max(0, d - player.radius));
+    }
+    player.pos[axis] += dir * allow;
+  }
+
+  function updatePlayer(dt) {
+    // desired horizontal velocity from input, relative to yaw
+    const sp = move.run ? RUN : (player.fly ? FLY : WALK);
+    const fwdX = -Math.sin(player.yaw), fwdZ = -Math.cos(player.yaw);
+    const rgtX = Math.cos(player.yaw), rgtZ = -Math.sin(player.yaw);
+    const tx = (fwdX * move.f + rgtX * move.r) * sp;
+    const tz = (fwdZ * move.f + rgtZ * move.r) * sp;
+    const k = 1 - Math.exp(-ACCEL * dt);
+    moveVel.x += (tx - moveVel.x) * k;
+    moveVel.z += (tz - moveVel.z) * k;
+
+    if (player.fly) {
+      player.pos.x += moveVel.x * dt;
+      player.pos.z += moveVel.z * dt;
+      player.pos.y += move.up * FLY * dt;
+      player.velY = 0; player.onGround = false;
+      return;
+    }
+
+    moveAxis('x', moveVel.x * dt);
+    moveAxis('z', moveVel.z * dt);
+    // gravity + floor follow with stair step-up
+    const g = groundAt(player.pos.x, player.pos.z, player.pos.y);
+    if (g !== null && player.pos.y <= g + 0.02 + 1e-4) {
+      // standing on / stepping up to a surface
+      player.pos.y = g; player.velY = 0; player.onGround = true;
+    } else {
+      player.velY -= GRAV * dt;
+      player.pos.y += player.velY * dt;
+      player.onGround = false;
+      if (g !== null && player.pos.y < g) { player.pos.y = g; player.velY = 0; player.onGround = true; }
+    }
+  }
+
+  // smoothing the eye height takes the jerk out of stair treads / small
+  // steps; large changes (spawn, teleport, fly) snap instantly.
+  function placeCamera(dt) {
+    const target = player.pos.y + player.eye;
+    if (dt === undefined || player.fly || Math.abs(target - player.viewY) > 1.5) player.viewY = target;
+    else player.viewY += (target - player.viewY) * (1 - Math.exp(-16 * dt));
+    camera.position.set(player.pos.x, player.viewY, player.pos.z);
+    camera.rotation.set(player.pitch, player.yaw, 0);
+  }
+
+  function spawnTo(i) {
+    const s = SPAWNS[i];
+    player.pos.copy(s.pos); player.yaw = s.yaw; player.pitch = -0.04;
+    player.velY = 0; moveVel.set(0, 0, 0);
+    document.querySelectorAll('#levels button').forEach(b =>
+      b.classList.toggle('on', +b.dataset.spawn === i));
+    placeCamera();
+  }
+
+  /* ---------------- input ---------------- */
+  const pressed = {};
+  function setMove() {
+    move.f = (pressed['w'] || pressed['arrowup'] ? 1 : 0) - (pressed['s'] || pressed['arrowdown'] ? 1 : 0);
+    move.r = (pressed['d'] || pressed['arrowright'] ? 1 : 0) - (pressed['a'] || pressed['arrowleft'] ? 1 : 0);
+    move.up = (pressed[' '] ? 1 : 0) - (pressed['shift'] && player.fly ? 1 : 0);
+    move.run = !!pressed['shift'] && !player.fly;
+  }
+  function toggleFly(forceValue) {
+    player.fly = forceValue !== undefined ? forceValue : !player.fly;
+    player.velY = 0;
+    const btn = $('btnFly');
+    if (btn) {
+      if (player.fly) {
+        btn.innerHTML = '<b>F</b> walk';
+        btn.style.color = 'var(--brass)';
+      } else {
+        btn.innerHTML = '<b>F</b> fly';
+        btn.style.color = '';
+      }
+    }
+  }
+
+  window.addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'f') { toggleFly(); }
+    if (k >= '1' && k <= '5') spawnTo(+k - 1);
+    if (k === ' ' && !player.fly && player.onGround) { player.velY = 6.0; player.onGround = false; }
+    pressed[k] = true; setMove();
+    if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('keyup', e => { pressed[e.key.toLowerCase()] = false; setMove(); });
+  window.addEventListener('blur', () => { for (const k in pressed) pressed[k] = false; setMove(); });
+
+  // mouse look (pointer lock)
+  let locked = false;
+  function onMouseMove(e) {
+    if (!locked) return;
+    player.yaw -= e.movementX * 0.0022;
+    player.pitch = clamp(player.pitch - e.movementY * 0.0022, -1.5, 1.5);
+  }
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('pointerlockchange', () => {
+    locked = (document.pointerLockElement === canvas);
+    $('cross').classList.toggle('on', locked);
+  });
+  function lockPointer() {
+    try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* browser throttles rapid re-locks */ }
+  }
+  canvas.addEventListener('click', () => { if (!introOpen) lockPointer(); });
+  // level pills (work without pointer lock)
+  document.querySelectorAll('#levels button').forEach(b =>
+    b.addEventListener('click', e => { e.stopPropagation(); spawnTo(+b.dataset.spawn); }));
+
+  const btnFly = $('btnFly');
+  if (btnFly) {
+    btnFly.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFly();
+    });
+  }
+
+  // touch look + drag-to-walk for mobile (basic)
+  let touchLook = null;
+  canvas.addEventListener('touchstart', e => {
+    const t = e.touches[0]; touchLook = { x: t.clientX, y: t.clientY };
+    pressed['w'] = true; setMove();
+  }, { passive: true });
+  canvas.addEventListener('touchmove', e => {
+    if (!touchLook) return; const t = e.touches[0];
+    player.yaw -= (t.clientX - touchLook.x) * 0.005;
+    player.pitch = clamp(player.pitch - (t.clientY - touchLook.y) * 0.005, -1.4, 1.4);
+    touchLook.x = t.clientX; touchLook.y = t.clientY;
+  }, { passive: true });
+  canvas.addEventListener('touchend', () => { touchLook = null; pressed['w'] = false; setMove(); });
+
+  /* ---------------- HUD: current room + floor ---------------- */
+  const roomEl = $('roomName'), floorEl = $('floorName');
+  const FLOOR_LABEL = ['GROUND FLOOR', 'FIRST FLOOR', 'SECOND FLOOR'];
+  function currentFloorIndex() {
+    const y = player.pos.y;
+    if (y >= L.roof - 0.6) return 3;
+    if (y >= L.f2 - 0.6) return 2;
+    if (y >= L.f1 - 0.6) return 1;
+    return 0;
+  }
+  function isPlayerExterior() {
+    if (player.pos.y < L.f0 - 0.2) return true;
+    const px = player.pos.x * 1000, py = -player.pos.z * 1000;
+    if (px < 0 || px > 16600 || py < 0 || py > 8870) return true;
+    return false;
+  }
+  function getSpecialRoom(fi, px, py) {
+    if (fi === 3) return { room: 'TERRACE', floor: 'ROOF · OPEN SKY' };
+    
+    // Check if on North Balcony (for FF or SF)
+    if (px >= 0 && px <= 16600 && py >= 8870 && py <= 9900) {
+      return { room: 'NORTH BALCONY', floor: fi === 1 ? 'FIRST FLOOR' : 'SECOND FLOOR' };
+    }
+    
+    // Check if on East Balcony/Terrace
+    if (px >= 12650 && px <= 16600) {
+      if (fi === 1 && py >= 4140 && py <= 8870) {
+        return { room: 'EAST BALCONY', floor: 'FIRST FLOOR' };
+      }
+      if (fi === 2 && py >= 2035 && py <= 8870) {
+        return { room: 'EAST BALCONY', floor: 'SECOND FLOOR' };
+      }
+    }
+    
+    // Check if in Portico (GF exterior under the slab)
+    if (fi === 0 && px >= 12650 && px <= 16600 && py >= 3975 && py <= 8870) {
+      return { room: 'PORTICO', floor: 'GROUND FLOOR' };
+    }
+    
+    // Check if in Lift
+    if (px >= 12650 && px <= 14270 && py >= 0 && py <= 2035) {
+      return { room: 'LIFT', floor: fi === 0 ? 'GROUND FLOOR' : (fi === 1 ? 'FIRST FLOOR' : 'SECOND FLOOR') };
+    }
+
+    return null;
+  }
+  let lastRoom = '';
+  function updateHUD() {
+    const fi = currentFloorIndex();
+    const px = player.pos.x * 1000, py = -player.pos.z * 1000;
+    
+    // 1. Check special areas (balconies, terrace, portico, lift)
+    const special = getSpecialRoom(fi, px, py);
+    if (special) {
+      setHUD(special.room, special.floor);
+      return;
+    }
+    
+    // 2. Check if general exterior (yard, driveway, compound)
+    if (isPlayerExterior()) {
+      setHUD('YARD / DRIVEWAY', 'EXTERIOR');
+      return;
+    }
+    
+    // 3. Regular rooms
+    const rooms = data.floors[fi] ? data.floors[fi].rooms : [];
+    let found = null;
+    for (const r of rooms) {
+      if (px >= r.x0 && px <= r.x1 && py >= r.y0 && py <= r.y1) { found = r.name; break; }
+    }
+    setHUD(found || 'CIRCULATION', FLOOR_LABEL[fi]);
+  }
+  function setHUD(room, floor) {
+    if (room !== lastRoom) { roomEl.textContent = room; lastRoom = room; }
+    floorEl.textContent = floor;
+  }
+
+  /* ---------------- resize + loop ---------------- */
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize); resize();
+
+  let intro = $('intro'), introOpen = true;
+  let last = performance.now(), firstFrame = false, frames = 0;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const frameMs = now - last; last = now;
+    if (document.hidden) return;            // pause all work when tab is hidden
+    const dt = Math.min(0.05, frameMs / 1000);
+    scaler.sample(frameMs);
+    updatePlayer(dt);
+    placeCamera(dt);
+    skyDome.position.copy(camera.position);
+    renderer.render(scene, camera);
+    if ((frames++ & 3) === 0) updateHUD();
+
+    if (!firstFrame) { firstFrame = true; enableEntry(); }
+  }
+
+  // animate the loading bar a touch before first frame, then hand control to ENTER
+  let prog = 0;
+  const tick = setInterval(() => { prog = Math.min(prog + 14, 88); $('barFill').style.width = prog + '%'; }, 90);
+  function enableEntry() { const b = $('enter'); if (b.disabled) { clearInterval(tick); b.disabled = false; b.classList.add('show'); $('barFill').style.width = '100%'; } }
+  // fallback: never leave ENTER stuck if the first rAF is delayed (e.g. tab opened in background)
+  setTimeout(enableEntry, 3500);
+  spawnTo(0);
+  placeCamera();
+  requestAnimationFrame(frame);
+
+  $('enter').addEventListener('click', () => {
+    clearInterval(tick);
+    introOpen = false;
+    intro.classList.add('done');
+    setTimeout(() => intro.remove(), 650);
+    lockPointer();
+  });
+})();
+</script>
+</body>
+</html>

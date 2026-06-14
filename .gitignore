@@ -1,0 +1,11 @@
+# dependencies / tooling
+node_modules/
+.vercel
+
+# local Claude Code settings (keep launch.json so others can run the preview)
+.claude/settings.local.json
+
+# os / editor cruft
+.DS_Store
+Thumbs.db
+*.log

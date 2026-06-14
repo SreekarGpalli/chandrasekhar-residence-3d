@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, interactive-widget=resizes-visual, viewport-fit=cover">
+<title>Chandrasekhar Residence · Anantapur</title>
+<meta name="description" content="Interactive 3D visualization — Mr Chandrasekhar Family Residence, G+2, Anantapur.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101214; --panel:rgba(22,24,27,.72); --panel-line:rgba(255,255,255,.08);
+    --ink:#e8e6e1; --ink-dim:#9a9890; --brass:#c9a36a; --brass-dim:rgba(201,163,106,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  #c:active{cursor:grabbing}
+  /* vignette */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;
+    background:radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(0,0,0,.42) 100%)}
+  /* labels */
+  #labels{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+  .rlabel{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;will-change:transform;
+    display:flex;flex-direction:column;align-items:center;gap:1px;
+    padding:5px 9px 6px;border-radius:7px;
+    background:rgba(18,20,22,.66);border:1px solid rgba(255,255,255,.09);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    transition:border-color .2s, background .2s;text-align:center;white-space:nowrap;
+    max-width:200px}
+  .rlabel:active{background:rgba(201,163,106,.18);border-color:var(--brass-dim)}
+  .rlabel:hover{border-color:var(--brass-dim);background:rgba(26,27,29,.82)}
+  .rlabel .rn{font-family:Archivo,Inter,sans-serif;font-weight:600;font-size:10.5px;letter-spacing:.14em;
+    overflow:hidden;text-overflow:ellipsis;max-width:180px}
+  .rlabel .rd{font-size:9px;color:var(--ink-dim);letter-spacing:.05em}
+  /* title block */
+  #titleblock{position:fixed;top:max(18px, env(safe-area-inset-top));left:22px;z-index:6;user-select:none}
+  #titleblock h1{font-family:Archivo,Inter,sans-serif;font-weight:700;font-size:17px;letter-spacing:.34em;line-height:1.35}
+  #titleblock p{font-size:10.5px;letter-spacing:.3em;color:var(--ink-dim);margin-top:4px}
+  #titleblock i{display:block;width:46px;height:2px;background:var(--brass);margin-top:10px}
+  /* compass */
+  #compass{position:fixed;top:max(18px, env(safe-area-inset-top));right:20px;z-index:6;
+    width:52px;height:52px;border-radius:50%;
+    background:var(--panel);border:1px solid var(--panel-line);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  #needle{position:absolute;inset:0;transition:transform .15s ease-out}
+  #needle::before{content:"";position:absolute;left:50%;top:7px;width:2px;height:19px;margin-left:-1px;
+    background:linear-gradient(var(--brass),transparent)}
+  #needle::after{content:"N";position:absolute;left:50%;top:5px;transform:translateX(-50%);
+    font-size:8.5px;font-weight:600;color:var(--brass);letter-spacing:0}
+  #compass b{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:var(--ink-dim)}
+  /* rooms panel */
+  #roomsPanel{position:fixed;top:50%;right:20px;transform:translateY(-50%);z-index:6;width:228px;
+    max-height:min(64vh,560px);display:flex;flex-direction:column;
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    transition:opacity .35s, transform .35s}
+  #roomsPanel.off{opacity:0;pointer-events:none;transform:translateY(-50%) translateX(14px)}
+  #roomsPanel h3{font-family:Archivo;font-size:10.5px;font-weight:600;letter-spacing:.26em;color:var(--brass);
+    padding:14px 16px 10px;border-bottom:1px solid var(--panel-line)}
+  #roomsList{list-style:none;overflow-y:auto;padding:6px 0;scrollbar-width:thin;scrollbar-color:#3a3d41 transparent}
+  #roomsList::-webkit-scrollbar{width:4px}
+  #roomsList::-webkit-scrollbar-thumb{background:#3a3d41;border-radius:2px}
+  #roomsList li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:8px 16px;cursor:pointer;border-left:2px solid transparent;transition:background .15s,border-color .15s}
+  #roomsList li:hover{background:rgba(255,255,255,.045)}
+  #roomsList li.sel{border-left-color:var(--brass);background:rgba(201,163,106,.08)}
+  #roomsList li span{font-size:11.5px;font-weight:500;letter-spacing:.06em}
+  #roomsList li em{font-style:normal;font-size:9.5px;color:var(--ink-dim);white-space:nowrap}
+  /* info card */
+  #infoCard{position:fixed;left:22px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:7;width:236px;
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:15px 16px 14px;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    transition:opacity .3s, transform .3s}
+  #infoCard.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
+  #infoCard h4{font-family:Archivo;font-size:13px;font-weight:600;letter-spacing:.18em;padding-right:22px}
+  #infoCard .mm{margin-top:7px;font-size:12px;color:var(--ink)}
+  #infoCard .ft{margin-top:2px;font-size:11px;color:var(--ink-dim)}
+  #infoCard .ar{margin-top:8px;font-size:10.5px;letter-spacing:.08em;color:var(--brass)}
+  #cardClose{position:absolute;top:9px;right:11px;background:none;border:none;color:var(--ink-dim);
+    font-size:15px;cursor:pointer;line-height:1;padding:3px}
+  #cardClose:hover{color:var(--ink)}
+  /* view switcher */
+  #views{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:7;
+    display:flex;background:var(--panel);border:1px solid var(--panel-line);border-radius:11px;overflow:hidden;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  #views button, #views a{appearance:none;background:none;border:none;color:var(--ink-dim);cursor:pointer;
+    font-family:Archivo,Inter,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.18em;
+    padding:13px 17px 12px;position:relative;transition:color .2s;text-decoration:none;display:flex;align-items:center;gap:6px}
+  #views button + button, #views button + a, #views a + button{border-left:1px solid var(--panel-line)}
+  #views button.on{color:var(--ink)}
+  #views button.on::after{content:"";position:absolute;left:14px;right:14px;bottom:7px;height:2px;background:var(--brass)}
+  #views button:hover, #views a:hover{color:var(--ink)}
+  #views .wt-link{color:var(--brass);border-left:1px solid var(--panel-line)}
+  #views .wt-link:hover{color:#e0c48e;background:rgba(201,163,106,.08)}
+  #views .wt-link svg{width:13px;height:13px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  /* hint */
+  #hint{position:fixed;left:50%;bottom:calc(72px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
+    font-size:10.5px;letter-spacing:.12em;color:var(--ink-dim);transition:opacity .8s;white-space:nowrap}
+  #hint.fade{opacity:0}
+  #hint .d{display:none}
+  /* loading */
+  #loading{position:fixed;inset:0;z-index:20;background:var(--bg);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    transition:opacity .6s}
+  #loading.done{opacity:0;pointer-events:none}
+  #loading .lt{font-family:Archivo;font-weight:700;font-size:16px;letter-spacing:.4em;text-indent:.4em;text-align:center}
+  #loading .ls{font-size:10px;letter-spacing:.3em;text-indent:.3em;color:var(--ink-dim)}
+  #loading .bar{width:150px;height:2px;background:rgba(255,255,255,.08);border-radius:1px;overflow:hidden;margin-top:8px}
+  #loading .bar i{display:block;width:40%;height:100%;background:var(--brass);border-radius:1px;
+    animation:shimmer 1.2s ease-in-out infinite}
+  @keyframes shimmer{0%{transform:translateX(-110%)}100%{transform:translateX(380%)}}
+  /* mobile room drawer */
+  #mobileRoomBtn{display:none;position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:6;
+    width:42px;height:42px;border-radius:50%;border:1px solid var(--panel-line);
+    background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    color:var(--brass);font-size:18px;cursor:pointer;align-items:center;justify-content:center;
+    transition:background .2s}
+  #mobileRoomBtn:hover,#mobileRoomBtn:active{background:rgba(201,163,106,.15)}
+  #mobileDrawer{display:none;position:fixed;left:0;right:0;bottom:0;z-index:15;
+    max-height:52vh;background:var(--panel);border-top:1px solid var(--panel-line);
+    border-radius:14px 14px 0 0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    flex-direction:column;transform:translateY(100%);transition:transform .35s ease-out}
+  #mobileDrawer.open{transform:translateY(0)}
+  #mobileDrawer .drawer-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);
+    margin:10px auto 6px;flex-shrink:0}
+  #mobileDrawer h3{font-family:Archivo;font-size:10.5px;font-weight:600;letter-spacing:.26em;color:var(--brass);
+    padding:6px 16px 10px;border-bottom:1px solid var(--panel-line);flex-shrink:0}
+  #mobileDrawer ul{list-style:none;overflow-y:auto;padding:6px 0;scrollbar-width:thin;scrollbar-color:#3a3d41 transparent;flex:1}
+  #mobileDrawer ul li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    padding:12px 20px;cursor:pointer;border-left:2px solid transparent;transition:background .15s,border-color .15s}
+  #mobileDrawer ul li:hover{background:rgba(255,255,255,.045)}
+  #mobileDrawer ul li.sel{border-left-color:var(--brass);background:rgba(201,163,106,.08)}
+  #mobileDrawer ul li span{font-size:12.5px;font-weight:500;letter-spacing:.06em}
+  #drawerOverlay{display:none;position:fixed;inset:0;z-index:14;background:rgba(0,0,0,.35)}
+  /* hint recall */
+  #hintBtn{position:fixed;left:50%;bottom:calc(60px + env(safe-area-inset-bottom));transform:translateX(90px);z-index:7;
+    width:26px;height:26px;border-radius:50%;border:1px solid var(--panel-line);
+    background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    color:var(--ink-dim);font-size:12px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .4s}
+  #hintBtn.show{opacity:1}
+  #hintBtn:hover{color:var(--ink);border-color:var(--brass-dim)}
+  /* aria status */
+  #ariaStatus{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  @media (max-width:959px){
+    #roomsPanel{display:none}
+    #mobileRoomBtn{display:flex}
+    #mobileDrawer{display:flex}
+    #titleblock h1{font-size:13.5px;letter-spacing:.26em}
+    #titleblock p{font-size:9px}
+    #views button, #views a{padding:12px 11px 11px;font-size:9.5px;letter-spacing:.12em}
+    #views .wt-link svg{width:11px;height:11px}
+    #infoCard{left:14px;right:14px;width:auto}
+    #hint .d{display:none}#hint .m{display:inline}
+    #hintBtn{transform:translateX(70px)}
+  }
+  @media (min-width:960px){ #hint .m{display:none}#hint .d{display:inline} }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:0.01ms!important;animation-iteration-count:1!important;
+      transition-duration:0.01ms!important}
+    #loading .bar i{animation:none}
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+
+<header id="titleblock">
+  <h1>CHANDRASEKHAR<br>RESIDENCE</h1>
+  <p>ANANTAPUR · G+2 · EAST FACING</p>
+  <i></i>
+</header>
+
+<div id="compass" aria-hidden="true"><div id="needle"></div><b></b></div>
+
+<aside id="roomsPanel" class="off">
+  <h3 id="panelTitle">ROOMS</h3>
+  <ul id="roomsList"></ul>
+</aside>
+
+<div id="infoCard" class="hidden">
+  <button id="cardClose" aria-label="Close">×</button>
+  <h4 id="cardName"></h4>
+</div>
+
+<nav id="views">
+  <button data-view="exterior" class="on">EXTERIOR</button>
+  <button data-view="floor0">GROUND</button>
+  <button data-view="floor1">FIRST</button>
+  <button data-view="floor2">SECOND</button>
+  <a href="walkthrough.html" class="wt-link" title="First-person walkthrough"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>WALKTHROUGH</a>
+</nav>
+
+<div id="hint">
+  <span class="d">DRAG TO ORBIT · SCROLL TO ZOOM · RIGHT-DRAG TO PAN</span>
+  <span class="m">DRAG TO ORBIT · PINCH TO ZOOM</span>
+</div>
+<button id="hintBtn" aria-label="Show controls hint" title="Show controls">?</button>
+
+<button id="mobileRoomBtn" aria-label="Browse rooms" style="display:none">☰</button>
+<div id="drawerOverlay"></div>
+<div id="mobileDrawer" aria-label="Rooms drawer">
+  <div class="drawer-handle"></div>
+  <h3 id="drawerTitle">ROOMS</h3>
+  <ul id="mobileRoomsList"></ul>
+</div>
+<div id="ariaStatus" aria-live="polite" role="status"></div>
+
+<div id="loading">
+  <div class="lt">CHANDRASEKHAR RESIDENCE</div>
+  <div class="ls">ANANTAPUR · PREPARING 3D MODEL</div>
+  <div class="bar"><i></i></div>
+</div>
+
+<!-- Three.js: served locally from the edge (fast, reliable); CDN as fallback -->
+<script src="lib/three.min.js"></script>
+<script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
+<script>if(!window.THREE){document.querySelector('#loading .ls').textContent='FAILED TO LOAD 3D ENGINE — CHECK NETWORK';document.querySelector('#loading .bar').style.display='none';throw new Error('Three.js failed to load')}</script>
+<script src="perf.js"></script>
+<script src="houseScene.js"></script>
+<script>
+/* ============================================================
+   app.js — interactive layer for the Chandrasekhar Residence
+   Requires: THREE (r128) + HouseScene (scene.js) already loaded.
+   ============================================================ */
+(function () {
+  'use strict';
+  if (!window.THREE || !window.HouseScene) return;
+  const THREE = window.THREE;
+
+  /* ---------- named constants ---------- */
+  const ORBIT_SENSITIVITY = 0.0052;
+  const TILT_SENSITIVITY = 0.0042;
+  const SCROLL_SENSITIVITY = 0.0012;
+  const PAN_FACTOR = 0.0014;
+  const LABEL_Y_OFFSET = 1.55;
+  const MIN_RADIUS = 4.5;
+  const MAX_RADIUS = 80;
+  const MIN_PHI = 0.12;
+  const MAX_PHI = 1.52;
+  const SHADOW_BIAS = -0.0004;
+  const DAMPING_RATE = 8;
+  const AUTO_ROTATE_SPEED = 0.05;
+
+  /* ---------- helpers ---------- */
+  const $ = id => document.getElementById(id);
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  function ftin(mm) {
+    const tin = mm / 25.4;
+    let ft = Math.floor(tin / 12);
+    let inch = Math.round(tin - ft * 12);
+    if (inch === 12) { ft++; inch = 0; }
+    return ft + "'-" + inch + '"';
+  }
+  const easeInOutCubic = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  /* ---------- three.js boot ---------- */
+  const canvas = $('c');
+  // adaptive quality: pick render settings to match the device's hardware
+  const Q = window.Perf ? Perf.detect()
+    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7 };
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: Q.antialias, powerPreference: 'high-performance' });
+  renderer.setClearColor(0x101214, 1);
+  // Forward-compatible encoding: use outputColorSpace on r152+, fall back to outputEncoding on r128
+  if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
+  else renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  const SHADOW_TYPE = { basic: THREE.BasicShadowMap, pcf: THREE.PCFShadowMap, pcfsoft: THREE.PCFSoftShadowMap };
+  renderer.shadowMap.enabled = Q.shadows;
+  renderer.shadowMap.type = SHADOW_TYPE[Q.shadowType] || THREE.PCFSoftShadowMap;
+  // scene + sun are static → render the shadow map ONCE, never per-frame
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = Q.shadows;
+  // dynamic resolution scaler holds the framerate steady on any GPU
+  const scaler = window.Perf ? Perf.makeScaler(renderer, Q, { targetFps: 58, minFps: 30 })
+    : { sample: function () {}, apply: function () { renderer.setPixelRatio(Q.dpr); } };
+  scaler.apply();
+
+  /* on-demand rendering: only draw when something is moving or the user just
+     interacted, so an idle floor view costs ~zero GPU/battery */
+  let wakeUntil = 0;
+  function wake(ms) { wakeUntil = Math.max(wakeUntil, performance.now() + (ms || 450)); }
+  ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart', 'touchmove']
+    .forEach(function (ev) { window.addEventListener(ev, function () { wake(); }, { passive: true }); });
+  if (window.Perf) Perf.onHidden(function (h) { if (!h) wake(300); });
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x101214, 70, 180);
+
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+
+  /* lights */
+  scene.add(new THREE.HemisphereLight(0x8fa3b8, 0x26292c, 0.5));
+  const sun = new THREE.DirectionalLight(0xffe3c0, 1.25);
+  sun.position.set(38, 46, 16);
+  sun.castShadow = Q.shadows;
+  sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
+  const sc = sun.shadow.camera;
+  sc.left = -28; sc.right = 28; sc.top = 28; sc.bottom = -28;
+  sc.near = 5; sc.far = 140;
+  sun.shadow.bias = SHADOW_BIAS;
+  const sunTarget = new THREE.Object3D();
+  sunTarget.position.set(8, 0, -4.4);
+  scene.add(sunTarget); sun.target = sunTarget;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xa9b6c6, 0.18);
+  fill.position.set(-30, 18, 6);
+  scene.add(fill);
+
+  /* soft light pool under the building */
+  (function pool() {
+    if (typeof document === 'undefined') return;
+    const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+    const ctx = cv.getContext && cv.getContext('2d');
+    if (!ctx) return;
+    const g = ctx.createRadialGradient(256, 256, 30, 256, 256, 250);
+    g.addColorStop(0, 'rgba(74,79,86,0.85)');
+    g.addColorStop(0.55, 'rgba(46,50,55,0.45)');
+    g.addColorStop(1, 'rgba(26,28,30,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
+    const tex = new THREE.CanvasTexture(cv);
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(92, 92),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(9.5, 0.018, -4.2);
+    m.renderOrder = 1;
+    scene.add(m);
+  })();
+
+  /* ---------- house ---------- */
+  const data = window.HouseScene.build(THREE);
+  scene.add(data.root);
+  const FLOOR_NAMES = ['GROUND', 'FIRST', 'SECOND'];
+  const VIEW_KEYS = ['exterior', 'floor0', 'floor1', 'floor2'];
+
+  /* room highlight planes + label elements */
+  const labelsLayer = $('labels');
+  const hlMat = new THREE.MeshBasicMaterial({ color: 0xc9a36a, transparent: true, opacity: 0.33, depthWrite: false });
+  const floorsUI = data.floors.map((f, fi) => {
+    const rooms = f.rooms.map(r => {
+      const w = (r.x1 - r.x0) / 1000, d = (r.y1 - r.y0) / 1000;
+      const hl = new THREE.Mesh(new THREE.PlaneGeometry(w, d), hlMat);
+      hl.rotation.x = -Math.PI / 2;
+      hl.position.set((r.x0 + r.x1) / 2000, f.floorY + 0.02, -(r.y0 + r.y1) / 2000);
+      hl.visible = false; hl.renderOrder = 3;
+      f.group.add(hl);
+      const el = document.createElement('div');
+      el.className = 'rlabel';
+      el.setAttribute('role', 'button');
+      el.setAttribute('tabindex', '0');
+      el.innerHTML = '<span class="rn">' + r.name + '</span>';
+      el.style.display = 'none';
+      labelsLayer.appendChild(el);
+      const room = { r, hl, el, fi, cx: (r.x0 + r.x1) / 2000, cz: -(r.y0 + r.y1) / 2000 };
+      el.addEventListener('click', e => { e.stopPropagation(); selectRoom(room, false); });
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectRoom(room, false); }
+      });
+      return room;
+    });
+    return { rooms, group: f.group, floorY: f.floorY };
+  });
+
+  /* ---------- camera controls (custom orbit) ---------- */
+  const ctl = {
+    target: new THREE.Vector3(), tTarget: new THREE.Vector3(),
+    theta: 0, phi: 1.1, radius: 30,
+    tTheta: 0, tPhi: 1.1, tRadius: 30,
+    interacted: false
+  };
+  /* Pre-allocated Vector3 temporaries for zero-GC path */
+  const _tmpP = new THREE.Vector3(), _tmpT = new THREE.Vector3(), _tmpOff = new THREE.Vector3();
+  const _right = new THREE.Vector3(), _up = new THREE.Vector3();
+
+  function setFromView(v, snap) {
+    _tmpP.set(v.pos[0], v.pos[1], v.pos[2]);
+    _tmpT.set(v.target[0], v.target[1], v.target[2]);
+    _tmpOff.copy(_tmpP).sub(_tmpT);
+    const r = _tmpOff.length();
+    const phi = Math.acos(clamp(_tmpOff.y / r, -1, 1));
+    const theta = Math.atan2(_tmpOff.x, _tmpOff.z);
+    ctl.tTarget.copy(_tmpT); ctl.tRadius = r; ctl.tPhi = phi; ctl.tTheta = theta;
+    if (snap) { ctl.target.copy(_tmpT); ctl.radius = r; ctl.phi = phi; ctl.theta = theta; }
+  }
+  function applyCamera() {
+    const sp = Math.sin(ctl.phi), cp = Math.cos(ctl.phi);
+    camera.position.set(
+      ctl.target.x + ctl.radius * sp * Math.sin(ctl.theta),
+      ctl.target.y + ctl.radius * cp,
+      ctl.target.z + ctl.radius * sp * Math.cos(ctl.theta)
+    );
+    camera.lookAt(ctl.target);
+  }
+
+  /* tween between views */
+  let tween = null;
+  function flyTo(dest, dur) {
+    const norm = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+    const from = {
+      target: ctl.target.clone(), radius: ctl.radius, phi: ctl.phi, theta: ctl.theta
+    };
+    let dTheta = norm(dest.theta - ctl.theta);
+    tween = {
+      from, dest, dTheta, t0: performance.now(), dur: (dur || 1.15) * 1000
+    };
+  }
+  function flyToView(v) {
+    _tmpP.set(v.pos[0], v.pos[1], v.pos[2]);
+    _tmpT.set(v.target[0], v.target[1], v.target[2]);
+    _tmpOff.copy(_tmpP).sub(_tmpT);
+    const r = _tmpOff.length();
+    flyTo({
+      target: _tmpT.clone(), radius: r,
+      phi: Math.acos(clamp(_tmpOff.y / r, -1, 1)),
+      theta: Math.atan2(_tmpOff.x, _tmpOff.z)
+    });
+  }
+
+  /* pointer input */
+  const pointers = new Map();
+  let lastPinch = 0, moved = 0, downAt = null;
+  let ptrMoveQueued = false;
+  canvas.addEventListener('pointerdown', e => {
+    canvas.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, button: e.button });
+    ctl.interacted = true; tween = null; moved = 0; downAt = { x: e.clientX, y: e.clientY };
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      lastPinch = Math.hypot(a.x - b.x, a.y - b.y);
+    }
+  });
+  canvas.addEventListener('pointermove', e => {
+    const p = pointers.get(e.pointerId);
+    if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    moved += Math.abs(dx) + Math.abs(dy);
+    if (ptrMoveQueued) return;
+    ptrMoveQueued = true;
+    requestAnimationFrame(() => {
+      ptrMoveQueued = false;
+      if (pointers.size === 1) {
+        if (p.button === 2 || e.shiftKey) pan(dx, dy);
+        else {
+          ctl.tTheta -= dx * ORBIT_SENSITIVITY;
+          ctl.tPhi = clamp(ctl.tPhi - dy * TILT_SENSITIVITY, MIN_PHI, MAX_PHI);
+        }
+      } else if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const pinch = Math.hypot(a.x - b.x, a.y - b.y);
+        if (lastPinch > 0) ctl.tRadius = clamp(ctl.tRadius * lastPinch / pinch, MIN_RADIUS, MAX_RADIUS);
+        lastPinch = pinch;
+        pan(dx * 0.5, dy * 0.5);
+      }
+    });
+  });
+  const endPtr = e => {
+    pointers.delete(e.pointerId);
+    lastPinch = 0;
+    if (downAt && moved < 6 && e.button !== 2) clearSelection();
+    downAt = null;
+  };
+  canvas.addEventListener('pointerup', endPtr);
+  canvas.addEventListener('pointercancel', endPtr);
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    ctl.interacted = true; tween = null;
+    ctl.tRadius = clamp(ctl.tRadius * Math.exp(e.deltaY * SCROLL_SENSITIVITY), MIN_RADIUS, MAX_RADIUS);
+  }, { passive: false });
+
+  function pan(dx, dy) {
+    const f = ctl.radius * PAN_FACTOR;
+    const m = camera.matrix.elements;
+    _right.set(m[0], m[1], m[2]);
+    _up.set(m[4], m[5], m[6]);
+    ctl.tTarget.addScaledVector(_right, -dx * f).addScaledVector(_up, dy * f);
+    const b = data.bounds;
+    ctl.tTarget.x = clamp(ctl.tTarget.x, b.minX, b.maxX);
+    ctl.tTarget.z = clamp(ctl.tTarget.z, b.minZ, b.maxZ);
+    ctl.tTarget.y = clamp(ctl.tTarget.y, 0, b.maxY);
+  }
+
+  /* ---------- view switching ---------- */
+  let activeView = 'exterior';
+  const ariaStatus = $('ariaStatus');
+  function announce(msg) { ariaStatus.textContent = msg; }
+  function setView(name, instant) {
+    activeView = name;
+    const fi = VIEW_KEYS.indexOf(name) - 1; // -1 for exterior
+    data.exterior.visible = name === 'exterior';
+    data.floors.forEach((f, i) => f.group.visible = (i === fi));
+    clearSelection();
+    document.querySelectorAll('#views button').forEach(b =>
+      b.classList.toggle('on', b.dataset.view === name));
+    buildPanel(fi);
+    labelsLayer.style.display = fi >= 0 ? 'block' : 'none';
+    if (instant) setFromView(data.views[name], true);
+    else flyToView(data.views[name]);
+    $('hint').dataset.mode = name;
+    announce(fi >= 0 ? FLOOR_NAMES[fi] + ' floor view' : 'Exterior view');
+  }
+  document.querySelectorAll('#views button').forEach(b =>
+    b.addEventListener('click', () => setView(b.dataset.view)));
+
+  /* ---------- rooms panel ---------- */
+  const panel = $('roomsPanel'), list = $('roomsList'), panelTitle = $('panelTitle');
+  const mobileBtn = $('mobileRoomBtn'), mobileDrawer = $('mobileDrawer');
+  const mobileList = $('mobileRoomsList'), drawerTitle = $('drawerTitle');
+  const drawerOverlay = $('drawerOverlay');
+
+  function openDrawer() { mobileDrawer.classList.add('open'); drawerOverlay.style.display = 'block'; }
+  function closeDrawer() { mobileDrawer.classList.remove('open'); drawerOverlay.style.display = 'none'; }
+  mobileBtn.addEventListener('click', openDrawer);
+  drawerOverlay.addEventListener('click', closeDrawer);
+
+  function buildPanel(fi) {
+    const frag = document.createDocumentFragment();
+    const mobileFrag = document.createDocumentFragment();
+    if (fi < 0) {
+      panel.classList.add('off');
+      mobileBtn.style.display = 'none';
+      closeDrawer();
+      list.replaceChildren();
+      mobileList.replaceChildren();
+      return;
+    }
+    panel.classList.remove('off');
+    mobileBtn.style.display = '';
+    panelTitle.textContent = FLOOR_NAMES[fi] + ' FLOOR';
+    drawerTitle.textContent = FLOOR_NAMES[fi] + ' FLOOR';
+    floorsUI[fi].rooms.forEach(room => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'button');
+      li.setAttribute('tabindex', '0');
+      li.innerHTML = '<span>' + room.r.name + '</span>';
+      li.addEventListener('click', () => selectRoom(room, true));
+      li.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRoom(room, true); }
+      });
+      room.li = li;
+      frag.appendChild(li);
+
+      // mobile drawer clone
+      const mli = document.createElement('li');
+      mli.setAttribute('role', 'button');
+      mli.setAttribute('tabindex', '0');
+      mli.innerHTML = '<span>' + room.r.name + '</span>';
+      mli.addEventListener('click', () => { selectRoom(room, true); closeDrawer(); });
+      mli.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRoom(room, true); closeDrawer(); }
+      });
+      room.mli = mli;
+      mobileFrag.appendChild(mli);
+    });
+    list.replaceChildren(frag);
+    mobileList.replaceChildren(mobileFrag);
+  }
+
+  /* ---------- selection / info card ---------- */
+  const card = $('infoCard');
+  let selected = null;
+  function clearSelection() {
+    if (selected) {
+      selected.hl.visible = false;
+      if (selected.li) selected.li.classList.remove('sel');
+      if (selected.mli) selected.mli.classList.remove('sel');
+    }
+    selected = null;
+    card.classList.add('hidden');
+  }
+  function selectRoom(room, fly) {
+    clearSelection();
+    selected = room;
+    room.hl.visible = true;
+    if (room.li) room.li.classList.add('sel');
+    if (room.mli) room.mli.classList.add('sel');
+    $('cardName').textContent = room.r.name;
+    card.classList.remove('hidden');
+    announce('Selected ' + room.r.name);
+    if (fly) {
+      const fY = data.floors[room.fi].floorY;
+      _tmpT.set(room.cx, fY + 0.4, room.cz);
+      flyTo({
+        target: _tmpT.clone(),
+        radius: Math.max(8, ctl.radius * 0.7),
+        phi: clamp(ctl.phi, 0.5, 1.05),
+        theta: ctl.theta
+      }, 0.9);
+    }
+  }
+  $('cardClose').addEventListener('click', clearSelection);
+
+  /* ---------- labels ---------- */
+  const v3 = new THREE.Vector3();
+  const _v3b = new THREE.Vector3();
+  function updateLabels(w, h) {
+    const activeFi = VIEW_KEYS.indexOf(activeView) - 1;
+    // Hide all labels for other floors
+    floorsUI.forEach((f, fi) => {
+      if (fi !== activeFi) {
+        f.rooms.forEach(room => room.el.style.display = 'none');
+      }
+    });
+
+    if (activeFi < 0) return;
+    const fY = data.floors[activeFi].floorY;
+    for (const room of floorsUI[activeFi].rooms) {
+      v3.set(room.cx, fY + LABEL_Y_OFFSET, room.cz).project(camera);
+      const onScreen = v3.z < 1 && v3.x > -1.08 && v3.x < 1.08 && v3.y > -1.1 && v3.y < 1.1;
+      if (!onScreen) { room.el.style.display = 'none'; continue; }
+      const x = (v3.x * 0.5 + 0.5) * w, y = (-v3.y * 0.5 + 0.5) * h;
+      _v3b.set(room.cx, fY, room.cz);
+      const d = camera.position.distanceTo(_v3b);
+      const op = clamp((40 - d) / 22, 0, 1) * 0.85 + 0.15;
+      const s = clamp(16 / d, 0.72, 1.12);
+      room.el.style.display = 'block';
+      room.el.style.opacity = op.toFixed(2);
+      room.el.style.transform = 'translate(-50%,-120%) translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) scale(' + s.toFixed(2) + ')';
+      room.el.style.zIndex = (1000 - Math.round(v3.z * 500));
+    }
+  }
+
+  /* ---------- compass ---------- */
+  const needle = $('needle');
+  function updateCompass() {
+    const az = Math.atan2(camera.position.x - ctl.target.x, camera.position.z - ctl.target.z);
+    needle.style.transform = 'rotate(' + (az * 180 / Math.PI) + 'deg)';
+  }
+
+  /* ---------- resize ---------- */
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    wake(600);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ---------- main loop ---------- */
+  setView('exterior', true);
+  applyCamera();
+
+  /* hint recall */
+  const hintEl = $('hint'), hintBtn = $('hintBtn');
+  let hintHidden = false;
+  function hideHint() {
+    hintEl.classList.add('fade');
+    hintHidden = true;
+    hintBtn.classList.add('show');
+  }
+  hintBtn.addEventListener('click', () => {
+    hintEl.classList.remove('fade');
+    hintBtn.classList.remove('show');
+    hintHidden = false;
+    setTimeout(hideHint, 6000);
+  });
+
+  // camera is "settled" when it has finished damping toward its target
+  function camSettled() {
+    return !tween
+      && Math.abs(ctl.tTheta - ctl.theta) < 3e-4
+      && Math.abs(ctl.tPhi - ctl.phi) < 3e-4
+      && Math.abs(ctl.tRadius - ctl.radius) < 3e-3
+      && ctl.target.distanceToSquared(ctl.tTarget) < 1e-6;
+  }
+
+  let last = performance.now(), firstFrame = false;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const frameMs = now - last; last = now;
+    if (document.hidden) return;                 // pause all work when tab is hidden
+    const dt = Math.min(0.05, frameMs / 1000);
+    scaler.sample(frameMs);
+
+    // advance camera state every frame (cheap); auto-rotate keeps exterior alive
+    if (tween) {
+      const t = clamp((now - tween.t0) / tween.dur, 0, 1);
+      const k = easeInOutCubic(t);
+      ctl.target.lerpVectors(tween.from.target, tween.dest.target, k);
+      ctl.radius = tween.from.radius + (tween.dest.radius - tween.from.radius) * k;
+      ctl.phi = tween.from.phi + (tween.dest.phi - tween.from.phi) * k;
+      ctl.theta = tween.from.theta + tween.dTheta * k;
+      ctl.tTarget.copy(ctl.target); ctl.tRadius = ctl.radius; ctl.tPhi = ctl.phi; ctl.tTheta = ctl.theta;
+      if (t >= 1) tween = null;
+    } else {
+      if (activeView === 'exterior' && !ctl.interacted) ctl.tTheta += dt * AUTO_ROTATE_SPEED;
+      const k = 1 - Math.exp(-dt * DAMPING_RATE);
+      ctl.target.lerp(ctl.tTarget, k);
+      ctl.radius += (ctl.tRadius - ctl.radius) * k;
+      ctl.phi += (ctl.tPhi - ctl.phi) * k;
+      ctl.theta += (ctl.tTheta - ctl.theta) * k;
+    }
+    applyCamera();
+
+    // render only when needed: moving, mid-tween, or recently interacted
+    if (now < wakeUntil || tween || !camSettled()) {
+      renderer.render(scene, camera);
+      updateLabels(window.innerWidth, window.innerHeight);
+      updateCompass();
+      if (!firstFrame) {
+        firstFrame = true;
+        // Loading screen dismissal tied to actual first render
+        const lo = $('loading');
+        lo.classList.add('done');
+        setTimeout(() => lo.remove(), 650);
+        setTimeout(hideHint, 6000);
+      }
+    }
+  }
+  wake(1500);                                    // render through startup
+  requestAnimationFrame(frame);
+})();
+
+</script>
+</body>
+</html>
