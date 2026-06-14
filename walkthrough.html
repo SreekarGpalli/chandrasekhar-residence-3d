@@ -16,7 +16,7 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
     font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-  #c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:default}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:default;touch-action:none}
 
   /* crosshair */
   #cross{position:fixed;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;z-index:4;
@@ -85,11 +85,41 @@
     background:rgba(255,255,255,.06);border:1px solid var(--line);border-bottom-width:2px;
     border-radius:5px;padding:3px 7px;min-width:20px;text-align:center}
   #err{color:#e08b7a;font-size:11px;letter-spacing:.04em;margin-top:14px;max-width:360px;display:none}
+
+  /* ---- touch / mobile controls (shown only on coarse-pointer devices) ---- */
+  body.touch #cross{opacity:.45}
+  /* left-thumb movement joystick (positioned at the touch point in JS) */
+  #joy{display:none;position:fixed;z-index:6;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);pointer-events:none;opacity:0;transition:opacity .12s;
+    -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+  #joy.act{opacity:1}
+  #joyKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;
+    background:rgba(201,163,106,.55);border:1px solid rgba(255,255,255,.3)}
+  /* jump button (right thumb) */
+  #jumpBtn{display:none;position:fixed;z-index:6;right:max(16px,env(safe-area-inset-right));
+    bottom:calc(86px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;
+    align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);
+    color:var(--brass);font-family:Archivo,Inter,sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);-webkit-tap-highlight-color:transparent;
+    touch-action:none;user-select:none}
+  #jumpBtn:active{background:rgba(201,163,106,.2);color:#11140f}
+  /* intro: touch instructions in place of the keyboard list */
+  #keysTouch{display:none;margin-top:22px;gap:16px;flex-wrap:wrap;justify-content:center;
+    font-size:11px;letter-spacing:.06em;color:var(--dim);max-width:520px}
+  #keysTouch span{display:inline-flex;align-items:center;gap:6px}
+  #keysTouch b{color:var(--ink);font-weight:600}
+  body.touch #joy{display:block}
+  body.touch #jumpBtn{display:flex}
+  body.touch #keys{display:none}
+  body.touch #keysTouch{display:flex}
+  body.touch .kbd-hint{display:none}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="cross"></div>
+<div id="joy" aria-hidden="true"><div id="joyKnob"></div></div>
+<button id="jumpBtn" aria-label="Jump" title="Jump">JUMP</button>
 
 <div id="hud">
   <div class="room" id="roomName">EXTERIOR</div>
@@ -107,12 +137,12 @@
 
 <div id="foot">
   <a href="index.html" class="back-link" title="Back to 3D model viewer"><svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>3D MODEL</a><span class="sep"></span>
-  <span><b>WASD</b> move</span><span class="sep"></span>
-  <span><b>Mouse</b> look</span><span class="sep d"></span>
-  <span class="d"><b>Shift</b> run</span><span class="sep d"></span>
-  <span class="d"><b>Space</b> jump</span><span class="sep"></span>
-  <span id="btnFly" style="cursor:pointer; transition: color 0.18s"><b>F</b> fly</span><span class="sep"></span>
-  <span><b>Esc</b> release</span>
+  <span class="kbd-hint"><b>WASD</b> move</span><span class="sep kbd-hint"></span>
+  <span class="kbd-hint"><b>Mouse</b> look</span><span class="sep d kbd-hint"></span>
+  <span class="d kbd-hint"><b>Shift</b> run</span><span class="sep d kbd-hint"></span>
+  <span class="d kbd-hint"><b>Space</b> jump</span><span class="sep kbd-hint"></span>
+  <span id="btnFly" style="cursor:pointer; transition: color 0.18s"><b>F</b> fly</span><span class="sep kbd-hint"></span>
+  <span class="kbd-hint"><b>Esc</b> release</span>
 </div>
 
 <div id="intro">
@@ -127,6 +157,12 @@
     <span><kbd>Space</kbd> jump</span>
     <span><kbd>F</kbd> fly (no collision)</span>
     <span><kbd>1</kbd>-<kbd>5</kbd> floor / roof / ext</span>
+  </div>
+  <div id="keysTouch">
+    <span><b>Left half</b> — move</span>
+    <span><b>Right half</b> — look around</span>
+    <span><b>JUMP</b> button — hop</span>
+    <span><b>G·1·2·R·E</b> — change level</span>
   </div>
   <div id="err"></div>
 </div>
@@ -162,6 +198,9 @@ if(!window.THREE || !window.HouseScene){
   const THREE = window.THREE;
   const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  // touch device? (primary input is a finger → show on-screen joystick/jump)
+  const coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  if (coarse && document.body) document.body.classList.add('touch');
 
   /* ---------------- renderer ---------------- */
   const canvas = $('c');
@@ -732,7 +771,7 @@ if(!window.THREE || !window.HouseScene){
   function lockPointer() {
     try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* browser throttles rapid re-locks */ }
   }
-  canvas.addEventListener('click', () => { if (!introOpen) lockPointer(); });
+  canvas.addEventListener('click', () => { if (!introOpen && !coarse) lockPointer(); });
   // level pills (work without pointer lock)
   document.querySelectorAll('#levels button').forEach(b =>
     b.addEventListener('click', e => { e.stopPropagation(); spawnTo(+b.dataset.spawn); }));
@@ -745,19 +784,72 @@ if(!window.THREE || !window.HouseScene){
     });
   }
 
-  // touch look + drag-to-walk for mobile (basic)
-  let touchLook = null;
-  canvas.addEventListener('touchstart', e => {
-    const t = e.touches[0]; touchLook = { x: t.clientX, y: t.clientY };
-    pressed['w'] = true; setMove();
-  }, { passive: true });
-  canvas.addEventListener('touchmove', e => {
-    if (!touchLook) return; const t = e.touches[0];
-    player.yaw -= (t.clientX - touchLook.x) * 0.005;
-    player.pitch = clamp(player.pitch - (t.clientY - touchLook.y) * 0.005, -1.4, 1.4);
-    touchLook.x = t.clientX; touchLook.y = t.clientY;
-  }, { passive: true });
-  canvas.addEventListener('touchend', () => { touchLook = null; pressed['w'] = false; setMove(); });
+  /* ---------------- touch controls (mobile / tablet) ----------------
+     Dual-zone, multi-touch: LEFT half of the screen is a virtual movement
+     joystick (walk in any direction), RIGHT half is drag-to-look. Plus a
+     JUMP button. Each finger is tracked by its identifier so move + look
+     work at the same time. */
+  const joy = $('joy'), joyKnob = $('joyKnob');
+  const JOY_MAX = 56;                 // px from centre for full-speed
+  let moveId = null, moveOrig = null; // finger driving the joystick
+  let lookId = null, lookLast = null; // finger driving the look
+
+  function touchStart(e) {
+    for (const t of e.changedTouches) {
+      const left = t.clientX < window.innerWidth * 0.5;
+      if (left && moveId === null) {
+        moveId = t.identifier; moveOrig = { x: t.clientX, y: t.clientY };
+        if (joy) {
+          joy.style.left = t.clientX + 'px'; joy.style.top = t.clientY + 'px';
+          joyKnob.style.transform = 'translate(-50%,-50%)';
+          joy.classList.add('act');
+        }
+      } else if (!left && lookId === null) {
+        lookId = t.identifier; lookLast = { x: t.clientX, y: t.clientY };
+      }
+    }
+  }
+  function touchMove(e) {
+    for (const t of e.changedTouches) {
+      if (t.identifier === moveId) {
+        let dx = t.clientX - moveOrig.x, dy = t.clientY - moveOrig.y;
+        const mag = Math.hypot(dx, dy);
+        if (mag > JOY_MAX) { dx *= JOY_MAX / mag; dy *= JOY_MAX / mag; }
+        move.r = dx / JOY_MAX;        // strafe (analog -1..1)
+        move.f = -dy / JOY_MAX;       // forward (up on screen)
+        if (joyKnob) joyKnob.style.transform =
+          'translate(calc(-50% + ' + dx.toFixed(0) + 'px), calc(-50% + ' + dy.toFixed(0) + 'px))';
+      } else if (t.identifier === lookId) {
+        player.yaw -= (t.clientX - lookLast.x) * 0.005;
+        player.pitch = clamp(player.pitch - (t.clientY - lookLast.y) * 0.005, -1.45, 1.45);
+        lookLast.x = t.clientX; lookLast.y = t.clientY;
+      }
+    }
+  }
+  function touchEnd(e) {
+    for (const t of e.changedTouches) {
+      if (t.identifier === moveId) {
+        moveId = null; move.f = 0; move.r = 0;
+        if (joy) joy.classList.remove('act');
+      } else if (t.identifier === lookId) {
+        lookId = null;
+      }
+    }
+  }
+  canvas.addEventListener('touchstart', touchStart, { passive: true });
+  canvas.addEventListener('touchmove', touchMove, { passive: true });
+  canvas.addEventListener('touchend', touchEnd, { passive: true });
+  canvas.addEventListener('touchcancel', touchEnd, { passive: true });
+
+  // JUMP button — hop when walking, or a gentle ascent while flying
+  const jumpBtn = $('jumpBtn');
+  if (jumpBtn) {
+    jumpBtn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      if (player.fly) { player.pos.y += 0.35; }
+      else if (player.onGround) { player.velY = 6.0; player.onGround = false; }
+    }, { passive: false });
+  }
 
   /* ---------------- HUD: current room + floor ---------------- */
   const roomEl = $('roomName'), floorEl = $('floorName');
@@ -876,7 +968,7 @@ if(!window.THREE || !window.HouseScene){
     introOpen = false;
     intro.classList.add('done');
     setTimeout(() => intro.remove(), 650);
-    lockPointer();
+    if (!coarse) lockPointer();
   });
 })();
 </script>
