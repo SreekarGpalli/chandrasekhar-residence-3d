@@ -1612,7 +1612,7 @@ window.HouseScene = (function () {
       S: [
         { c: 2500, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true },
         { c: 5700, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
-        { c: 7982, w: 2775, sill: 1000, h: 1200, type: 'grill', chajja: true },
+        { c: 7595, w: 2000, sill: 1000, h: 1200, type: 'grill', chajja: true },
         { c: 11010, w: 2800, sill: 1000, h: 1200, type: 'grill', chajja: true }
       ],
       W: [
@@ -1652,7 +1652,7 @@ window.HouseScene = (function () {
       { dir: 'y', b: [4805, 4920], a: [5345, 8640], ops: [] },                         // bed02|hall (door closed)
       { dir: 'x', b: [5345, 5460], a: [230, 4805], ops: [{ c: 4300, w: 900 }] },       // bed02 south door
       { dir: 'y', b: [2030, 2145], a: [3776, 5345], ops: [{ c: 4350, w: 750 }] },      // cbath|handwash
-      { dir: 'x', b: [3663, 3776], a: [230, 4920], ops: [{ c: 4300, w: 900 }] },       // master north door
+      { dir: 'x', b: [3663, 3776], a: [230, 4805], ops: [{ c: 4300, w: 900 }] },       // master north door
       { dir: 'x', b: [2216, 2331], a: [4920, 6752], ops: [] },                          // mbath north
       { dir: 'y', b: [6752, 6870], a: [230, 2332], ops: [] },                           // mbath|utility
       { dir: 'y', b: [9371, 9487], a: [230, 2331], ops: [] },                           // utility|kitchen
@@ -1665,12 +1665,12 @@ window.HouseScene = (function () {
       { dir: 'x', b: [4432, 4547], a: [230, 2705], ops: [] },                           // master|mbath
       { dir: 'x', b: [4432, 4547], a: [2816, 4805], ops: [{ c: 3500, w: 900 }] },      // master|walkin
       { dir: 'y', b: [2705, 2816], a: [4432, 6381], ops: [{ c: 5025, w: 850 }] },       // mbath|walkin
-      { dir: 'x', b: [6381, 6496], a: [230, 4920], ops: [] },                           // stair south
+      { dir: 'x', b: [6381, 6496], a: [230, 4805], ops: [] },                           // stair south
       { dir: 'y', b: [4805, 4920], a: [4432, 6496], ops: [] },                          // spine filler
-      { dir: 'x', b: [1413, 1526], a: [4916, 6595], ops: [] },      // cbath north
-      { dir: 'y', b: [6476, 6595], a: [152, 1413], ops: [{ c: 1100, w: 600 }] },                           // balcony west cheek
-      { dir: 'y', b: [9370, 9601], a: [152, 1411], ops: [] },                           // balcony east mass
-      { dir: 'x', b: [1377, 1526], a: [6595, 9370], ops: [{ c: 7980, w: 2400, sill: 0, h: 2400 }] }, // balcony slider wall
+      { dir: 'x', b: [1413, 1526], a: [4920, 6595], ops: [] },      // cbath north
+      { dir: 'y', b: [6476, 6595], a: [230, 1413], ops: [{ c: 1050, w: 700 }] },                           // balcony west cheek
+      { dir: 'y', b: [9370, 9601], a: [230, 1411], ops: [] },                           // balcony east mass
+      { dir: 'x', b: [1377, 1526], a: [6595, 9370], ops: [{ c: 7700, w: 1900, sill: 0, h: 2400 }] }, // balcony slider wall
       { dir: 'x', b: [1411, 1527], a: [9370, 12421], ops: [{ c: 10800, w: 900 }] },    // utility north
       { dir: 'y', b: [9371, 9486], a: [1527, 4945], ops: [{ c: 2163.5, w: 1273, sill: 900, h: 1200 }, { c: 3523, w: 1446 }] },     // kitchen|dining
       { dir: 'y', b: [10780, 10893], a: [4945, 7300], ops: [{ c: 6180, w: 1500 }] },   // hall|foyer
@@ -1683,7 +1683,7 @@ window.HouseScene = (function () {
       { dir: 'x', b: [4432, 4547], a: [230, 2705], ops: [] },                           // master|mbath
       { dir: 'x', b: [4432, 4547], a: [2816, 4805], ops: [{ c: 3500, w: 900 }] },      // master|walkin
       { dir: 'y', b: [2705, 2816], a: [4432, 6381], ops: [{ c: 5025, w: 850 }] },       // mbath|walkin
-      { dir: 'x', b: [6381, 6496], a: [230, 4920], ops: [] },                           // stair south
+      { dir: 'x', b: [6381, 6496], a: [230, 4805], ops: [] },                           // stair south
       { dir: 'y', b: [4805, 4920], a: [4432, 6496], ops: [] },                          // spine filler
       { dir: 'x', b: [1758, 1871], a: [4920, 7620], ops: [{ c: 6900, w: 800 }] },      // bath03|walkin03
       { dir: 'x', b: [3151, 3266], a: [4920, 7620], ops: [] },                          // walkin03 north
@@ -1998,9 +1998,9 @@ window.HouseScene = (function () {
       pb(eBag, 'balcTile', 6650, 9320, 200, 1377, L.f1, L.f1 + 0.012);
       pb(eBag, 'charDark', 6595, 9370, 152, 1526, L.f2 - L.slabT, L.f2); // soffit band (charcoal)
       wallRun(eBag, 'white', 'x', 6595, 9370, 1377, 1526, L.f1, L.f2, L.f1,
-              [{ c: 7980, w: 2400, sill: 0, h: 2400 }]);
-      glazing(eBag, { face: 'S', band: [1377, 1526], floorY: L.f1, c: 7980, w: 2400, sill: 0, h: 2400, type: 'slider', panes: 3 });
-      pb(eBag, 'white', 6480, 6595, 152, 1377, L.f1, L.f2);
+              [{ c: 7700, w: 1900, sill: 0, h: 2400 }]);
+      glazing(eBag, { face: 'S', band: [1377, 1526], floorY: L.f1, c: 7700, w: 1900, sill: 0, h: 2400, type: 'slider', panes: 2 });
+      wallRun(eBag, 'white', 'y', 152, 1377, 6480, 6595, L.f1, L.f2, L.f1, [{ c: 1050, w: 700 }]);
       pb(eBag, 'white', 9370, 9485, 152, 1377, L.f1, L.f2);
       // parapet (terrace)
       pb(eBag, 'charcoal', X0, X1, Y0n, 150, L.roof, L.parapetTop);
@@ -2446,8 +2446,8 @@ window.HouseScene = (function () {
         bag.cyl('chrome', 7040 / 1000, fY + 0.86, -2032 / 1000, 0.015, 0.04); // Faucet base
         bag.cyl('chrome', 7040 / 1000, fY + 0.90, -2032 / 1000, 0.01, 0.15);  // Faucet stem
         bag.cyl('chrome', 7090 / 1000, fY + 1.04, -2032 / 1000, 0.009, 0.10, 0, 0, Math.PI / 2); // Faucet spout
-        Fur.basin(bag, 4920, 5820, 1716, 2216, fY); Fur.mirror(bag, 4920, 5820, 2204, 2216, fY); Fur.wc(bag, 5370, 510, fY, 'N'); Fur.shower(bag, 5820, 5850, 230, 1130, fY);
-        Fur.wc(bag, 1600, 5065, fY, 'S'); Fur.shower(bag, 1130, 1160, 4445, 5345, fY);
+        Fur.basin(bag, 4920, 5820, 1716, 2216, fY); Fur.mirror(bag, 4920, 5820, 2204, 2216, fY); Fur.wc(bag, 5370, 515, fY, 'N'); Fur.shower(bag, 5820, 5850, 230, 1130, fY);
+        Fur.wc(bag, 1600, 5060, fY, 'S'); Fur.shower(bag, 1130, 1160, 4445, 5345, fY);
         Fur.basin(bag, 2400, 3100, 4945, 5345, fY, 'N'); Fur.mirror(bag, 2400, 3100, 5333, 5345, fY);                 // handwash counter
       }
 
@@ -2508,7 +2508,7 @@ window.HouseScene = (function () {
         Fur.shelves(bag, 4501, 4805, 4432, 6082, fY);                // east wall shelves
         // --- Master Bath 01 ---
         Fur.shower(bag, 1130, 1160, 5127, 6381, fY);                 // N-S glass partition (shower area west)
-        Fur.wc(bag, 1650, 6101, fY, 'S');                            // WC middle, facing south
+        Fur.wc(bag, 1650, 6096, fY, 'S');                            // WC middle, facing south
         Fur.basin(bag, 2100, 2705, 5881, 6381, fY); Fur.mirror(bag, 2100, 2705, 6369, 6381, fY);                  // vanity basin near northeast corner
         // --- Hall (TV on North wall, L-sofa against West wall, compact seating shifted further West) ---
         Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, true);
@@ -2633,14 +2633,69 @@ window.HouseScene = (function () {
 
 
         // --- Common Bath ---
-        Fur.wc(bag, 5300, 513, fY, 'N');                              // WC against south wall, facing north
+        Fur.wc(bag, 5300, 515, fY, 'N');                              // WC against south wall, facing north
         // Southeast Corner Sink (Cylindrical Corner Washbasin)
         bag.cyl('counter', 6226 / 1000, fY + 0.42, -483 / 1000, 0.18, 0.84); // sink pedestal
         bag.cyl('whiteG', 6226 / 1000, fY + 0.86, -483 / 1000, 0.14, 0.08); // basin bowl
-        // --- Service Balcony (washer + dryer aligned towards south wall) ---
-        Fur.washer(bag, 6895, 500, fY, 'N');                          // washing machine facing north
-        Fur.washer(bag, 7500, 500, fY, 'N');                          // dryer facing north
-        Fur.basin(bag, 8870, 9370, 800, 1300, fY, 'E'); Fur.mirror(bag, 9358, 9370, 800, 1300, fY);                    // dining handwash vanity
+
+        // Closed Door (centered at Y = 1050, width = 700, on the East wall X = 6476..6595)
+        const dbY0 = 700, dbY1 = 1400;
+        const dbX0 = 6476, dbX1 = 6595;
+        const dbMidX = (dbX0 + dbX1) / 2;
+        // Frame
+        pb(bag, 'frame', dbX0 - 5, dbX1 + 5, dbY0, dbY0 + 40, fY, fY + 2.10); // South frame
+        pb(bag, 'frame', dbX0 - 5, dbX1 + 5, dbY1 - 40, dbY1, fY, fY + 2.10); // North frame
+        pb(bag, 'frame', dbX0 - 5, dbX1 + 5, dbY0, dbY1, fY + 2.06, fY + 2.10); // Top frame
+        // Door panel (wood)
+        pb(bag, 'walnut', dbMidX - 20, dbMidX + 20, dbY0 + 40, dbY1 - 40, fY + 0.01, fY + 2.06);
+        // Brass handles (hinged on North side, handles on South side at Y = 780)
+        bag.cyl('brass', (dbMidX + 25) / 1000, fY + 1.00, -780 / 1000, 0.008, 0.12); // Balcony side (East)
+        bag.cyl('brass', (dbMidX - 25) / 1000, fY + 1.00, -780 / 1000, 0.008, 0.12); // Bathroom side (West)
+
+        // --- Service Balcony ---
+        // Stacked washing machine + dryer cupboard on East wall (X = 9370) and North wall (Y = 1377), facing West
+        // 1. Bottom Washing Machine (facing West, centered at X = 9070, Y = 1077)
+        Fur.washer(bag, 9070, 1077, fY, 'W');
+
+        // 2. Middle Continuous Shelf / Folding Counter (extending to laundry storage section)
+        pb(bag, 'woodF', 8750, 9370, 255, 1377, fY + 0.88, fY + 0.92);
+
+        // 3. Top Dryer (facing West)
+        Fur.washer(bag, 9070, 1077, fY + 0.92, 'W');
+
+        // 4. Cupboard Carcass & Storage
+        // South side vertical wood panel enclosing the entire run (thickness 25mm: Y = 230..255, spans X = 8750..9370)
+        pb(bag, 'woodD', 8750, 9370, 230, 255, fY, fY + 2.40);
+        // Top horizontal panel covering the entire run
+        pb(bag, 'woodF', 8750, 9370, 230, 1377, fY + 2.36, fY + 2.40);
+
+        // 5. Laundry Cupboard Doors (Dryer Upper Section)
+        // Upper cupboard doors (front face, facing West at X = 8750..8760, thickness 10mm)
+        pb(bag, 'woodD', 8750, 8760, 787, 1072, fY + 1.84, fY + 2.34); // South door
+        pb(bag, 'woodD', 8750, 8760, 1082, 1367, fY + 1.84, fY + 2.34); // North door
+        // Small brass handles for upper cupboard doors
+        bag.cyl('brass', 8745 / 1000, fY + 2.05, -1057 / 1000, 0.006, 0.08);
+        bag.cyl('brass', 8745 / 1000, fY + 2.05, -1097 / 1000, 0.006, 0.08);
+
+        // 6. Extended Storage Cabinet (South side of washer-dryer, Y = 255..777)
+        // Lower storage doors (facing West at X = 8750..8760, height fY + 0.04 to fY + 0.88)
+        pb(bag, 'woodD', 8750, 8760, 265, 505, fY + 0.04, fY + 0.88); // South lower door
+        pb(bag, 'woodD', 8750, 8760, 515, 755, fY + 0.04, fY + 0.88); // North lower door
+        // Lower cabinet door handles
+        bag.cyl('brass', 8745 / 1000, fY + 0.46, -490 / 1000, 0.006, 0.08);
+        bag.cyl('brass', 8745 / 1000, fY + 0.46, -530 / 1000, 0.006, 0.08);
+
+        // Upper storage doors (facing West at X = 8750..8760, height fY + 1.40 to fY + 2.34)
+        pb(bag, 'woodD', 8750, 8760, 265, 505, fY + 1.40, fY + 2.34); // South upper door
+        pb(bag, 'woodD', 8750, 8760, 515, 755, fY + 1.40, fY + 2.34); // North upper door
+        // Upper cabinet door handles
+        bag.cyl('brass', 8745 / 1000, fY + 1.87, -490 / 1000, 0.006, 0.08);
+        bag.cyl('brass', 8745 / 1000, fY + 1.87, -530 / 1000, 0.006, 0.08);
+        // Intermediate shelf inside the upper storage cabinet
+        pb(bag, 'woodF', 8770, 9370, 255, 777, fY + 1.88, fY + 1.92);
+
+        // Vanity sink on the South wall (inside face Y = 230), facing North
+        Fur.basin(bag, 7000, 7800, 230, 730, fY, 'S');
       }
 
       if (fi === 2) {
@@ -2699,7 +2754,7 @@ window.HouseScene = (function () {
         Fur.shelves(bag, 4501, 4805, 4432, 6082, fY);                // east wall shelves
         // --- Master Bath 02 ---
         Fur.shower(bag, 1130, 1160, 5127, 6381, fY);                 // N-S glass partition (shower area west)
-        Fur.wc(bag, 1650, 6101, fY, 'S');                            // WC middle, facing south
+        Fur.wc(bag, 1650, 6096, fY, 'S');                            // WC middle, facing south
         Fur.basin(bag, 2100, 2705, 5881, 6381, fY); Fur.mirror(bag, 2100, 2705, 6369, 6381, fY);                  // vanity basin near northeast corner
         Fur.bed(bag, 9100, 11000, 232, 1832, fY, 'S');              // bed03
         Fur.side(bag, 8600, 9020, 232, 652, fY); Fur.side(bag, 11100, 11520, 232, 652, fY);
@@ -2707,7 +2762,7 @@ window.HouseScene = (function () {
         Fur.shelves(bag, 5000, 7540, 2850, 3100, fY);                // walk-in 03
         Fur.shelves(bag, 5000, 5300, 1950, 2850, fY);
         Fur.shower(bag, 5820, 5850, 230, 1130, fY);                  // West: shower partition
-        Fur.wc(bag, 6295, 510, fY, 'N');                              // Middle: WC facing North
+        Fur.wc(bag, 6295, 515, fY, 'N');                              // Middle: WC facing North
         Fur.basin(bag, 6770, 7620, 230, 780, fY, 'S'); Fur.mirror(bag, 6770, 7620, 230, 242, fY);                    // East: vanity counter
         Fur.sofa(bag, 9900, 12300, 7980, 8580, fY, 'N');             // North sofa facing South
         Fur.sofa(bag, 9900, 12300, 4600, 5200, fY, 'S');             // South sofa facing North

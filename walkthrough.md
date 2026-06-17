@@ -151,3 +151,26 @@ We identified and resolved the cause of the hovering object in the first-floor d
 - Corrected the division factors in `Fur.sink` (4 locations) and `Fur.basin` (2 locations) to divide by `1000`.
 - Verified that all faucet spouts and extensions are now drawn flush with their corresponding sinks and vanity counters on all floors, and no floating objects remain in the dining room or other living spaces.
 
+## Phase 6 — First Floor Service Balcony & Bathroom Door Upgrades (Completed)
+
+We optimized the service balcony layout on the first floor and fixed the rendering of the common bathroom door.
+
+### Changes Made
+
+#### 1. Optimized & Unobstructed Service Balcony Layout
+- **Stacked Washing Machine & Dryer**: Replaced the separate side-by-side washer and dryer layout with a stacked washer-dryer configuration, placed in a custom cupboard in the South-West corner of the service balcony (X: 6595 to 7195, Y: 152 to 752) facing East.
+- **Enclosing Cupboard**: Built a wood carcass around the stack with a divider shelf, a top crown panel (at 2.40m), and storage cabinets with brass handles above the dryer, facing East.
+- **Unobstructed Vanity Sink**: Placed the vanity sink and mirror against the North wall on the East side (X: 8520 to 9320, Y: 877 to 1377), facing South. Because the laundry cupboard is moved to the West, the East side is completely open, providing ample standing space and zero physical obstruction for the vanity sink.
+
+#### 2. Adjusted Sliding Glass Door
+- Shifted the balcony sliding glass door slightly to the west (center X = 7575, width = 1800mm, 2 panes) in both the exterior shell rendering (`exterior()`) and interior wall schedule (`IW[1]`). This extended the solid portion of the North wall on the East side, providing a clean 895mm wide wall surface to perfectly fit the vanity sink without overlapping the glass panes.
+
+#### 3. Common Bathroom Door Rendering Fix
+- Restored the common bathroom's North wall (`cbath north`) to a solid wall, and added a door opening (`c: 1080, w: 650`) to the common bathroom's East wall (`balcony west cheek`) in the interior wall schedule `IW[1]`. The door is shifted slightly North to clear the 600mm deep stacked laundry cupboard in the South-West corner.
+- Rendered a proper closed door with a custom door frame (using `'frame'` material) and wood panel (using `'walnut'` material) matching the other doors in the residence. Added dual-sided brass pull handles on both the service balcony side and the bathroom interior side.
+- Replaced the solid white balcony cheek box `pb(eBag, 'white', 6480, 6595, ...)` in `exterior()` with a `wallRun` featuring the matching door opening (`[{ c: 1080, w: 650 }]`). This ensures the door is visible in the rendering and is not overlapped by a solid white wall block.
+
+#### 4. Walkthrough Collision & UV Resolution
+- Fixed a bug in [walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html) where in-place material modifications during the first scene traversal (such as upgrading the glass color to `0xafc4d2` and frame color to `0x3b3e42`) caused name resolution via `hex2name` to return `undefined` in later steps. This previously resulted in glass door frames, glass panes, and brass handles being treated as colliders, blocking the player from walking into the service balcony.
+- Cached the original material names in `o.material.userData.name` during the first reskinning pass, and updated both the world-aligned UV texture mapper and first-person collision detector to read from `userData.name`. This enables smooth, walk-through traversal into the service balcony.
+

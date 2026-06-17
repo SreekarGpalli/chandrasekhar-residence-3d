@@ -558,6 +558,7 @@ if(!window.THREE || !window.HouseScene){
     seen.add(o.material);
     const m = o.material;
     const name = hex2name[m.color ? m.color.getHex() : -1];
+    m.userData.name = name;
     const t = treatment(name || '');
     if (t.glass) {
       m.roughness = 0.04; m.metalness = 0.0; m.envMapIntensity = 1.5;
@@ -593,7 +594,7 @@ if(!window.THREE || !window.HouseScene){
         o.material.polygonOffsetUnits = -1.2;
         o.material.userData.poff = true;
       }
-      const name = hex2name[o.material && o.material.color ? o.material.color.getHex() : -1];
+      const name = o.material && o.material.userData ? o.material.userData.name : undefined;
       const t = treatment(name || '');
       if (t.tex) boxUV(o.geometry, t.tile);
     });
@@ -604,7 +605,7 @@ if(!window.THREE || !window.HouseScene){
   const nonCollidableMaterials = new Set(['glass', 'carGlass', 'walnut', 'liftDoor', 'woodD', 'woodF', 'frame', 'brass']);
   data.root.traverse(o => {
     if (o.isMesh && o !== skyDome) {
-      const name = hex2name[o.material && o.material.color ? o.material.color.getHex() : -1];
+      const name = o.material && o.material.userData ? o.material.userData.name : undefined;
       if (!nonCollidableMaterials.has(name)) {
         colliders.push(o);
       }
