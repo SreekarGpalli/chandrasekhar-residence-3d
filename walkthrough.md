@@ -174,3 +174,31 @@ We optimized the service balcony layout on the first floor and fixed the renderi
 - Fixed a bug in [walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html) where in-place material modifications during the first scene traversal (such as upgrading the glass color to `0xafc4d2` and frame color to `0x3b3e42`) caused name resolution via `hex2name` to return `undefined` in later steps. This previously resulted in glass door frames, glass panes, and brass handles being treated as colliders, blocking the player from walking into the service balcony.
 - Cached the original material names in `o.material.userData.name` during the first reskinning pass, and updated both the world-aligned UV texture mapper and first-person collision detector to read from `userData.name`. This enables smooth, walk-through traversal into the service balcony.
 
+---
+
+## Phase 7 — Bathroom Shower Fixtures Upgrades (Completed)
+
+We installed premium, modern shower head fixtures (riser pipe, mixer handle, handheld wand, hose, and overhead rain shower plate) in all 5 bathrooms that have shower areas.
+
+### Changes Made
+
+#### 1. Added Modern Shower Fixture 3D Modeling Helper
+- Implemented `Fur.showerHead(bag, cx, cy, fY, facing)` inside [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js).
+- The helper renders:
+  - A wall-mounted backplate (`chrome`) with a thermostatic mixer handle (`charcoal` and `chrome`) at height `fY + 1.0m`.
+  - A vertical riser rail pipe (`chrome`) up to height `fY + 2.0m`.
+  - A horizontal overhead arm (`chrome`) extending $350\text{ mm}$ out from the wall.
+  - A rain shower head plate ($200\text{ mm} \times 200\text{ mm}$, `chrome` material) pointing downwards.
+  - A handheld shower bracket (`charcoal`), handheld nozzle (`chrome`), and vertical hose (`charcoal`).
+
+#### 2. Positioned Shower Fixtures in Bathrooms
+Per the mounting wall alignment of other fixtures like toilets and vanity basins, we correctly oriented the shower heads in each bathroom:
+- **Ground Floor Master Bath**: Center $x = 6301$, South wall ($y = 230$), facing North (`'N'`).
+- **Ground Floor Office/Guest Bath**: Center $x = 680$, North wall ($y = 5345$), facing South (`'S'`).
+- **First Floor Master Bath 01**: Center $x = 680$, North wall ($y = 6381$), facing South (`'S'`).
+- **Second Floor Master Bath 02**: Center $x = 680$, North wall ($y = 6381$), facing South (`'S'`).
+- **Second Floor Bath 03**: Center $x = 5370$, South wall ($y = 230$), facing North (`'N'`).
+
+The common bathroom on the first floor is correctly excluded from modifications, as requested.
+
+

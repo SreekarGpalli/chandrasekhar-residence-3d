@@ -565,7 +565,7 @@ window.HouseScene = (function () {
       drawSection(w0, w1, false);
       drawSection(w1, y1, true);
     },
-    sofa(bag, x0, x1, y0, y1, fY, back) {
+    sofa(bag, x0, x1, y0, y1, fY, back, omitArmStart = false, omitArmEnd = false) {
       const isNS = (back === 'N' || back === 'S');
       const W = isNS ? (x1 - x0) : (y1 - y0);
       const L = isNS ? (y1 - y0) : (x1 - x0);
@@ -599,21 +599,25 @@ window.HouseScene = (function () {
       addPart('fabric2', 0, W, 0, 150, fY + 0.22, fY + 0.78);
 
       // 4. Armrests
-      addPart('fabric2', 0, 120, 150, L, fY + 0.22, fY + 0.58);
-      addPart('fabric2', W - 120, W, 150, L, fY + 0.22, fY + 0.58);
-
-      // Soft armrest pads on top
-      addPart('fabric', -10, 130, 160, L - 10, fY + 0.58, fY + 0.62);
-      addPart('fabric', W - 130, W + 10, 160, L - 10, fY + 0.58, fY + 0.62);
+      if (!omitArmStart) {
+        addPart('fabric2', 0, 120, 150, L, fY + 0.22, fY + 0.58);
+        addPart('fabric', -10, 130, 160, L - 10, fY + 0.58, fY + 0.62);
+      }
+      if (!omitArmEnd) {
+        addPart('fabric2', W - 120, W, 150, L, fY + 0.22, fY + 0.58);
+        addPart('fabric', W - 130, W + 10, 160, L - 10, fY + 0.58, fY + 0.62);
+      }
 
       // 5. Cushion splits
-      const SW = W - 240; // width between arms
+      const startU = omitArmStart ? 0 : 120;
+      const endU = omitArmEnd ? W : W - 120;
+      const SW = endU - startU; // width between arms
       const n = SW >= 1600 ? 3 : (SW >= 900 ? 2 : 1);
       const cw = SW / n;
 
       for (let i = 0; i < n; i++) {
-        const cu0 = 120 + i * cw + 6;
-        const cu1 = 120 + (i + 1) * cw - 6;
+        const cu0 = startU + i * cw + 6;
+        const cu1 = startU + (i + 1) * cw - 6;
         // Seat cushion
         addPart('fabric', cu0, cu1, 150, L - 15, fY + 0.22, fY + 0.38);
         // Backrest cushion (angled back: tilt = 0.14)
@@ -622,8 +626,12 @@ window.HouseScene = (function () {
 
       // 6. Cozy corner throw pillows for double/triple seaters
       if (W >= 900) {
-        addPart('brass', 150, 370, 200, 260, fY + 0.36, fY + 0.56, 0.1); // Left pillow
-        addPart('brass', W - 370, W - 150, 200, 260, fY + 0.36, fY + 0.56, 0.1); // Right pillow
+        if (!omitArmStart) {
+          addPart('brass', 150, 370, 200, 260, fY + 0.36, fY + 0.56, 0.1); // Left pillow
+        }
+        if (!omitArmEnd) {
+          addPart('brass', W - 370, W - 150, 200, 260, fY + 0.36, fY + 0.56, 0.1); // Right pillow
+        }
       }
     },
     table(bag, x0, x1, y0, y1, fY, h, mat) {
@@ -1127,6 +1135,34 @@ window.HouseScene = (function () {
       bag.cyl('chrome', fx / 1000, fBase + 0.185, -fz / 1000, 0.004, 0.035, 0.3, 0.2, 0.5);
     },
     shower(bag, x0, x1, y0, y1, fY) { pb(bag, 'glass', x0, x1, y0, y1, fY + 0.02, fY + 1.35); },
+    showerHead(bag, cx, cy, fY, facing) {
+      facing = facing || 'S';
+      if (facing === 'N') {
+        pb(bag, 'chrome', cx - 100, cx + 100, cy, cy + 15, fY + 0.95, fY + 1.05);
+        bag.cyl('charcoal', cx / 1000, fY + 1.0, -(cy + 30) / 1000, 0.02, 0.18, 0, 0, Math.PI / 2);
+        bag.cyl('chrome', (cx - 60) / 1000, fY + 1.0, -(cy + 45) / 1000, 0.012, 0.03, Math.PI / 2, 0, 0);
+        bag.cyl('chrome', (cx + 60) / 1000, fY + 1.0, -(cy + 45) / 1000, 0.012, 0.03, Math.PI / 2, 0, 0);
+        bag.cyl('chrome', cx / 1000, fY + 1.5, -(cy + 25) / 1000, 0.01, 1.0);
+        bag.cyl('chrome', cx / 1000, fY + 2.0, -(cy + 200) / 1000, 0.01, 0.35, Math.PI / 2, 0, 0);
+        pb(bag, 'chrome', cx - 100, cx + 100, cy + 300, cy + 500, fY + 1.97, fY + 1.99);
+        bag.cyl('chrome', cx / 1000, fY + 2.0, -(cy + 400) / 1000, 0.015, 0.02);
+        pb(bag, 'charcoal', cx - 110, cx - 80, cy, cy + 20, fY + 1.33, fY + 1.37);
+        bag.cyl('chrome', (cx - 95) / 1000, fY + 1.38, -(cy + 25) / 1000, 0.01, 0.15, -0.2, 0, 0);
+        bag.cyl('charcoal', (cx - 70) / 1000, fY + 1.15, -(cy + 30) / 1000, 0.006, 0.35);
+      } else {
+        pb(bag, 'chrome', cx - 100, cx + 100, cy - 15, cy, fY + 0.95, fY + 1.05);
+        bag.cyl('charcoal', cx / 1000, fY + 1.0, -(cy - 30) / 1000, 0.02, 0.18, 0, 0, Math.PI / 2);
+        bag.cyl('chrome', (cx - 60) / 1000, fY + 1.0, -(cy - 45) / 1000, 0.012, 0.03, Math.PI / 2, 0, 0);
+        bag.cyl('chrome', (cx + 60) / 1000, fY + 1.0, -(cy - 45) / 1000, 0.012, 0.03, Math.PI / 2, 0, 0);
+        bag.cyl('chrome', cx / 1000, fY + 1.5, -(cy - 25) / 1000, 0.01, 1.0);
+        bag.cyl('chrome', cx / 1000, fY + 2.0, -(cy - 200) / 1000, 0.01, 0.35, Math.PI / 2, 0, 0);
+        pb(bag, 'chrome', cx - 100, cx + 100, cy - 500, cy - 300, fY + 1.97, fY + 1.99);
+        bag.cyl('chrome', cx / 1000, fY + 2.0, -(cy - 400) / 1000, 0.015, 0.02);
+        pb(bag, 'charcoal', cx + 80, cx + 110, cy - 20, cy, fY + 1.33, fY + 1.37);
+        bag.cyl('chrome', (cx + 95) / 1000, fY + 1.38, -(cy - 25) / 1000, 0.01, 0.15, 0.2, 0, 0);
+        bag.cyl('charcoal', (cx + 70) / 1000, fY + 1.15, -(cy - 30) / 1000, 0.006, 0.35);
+      }
+    },
     washer(bag, cx, cy, fY, facing) {
       facing = facing || 'S';
       pb(bag, 'whiteG', cx - 300, cx + 300, cy - 300, cy + 300, fY, fY + 0.85); // body
@@ -1613,7 +1649,7 @@ window.HouseScene = (function () {
         { c: 2500, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true },
         { c: 5700, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
         { c: 7595, w: 2000, sill: 1000, h: 1200, type: 'grill', chajja: true },
-        { c: 11010, w: 2800, sill: 1000, h: 1200, type: 'grill', chajja: true }
+        { c: 10610, w: 2000, sill: 1000, h: 1200, type: 'grill', chajja: true },
       ],
       W: [
         { c: 5460, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
@@ -2388,8 +2424,8 @@ window.HouseScene = (function () {
         Fur.side(bag, 900, 1300, 5460, 5960, fY); Fur.side(bag, 3300, 3700, 5460, 5960, fY);
         Fur.vastuWardrobe(bag, 230, 830, 5460, 8640, fY, 7000, 1200, 1.10);
         // Hall (Living room) furniture layout
-        Fur.sofa(bag, 4920, 5620, 6200, 8640, fY, 'W');             // L-sofa long side on West wall
-        Fur.sofa(bag, 5620, 7420, 7940, 8640, fY, 'N');             // L-sofa short side on North wall
+        Fur.sofa(bag, 4920, 5620, 6200, 8640, fY, 'W', false, true);             // L-sofa long side on West wall
+        Fur.sofa(bag, 5620, 7420, 7940, 8640, fY, 'N', true, false);             // L-sofa short side on North wall
         Fur.chair(bag, 6000, 5800, fY, 'N');                        // side sofa chair 1 on South facing North
         Fur.chair(bag, 7000, 5800, fY, 'N');                        // side sofa chair 2 on South facing North
         Fur.table(bag, 5900, 7100, 6600, 7400, fY, 0.42);           // centered coffee table
@@ -2446,8 +2482,9 @@ window.HouseScene = (function () {
         bag.cyl('chrome', 7040 / 1000, fY + 0.86, -2032 / 1000, 0.015, 0.04); // Faucet base
         bag.cyl('chrome', 7040 / 1000, fY + 0.90, -2032 / 1000, 0.01, 0.15);  // Faucet stem
         bag.cyl('chrome', 7090 / 1000, fY + 1.04, -2032 / 1000, 0.009, 0.10, 0, 0, Math.PI / 2); // Faucet spout
-        Fur.basin(bag, 4920, 5820, 1716, 2216, fY); Fur.mirror(bag, 4920, 5820, 2204, 2216, fY); Fur.wc(bag, 5370, 515, fY, 'N'); Fur.shower(bag, 5820, 5850, 230, 1130, fY);
-        Fur.wc(bag, 1600, 5060, fY, 'S'); Fur.shower(bag, 1130, 1160, 4445, 5345, fY);
+        Fur.basin(bag, 4920, 5820, 1716, 2216, fY); Fur.mirror(bag, 4920, 5820, 2204, 2216, fY); Fur.wc(bag, 5370, 515, fY, 'N');
+        Fur.shower(bag, 5820, 5850, 230, 1130, fY); Fur.showerHead(bag, 6301, 230, fY, 'N');
+        Fur.wc(bag, 1600, 5060, fY, 'S'); Fur.shower(bag, 1130, 1160, 4445, 5345, fY); Fur.showerHead(bag, 680, 5345, fY, 'S');
         Fur.basin(bag, 2400, 3100, 4945, 5345, fY, 'N'); Fur.mirror(bag, 2400, 3100, 5333, 5345, fY);                 // handwash counter
       }
 
@@ -2507,15 +2544,15 @@ window.HouseScene = (function () {
         Fur.shelves(bag, 2816, 4805, 6082, 6382, fY);                // north wall shelves
         Fur.shelves(bag, 4501, 4805, 4432, 6082, fY);                // east wall shelves
         // --- Master Bath 01 ---
-        Fur.shower(bag, 1130, 1160, 5127, 6381, fY);                 // N-S glass partition (shower area west)
+        Fur.shower(bag, 1130, 1160, 5127, 6381, fY); Fur.showerHead(bag, 680, 6381, fY, 'S');                 // N-S glass partition (shower area west)
         Fur.wc(bag, 1650, 6096, fY, 'S');                            // WC middle, facing south
         Fur.basin(bag, 2100, 2705, 5881, 6381, fY); Fur.mirror(bag, 2100, 2705, 6369, 6381, fY);                  // vanity basin near northeast corner
         // --- Hall (TV on North wall, L-sofa against West wall, compact seating shifted further West) ---
         Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, true);
         Fur.console(bag, 6430, 7830, 8222, 8642, fY);               // TV console centered on solid North wall
         Fur.tv(bag, 'x', 8580, 6530, 7730, fY);                     // TV facing south
-        Fur.sofa(bag, 4920, 5620, 5500, 6400, fY, 'W');             // L-sofa long side against West wall
-        Fur.sofa(bag, 4920, 7220, 4800, 5500, fY, 'S');             // L-sofa short side against South boundary
+        Fur.sofa(bag, 4920, 5620, 4800, 6400, fY, 'W', true, false);             // L-sofa long side against West wall
+        Fur.sofa(bag, 5620, 7220, 4800, 5500, fY, 'S', true, false);             // L-sofa short side against South boundary
         Fur.sofa(bag, 7900, 8700, 5400, 6200, fY, 'E');             // South sofa chair facing west
         Fur.sofa(bag, 7900, 8700, 6600, 7400, fY, 'E');             // North sofa chair facing west
         // Round Coffee Table (pedestal base + glass top)
@@ -2532,29 +2569,81 @@ window.HouseScene = (function () {
         Fur.counterX(bag, 11262, 11800, 1539, 2139, fY);            // south counter run (does not block utility door)
         Fur.hob(bag, 12110, 2400, fY);                               // hob on east counter
         Fur.sink(bag, 12110, 3600, fY);                               // sink on east counter
+
+        // Base cabinet doors/drawers on the East Counter (facing West, proud of the base counter at X = 11790..11800)
+        pb(bag, 'woodD', 11790, 11800, 1550, 2090, fY + 0.04, fY + 0.80); // Door 1
+        bag.cyl('brass', 11785 / 1000, fY + 0.46, -2050 / 1000, 0.006, 0.08); // Handle 1
+        // Pot drawers under the hob (Y = 2150..2650)
+        pb(bag, 'woodD', 11790, 11800, 2150, 2650, fY + 0.04, fY + 0.40); // Lower drawer
+        pb(bag, 'brass', 11785, 11790, 2350, 2450, fY + 0.20, fY + 0.23); // Lower handle
+        pb(bag, 'woodD', 11790, 11800, 2150, 2650, fY + 0.44, fY + 0.80); // Upper drawer
+        pb(bag, 'brass', 11785, 11790, 2350, 2450, fY + 0.60, fY + 0.63); // Upper handle
+        // Door 2 (between stove and sink)
+        pb(bag, 'woodD', 11790, 11800, 2710, 3290, fY + 0.04, fY + 0.80);
+        bag.cyl('brass', 11785 / 1000, fY + 0.46, -2750 / 1000, 0.006, 0.08);
+        // Door 3 (below sink)
+        pb(bag, 'woodD', 11790, 11800, 3360, 3840, fY + 0.04, fY + 0.80);
+        bag.cyl('brass', 11785 / 1000, fY + 0.46, -3400 / 1000, 0.006, 0.08);
+        // Door 4
+        pb(bag, 'woodD', 11790, 11800, 3910, 4440, fY + 0.04, fY + 0.80);
+        bag.cyl('brass', 11785 / 1000, fY + 0.46, -3950 / 1000, 0.006, 0.08);
+        // Door 5
+        pb(bag, 'woodD', 11790, 11800, 4460, 4890, fY + 0.04, fY + 0.80);
+        bag.cyl('brass', 11785 / 1000, fY + 0.46, -4500 / 1000, 0.006, 0.08);
+
+        // Base cabinet doors on the South Counter (facing North, proud of counter base at Y = 2139..2149)
+        pb(bag, 'woodD', 11280, 11520, 2139, 2149, fY + 0.04, fY + 0.80); // Left door
+        bag.cyl('brass', 11500 / 1000, fY + 0.46, -2153 / 1000, 0.006, 0.08);
+        pb(bag, 'woodD', 11540, 11780, 2139, 2149, fY + 0.04, fY + 0.80); // Right door
+        bag.cyl('brass', 11560 / 1000, fY + 0.46, -2153 / 1000, 0.006, 0.08);
+
         // Refrigerator in the North-West corner facing South
         Fur.fridge(bag, 9486, 10350, 4245, 4945, fY);
         pb(bag, 'chrome', 10100, 10130, 4230, 4245, fY + 0.50, fY + 1.20);            // fridge handle (opening faces south)
-        // Cabinet over refrigerator to unify height to 2.40m
-        pb(bag, 'woodD', 9486, 10350, 4245, 4945, fY + 1.50, fY + 2.36);
-        pb(bag, 'woodF', 9486, 10350, 4230, 4960, fY + 2.36, fY + 2.40);
+
 
         // North wall cupboards & pantry unit (filling the gap next to the fridge, depth matching fridge at 700mm)
         pb(bag, 'woodD', 10350, 10950, 4245, 4945, fY, fY + 2.36);                     // pantry main body
         pb(bag, 'woodF', 10350, 10965, 4230, 4960, fY + 2.36, fY + 2.40);              // pantry top crown
-        pb(bag, 'brass', 10880, 10900, 4225, 4245, fY + 0.90, fY + 1.20);              // pantry vertical handle
-        Fur.counterX(bag, 10950, 11800, 4345, 4945, fY);                               // base counter
-        // Upper wall cabinets raised to match 2.40m height line
-        pb(bag, 'woodD', 10950, 11800, 4595, 4945, fY + 1.40, fY + 2.36);
-        pb(bag, 'woodF', 10962, 11788, 4607, 4933, fY + 2.36, fY + 2.40);
+        // Pantry double vertical doors (facing South, proud at Y = 4235..4245)
+        pb(bag, 'woodD', 10360, 10640, 4235, 4245, fY + 0.04, fY + 2.32); // Left pantry door
+        pb(bag, 'woodD', 10660, 10940, 4235, 4245, fY + 0.04, fY + 2.32); // Right pantry door
+        pb(bag, 'brass', 10630, 10638, 4225, 4235, fY + 0.90, fY + 1.20); // Left pull handle
+        pb(bag, 'brass', 10662, 10670, 4225, 4235, fY + 0.90, fY + 1.20); // Right pull handle
 
-        // Wall cabinets above east counter raised to match 2.40m height line (avoiding range hood and kitchen window)
+        Fur.counterX(bag, 10950, 11800, 4345, 4945, fY);                               // base counter
+        // Base cabinet doors on the North Counter (facing South, proud of counter base at Y = 4335..4345)
+        pb(bag, 'woodD', 10970, 11360, 4335, 4345, fY + 0.04, fY + 0.80); // Left door
+        bag.cyl('brass', 11340 / 1000, fY + 0.46, -4330 / 1000, 0.006, 0.08);
+        pb(bag, 'woodD', 11380, 11770, 4335, 4345, fY + 0.04, fY + 0.80); // Right door
+        bag.cyl('brass', 11400 / 1000, fY + 0.46, -4330 / 1000, 0.006, 0.08);
+
+        // Upper wall cabinets above North Counter (extended to X = 12070 to form L-shape corner with East run)
+        pb(bag, 'woodD', 10950, 12070, 4595, 4945, fY + 1.40, fY + 2.36); // cabinet body
+        pb(bag, 'woodF', 10962, 12058, 4607, 4933, fY + 2.36, fY + 2.40); // cabinet crown
+        pb(bag, 'woodD', 10960, 11315, 4585, 4595, fY + 1.44, fY + 2.32); // Door 1 facing South
+        pb(bag, 'woodD', 11335, 11690, 4585, 4595, fY + 1.44, fY + 2.32); // Door 2 facing South
+        pb(bag, 'woodD', 11710, 12060, 4585, 4595, fY + 1.44, fY + 2.32); // Door 3 facing South
+        bag.cyl('brass', 11300 / 1000, fY + 1.60, -4580 / 1000, 0.006, 0.08); // handles
+        bag.cyl('brass', 11350 / 1000, fY + 1.60, -4580 / 1000, 0.006, 0.08);
+        bag.cyl('brass', 11675 / 1000, fY + 1.60, -4580 / 1000, 0.006, 0.08);
+        bag.cyl('brass', 11725 / 1000, fY + 1.60, -4580 / 1000, 0.006, 0.08);
+
+        // Wall cabinets above East counter corrected to 350mm depth (X = 12070 to 12420)
         // South part (y = 1539..2100)
-        pb(bag, 'woodD', 11800, 12408, 1539, 2100, fY + 1.40, fY + 2.36);
-        pb(bag, 'woodF', 11812, 12396, 1551, 2088, fY + 2.36, fY + 2.40);
-        // North part (y = 3850..4933)
-        pb(bag, 'woodD', 11800, 12408, 3850, 4933, fY + 1.40, fY + 2.36);
-        pb(bag, 'woodF', 11812, 12396, 3862, 4921, fY + 2.36, fY + 2.40);
+        pb(bag, 'woodD', 12070, 12420, 1539, 2100, fY + 1.40, fY + 2.36); // cabinet body
+        pb(bag, 'woodF', 12080, 12410, 1551, 2088, fY + 2.36, fY + 2.40); // cabinet crown
+        pb(bag, 'woodD', 12060, 12070, 1550, 2090, fY + 1.44, fY + 2.32); // door facing West
+        bag.cyl('brass', 12055 / 1000, fY + 1.60, -2050 / 1000, 0.006, 0.08);
+
+        // North part (y = 3850..4945, extended to North wall to complete L-shape corner)
+        pb(bag, 'woodD', 12070, 12420, 3850, 4945, fY + 1.40, fY + 2.36); // cabinet body
+        pb(bag, 'woodF', 12080, 12410, 3862, 4933, fY + 2.36, fY + 2.40); // cabinet crown
+        pb(bag, 'woodD', 12060, 12070, 3865, 4210, fY + 1.44, fY + 2.32); // South door facing West
+        pb(bag, 'woodD', 12060, 12070, 4230, 4580, fY + 1.44, fY + 2.32); // North door facing West (visible section only)
+        bag.cyl('brass', 12055 / 1000, fY + 1.60, -4200 / 1000, 0.006, 0.08); // handles
+        bag.cyl('brass', 12055 / 1000, fY + 1.60, -4240 / 1000, 0.006, 0.08);
+
         Fur.rangeHood(bag, 12110, 2400, fY);
         // --- Breakfast Counter ---
         // Cantilevered counter top on the extended west wall (marble/wood)
@@ -2623,20 +2712,47 @@ window.HouseScene = (function () {
         bag.cyl('brass', 11650 / 1000, fY + 2.65, -8030 / 1000, 0.006, 1.10); // chain from ceiling (3.20m to 2.10m)
         bag.cyl('brass', 11650 / 1000, fY + 2.05, -8030 / 1000, 0.05, 0.10);  // bell body
         bag.cyl('brass', 11650 / 1000, fY + 1.97, -8030 / 1000, 0.012, 0.06); // bell clapper
-        // --- Utility (Wet Kitchen - sink on West, stove on East) ---
-        // West counter with sink
+        // --- Utility (Wet Kitchen - sink & dishwasher on West, stove & cupboards on East) ---
+        // 1. West counter with sink and dishwasher
         Fur.counterX(bag, 9613, 10200, 242, 1399, fY);
-        Fur.sink(bag, 9900, 820, fY, 'W');
-        // East counter with stove
+        // Sink shifted North (centered at Y = 1100)
+        Fur.sink(bag, 9900, 1100, fY, 'W');
+
+        // Dishwasher integrated on the South end below the West counter (Y = 242..800)
+        // Shifted slightly Eastward to X = 10200..10208 (proud of the counter base to prevent z-fighting)
+        pb(bag, 'charDark', 10180, 10200, 250, 790, fY, fY + 0.04); // Dishwasher kickplate (recessed)
+        pb(bag, 'steel', 10200, 10208, 250, 790, fY + 0.04, fY + 0.82); // Dishwasher front panel
+        pb(bag, 'charDark', 10200, 10208, 250, 790, fY + 0.72, fY + 0.82); // Dishwasher control panel
+        pb(bag, 'tv', 10207, 10209, 480, 560, fY + 0.74, fY + 0.80); // Control screen
+        pb(bag, 'brass', 10209, 10213, 360, 680, fY + 0.66, fY + 0.69); // Horizontal pull bar handle
+
+        // Sink base cabinet doors below the counter on the North end (Y = 800..1399)
+        // Shifted slightly Eastward to X = 10200..10208 (proud of the counter base to prevent z-fighting)
+        pb(bag, 'charDark', 10180, 10200, 800, 1399, fY, fY + 0.04); // Cabinet kickplate (recessed)
+        pb(bag, 'woodD', 10200, 10208, 810, 1090, fY + 0.04, fY + 0.82); // South cabinet door
+        pb(bag, 'woodD', 10200, 10208, 1100, 1380, fY + 0.04, fY + 0.82); // North cabinet door
+        bag.cyl('brass', 10212 / 1000, fY + 0.46, -1075 / 1000, 0.006, 0.08); // Handles
+        bag.cyl('brass', 10212 / 1000, fY + 0.46, -1115 / 1000, 0.006, 0.08);
+
+        // 2. East counter with stove and cupboards
         Fur.counterX(bag, 11820, 12409, 242, 1399, fY);
         Fur.hob(bag, 12115, 820, fY);
 
+        // East Wall Upper Cupboards (continuous run, Y = 242..1399)
+        pb(bag, 'woodD', 12071, 12421, 242, 267, fY + 1.40, fY + 2.40); // South vertical panel
+        pb(bag, 'woodD', 12071, 12421, 1374, 1399, fY + 1.40, fY + 2.40); // North vertical panel
+        pb(bag, 'woodF', 12071, 12421, 242, 1399, fY + 2.36, fY + 2.40); // Top panel
+        pb(bag, 'woodF', 12071, 12421, 242, 1399, fY + 1.40, fY + 1.44); // Bottom panel
+        pb(bag, 'woodF', 12071, 12390, 267, 1374, fY + 1.88, fY + 1.92); // Shelf
+        pb(bag, 'woodD', 12071, 12082, 267, 532, fY + 1.44, fY + 2.36); // South door
+        pb(bag, 'woodD', 12071, 12082, 552, 1089, fY + 1.44, fY + 2.36); // Middle door
+        pb(bag, 'woodD', 12071, 12082, 1109, 1374, fY + 1.44, fY + 2.36); // North door
+        bag.cyl('brass', 12067 / 1000, fY + 1.87, -400 / 1000, 0.006, 0.08); // Handles
+        bag.cyl('brass', 12067 / 1000, fY + 1.87, -820 / 1000, 0.006, 0.08);
+        bag.cyl('brass', 12067 / 1000, fY + 1.87, -1240 / 1000, 0.006, 0.08);
 
         // --- Common Bath ---
         Fur.wc(bag, 5300, 515, fY, 'N');                              // WC against south wall, facing north
-        // Southeast Corner Sink (Cylindrical Corner Washbasin)
-        bag.cyl('counter', 6226 / 1000, fY + 0.42, -483 / 1000, 0.18, 0.84); // sink pedestal
-        bag.cyl('whiteG', 6226 / 1000, fY + 0.86, -483 / 1000, 0.14, 0.08); // basin bowl
 
         // Closed Door (centered at Y = 1050, width = 700, on the East wall X = 6476..6595)
         const dbY0 = 700, dbY1 = 1400;
@@ -2753,7 +2869,7 @@ window.HouseScene = (function () {
         Fur.shelves(bag, 2816, 4805, 6082, 6382, fY);                // north wall shelves
         Fur.shelves(bag, 4501, 4805, 4432, 6082, fY);                // east wall shelves
         // --- Master Bath 02 ---
-        Fur.shower(bag, 1130, 1160, 5127, 6381, fY);                 // N-S glass partition (shower area west)
+        Fur.shower(bag, 1130, 1160, 5127, 6381, fY); Fur.showerHead(bag, 680, 6381, fY, 'S');                 // N-S glass partition (shower area west)
         Fur.wc(bag, 1650, 6096, fY, 'S');                            // WC middle, facing south
         Fur.basin(bag, 2100, 2705, 5881, 6381, fY); Fur.mirror(bag, 2100, 2705, 6369, 6381, fY);                  // vanity basin near northeast corner
         Fur.bed(bag, 9100, 11000, 232, 1832, fY, 'S');              // bed03
@@ -2761,7 +2877,7 @@ window.HouseScene = (function () {
         Fur.vastuWardrobe(bag, 11820, 12420, 232, 4432, fY, 3200, 1200, 1.10); // East wall wardrobe wrapping around window
         Fur.shelves(bag, 5000, 7540, 2850, 3100, fY);                // walk-in 03
         Fur.shelves(bag, 5000, 5300, 1950, 2850, fY);
-        Fur.shower(bag, 5820, 5850, 230, 1130, fY);                  // West: shower partition
+        Fur.shower(bag, 5820, 5850, 230, 1130, fY); Fur.showerHead(bag, 5370, 230, fY, 'N');                  // West: shower partition
         Fur.wc(bag, 6295, 515, fY, 'N');                              // Middle: WC facing North
         Fur.basin(bag, 6770, 7620, 230, 780, fY, 'S'); Fur.mirror(bag, 6770, 7620, 230, 242, fY);                    // East: vanity counter
         Fur.sofa(bag, 9900, 12300, 7980, 8580, fY, 'N');             // North sofa facing South
