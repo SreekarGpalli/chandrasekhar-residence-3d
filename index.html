@@ -569,10 +569,11 @@
   function setView(name, instant) {
     activeView = name;
     const fi = VIEW_KEYS.indexOf(name) - 1; // -1 for exterior
-    // Keep exterior shell visible in floor views so balconies / lift / outdoor
-    // structure remain (those live only on `exterior` now, avoiding walkthrough
-    // coplanar duplicates with full outdoor slabs on every floor bag).
-    data.exterior.visible = true;
+    // Exterior = full multi-storey shell. Floor buttons = dollhouse cutaway of
+    // that level only. Hiding `exterior` here is required — its roof / upper
+    // walls otherwise sit over the plan and make every floor look the same.
+    // (Walkthrough keeps everything visible for first-person; this is orbit UI.)
+    data.exterior.visible = (name === 'exterior');
     data.floors.forEach((f, i) => {
       f.group.visible = (name === 'exterior') ? false : (i === fi);
     });
