@@ -2970,16 +2970,14 @@ window.HouseScene = (function () {
       for (let y = 0; y < 4300; y += 760) shrub(21600, y - 380, 0.34 + (y % 3) * 0.03, (y % 1520 === 0) ? 'boug' : 'green');
       for (let y = 8550; y < 9500; y += 700) shrub(21600, y, 0.33, (y % 1400 < 700) ? 'ixora' : 'green');
       shrub(18000, 9800, 0.42, 'boug'); shrub(11000, 9250, 0.36, 'green2');
-      // grass strips along south inside wall and old north strip
-      pb(sBag, 'grass', -700, 7800, 8980, 9560, 0.012, 0.045);
-      pb(sBag, 'grass', -700, 21100, -700, -150, 0.012, 0.045);
+      // Grass: south inside compound wall; north-of-building strip (avoid stoop band)
+      pb(sBag, 'grass', -700, 21100, -700, -150, 0.012, 0.045); // south verge
       for (let x = 1200; x < 20500; x += 2600) shrub(x, -430, 0.3, (x % 5200 < 2600) ? 'green' : 'green2');
-
-      // new expanded landscape lawn on the North side - split to avoid the new stoop/path
-      pb(sBag, 'grass', -700, 9500, 9560, 18620, 0.012, 0.045); // West lawn
-      pb(sBag, 'grass', 17500, 21950, 9560, 18620, 0.012, 0.045); // East lawn
-      pb(sBag, 'grass', 9500, 17500, 11270, 18620, 0.012, 0.045); // North lawn
-      pb(sBag, 'grass', 9500, 16600, 8980, 10370, 0.012, 0.045); // South lawn strip
+      // North lawns — split around north-stoop path (y 10370..11270 / x 9500..17500)
+      pb(sBag, 'grass', -700, 9500, 8980, 18620, 0.012, 0.045);   // west of path run
+      pb(sBag, 'grass', 17500, 21950, 8980, 18620, 0.012, 0.045); // east of path run
+      pb(sBag, 'grass', 9500, 17500, 11270, 18620, 0.012, 0.045); // north of path
+      pb(sBag, 'grass', 9500, 16600, 8980, 10370, 0.012, 0.045); // south of path (to house)
 
       // ─── Trees: tapered trunk + branches + irregular layered blob canopy ───
       const tree = (x, y, r, col1, col2, isFlowering) =>
@@ -2994,39 +2992,45 @@ window.HouseScene = (function () {
       for (let x = 0; x < 21000; x += 1200) {
         shrub(x, 18350, 0.35 + (x % 3) * 0.05, (x % 2400 === 0) ? 'ixora' : 'green2');
       }
-      // wall lights (east wall inner face) — steel bezel + warm lens
-      for (const ly of [1500, 3300, 9000]) {
-        pb(sBag, 'charDark', 22040, 22110, ly - 90, ly + 90, 1.05, 1.42);
-        pb(sBag, 'steel', 22030, 22050, ly - 70, ly + 70, 1.10, 1.38);
-        pb(sBag, 'lamp', 22015, 22035, ly - 55, ly + 55, 1.14, 1.34);
+      // East compound wall sconces (inner face) — spaced along solid wall segments
+      // (gate gap is y 4622..8222; keep fixtures off the opening).
+      for (const ly of [1200, 3000, 9800, 14000]) {
+        pb(sBag, 'charDark', 22040, 22110, ly - 80, ly + 80, 1.05, 1.42);
+        pb(sBag, 'steel', 22030, 22050, ly - 60, ly + 60, 1.10, 1.38);
+        pb(sBag, 'lamp', 22015, 22035, ly - 48, ly + 48, 1.14, 1.34);
       }
-      // Driveway / path bollards + garden mushroom lights
+      // Path bollards — only ON paved edges, modest spacing (not a forest of posts)
       const sCyl = (mat, x, y, hMid, r, h) => sBag.cyl(mat, x / 1000, hMid, -y / 1000, r, h);
       const pathBollard = (x, y) => {
-        pb(sBag, 'charDark', x - 45, x + 45, y - 45, y + 45, 0, 0.06);
-        sCyl('steel', x, y, 0.36, 0.04, 0.68);
-        sCyl('chrome', x, y, 0.74, 0.05, 0.05);
-        sCyl('lamp', x, y, 0.68, 0.035, 0.07);
+        pb(sBag, 'charDark', x - 40, x + 40, y - 40, y + 40, 0, 0.05);
+        sCyl('steel', x, y, 0.34, 0.038, 0.62);
+        sCyl('chrome', x, y, 0.70, 0.048, 0.045);
+        sCyl('lamp', x, y, 0.64, 0.032, 0.06);
       };
-      for (let x = 17200; x <= 21600; x += 2200) {
-        pathBollard(x, 4780);  // driveway south edge
-        pathBollard(x, 8080);  // driveway north edge
+      // Driveway (pavers x 16600..22100, y 4700..8150) — edge lights every ~3.5 m
+      for (let x = 17500; x <= 21000; x += 3500) {
+        pathBollard(x, 4850);  // south edge of driveway
+        pathBollard(x, 8000);  // north edge of driveway
       }
-      // Path to north stoop
-      for (let x = 10000; x <= 16000; x += 2000) pathBollard(x, 10300);
-      for (let y = 8600; y <= 11000; y += 1600) pathBollard(17050, y);
-      // Lift side path
-      for (let y = 2300; y <= 3800; y += 750) pathBollard(14400, y);
-      // Garden path lights near trees (low mushroom style)
-      for (const [gx, gy] of [[3200, 13800], [9600, 15300], [16200, 13300], [5000, 17000], [14000, 17000]]) {
-        sCyl('charDark', gx, gy, 0.12, 0.06, 0.22);
-        sCyl('steel', gx, gy, 0.28, 0.025, 0.20);
-        sCyl('lamp', gx, gy, 0.40, 0.08, 0.06);
-        sCyl('copingLight', gx, gy, 0.44, 0.10, 0.03);
+      // Gate approach (just inside compound, flanking gate opening)
+      pathBollard(21750, 5000);
+      pathBollard(21750, 7800);
+      // North-stoop path: E–W run is paver y 10370..11270 — centreline ~10820
+      for (let x = 10500; x <= 15500; x += 2500) pathBollard(x, 10820);
+      // N–S leg of path: paver x 16600..17500 — centreline ~17050
+      pathBollard(17050, 9200);
+      pathBollard(17050, 10050);
+      pathBollard(17050, 10900);
+      // Lift side path: paver x 12650..14270, y 2035..3975 — centreline x ~13460
+      pathBollard(13460, 2500);
+      pathBollard(13460, 3400);
+      // Garden mushroom lights at tree bases (not random lawn scatter)
+      for (const [gx, gy] of [[3000, 14000], [9500, 15500], [16500, 13500]]) {
+        sCyl('charDark', gx, gy + 900, 0.10, 0.055, 0.18);
+        sCyl('steel', gx, gy + 900, 0.26, 0.022, 0.18);
+        sCyl('lamp', gx, gy + 900, 0.38, 0.075, 0.055);
+        sCyl('copingLight', gx, gy + 900, 0.42, 0.095, 0.025);
       }
-      // Gate pier lamps already present; add approach bollards outside gate line
-      pathBollard(21800, 5200);
-      pathBollard(21800, 7600);
     })();
     const site = sBag.build(THREE, materials); site.name = 'site'; root.add(site);
     placeCar();
@@ -3087,18 +3091,16 @@ window.HouseScene = (function () {
         cBag.cyl('ms', sx / 1000, 5.88, 3.15, 0.035, 1.7, Math.PI / 2, 0, 0); // arm over road
         cBag.box('lamp', sx / 1000, 5.83, 3.93, 0.18, 0.10, 0.42);
       }
-      // neighbour houses: across the road (east) and beyond side walls (N/S),
-      // 12-45m from the compound, varied heights/tones/orientation
-      nbrHouse(cBag, 45000, 2500, 9000, 8000, 2, 'nbr1', 0.06, 'W');
-      nbrHouse(cBag, 46000, 12500, 10000, 9000, 3, 'nbr2', -0.05, 'W');
-      nbrHouse(cBag, 45000, 21500, 8500, 7500, 1, 'nbr3', 0.09, 'W');
+      // Neighbour houses: north / south context only.
+      // East-side houses (across the main road) removed — they blocked the
+      // east elevation / portico view from the exterior camera.
       nbrHouse(cBag, 7000, 35500, 11000, 8500, 2, 'nbr2', -0.07, 'S');
       nbrHouse(cBag, 17500, 34500, 8000, 7000, 1, 'nbr1', 0.12, 'S');
       nbrHouse(cBag, 4000, -17000, 9500, 8000, 2, 'nbr3', -0.04, 'N');
-      // loose tree line 30-60m out to the east/north to soften the horizon
+      // Distant tree line (N / NE only — no dense east blockers in front of house)
       const tl = [
-        [46000, -8000], [52000, 2000], [49000, 12000], [55000, 20000], [50000, 30000],
-        [8000, 46000], [20000, 50000], [32000, 44000], [44000, 48000]
+        [8000, 46000], [20000, 50000], [32000, 44000], [44000, 48000],
+        [52000, 28000], [55000, 35000]
       ];
       tl.forEach(([tx, ty], ti) =>
         plantTree(cBag, tx, ty, 2.2 + (ti % 3) * 0.5, { low: true, base: 0.02 }));
@@ -3592,19 +3594,48 @@ window.HouseScene = (function () {
       // Terrace North Balcony Slabs & Soffits
       pb(eBag, 'white', 0, 17362, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      // wall lamps — matching dark body + steel bezel + warm lens (N main, E doors GF/FF/SF)
-      pb(eBag, 'charDark', 9320, 9420, NB[0] - 70, NB[0], L.f0 + 1.7, L.f0 + 2.05);
-      pb(eBag, 'steel', 9330, 9410, NB[0] - 78, NB[0] - 4, L.f0 + 1.74, L.f0 + 2.01);
-      pb(eBag, 'lamp', 9335, 9405, NB[0] - 100, NB[0] - 72, L.f0 + 1.78, L.f0 + 1.97);
-      pb(eBag, 'charDark', EB[1], EB[1] + 70, 5380, 5480, L.f0 + 1.7, L.f0 + 2.05);
-      pb(eBag, 'steel', EB[1] + 4, EB[1] + 62, 5390, 5470, L.f0 + 1.74, L.f0 + 2.01);
-      pb(eBag, 'lamp', EB[1] + 70, EB[1] + 98, 5395, 5465, L.f0 + 1.78, L.f0 + 1.97);
-      pb(eBag, 'charDark', EB[1], EB[1] + 70, 5380, 5480, L.f1 + 1.7, L.f1 + 2.05);
-      pb(eBag, 'steel', EB[1] + 4, EB[1] + 62, 5390, 5470, L.f1 + 1.74, L.f1 + 2.01);
-      pb(eBag, 'lamp', EB[1] + 70, EB[1] + 98, 5395, 5465, L.f1 + 1.78, L.f1 + 1.97);
-      pb(eBag, 'charDark', EB[1], EB[1] + 70, 6200, 6300, L.f2 + 1.7, L.f2 + 2.05);
-      pb(eBag, 'steel', EB[1] + 4, EB[1] + 62, 6210, 6290, L.f2 + 1.74, L.f2 + 2.01);
-      pb(eBag, 'lamp', EB[1] + 70, EB[1] + 98, 6215, 6285, L.f2 + 1.78, L.f2 + 1.97);
+      // Wall lamps — dark body + steel bezel + warm lens.
+      // Flank centers sit OUTSIDE the opening leaf + accent surround (~130 mm),
+      // never on the glass / door leaf itself.
+      function flankCenters(c, w, margin) {
+        margin = margin === undefined ? 180 : margin; // clear of frame + surround
+        const half = w / 2 + margin;
+        return [c - half, c + half];
+      }
+      function northWallLamp(cx, fl) {
+        pb(eBag, 'charDark', cx - 50, cx + 50, NB[0] - 70, NB[0], fl + 1.7, fl + 2.05);
+        pb(eBag, 'steel', cx - 40, cx + 40, NB[0] - 78, NB[0] - 4, fl + 1.74, fl + 2.01);
+        pb(eBag, 'lamp', cx - 35, cx + 35, NB[0] - 100, NB[0] - 72, fl + 1.78, fl + 1.97);
+      }
+      // North: GF main door (8650×1200) + each major north window, lamps outside frames
+      (function northFacadeLamps() {
+        // GF door
+        for (const cx of flankCenters(8650, 1200, 190)) northWallLamp(cx, L.f0);
+        // GF windows — bed02, hall, office
+        for (const o of [{ c: 2400, w: 1500 }, { c: 6800, w: 1800 }, { c: 11000, w: 1500 }]) {
+          for (const cx of flankCenters(o.c, o.w, 160)) northWallLamp(cx, L.f0);
+        }
+        // FF / SF north windows (no door on upper north)
+        for (const fl of [L.f1, L.f2]) {
+          for (const o of [{ c: 5500, w: 1000 }, { c: 8760, w: 1000 }]) {
+            for (const cx of flankCenters(o.c, o.w, 160)) northWallLamp(cx, fl);
+          }
+        }
+        // FF pooja slit
+        for (const cx of flankCenters(11650, 600, 140)) northWallLamp(cx, L.f1);
+      })();
+      // East entry lamps: GF office c=6180; FF duplex c=6180+sidelite; SF french c=6410.
+      (function eastEntryLamps() {
+        function eastLamp(cy, fl) {
+          pb(eBag, 'charDark', EB[1], EB[1] + 70, cy - 50, cy + 50, fl + 1.7, fl + 2.05);
+          pb(eBag, 'steel', EB[1] + 4, EB[1] + 62, cy - 40, cy + 40, fl + 1.74, fl + 2.01);
+          pb(eBag, 'lamp', EB[1] + 70, EB[1] + 98, cy - 35, cy + 35, fl + 1.78, fl + 1.97);
+        }
+        for (const cy of flankCenters(6180, 1200, 190)) eastLamp(cy, L.f0);
+        // FF door 6180 + sidelite 7010 → combined opening ~5580..7235, c≈6407.5 w≈1655
+        for (const cy of flankCenters(6408, 1655, 190)) eastLamp(cy, L.f1);
+        for (const cy of flankCenters(6410, 1650, 190)) eastLamp(cy, L.f2);
+      })();
 
       // ===== EAST FACADE TREATMENT — Modern Minimal Elevation =====
       (function eastFacade() {
@@ -3680,6 +3711,8 @@ window.HouseScene = (function () {
            L.f0 + 2.50, L.f0 + 2.60);          // canopy slab
         pb(eBag, 'accentWarm', EF + 30, EF + 740, 5300, 7060,
            L.f0 + 2.40, L.f0 + 2.50);          // warm soffit accent
+        pb(eBag, 'lamp', EF + 80, EF + 700, 5450, 6900,
+           L.f0 + 2.385, L.f0 + 2.40);         // under-glow strip
         pb(eBag, 'charDark', EF + 740, EF + 770, 5270, 7090,
            L.f0 + 2.38, L.f0 + 2.62);          // drip edge
 
@@ -3688,6 +3721,8 @@ window.HouseScene = (function () {
            L.f1 + 2.50, L.f1 + 2.60);
         pb(eBag, 'accentWarm', EF + 30, EF + 740, 5300, 7450,
            L.f1 + 2.40, L.f1 + 2.50);
+        pb(eBag, 'lamp', EF + 80, EF + 700, 5450, 7300,
+           L.f1 + 2.385, L.f1 + 2.40);
         pb(eBag, 'charDark', EF + 740, EF + 770, 5270, 7480,
            L.f1 + 2.38, L.f1 + 2.62);
 
@@ -3769,48 +3804,42 @@ window.HouseScene = (function () {
         for (const o of OPEN.f1.N) nSurround(o.c, o.w, o.sill || 0, o.h, L.f1);
         for (const o of OPEN.f2.N) nSurround(o.c, o.w, o.sill || 0, o.h, L.f2);
 
-        // Main door canopy (c=8650, w=1200) — projects north over the stoop
+        // Main door canopy (c=8650, w=1200 → leaf 8050..9250) — projects north over stoop
         pb(eBag, 'charDark', 7900, 9400, NF - 25, NF + 720, L.f0 + 2.50, L.f0 + 2.60);
         pb(eBag, 'accentWarm', 7930, 9370, NF + 30, NF + 700, L.f0 + 2.40, L.f0 + 2.50);
         pb(eBag, 'charDark', 7880, 9420, NF + 700, NF + 730, L.f0 + 2.38, L.f0 + 2.62);
-        // Canopy under-glow (warm lamp strip)
-        pb(eBag, 'lamp', 8000, 9300, NF + 80, NF + 650, L.f0 + 2.385, L.f0 + 2.40);
+        // Canopy under-glow (warm lamp strip) — under the canopy only, over the door leaf
+        pb(eBag, 'lamp', 8100, 9200, NF + 80, NF + 650, L.f0 + 2.385, L.f0 + 2.40);
 
-        // Vertical fins flanking main entry (clear of windows at c=6800 / c=11000)
-        for (const fx of [7600, 9700]) {
+        // Vertical fins on solid wall only (must clear every floor's north openings).
+        // Blocked x-bands (leaf + ~150): 1650-3150, 5000-6000, 5900-7700,
+        // 8050-9260, 10250-11950. Clear: ~3800-4900, ~9400-10100, ~12100-12500.
+        for (const fx of [4200, 9750, 12300]) {
           pb(eBag, 'charcoal', fx - 90, fx + 90, NF - 10, NF + 220, L.f0 + 0.22, L.roof - 0.22);
           pb(eBag, 'accentWarm', fx - 95, fx + 95, NF - 10, NF + 225, L.roof - 0.22, L.roof - 0.16);
           pb(eBag, 'accentWarm', fx - 95, fx + 95, NF - 10, NF + 225, L.f0 + 0.16, L.f0 + 0.22);
         }
-
-        // Wall lamps either side of main door at FF + SF balcony (entry stack)
-        for (const fl of [L.f1, L.f2]) {
-          pb(eBag, 'charDark', 8120, 8220, NF, NF + 70, fl + 1.7, fl + 2.05);
-          pb(eBag, 'steel', 8130, 8210, NF + 4, NF + 62, fl + 1.74, fl + 2.01);
-          pb(eBag, 'lamp', 8135, 8205, NF + 70, NF + 98, fl + 1.78, fl + 1.97);
-          pb(eBag, 'charDark', 9080, 9180, NF, NF + 70, fl + 1.7, fl + 2.05);
-          pb(eBag, 'steel', 9090, 9170, NF + 4, NF + 62, fl + 1.74, fl + 2.01);
-          pb(eBag, 'lamp', 9095, 9165, NF + 70, NF + 98, fl + 1.78, fl + 1.97);
-        }
+        // Upper-level wall lamps are drawn in northFacadeLamps() above (aligned to frames).
       })();
 
       // ===== PORTICO AMBIENT — column uplights + lift approach lamps =====
       (function porticoLights() {
-        // Soft uplights at base of each portico column
+        // Uplights sit ON the portico tile (was buried under L.porticoFl = 0.15).
+        const t0 = L.porticoFl + 0.016;
         for (const cy of [8720, 4290, 150]) {
-          pb(eBag, 'steel', 16270, 16310, cy - 40, cy + 40, 0.02, 0.08);
-          pb(eBag, 'lamp', 16275, 16305, cy - 30, cy + 30, 0.08, 0.10);
-          pb(eBag, 'steel', 16590, 16630, cy - 40, cy + 40, 0.02, 0.08);
-          pb(eBag, 'lamp', 16595, 16625, cy - 30, cy + 30, 0.08, 0.10);
+          // Inboard and outboard of each column shaft (16300..16600)
+          pb(eBag, 'steel', 16255, 16295, cy - 35, cy + 35, t0, t0 + 0.05);
+          pb(eBag, 'lamp', 16260, 16290, cy - 28, cy + 28, t0 + 0.04, t0 + 0.08);
+          pb(eBag, 'steel', 16605, 16645, cy - 35, cy + 35, t0, t0 + 0.05);
+          pb(eBag, 'lamp', 16610, 16640, cy - 28, cy + 28, t0 + 0.04, t0 + 0.08);
         }
-        // Lift approach wall lamps (north face of lift tower, each landing)
+        // Lift approach wall lamps — north face of tower (outer face y=2035)
         for (const fl of [L.porticoFl, L.f1, L.f2]) {
-          pb(eBag, 'charDark', 12720, 12800, 2035, 2105, fl + 1.55, fl + 1.90);
-          pb(eBag, 'steel', 12730, 12790, 2040, 2095, fl + 1.58, fl + 1.87);
-          pb(eBag, 'lamp', 12735, 12785, 2105, 2135, fl + 1.62, fl + 1.82);
-          pb(eBag, 'charDark', 13890, 13970, 2035, 2105, fl + 1.55, fl + 1.90);
-          pb(eBag, 'steel', 13900, 13960, 2040, 2095, fl + 1.58, fl + 1.87);
-          pb(eBag, 'lamp', 13905, 13955, 2105, 2135, fl + 1.62, fl + 1.82);
+          for (const [x0, x1] of [[12720, 12800], [13890, 13970]]) {
+            pb(eBag, 'charDark', x0, x1, 2035, 2105, fl + 1.55, fl + 1.90);
+            pb(eBag, 'steel', x0 + 10, x1 - 10, 2040, 2095, fl + 1.58, fl + 1.87);
+            pb(eBag, 'lamp', x0 + 15, x1 - 15, 2105, 2135, fl + 1.62, fl + 1.82);
+          }
         }
       })();
 
@@ -3860,8 +3889,13 @@ window.HouseScene = (function () {
         for (const o of OPEN.f0.W) wSurround(o.c, o.w, o.sill || 0, o.h, L.f0);
         for (const o of OPEN.f1.W) wSurround(o.c, o.w, o.sill || 0, o.h, L.f1);
         for (const o of OPEN.f2.W) wSurround(o.c, o.w, o.sill || 0, o.h, L.f2);
-        // Slim vertical fins at SW / NW corners (west face)
-        for (const fy of [1200, 7600]) {
+        // Vertical fins on solid wall only — full-height, so clear of openings
+        // on every floor (west openings use c as plan-y):
+        //   GF: 2360-3560, 4260-4860, 6400-7600
+        //   FF/SF: 3130-4330, 5160-5760, 6970-8170
+        // Old fins at y=7600 cut through the stair-landing window (6970-8170).
+        // Clear bands: ~900-2000, ~5900-6300, ~8300-8800.
+        for (const fy of [1100, 6080, 8500]) {
           pb(eBag, 'charcoal', WF - 180, WF + 10, fy - 90, fy + 90, L.f0 + 0.22, L.roof - 0.22);
           pb(eBag, 'accentWarm', WF - 185, WF + 12, fy - 95, fy + 95, L.roof - 0.22, L.roof - 0.16);
           pb(eBag, 'accentWarm', WF - 185, WF + 12, fy - 95, fy + 95, L.f0 + 0.16, L.f0 + 0.22);
@@ -3871,30 +3905,47 @@ window.HouseScene = (function () {
     })();
     const exterior = eBag.build(THREE, materials); exterior.name = 'exterior'; root.add(exterior);
 
-    /* ======== Per-level outdoor amenity (portico / east balconies) ========
-       Separate from the multi-storey exterior shell so orbit floor views can
-       show the portico or balcony for that level without covering the plan. */
+    /* ======== Per-level outdoor amenity (portico / east-north balconies) ========
+       CRITICAL: only true outdoor decks — never the main-block floor plate.
+       Using full-floor drawFFSlab/drawSFSlab here stacked a solid white slab
+       over the whole house in exterior + walkthrough (z-fight / “everything
+       overlapped”). Decks live east of X1=12650, south strip, and north balcony. */
     const outdoors = [];
     (function buildOutdoorAmenity() {
-      // --- outdoor0: GF portico + stoops ---
+      const EX0 = 12650, EX1 = 17362; // east outdoor band
+      const NBY0 = Y1n, NBY1 = Y1n + 1000; // north balcony
+
+      /** Structural deck + tile + thin soffit for an outdoor rectangle */
+      function outdoorDeck(bag, x0, x1, y0, y1, fY, tileMat) {
+        const h0 = fY - L.slabT, h1 = fY;
+        const t0 = fY, t1 = fY + 0.012;
+        const s0 = h0 - 0.008, s1 = h0;
+        if (x1 - x0 < 40 || y1 - y0 < 40) return;
+        pb(bag, 'white', x0, x1, y0, y1, h0, h1);
+        pb(bag, 'charDark', x0 + 40, x1 - 40, y0 + 40, y1 - 40, s0, s1);
+        pb(bag, tileMat || 'balcTile', x0 + 25, x1 - 25, y0 + 25, y1 - 25, t0, t1);
+      }
+
+      // --- outdoor0: GF portico + stoops only ---
       const o0 = makeBag(THREE);
-      pb(o0, 'concrete', eastX[0], eastX[1], portY[0], portY[1], 0, L.porticoFl);
-      pb(o0, 'balcTile', eastX[0] + 50, eastX[1] - 50, portY[0] + 50, portY[1] - 50, L.porticoFl, L.porticoFl + 0.014);
-      pb(o0, 'charDark', eastX[0] - 20, eastX[1] + 20, portY[0] - 20, portY[0] + 40, 0, L.porticoFl + 0.04);
-      pb(o0, 'charDark', eastX[0] - 20, eastX[1] + 20, portY[1] - 40, portY[1] + 20, 0, L.porticoFl + 0.04);
-      pb(o0, 'charDark', eastX[1] - 40, eastX[1] + 20, portY[0], portY[1], 0, L.porticoFl + 0.04);
-      pb(o0, 'copingLight', eastX[0] - 25, eastX[1] + 25, portY[0] - 25, portY[0] + 45, L.porticoFl + 0.04, L.porticoFl + 0.06);
-      pb(o0, 'copingLight', eastX[0] - 25, eastX[1] + 25, portY[1] - 45, portY[1] + 25, L.porticoFl + 0.04, L.porticoFl + 0.06);
-      pb(o0, 'copingLight', eastX[1] - 45, eastX[1] + 25, portY[0], portY[1], L.porticoFl + 0.04, L.porticoFl + 0.06);
-      Fur.planter(o0, 16050, 8720, L.porticoFl, 0.95);
-      Fur.planter(o0, 16050, 4290, L.porticoFl, 0.95);
-      Fur.planter(o0, 16050, 150, L.porticoFl, 0.9);
-      Fur.planter(o0, 16800, 8720, L.porticoFl, 0.85);
-      Fur.planter(o0, 16800, 4290, L.porticoFl, 0.85);
-      Fur.planter(o0, 13000, 8500, L.porticoFl, 0.75);
-      Fur.planter(o0, 13000, 400, L.porticoFl, 0.75);
-      Fur.planter(o0, 13200, 5400, L.porticoFl, 0.7);
-      Fur.planter(o0, 13200, 7000, L.porticoFl, 0.7);
+      pb(o0, 'concrete', EX0, EX1, portY[0], portY[1], 0, L.porticoFl);
+      pb(o0, 'balcTile', EX0 + 50, EX1 - 50, portY[0] + 50, portY[1] - 50, L.porticoFl, L.porticoFl + 0.014);
+      // Outer curb only (not a second slab)
+      pb(o0, 'charDark', EX0 - 20, EX1 + 20, portY[0] - 20, portY[0] + 40, 0, L.porticoFl + 0.04);
+      pb(o0, 'charDark', EX0 - 20, EX1 + 20, portY[1] - 40, portY[1] + 20, 0, L.porticoFl + 0.04);
+      pb(o0, 'charDark', EX1 - 40, EX1 + 20, portY[0], portY[1], 0, L.porticoFl + 0.04);
+      pb(o0, 'copingLight', EX0 - 25, EX1 + 25, portY[0] - 25, portY[0] + 45, L.porticoFl + 0.04, L.porticoFl + 0.06);
+      pb(o0, 'copingLight', EX0 - 25, EX1 + 25, portY[1] - 45, portY[1] + 25, L.porticoFl + 0.04, L.porticoFl + 0.06);
+      pb(o0, 'copingLight', EX1 - 45, EX1 + 25, portY[0], portY[1], L.porticoFl + 0.04, L.porticoFl + 0.06);
+      // Planters at columns — clear of parking bay (14200..16500 × 5200..7600)
+      Fur.planter(o0, 16080, 8720, L.porticoFl, 0.85);
+      Fur.planter(o0, 16080, 4290, L.porticoFl, 0.85);
+      Fur.planter(o0, 16080, 150, L.porticoFl, 0.8);
+      Fur.planter(o0, 16920, 8720, L.porticoFl, 0.75);
+      Fur.planter(o0, 16920, 150, L.porticoFl, 0.75);
+      Fur.planter(o0, 13100, 5300, L.porticoFl, 0.65);
+      Fur.planter(o0, 13100, 7100, L.porticoFl, 0.65);
+      // Parking bay marks
       (function parkingBay() {
         const bx0 = 14200, bx1 = 16500, by0 = 5200, by1 = 7600;
         pb(o0, 'roadLine', bx0, bx1, by0, by0 + 50, L.porticoFl + 0.014, L.porticoFl + 0.022);
@@ -3910,7 +3961,7 @@ window.HouseScene = (function () {
         pb(o0, 'charDark', 14200, 14320, 5400, 7400, L.porticoFl, L.porticoFl + 0.12);
         pb(o0, 'copingLight', 14190, 14330, 5390, 7410, L.porticoFl + 0.12, L.porticoFl + 0.14);
       })();
-      // GF north stoop (main door)
+      // North main-door stoop
       pb(o0, 'plinth', 7800, 9500, Y1n, 10070, 0, L.f0);
       pb(o0, 'copingLight', 7820, 9480, Y1n + 20, 10050, L.f0, L.f0 + 0.02);
       let st = 0.60;
@@ -3919,7 +3970,7 @@ window.HouseScene = (function () {
         pb(o0, 'copingLight', 7820, 9480, 10080 + i * 300, 10070 + (i + 1) * 300 - 10, st, st + 0.018);
         st -= 0.15;
       }
-      // office stoop in portico
+      // Office stoop on portico (door c=6180)
       st = 0.60;
       for (let i = 0; i < 3; i++) {
         pb(o0, 'plinth', 12650 + i * 300, 12950 + i * 300, 5580, 6780, L.porticoFl, st);
@@ -3928,73 +3979,75 @@ window.HouseScene = (function () {
       }
       const g0 = o0.build(THREE, materials); g0.name = 'outdoor0'; root.add(g0); outdoors.push(g0);
 
-      // --- outdoor1: FF east / south / north balconies + service-band tiles ---
+      // --- outdoor1: FF outdoor decks ONLY (no interior floor plate) ---
       const o1 = makeBag(THREE);
-      drawFFSlab(o1, L.f1 - L.slabT, L.f1);
-      const sof0 = L.f1 - L.slabT - 0.008, sof1 = L.f1 - L.slabT;
-      pb(o1, 'charDark', 60, 17302, -702, 200, sof0, sof1);
-      pb(o1, 'charDark', 60, 12600, 230, 1000, sof0, sof1);
-      pb(o1, 'charDark', 14090, 17302, 280, 1000, sof0, sof1);
-      pb(o1, 'charDark', 60, 12600, 1040, LIFT_NY, sof0, sof1);
-      pb(o1, 'charDark', VOID_EX + 60, 17302, 1100, 3850, sof0, sof1);
-      pb(o1, 'charDark', 60, VOID_WX - 60, LIFT_NY + 40, 3850, sof0, sof1);
-      pb(o1, 'charDark', 60, 17302, 3930, Y1n - 60, sof0, sof1);
-      drawFFTiles(o1, 'balcTile', L.f1, L.f1 + 0.012);
-      pb(o1, 'balcTile', 4965, 8085, -596, 1360, L.f1, L.f1 + 0.012);   // utility
-      pb(o1, 'balcTile', 8300, 9320, -596, 1360, L.f1, L.f1 + 0.012);   // common bath
-      pb(o1, 'balcTile', 9536, 12370, -596, 1360, L.f1, L.f1 + 0.012);  // wet kitchen
-      pb(o1, 'charDark', eastX[1] - 90, eastX[1] + 10, -762, 9880, L.f1 - 0.45, L.f1 + 0.012);
-      pb(o1, 'charDark', 0, eastX[1] + 10, 9780, 9880, L.f1 - 0.45, L.f1 + 0.012);
-      pb(o1, 'charDark', -10, 90, -762, 9880, L.f1 - 0.45, L.f1 + 0.012);
-      pb(o1, 'charDark', 0, 17362 + 10, -762 - 90, -762 + 10, L.f1 - 0.45, L.f1 + 0.012);
-      pb(o1, 'accentWarm', eastX[1] - 100, eastX[1] + 18, -770, 9890, L.f1 - 0.53, L.f1 - 0.45);
-      pb(o1, 'accentWarm', -20, eastX[1] + 18, 9770, 9890, L.f1 - 0.53, L.f1 - 0.45);
-      pb(o1, 'accentWarm', -18, 100, -770, 9890, L.f1 - 0.53, L.f1 - 0.45);
-      pb(o1, 'accentWarm', -20, eastX[1] + 18, -780, -740, L.f1 - 0.53, L.f1 - 0.45);
-      railing(o1, 'x', -762, 0, 4805, L.f1, 1.0);
-      railing(o1, 'y', 0, -762, 0, L.f1, 1.0);
-      railing(o1, 'x', -762, 12650, 17362, L.f1, 1.0);
-      railing(o1, 'y', 17282, -762, 9790, L.f1, 1.0);
-      externalStairVoidRails(o1, L.f1);
-      railing(o1, 'x', 9790, 80, 17282, L.f1, 1.0);
-      railing(o1, 'y', 80, 8870, 9790, L.f1, 1.0);
-      // North balcony
-      pb(o1, 'white', 0, 17362, Y1n, Y1n + 1000, L.f1 - L.slabT, L.f1);
-      pb(o1, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.f1 - L.slabT - 0.008, L.f1 - L.slabT);
-      pb(o1, 'balcTile', 30, 17332, Y1n, Y1n + 1000 - 30, L.f1, L.f1 + 0.012);
-      Fur.planter(o1, 16280, 8430, L.f1, 1.0);
-      Fur.planter(o1, 13350, 8200, L.f1, 0.9);
-      Fur.planter(o1, 15800, 2800, L.f1, 0.85);
+      const f1 = L.f1;
+      // South bedroom balcony (west of service band)
+      outdoorDeck(o1, 30, 4805, -732, 0, f1);
+      // Portico-top / south-east deck
+      outdoorDeck(o1, EX0, EX1, -732, 230, f1);
+      // Over external-stair mid-landing (east of lift)
+      outdoorDeck(o1, 14040, EX1, 230, 1040, f1);
+      // Outer east strip beside stair void
+      outdoorDeck(o1, VOID_EX + 20, EX1, 1040, 3890, f1);
+      // East corridor (house face → void west), north of lift
+      outdoorDeck(o1, EX0 + 30, VOID_WX - 20, LIFT_NY, 3890, f1);
+      // East deck north of stair arrival → building NE
+      outdoorDeck(o1, EX0, EX1, 3890, Y1n, f1);
+      // North balcony (outside main north wall)
+      outdoorDeck(o1, 30, EX1, NBY0, NBY1 - 30, f1);
+      // Service-band floors (south of main block, FF only)
+      outdoorDeck(o1, 4965, 8085, -596, 1360, f1);
+      outdoorDeck(o1, 8300, 9320, -596, 1360, f1);
+      outdoorDeck(o1, 9536, 12370, -596, 1360, f1);
+      // Edge fascia — outdoor perimeter only (not a full-building loop)
+      pb(o1, 'charDark', EX1 - 90, EX1 + 10, -762, NBY1, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'charDark', EX0, EX1 + 10, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'charDark', EX0, EX1 + 10, -762 - 90, -762 + 10, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'charDark', 0, 4805, -762 - 90, -762 + 10, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'accentWarm', EX1 - 100, EX1 + 18, -770, NBY1 + 10, f1 - 0.53, f1 - 0.45);
+      // Railings on outdoor edges
+      railing(o1, 'x', -762, 0, 4805, f1, 1.0);
+      railing(o1, 'y', 0, -762, 0, f1, 1.0);
+      railing(o1, 'x', -762, EX0, EX1, f1, 1.0);
+      railing(o1, 'y', EX1 - 80, -762, NBY1 - 80, f1, 1.0);
+      externalStairVoidRails(o1, f1);
+      railing(o1, 'x', NBY1 - 80, EX0, EX1 - 80, f1, 1.0);
+      railing(o1, 'x', NBY1 - 80, 80, EX0, f1, 1.0);
+      railing(o1, 'y', 80, Y1n, NBY1 - 80, f1, 1.0);
+      Fur.planter(o1, 16280, 8430, f1, 0.9);
+      Fur.planter(o1, 13350, 8430, f1, 0.8);
+      Fur.planter(o1, 16280, 4200, f1, 0.8);
       const g1 = o1.build(THREE, materials); g1.name = 'outdoor1'; root.add(g1); outdoors.push(g1);
 
-      // --- outdoor2: SF east / south / north balconies + loungers ---
+      // --- outdoor2: SF outdoor decks ONLY ---
       const o2 = makeBag(THREE);
-      drawSFSlab(o2, L.f2 - L.slabT, L.f2);
-      drawSFSoffit(o2, L.f2 - L.slabT - 0.008, L.f2 - L.slabT);
-      drawSFTiles(o2, 'balcTile', L.f2, L.f2 + 0.012);
-      pb(o2, 'charDark', eastX[1] - 90, eastX[1] + 10, -762, 9880, L.f2 - 0.45, L.f2 + 0.012);
-      pb(o2, 'charDark', 0, eastX[1] + 10, 9780, 9880, L.f2 - 0.45, L.f2 + 0.012);
-      pb(o2, 'charDark', -10, 90, -762, 9880, L.f2 - 0.45, L.f2 + 0.012);
-      pb(o2, 'charDark', 0, 17362 + 10, -762 - 90, -762 + 10, L.f2 - 0.45, L.f2 + 0.012);
-      pb(o2, 'accentWarm', eastX[1] - 100, eastX[1] + 18, -770, 9890, L.f2 - 0.53, L.f2 - 0.45);
-      pb(o2, 'accentWarm', -20, eastX[1] + 18, 9770, 9890, L.f2 - 0.53, L.f2 - 0.45);
-      pb(o2, 'accentWarm', -18, 100, -770, 9890, L.f2 - 0.53, L.f2 - 0.45);
-      pb(o2, 'accentWarm', -20, eastX[1] + 18, -780, -740, L.f2 - 0.53, L.f2 - 0.45);
-      railing(o2, 'x', -762, 0, 17362, L.f2, 1.0);
-      railing(o2, 'y', 0, -762, 0, L.f2, 1.0);
-      railing(o2, 'y', 17282, -762, 9790, L.f2, 1.0);
-      railing(o2, 'x', 9790, 80, 17282, L.f2, 1.0);
-      railing(o2, 'y', 80, 8870, 9790, L.f2, 1.0);
-      pb(o2, 'white', 0, 17362, Y1n, Y1n + 1000, L.f2 - L.slabT, L.f2);
-      pb(o2, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.f2 - L.slabT - 0.008, L.f2 - L.slabT);
-      pb(o2, 'balcTile', 30, 17332, Y1n, Y1n + 1000 - 30, L.f2, L.f2 + 0.012);
-      Fur.planter(o2, 16280, 8430, L.f2, 1.1);
-      Fur.planter(o2, 16280, 2450, L.f2, 1.1);
-      Fur.planter(o2, 12950, 8430, L.f2, 0.95);
-      Fur.lounger(o2, 15050, 16350, 5500, 6280, L.f2);
-      Fur.lounger(o2, 15050, 16350, 6600, 7380, L.f2);
-      Fur.table(o2, 15200, 15800, 6400, 7000, L.f2, 0.40);
-      Fur.planter(o2, 14800, 7800, L.f2, 0.8);
+      const f2 = L.f2;
+      // South outdoor strip (portico-top + south balcony)
+      outdoorDeck(o2, 30, EX1, -732, 230, f2);
+      // East of lift shaft only (lift cutout 12650..14040 × 230..1805)
+      outdoorDeck(o2, 14040, EX1, 230, 1805, f2);
+      // Continuous east outdoor deck north of lift
+      outdoorDeck(o2, EX0, EX1, 1805, Y1n, f2);
+      // North balcony
+      outdoorDeck(o2, 30, EX1, NBY0, NBY1 - 30, f2);
+      // Edge fascia outdoor only
+      pb(o2, 'charDark', EX1 - 90, EX1 + 10, -762, NBY1, f2 - 0.45, f2 + 0.012);
+      pb(o2, 'charDark', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f2 - 0.45, f2 + 0.012);
+      pb(o2, 'charDark', 0, EX1 + 10, -762 - 90, -762 + 10, f2 - 0.45, f2 + 0.012);
+      pb(o2, 'accentWarm', EX1 - 100, EX1 + 18, -770, NBY1 + 10, f2 - 0.53, f2 - 0.45);
+      railing(o2, 'x', -762, 0, EX1, f2, 1.0);
+      railing(o2, 'y', EX1 - 80, -762, NBY1 - 80, f2, 1.0);
+      railing(o2, 'x', NBY1 - 80, 80, EX1 - 80, f2, 1.0);
+      railing(o2, 'y', 80, Y1n, NBY1 - 80, f2, 1.0);
+      Fur.planter(o2, 16280, 8430, f2, 0.95);
+      Fur.planter(o2, 13350, 8430, f2, 0.85);
+      Fur.planter(o2, 16280, 4200, f2, 0.9);
+      // Loungers on solid east deck (north of y≈3890, east of EX0)
+      Fur.lounger(o2, 15050, 16350, 5500, 6280, f2);
+      Fur.lounger(o2, 15050, 16350, 6600, 7380, f2);
+      Fur.table(o2, 15200, 15800, 6400, 7000, f2, 0.40);
+      Fur.planter(o2, 14800, 7800, f2, 0.7);
       const g2 = o2.build(THREE, materials); g2.name = 'outdoor2'; root.add(g2); outdoors.push(g2);
     })();
 
@@ -4644,74 +4697,82 @@ window.HouseScene = (function () {
     lights.push({ x: 12.130, y: L.f1 + 0.77, z: -7.750, floor: 1, warm: true });
     lights.push({ x: 12.130, y: L.f1 + 0.77, z: -8.310, floor: 1, warm: true });
 
-    /* ---- exterior warm fixtures for walkthrough light pool ----
-       Plan mm → world: X = mm/1000, Z = -mm/1000. floor tags nearest level. */
+    /* ---- warm fixtures for walkthrough light pool ----
+       Plan mm → world: X = mm/1000, Z = -mm/1000.
+       Keep this list sparse and co-located with real lamp geometry so the
+       small point-light pool picks intentional accents (not random lawn blobs). */
     function warmFix(xmm, ymm, yM, floor) {
       lights.push({ x: xmm / 1000, y: yM, z: -ymm / 1000, floor: floor, warm: true });
     }
-    // Main north entry canopy under-glow + GF door lamps (stronger entry cluster)
-    warmFix(8650, 9100, L.f0 + 2.42, 0);
-    warmFix(8300, 9050, L.f0 + 2.42, 0);
-    warmFix(9000, 9050, L.f0 + 2.42, 0);
-    warmFix(8170, 8870, L.f0 + 1.88, 0);
-    warmFix(9130, 8870, L.f0 + 1.88, 0);
-    warmFix(8150, 8610, L.f0 + 1.82, 0); // interior entry sconces
+    // North facade — canopy + lamps outside real frames (match geometry above)
+    warmFix(8650, 9200, L.f0 + 2.42, 0);
+    // GF door flanks (8650±790)
+    warmFix(7860, 8870, L.f0 + 1.88, 0);
+    warmFix(9440, 8870, L.f0 + 1.88, 0);
+    // GF hall / office window flanks (sample)
+    warmFix(5900, 8870, L.f0 + 1.88, 0);
+    warmFix(7700, 8870, L.f0 + 1.88, 0);
+    warmFix(10190, 8870, L.f0 + 1.88, 0);
+    warmFix(11810, 8870, L.f0 + 1.88, 0);
+    warmFix(8150, 8610, L.f0 + 1.82, 0); // interior vestibule
     warmFix(9150, 8610, L.f0 + 1.82, 0);
-    // Mumty interior lamp
-    warmFix(5520, 7460, L.roof + 1.75, 2);
-    warmFix(2900, 7550, L.roof + 2.40, 2);
-    // North balcony lamps FF / SF
-    warmFix(8170, 8920, L.f1 + 1.88, 1);
-    warmFix(9130, 8920, L.f1 + 1.88, 1);
-    warmFix(8170, 8920, L.f2 + 1.88, 2);
-    warmFix(9130, 8920, L.f2 + 1.88, 2);
-    // East office / duplex door lamps
-    warmFix(12690, 5430, L.f0 + 1.88, 0);
-    warmFix(12690, 5430, L.f1 + 1.88, 1);
-    warmFix(12690, 6250, L.f2 + 1.88, 2);
-    // Portico column uplights (three columns × two sides)
-    for (const cy of [8720, 4290, 150]) {
-      warmFix(16290, cy, 0.35, 0);
-      warmFix(16610, cy, 0.35, 0);
+    // FF / SF north window flanks (5500±660, 8760±660)
+    for (const fl of [1, 2]) {
+      const yL = fl === 1 ? L.f1 + 1.88 : L.f2 + 1.88;
+      warmFix(4840, 8920, yL, fl);
+      warmFix(6160, 8920, yL, fl);
+      warmFix(8100, 8920, yL, fl);
+      warmFix(9420, 8920, yL, fl);
     }
-    // Lift approach lamps each landing
-    for (const [yM, fi] of [[L.porticoFl + 1.7, 0], [L.f1 + 1.7, 1], [L.f2 + 1.7, 2]]) {
+    // East entry flanks + canopy under-glow
+    warmFix(12700, 5390, L.f0 + 1.88, 0);
+    warmFix(12700, 6970, L.f0 + 1.88, 0);
+    warmFix(13000, 6180, L.f0 + 2.40, 0);
+    warmFix(12700, 5390, L.f1 + 1.88, 1);
+    warmFix(12700, 7425, L.f1 + 1.88, 1);
+    warmFix(13000, 6408, L.f1 + 2.40, 1);
+    warmFix(12700, 5395, L.f2 + 1.88, 2);
+    warmFix(12700, 7425, L.f2 + 1.88, 2);
+    // Site / compound / portico outdoor fixtures use floor:-1 so the light pool
+    // always considers them (not only when the player is tagged as GF).
+    for (const cy of [8720, 4290, 150]) {
+      warmFix(16275, cy, L.porticoFl + 0.28, -1);
+      warmFix(16625, cy, L.porticoFl + 0.28, -1);
+    }
+    for (const [yM, fi] of [[L.porticoFl + 1.7, -1], [L.f1 + 1.7, 1], [L.f2 + 1.7, 2]]) {
       warmFix(12760, 2120, yM, fi);
       warmFix(13930, 2120, yM, fi);
     }
-    // Driveway bollards (sample along edges for pool)
-    for (let x = 17200; x <= 21600; x += 4400) {
-      warmFix(x, 4780, 0.70, 0);
-      warmFix(x, 8080, 0.70, 0);
+    for (let x = 17500; x <= 21000; x += 3500) {
+      warmFix(x, 4850, 0.64, -1);
+      warmFix(x, 8000, 0.64, -1);
     }
-    // North stoop path bollards
-    for (let x = 10000; x <= 16000; x += 4000) warmFix(x, 10300, 0.70, 0);
-    warmFix(17050, 9000, 0.70, 0);
-    warmFix(17050, 10600, 0.70, 0);
-    // Lift side path
-    warmFix(14400, 2500, 0.70, 0);
-    warmFix(14400, 3500, 0.70, 0);
-    // Garden mushroom lights near lawn trees
-    for (const [gx, gy] of [[3200, 13800], [9600, 15300], [16200, 13300], [5000, 17000], [14000, 17000]]) {
-      warmFix(gx, gy, 0.42, 0);
+    warmFix(21750, 5000, 0.64, -1);
+    warmFix(21750, 7800, 0.64, -1);
+    for (let x = 10500; x <= 15500; x += 2500) warmFix(x, 10820, 0.64, -1);
+    warmFix(17050, 9200, 0.64, -1);
+    warmFix(17050, 10900, 0.64, -1);
+    warmFix(13460, 2500, 0.64, -1);
+    warmFix(13460, 3400, 0.64, -1);
+    for (const [gx, gy] of [[3000, 14900], [9500, 16400], [16500, 14400]]) {
+      warmFix(gx, gy, 0.40, -1);
     }
-    // Gate approach
-    warmFix(21800, 5200, 0.70, 0);
-    warmFix(21800, 7600, 0.70, 0);
-    // Compound east wall sconces
-    for (const ly of [1500, 3300, 9000]) warmFix(22030, ly, 1.25, 0);
+    for (const ly of [1200, 3000, 9800, 14000]) warmFix(22030, ly, 1.25, -1);
+    warmFix(22160, 4422, 2.18, -1);
+    warmFix(22160, 8422, 2.18, -1);
+    // Mumty
+    warmFix(5520, 7460, L.roof + 1.75, 2);
     // FF pooja mandir glow
     warmFix(12280, 8030, L.f1 + 1.2, 1);
     warmFix(12130, 7750, L.f1 + 0.9, 1);
     warmFix(12130, 8310, L.f1 + 0.9, 1);
     // GF office desk lamp
     warmFix(11550, 5350, L.f0 + 1.05, 0);
-    // Bedroom nightstand lamps (approx centres of typical side tables) — GF master
+    // Bedroom nightstands (GF master + bed02, FF master)
     warmFix(1700, 480, L.f0 + 0.88, 0);
     warmFix(4100, 480, L.f0 + 0.88, 0);
     warmFix(1100, 5710, L.f0 + 0.88, 0);
     warmFix(3500, 5710, L.f0 + 0.88, 0);
-    // FF master nightstands
     warmFix(1300, 480, L.f1 + 0.88, 1);
     warmFix(3700, 480, L.f1 + 0.88, 1);
 
