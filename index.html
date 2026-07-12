@@ -569,14 +569,20 @@
   function setView(name, instant) {
     activeView = name;
     const fi = VIEW_KEYS.indexOf(name) - 1; // -1 for exterior
-    // Exterior = full multi-storey shell. Floor buttons = dollhouse cutaway of
-    // that level only. Hiding `exterior` here is required — its roof / upper
-    // walls otherwise sit over the plan and make every floor look the same.
-    // (Walkthrough keeps everything visible for first-person; this is orbit UI.)
-    data.exterior.visible = (name === 'exterior');
+    // Exterior = full multi-storey shell + all outdoor decks.
+    // Floor buttons = that floor's dollhouse rooms + matching outdoor amenity
+    // (portico on G, east/north balconies on 1 & 2). Outdoor decks live in
+    // separate outdoor0/1/2 groups so the shell can hide without losing them.
+    const isExt = name === 'exterior';
+    data.exterior.visible = isExt;
     data.floors.forEach((f, i) => {
-      f.group.visible = (name === 'exterior') ? false : (i === fi);
+      f.group.visible = isExt ? false : (i === fi);
     });
+    if (data.outdoors) {
+      data.outdoors.forEach((g, i) => {
+        g.visible = isExt ? true : (i === fi);
+      });
+    }
     clearSelection();
     document.querySelectorAll('#views button').forEach(b =>
       b.classList.toggle('on', b.dataset.view === name));

@@ -3243,11 +3243,13 @@ window.HouseScene = (function () {
       pb(bag, 'balcTile', 14520, 15380, 3652, 3890, L.f1 - 0.008, L.f1 - 0.002);
     }
 
-    function liftTower(bag, topH, doors) {
-      // Shaft shell (charcoal). Entrances are built as bright stainless portals so
-      // they read clearly against the dark tower on every landing (GF / FF / SF).
-      pb(bag, 'charcoal', liftOX[0], liftOX[1], liftOY[0], liftOY[0] + 230, 0, topH); // south
-      pb(bag, 'charcoal', 14040, 14270, 230, liftOY[1], 0, topH);                     // east
+    function liftTower(bag, topH, doors, botH) {
+      // Shaft shell (charcoal). botH defaults to 0 (full tower for exterior).
+      // Dollhouse floors pass the floor datum so only that storey band is drawn.
+      if (botH === undefined || botH === null) botH = 0;
+      // Entrances are bright stainless portals so they read clearly on every landing.
+      pb(bag, 'charcoal', liftOX[0], liftOX[1], liftOY[0], liftOY[0] + 230, botH, topH); // south
+      pb(bag, 'charcoal', 14040, 14270, 230, liftOY[1], botH, topH);                     // east
 
       const nY0 = 1805, nY1 = 2035;                 // north wall thickness band
       const midX = 13345;
@@ -3256,12 +3258,14 @@ window.HouseScene = (function () {
       const doorH = 2.10;                           // clear leaf height
       const portalH = 2.30;                         // incl. head frame
 
-      // North wall flanks (full height) — door bays are cut in per landing
-      pb(bag, 'charcoal', liftOX[0], dx0, nY0, nY1, 0, topH);
-      pb(bag, 'charcoal', dx1, liftOX[1], nY0, nY1, 0, topH);
+      // North wall flanks — door bays are cut in per landing
+      pb(bag, 'charcoal', liftOX[0], dx0, nY0, nY1, botH, topH);
+      pb(bag, 'charcoal', dx1, liftOX[1], nY0, nY1, botH, topH);
 
-      let cur = 0;
+      let cur = botH;
       for (const dl of doors) {
+        // Skip portals outside this height band (multi-door full tower uses all)
+        if (dl + portalH < botH - 0.01 || dl > topH + 0.01) continue;
         // charcoal spandrel below this landing's sill
         if (dl > cur + 0.001) pb(bag, 'charcoal', dx0, dx1, nY0, nY1, cur, dl);
 
@@ -3316,12 +3320,18 @@ window.HouseScene = (function () {
       if (topH > cur + 0.001) pb(bag, 'charcoal', dx0, dx1, nY0, nY1, cur, topH);
     }
 
-    function columnsEast(bag, topH) {
-      // Ivory shaft + charcoal base/capital (same language as facade fins)
+    function columnsEast(bag, topH, botH) {
+      // Ivory shaft + charcoal base/capital (same language as facade fins).
+      // botH defaults to 0 (full height for exterior). Floor cutaways pass the
+      // floor datum so only that storey of each portico pillar is drawn.
+      if (botH === undefined || botH === null) botH = 0;
+      const cap = 0.14;
+      const shaftBot = botH + cap;
+      const shaftTop = Math.max(shaftBot + 0.05, topH - cap);
       for (const cy of [8720, 4290, 150]) {
-        pb(bag, 'charDark', 16300, 16600, cy - 150, cy + 150, 0, 0.14);              // base
-        pb(bag, 'white', 16315, 16585, cy - 135, cy + 135, 0.14, topH - 0.14);       // shaft
-        pb(bag, 'charDark', 16300, 16600, cy - 150, cy + 150, topH - 0.14, topH);    // capital
+        pb(bag, 'charDark', 16300, 16600, cy - 150, cy + 150, botH, shaftBot);       // base / collar
+        pb(bag, 'white', 16315, 16585, cy - 135, cy + 135, shaftBot, shaftTop);      // shaft
+        pb(bag, 'charDark', 16300, 16600, cy - 150, cy + 150, shaftTop, topH);       // capital
       }
     }
 
@@ -3462,10 +3472,7 @@ window.HouseScene = (function () {
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
-      // band floor tiles (inset from walls)
-      pb(eBag, 'balcTile', 4965, 8085, -596, 1360, L.f1, L.f1 + 0.012);   // utility
-      pb(eBag, 'balcTile', 8300, 9320, -596, 1360, L.f1, L.f1 + 0.012);   // common bath
-      pb(eBag, 'balcTile', 9536, 12370, -596, 1360, L.f1, L.f1 + 0.012);  // wet kitchen
+      // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // parapet (terrace) — continuous closed loop, no gaps
       pb(eBag, 'charcoal', X0, eastX[1], -762, -612, L.roof, L.parapetTop);                                  // south wall (flush with slab edge)
       pb(eBag, 'charcoal', X0, eastX[1], 9720, 9870, L.roof, L.parapetTop);                                  // north wall
@@ -3570,152 +3577,21 @@ window.HouseScene = (function () {
 
       // Roof terrace: no furniture (open deck only — tanks, solar, mumty remain)
 
-      // east outdoor structure
+      // East outdoor structure that stays on the exterior shell (full-height,
+      // needed for Exterior view + walkthrough silhouette). Portico / balcony
+      // *decks* live in separate outdoor0/1/2 groups so floor cutaways can show
+      // them without revealing the whole multi-storey shell.
       liftTower(eBag, L.liftTop, [L.porticoFl, L.f1, L.f2]);
       pb(eBag, 'charDark', liftOX[0] - 40, liftOX[1] + 40, liftOY[0] - 40, liftOY[1] + 40, L.liftTop, L.liftTop + 0.05);
       externalStair(eBag, true);
       columnsEast(eBag, L.roof - L.slabT);
-      // portico floor + warm stone tile + charcoal curb with limestone cap
-      pb(eBag, 'concrete', eastX[0], eastX[1], portY[0], portY[1], 0, L.porticoFl);
-      pb(eBag, 'balcTile', eastX[0] + 50, eastX[1] - 50, portY[0] + 50, portY[1] - 50, L.porticoFl, L.porticoFl + 0.014);
-      pb(eBag, 'charDark', eastX[0] - 20, eastX[1] + 20, portY[0] - 20, portY[0] + 40, 0, L.porticoFl + 0.04);
-      pb(eBag, 'charDark', eastX[0] - 20, eastX[1] + 20, portY[1] - 40, portY[1] + 20, 0, L.porticoFl + 0.04);
-      pb(eBag, 'charDark', eastX[1] - 40, eastX[1] + 20, portY[0], portY[1], 0, L.porticoFl + 0.04);
-      pb(eBag, 'copingLight', eastX[0] - 25, eastX[1] + 25, portY[0] - 25, portY[0] + 45, L.porticoFl + 0.04, L.porticoFl + 0.06);
-      pb(eBag, 'copingLight', eastX[0] - 25, eastX[1] + 25, portY[1] - 45, portY[1] + 25, L.porticoFl + 0.04, L.porticoFl + 0.06);
-      pb(eBag, 'copingLight', eastX[1] - 45, eastX[1] + 25, portY[0], portY[1], L.porticoFl + 0.04, L.porticoFl + 0.06);
-
-      // Portico planting — pots at columns + entry planters (clear of car + stairs)
-      Fur.planter(eBag, 16050, 8720, L.porticoFl, 0.95);
-      Fur.planter(eBag, 16050, 4290, L.porticoFl, 0.95);
-      Fur.planter(eBag, 16050, 150, L.porticoFl, 0.9);
-      Fur.planter(eBag, 16800, 8720, L.porticoFl, 0.85);
-      Fur.planter(eBag, 16800, 4290, L.porticoFl, 0.85);
-      Fur.planter(eBag, 13000, 8500, L.porticoFl, 0.75); // near north of portico
-      Fur.planter(eBag, 13000, 400, L.porticoFl, 0.75);  // south edge
-      // Low shrubs in planters already; add small bougainvillea pots flanking office stoop
-      Fur.planter(eBag, 13200, 5400, L.porticoFl, 0.7);
-      Fur.planter(eBag, 13200, 7000, L.porticoFl, 0.7);
-
-      // Parking bay markings under car (plan ~15200, 6420) — white paint lines on tile
-      (function parkingBay() {
-        const bx0 = 14200, bx1 = 16500, by0 = 5200, by1 = 7600;
-        // Outer bay rectangle
-        pb(eBag, 'roadLine', bx0, bx1, by0, by0 + 50, L.porticoFl + 0.014, L.porticoFl + 0.022);
-        pb(eBag, 'roadLine', bx0, bx1, by1 - 50, by1, L.porticoFl + 0.014, L.porticoFl + 0.022);
-        pb(eBag, 'roadLine', bx0, bx0 + 50, by0, by1, L.porticoFl + 0.014, L.porticoFl + 0.022);
-        pb(eBag, 'roadLine', bx1 - 50, bx1, by0, by1, L.porticoFl + 0.014, L.porticoFl + 0.022);
-        // Corner L-marks (parking-bay style)
-        for (const [cx0, cy0, sx, sy] of [
-          [bx0, by0, 1, 1], [bx1, by0, -1, 1], [bx0, by1, 1, -1], [bx1, by1, -1, -1]
-        ]) {
-          pb(eBag, 'roadLine', cx0, cx0 + sx * 350, cy0, cy0 + sy * 45, L.porticoFl + 0.015, L.porticoFl + 0.025);
-          pb(eBag, 'roadLine', cx0, cx0 + sx * 45, cy0, cy0 + sy * 350, L.porticoFl + 0.015, L.porticoFl + 0.025);
-        }
-        // Centre wheel-stop curb at house face side of bay
-        pb(eBag, 'charDark', 14200, 14320, 5400, 7400, L.porticoFl, L.porticoFl + 0.12);
-        pb(eBag, 'copingLight', 14190, 14330, 5390, 7410, L.porticoFl + 0.12, L.porticoFl + 0.14);
-      })();
-
-      // FF East & South Balcony Slabs (with lift shaft + stair void cutouts)
-      drawFFSlab(eBag, L.f1 - L.slabT, L.f1);
-
-      // Soffits under FF deck (match slab footprint, inset slightly)
-      const sof0 = L.f1 - L.slabT - 0.008, sof1 = L.f1 - L.slabT;
-      pb(eBag, 'charDark', 60, 17302, -702, 200, sof0, sof1);                         // south / portico-top
-      pb(eBag, 'charDark', 60, 12600, 230, 1000, sof0, sof1);                           // west of lift
-      pb(eBag, 'charDark', 14090, 17302, 280, 1000, sof0, sof1);                       // over mid-landing
-      pb(eBag, 'charDark', 60, 12600, 1040, LIFT_NY, sof0, sof1);                      // west of lift (mid)
-      pb(eBag, 'charDark', VOID_EX + 60, 17302, 1100, 3850, sof0, sof1);               // outer east deck
-      pb(eBag, 'charDark', 60, VOID_WX - 60, LIFT_NY + 40, 3850, sof0, sof1);          // east balcony corridor
-      pb(eBag, 'charDark', 60, 17302, 3930, Y1n - 60, sof0, sof1);                     // north of stair head
-
-      // Balcony tile finishes (with lift shaft + stair void cutouts)
-      drawFFTiles(eBag, 'balcTile', L.f1, L.f1 + 0.012);
-
-      // FF fascia 450 + continuous warm accent nose (all four edges)
-      pb(eBag, 'charDark', eastX[1] - 90, eastX[1] + 10, -762, 9880, L.f1 - 0.45, L.f1 + 0.012);
-      pb(eBag, 'charDark', 0, eastX[1] + 10, 9780, 9880, L.f1 - 0.45, L.f1 + 0.012);
-      pb(eBag, 'charDark', -10, 90, -762, 9880, L.f1 - 0.45, L.f1 + 0.012);
-      pb(eBag, 'charDark', 0, 17362 + 10, -762 - 90, -762 + 10, L.f1 - 0.45, L.f1 + 0.012);
-      pb(eBag, 'accentWarm', eastX[1] - 100, eastX[1] + 18, -770, 9890, L.f1 - 0.53, L.f1 - 0.45);
-      pb(eBag, 'accentWarm', -20, eastX[1] + 18, 9770, 9890, L.f1 - 0.53, L.f1 - 0.45);
-      pb(eBag, 'accentWarm', -18, 100, -770, 9890, L.f1 - 0.53, L.f1 - 0.45);
-      pb(eBag, 'accentWarm', -20, eastX[1] + 18, -780, -740, L.f1 - 0.53, L.f1 - 0.45);
-
-      // FF perimeter railings + stair-void enclosure
-      railing(eBag, 'x', -762, 0, 4805, L.f1, 1.0); // south balcony railing (west of service bands)
-      railing(eBag, 'y', 0, -762, 0, L.f1, 1.0); // south balcony west end cap
-      railing(eBag, 'x', -762, 12650, 17362, L.f1, 1.0); // portico-top south edge railing
-      railing(eBag, 'y', 17282, -762, 9790, L.f1, 1.0); // continuous outer east edge
-      externalStairVoidRails(eBag, L.f1);
-      railing(eBag, 'x', 9790, 80, 17282, L.f1, 1.0); // north balcony railing
-      railing(eBag, 'y', 80, 8870, 9790, L.f1, 1.0); // north balcony west railing
-
-      // SF East & South Balcony Slabs (with cutout voids for Stairs, Duplex, and Lift)
-      drawSFSlab(eBag, L.f2 - L.slabT, L.f2);
-      drawSFSoffit(eBag, L.f2 - L.slabT - 0.008, L.f2 - L.slabT);
-      drawSFTiles(eBag, 'balcTile', L.f2, L.f2 + 0.012);
-
-      // SF fascia 450 + continuous warm accent nose (all four edges)
-      pb(eBag, 'charDark', eastX[1] - 90, eastX[1] + 10, -762, 9880, L.f2 - 0.45, L.f2 + 0.012);
-      pb(eBag, 'charDark', 0, eastX[1] + 10, 9780, 9880, L.f2 - 0.45, L.f2 + 0.012);
-      pb(eBag, 'charDark', -10, 90, -762, 9880, L.f2 - 0.45, L.f2 + 0.012);
-      pb(eBag, 'charDark', 0, 17362 + 10, -762 - 90, -762 + 10, L.f2 - 0.45, L.f2 + 0.012);
-      pb(eBag, 'accentWarm', eastX[1] - 100, eastX[1] + 18, -770, 9890, L.f2 - 0.53, L.f2 - 0.45);
-      pb(eBag, 'accentWarm', -20, eastX[1] + 18, 9770, 9890, L.f2 - 0.53, L.f2 - 0.45);
-      pb(eBag, 'accentWarm', -18, 100, -770, 9890, L.f2 - 0.53, L.f2 - 0.45);
-      pb(eBag, 'accentWarm', -20, eastX[1] + 18, -780, -740, L.f2 - 0.53, L.f2 - 0.45);
-
-      // SF railings (outer perimeter only)
-      railing(eBag, 'x', -762, 0, 17362, L.f2, 1.0);
-      railing(eBag, 'y', 0, -762, 0, L.f2, 1.0);
-      railing(eBag, 'y', 17282, -762, 9790, L.f2, 1.0);
-      railing(eBag, 'x', 9790, 80, 17282, L.f2, 1.0);
-      railing(eBag, 'y', 80, 8870, 9790, L.f2, 1.0);
-
-      // Balcony amenity — planters on FF + SF, loungers + side tables on SF east deck
-      Fur.planter(eBag, 16280, 8430, L.f1, 1.0);
-      Fur.planter(eBag, 13350, 8200, L.f1, 0.9);
-      Fur.planter(eBag, 15800, 2800, L.f1, 0.85);
-      Fur.planter(eBag, 16280, 8430, L.f2, 1.1);
-      Fur.planter(eBag, 16280, 2450, L.f2, 1.1);
-      Fur.planter(eBag, 12950, 8430, L.f2, 0.95);
-      Fur.lounger(eBag, 15050, 16350, 5500, 6280, L.f2);
-      Fur.lounger(eBag, 15050, 16350, 6600, 7380, L.f2);
-      Fur.table(eBag, 15200, 15800, 6400, 7000, L.f2, 0.40); // side table between loungers
-      Fur.planter(eBag, 14800, 7800, L.f2, 0.8);
 
       // Terrace slab extensions and soffits over second-floor balconies
       pb(eBag, 'white', 0, 17362, -762, Y1n, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, 17302, -702, Y1n - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      // FF North Balcony Slabs, Soffits & Tiling
-      pb(eBag, 'white', 0, 17362, Y1n, Y1n + 1000, L.f1 - L.slabT, L.f1);
-      pb(eBag, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.f1 - L.slabT - 0.008, L.f1 - L.slabT);
-      pb(eBag, 'balcTile', 30, 17332, Y1n, Y1n + 1000 - 30, L.f1, L.f1 + 0.012);
-      // SF North Balcony Slabs, Soffits & Tiling
-      pb(eBag, 'white', 0, 17362, Y1n, Y1n + 1000, L.f2 - L.slabT, L.f2);
-      pb(eBag, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.f2 - L.slabT - 0.008, L.f2 - L.slabT);
-      pb(eBag, 'balcTile', 30, 17332, Y1n, Y1n + 1000 - 30, L.f2, L.f2 + 0.012);
       // Terrace North Balcony Slabs & Soffits
       pb(eBag, 'white', 0, 17362, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      // GF north stoop (main door) — charcoal + warm stone tread finish
-      pb(eBag, 'plinth', 7800, 9500, Y1n, 10070, 0, L.f0);
-      pb(eBag, 'copingLight', 7820, 9480, Y1n + 20, 10050, L.f0, L.f0 + 0.02);
-      let st = 0.60;
-      for (let i = 0; i < 4; i++) {
-        pb(eBag, 'plinth', 7800, 9500, 10070 + i * 300, 10070 + (i + 1) * 300, 0, st);
-        pb(eBag, 'copingLight', 7820, 9480, 10080 + i * 300, 10070 + (i + 1) * 300 - 10, st, st + 0.018);
-        st -= 0.15;
-      }
-      // office stoop in portico — same language as north stoop
-      st = 0.60;
-      for (let i = 0; i < 3; i++) {
-        pb(eBag, 'plinth', 12650 + i * 300, 12950 + i * 300, 5580, 6780, L.porticoFl, st);
-        pb(eBag, 'copingLight', 12660 + i * 300, 12940 + i * 300, 5600, 6760, st, st + 0.018);
-        st -= 0.15;
-      }
       // wall lamps — matching dark body + steel bezel + warm lens (N main, E doors GF/FF/SF)
       pb(eBag, 'charDark', 9320, 9420, NB[0] - 70, NB[0], L.f0 + 1.7, L.f0 + 2.05);
       pb(eBag, 'steel', 9330, 9410, NB[0] - 78, NB[0] - 4, L.f0 + 1.74, L.f0 + 2.01);
@@ -3995,6 +3871,133 @@ window.HouseScene = (function () {
     })();
     const exterior = eBag.build(THREE, materials); exterior.name = 'exterior'; root.add(exterior);
 
+    /* ======== Per-level outdoor amenity (portico / east balconies) ========
+       Separate from the multi-storey exterior shell so orbit floor views can
+       show the portico or balcony for that level without covering the plan. */
+    const outdoors = [];
+    (function buildOutdoorAmenity() {
+      // --- outdoor0: GF portico + stoops ---
+      const o0 = makeBag(THREE);
+      pb(o0, 'concrete', eastX[0], eastX[1], portY[0], portY[1], 0, L.porticoFl);
+      pb(o0, 'balcTile', eastX[0] + 50, eastX[1] - 50, portY[0] + 50, portY[1] - 50, L.porticoFl, L.porticoFl + 0.014);
+      pb(o0, 'charDark', eastX[0] - 20, eastX[1] + 20, portY[0] - 20, portY[0] + 40, 0, L.porticoFl + 0.04);
+      pb(o0, 'charDark', eastX[0] - 20, eastX[1] + 20, portY[1] - 40, portY[1] + 20, 0, L.porticoFl + 0.04);
+      pb(o0, 'charDark', eastX[1] - 40, eastX[1] + 20, portY[0], portY[1], 0, L.porticoFl + 0.04);
+      pb(o0, 'copingLight', eastX[0] - 25, eastX[1] + 25, portY[0] - 25, portY[0] + 45, L.porticoFl + 0.04, L.porticoFl + 0.06);
+      pb(o0, 'copingLight', eastX[0] - 25, eastX[1] + 25, portY[1] - 45, portY[1] + 25, L.porticoFl + 0.04, L.porticoFl + 0.06);
+      pb(o0, 'copingLight', eastX[1] - 45, eastX[1] + 25, portY[0], portY[1], L.porticoFl + 0.04, L.porticoFl + 0.06);
+      Fur.planter(o0, 16050, 8720, L.porticoFl, 0.95);
+      Fur.planter(o0, 16050, 4290, L.porticoFl, 0.95);
+      Fur.planter(o0, 16050, 150, L.porticoFl, 0.9);
+      Fur.planter(o0, 16800, 8720, L.porticoFl, 0.85);
+      Fur.planter(o0, 16800, 4290, L.porticoFl, 0.85);
+      Fur.planter(o0, 13000, 8500, L.porticoFl, 0.75);
+      Fur.planter(o0, 13000, 400, L.porticoFl, 0.75);
+      Fur.planter(o0, 13200, 5400, L.porticoFl, 0.7);
+      Fur.planter(o0, 13200, 7000, L.porticoFl, 0.7);
+      (function parkingBay() {
+        const bx0 = 14200, bx1 = 16500, by0 = 5200, by1 = 7600;
+        pb(o0, 'roadLine', bx0, bx1, by0, by0 + 50, L.porticoFl + 0.014, L.porticoFl + 0.022);
+        pb(o0, 'roadLine', bx0, bx1, by1 - 50, by1, L.porticoFl + 0.014, L.porticoFl + 0.022);
+        pb(o0, 'roadLine', bx0, bx0 + 50, by0, by1, L.porticoFl + 0.014, L.porticoFl + 0.022);
+        pb(o0, 'roadLine', bx1 - 50, bx1, by0, by1, L.porticoFl + 0.014, L.porticoFl + 0.022);
+        for (const [cx0, cy0, sx, sy] of [
+          [bx0, by0, 1, 1], [bx1, by0, -1, 1], [bx0, by1, 1, -1], [bx1, by1, -1, -1]
+        ]) {
+          pb(o0, 'roadLine', cx0, cx0 + sx * 350, cy0, cy0 + sy * 45, L.porticoFl + 0.015, L.porticoFl + 0.025);
+          pb(o0, 'roadLine', cx0, cx0 + sx * 45, cy0, cy0 + sy * 350, L.porticoFl + 0.015, L.porticoFl + 0.025);
+        }
+        pb(o0, 'charDark', 14200, 14320, 5400, 7400, L.porticoFl, L.porticoFl + 0.12);
+        pb(o0, 'copingLight', 14190, 14330, 5390, 7410, L.porticoFl + 0.12, L.porticoFl + 0.14);
+      })();
+      // GF north stoop (main door)
+      pb(o0, 'plinth', 7800, 9500, Y1n, 10070, 0, L.f0);
+      pb(o0, 'copingLight', 7820, 9480, Y1n + 20, 10050, L.f0, L.f0 + 0.02);
+      let st = 0.60;
+      for (let i = 0; i < 4; i++) {
+        pb(o0, 'plinth', 7800, 9500, 10070 + i * 300, 10070 + (i + 1) * 300, 0, st);
+        pb(o0, 'copingLight', 7820, 9480, 10080 + i * 300, 10070 + (i + 1) * 300 - 10, st, st + 0.018);
+        st -= 0.15;
+      }
+      // office stoop in portico
+      st = 0.60;
+      for (let i = 0; i < 3; i++) {
+        pb(o0, 'plinth', 12650 + i * 300, 12950 + i * 300, 5580, 6780, L.porticoFl, st);
+        pb(o0, 'copingLight', 12660 + i * 300, 12940 + i * 300, 5600, 6760, st, st + 0.018);
+        st -= 0.15;
+      }
+      const g0 = o0.build(THREE, materials); g0.name = 'outdoor0'; root.add(g0); outdoors.push(g0);
+
+      // --- outdoor1: FF east / south / north balconies + service-band tiles ---
+      const o1 = makeBag(THREE);
+      drawFFSlab(o1, L.f1 - L.slabT, L.f1);
+      const sof0 = L.f1 - L.slabT - 0.008, sof1 = L.f1 - L.slabT;
+      pb(o1, 'charDark', 60, 17302, -702, 200, sof0, sof1);
+      pb(o1, 'charDark', 60, 12600, 230, 1000, sof0, sof1);
+      pb(o1, 'charDark', 14090, 17302, 280, 1000, sof0, sof1);
+      pb(o1, 'charDark', 60, 12600, 1040, LIFT_NY, sof0, sof1);
+      pb(o1, 'charDark', VOID_EX + 60, 17302, 1100, 3850, sof0, sof1);
+      pb(o1, 'charDark', 60, VOID_WX - 60, LIFT_NY + 40, 3850, sof0, sof1);
+      pb(o1, 'charDark', 60, 17302, 3930, Y1n - 60, sof0, sof1);
+      drawFFTiles(o1, 'balcTile', L.f1, L.f1 + 0.012);
+      pb(o1, 'balcTile', 4965, 8085, -596, 1360, L.f1, L.f1 + 0.012);   // utility
+      pb(o1, 'balcTile', 8300, 9320, -596, 1360, L.f1, L.f1 + 0.012);   // common bath
+      pb(o1, 'balcTile', 9536, 12370, -596, 1360, L.f1, L.f1 + 0.012);  // wet kitchen
+      pb(o1, 'charDark', eastX[1] - 90, eastX[1] + 10, -762, 9880, L.f1 - 0.45, L.f1 + 0.012);
+      pb(o1, 'charDark', 0, eastX[1] + 10, 9780, 9880, L.f1 - 0.45, L.f1 + 0.012);
+      pb(o1, 'charDark', -10, 90, -762, 9880, L.f1 - 0.45, L.f1 + 0.012);
+      pb(o1, 'charDark', 0, 17362 + 10, -762 - 90, -762 + 10, L.f1 - 0.45, L.f1 + 0.012);
+      pb(o1, 'accentWarm', eastX[1] - 100, eastX[1] + 18, -770, 9890, L.f1 - 0.53, L.f1 - 0.45);
+      pb(o1, 'accentWarm', -20, eastX[1] + 18, 9770, 9890, L.f1 - 0.53, L.f1 - 0.45);
+      pb(o1, 'accentWarm', -18, 100, -770, 9890, L.f1 - 0.53, L.f1 - 0.45);
+      pb(o1, 'accentWarm', -20, eastX[1] + 18, -780, -740, L.f1 - 0.53, L.f1 - 0.45);
+      railing(o1, 'x', -762, 0, 4805, L.f1, 1.0);
+      railing(o1, 'y', 0, -762, 0, L.f1, 1.0);
+      railing(o1, 'x', -762, 12650, 17362, L.f1, 1.0);
+      railing(o1, 'y', 17282, -762, 9790, L.f1, 1.0);
+      externalStairVoidRails(o1, L.f1);
+      railing(o1, 'x', 9790, 80, 17282, L.f1, 1.0);
+      railing(o1, 'y', 80, 8870, 9790, L.f1, 1.0);
+      // North balcony
+      pb(o1, 'white', 0, 17362, Y1n, Y1n + 1000, L.f1 - L.slabT, L.f1);
+      pb(o1, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.f1 - L.slabT - 0.008, L.f1 - L.slabT);
+      pb(o1, 'balcTile', 30, 17332, Y1n, Y1n + 1000 - 30, L.f1, L.f1 + 0.012);
+      Fur.planter(o1, 16280, 8430, L.f1, 1.0);
+      Fur.planter(o1, 13350, 8200, L.f1, 0.9);
+      Fur.planter(o1, 15800, 2800, L.f1, 0.85);
+      const g1 = o1.build(THREE, materials); g1.name = 'outdoor1'; root.add(g1); outdoors.push(g1);
+
+      // --- outdoor2: SF east / south / north balconies + loungers ---
+      const o2 = makeBag(THREE);
+      drawSFSlab(o2, L.f2 - L.slabT, L.f2);
+      drawSFSoffit(o2, L.f2 - L.slabT - 0.008, L.f2 - L.slabT);
+      drawSFTiles(o2, 'balcTile', L.f2, L.f2 + 0.012);
+      pb(o2, 'charDark', eastX[1] - 90, eastX[1] + 10, -762, 9880, L.f2 - 0.45, L.f2 + 0.012);
+      pb(o2, 'charDark', 0, eastX[1] + 10, 9780, 9880, L.f2 - 0.45, L.f2 + 0.012);
+      pb(o2, 'charDark', -10, 90, -762, 9880, L.f2 - 0.45, L.f2 + 0.012);
+      pb(o2, 'charDark', 0, 17362 + 10, -762 - 90, -762 + 10, L.f2 - 0.45, L.f2 + 0.012);
+      pb(o2, 'accentWarm', eastX[1] - 100, eastX[1] + 18, -770, 9890, L.f2 - 0.53, L.f2 - 0.45);
+      pb(o2, 'accentWarm', -20, eastX[1] + 18, 9770, 9890, L.f2 - 0.53, L.f2 - 0.45);
+      pb(o2, 'accentWarm', -18, 100, -770, 9890, L.f2 - 0.53, L.f2 - 0.45);
+      pb(o2, 'accentWarm', -20, eastX[1] + 18, -780, -740, L.f2 - 0.53, L.f2 - 0.45);
+      railing(o2, 'x', -762, 0, 17362, L.f2, 1.0);
+      railing(o2, 'y', 0, -762, 0, L.f2, 1.0);
+      railing(o2, 'y', 17282, -762, 9790, L.f2, 1.0);
+      railing(o2, 'x', 9790, 80, 17282, L.f2, 1.0);
+      railing(o2, 'y', 80, 8870, 9790, L.f2, 1.0);
+      pb(o2, 'white', 0, 17362, Y1n, Y1n + 1000, L.f2 - L.slabT, L.f2);
+      pb(o2, 'charDark', 60, 17302, Y1n, Y1n + 1000 - 60, L.f2 - L.slabT - 0.008, L.f2 - L.slabT);
+      pb(o2, 'balcTile', 30, 17332, Y1n, Y1n + 1000 - 30, L.f2, L.f2 + 0.012);
+      Fur.planter(o2, 16280, 8430, L.f2, 1.1);
+      Fur.planter(o2, 16280, 2450, L.f2, 1.1);
+      Fur.planter(o2, 12950, 8430, L.f2, 0.95);
+      Fur.lounger(o2, 15050, 16350, 5500, 6280, L.f2);
+      Fur.lounger(o2, 15050, 16350, 6600, 7380, L.f2);
+      Fur.table(o2, 15200, 15800, 6400, 7000, L.f2, 0.40);
+      Fur.planter(o2, 14800, 7800, L.f2, 0.8);
+      const g2 = o2.build(THREE, materials); g2.name = 'outdoor2'; root.add(g2); outdoors.push(g2);
+    })();
+
     /* ======== DOLLHOUSE floors ======== */
     const floorsOut = [];
     const FLOOR_DEFS = [
@@ -4105,11 +4108,9 @@ window.HouseScene = (function () {
 
       /* ---- per-floor specials & furniture ---- */
       if (fi === 0) {
-        // Dollhouse context only: short lift/columns (cut height). Full outdoor
-        // massing is on `exterior` — walkthrough shows both without duplicating
-        // full portico slabs / full-height towers.
-        liftTower(bag, cut, [L.porticoFl]);
-        columnsEast(bag, cut);
+        // This storey only (0 → cut). Full multi-storey tower lives on exterior.
+        liftTower(bag, cut, [L.porticoFl], 0);
+        columnsEast(bag, cut, 0);
         // furniture
         // master bed (head South, cupboards along entire West wall, window integrated)
         pb(bag, 'rug', 1400, 4400, 200, 2600, fY + 0.012, fY + 0.018); // master bedroom rug
@@ -4243,9 +4244,9 @@ window.HouseScene = (function () {
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
         glazing(bag, { face: 'W', band: [4805, 4920], floorY: fY, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
-        // Cut-height lift/columns for dollhouse context (full outdoor deck on exterior)
-        liftTower(bag, cut, [fY]);
-        columnsEast(bag, cut);
+        // This storey only (FF slab → cut). Not the full tower from ground.
+        liftTower(bag, cut, [fY], fY);
+        columnsEast(bag, cut, fY);
 
         // Internal stair FF→mid: flight A + landing only (flight B owned by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
@@ -4560,9 +4561,9 @@ window.HouseScene = (function () {
       }
 
       if (fi === 2) {
-        // Cut-height lift/columns for dollhouse; outdoor deck amenity on exterior
-        liftTower(bag, cut, [fY]);
-        columnsEast(bag, cut);
+        // This storey only (SF slab → cut). Not the full tower from ground.
+        liftTower(bag, cut, [fY], fY);
+        columnsEast(bag, cut, fY);
         // Duplex void safety railings overlooking the first floor hall
         railing(bag, 'y', 6020, 6000, 8641, fY, 1.0);
         railing(bag, 'x', 6000, 6020, 8241, fY, 1.0);
@@ -4715,7 +4716,7 @@ window.HouseScene = (function () {
     warmFix(3700, 480, L.f1 + 0.88, 1);
 
     return {
-      root, site, exterior, floors: floorsOut, views, lights,
+      root, site, exterior, outdoors, floors: floorsOut, views, lights,
       LEVELS: L, COLORS: C,
       bounds: { minX: -3, maxX: 24.5, minZ: -21, maxZ: 3, minY: 0, maxY: 14 },
       nonCollideMaterials: NON_COLLIDE_MATERIALS,
