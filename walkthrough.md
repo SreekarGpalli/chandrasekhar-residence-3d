@@ -1,6 +1,6 @@
-# Walkthrough — House3D Updates
+# House3D — Development Changelog
 
-All modifications have been successfully implemented and verified in [index.html](file:///c:/Users/sreek/Desktop/VC/House3D/index.html).
+All modifications have been successfully implemented and verified in [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js) (3D model) with the orbit viewer ([index.html](file:///c:/Users/sreek/Desktop/VC/House3D/index.html)) and first-person walkthrough ([walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html)).
 
 ---
 
@@ -109,6 +109,7 @@ We resolved the walkthrough navigation limitations, giving users the freedom to 
   - **NORTH BALCONY** (First Floor / Second Floor)
   - **EAST BALCONY** (First Floor / Second Floor)
   - **LIFT** (Ground Floor / First Floor / Second Floor)
+  - **TERRACE** (Roof)
 
 ---
 
@@ -200,5 +201,65 @@ Per the mounting wall alignment of other fixtures like toilets and vanity basins
 - **Second Floor Bath 03**: Center $x = 5370$, South wall ($y = 230$), facing North (`'N'`).
 
 The common bathroom on the first floor is correctly excluded from modifications, as requested.
+
+---
+
+## Phase 8 — Architectural Revisions: South Balconies, Expanded Portico & Raised East Balconies (Completed)
+
+We implemented requested architectural design updates to the 3D model in [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js):
+
+### Summary of Changes Made
+
+#### 1. 2.5-ft South Balcony (First Floor & Second Floor)
+- Extended a 2.5-ft ($762\text{ mm}$) balcony slab, tile finish, charcoal fascia, and stainless steel/glass railing along the South facade ($y = -762\text{ mm}$ down from $y = 0$) spanning $x = 4920\text{ mm}$ to $x = 16600\text{ mm}$.
+- **First Floor Utility Premises**: On the First Floor, this south balcony serves as a service balcony for the holiday premises (wet kitchen and dining area). The South wall window schedule `OPEN.f1.S` was updated with a dedicated service access door at $x = 10800\text{ mm}$.
+- **Second Floor**: Added a South balcony access French door at $x = 10000\text{ mm}$ in `OPEN.f2.S`.
+
+#### 2. Expanded Ground Floor Portico
+- Extended the Portico footprint southwards from $y = 3975\text{ mm}$ down to $y = -762\text{ mm}$ ($x = 12650\text{ mm}$ to $16600\text{ mm}$).
+- Added structural column supports in `columnsEast` at $y = -612\text{ mm}$ along with extended concrete slab and tile finishes to support the upper balcony overhangs and stair landings.
+
+#### 3. Raised East Balconies (+2.5 ft)
+- Elevated the East Balcony floor slabs on the First Floor and Second Floor by $2.5\text{ ft}$ ($0.762\text{ m}$) above the main interior floors ($L.f1 + 0.762\text{ m} = 4.865\text{ m}$ for FF, and $L.f2 + 0.762\text{ m} = 8.218\text{ m}$ for SF).
+- Added 3-step interior transition flights (`flight()`) inside the doorway thresholds ($x = 12420\text{ mm}$ to $12650\text{ mm}$) to step up smoothly from the interior floors to the raised East Balcony decks.
+- Adjusted external stair riser calculation (`RISE_E`) and flight risers so visitors arriving via the external stair land at the raised East Balcony elevation ($4.865\text{ m}$).
+- Raised all East Balcony railings, soffits, and fascia boards to align with the new $+2.5\text{ ft}$ height.
+
+---
+
+## Phase 9 — First Floor South Band per Owner Sketch (Completed)
+
+Implemented the owner's hand-drawn first-floor plan: the south side now properly utilizes the balcony depth with two enclosed service bands (≈6.5 ft deep, y = -762 to 1411) plus the original 2.5 ft open balcony along the master bedroom.
+
+### Layout (east → west, matching the sketch; "C.B" = Common Bathroom, relocated per owner)
+1. **WET KITCHEN** (x 9486..12420): stove counter + 2×2 hob + upper cupboards on the East wall (y 620..1411, clear of the door), the existing SE secure grill door to the stair landing (sketch "Door"), and a sink (North) + dishwasher (South) counter against the West divider. A new 1130 mm full-height opening (c = 10650) connects it to the main kitchen, flush with the west counter end.
+2. **COMMON BATH** (x 8250..9370, relocated from its old cell at x 4916..6476): WC against the outer South wall facing North, high ventilator window (c = 8810, w = 600, sill 1700), and a walnut door in its West wall (c = 1000, w = 700) opening off the utility. The old bathroom cell was demolished (north wall, WC, door) and is now an open **dining alcove** (second DINING rect, 4921..6476 × 233..1413) lit by the existing c = 5700 vent window.
+3. **UTILITY** (x 4920..8135, extended west to the dining|bedroom partition line): entered via the dining sliding glass door (c = 7350, w = 1200, 2 panes, clear of the bathroom); stacked washer + dryer cupboard in the **North-West corner facing East** (x 4920..5540, y 250..1413), wash basin on the **South wall** under a grilled window (c = 7700, w = 800), and a full-height **secure grill door in the SW corner West wall** (x 4805..4920, c = -207, w = 800) opening onto the remaining south balcony behind the bedroom. The dining|utility north wall (x 4920..6595, y 1413..1526) was rebuilt; the FF south shell now runs x 230..4805 only (the c = 5700 vent window was removed with it).
+4. **SOUTH BALCONY** (x 0..4805): 2.5 ft open strip with railing along the master bedroom, now reachable from the utility through the SW grill door.
+
+### Structural / shell changes (both exterior + dollhouse groups)
+- Removed the old FF south shell wall stretch (x 6595..12420, y 0..230) that previously sliced through both bands (with its two stranded grill windows at c 7595 / c 10890); FF south shell now runs x 230..6595 only.
+- New weather-secure outer wall at y -762..-646 spanning x 6480..12420 with two grilled windows; FF east shell starts at y 1411 with a hand-drawn SE corner wall (y -762..1411) carrying the grill door, fixing the door previously half-clipped at y = 0 and blocked by a counter.
+- Split the full-width south railing/tiles into the west strip (x 0..6480) + portico-top (x 12650..16600); band floors tiled inset; west cheek extended down to y -646.
+- ROOMS/downlights updated (WET KITCHEN, UTILITY, SOUTH BALCONY) — 4 new band downlights.
+
+### Fixes found along the way
+- Deleted a misplaced duplicate of the utility program on the **Ground Floor** (counters, hob, range hood, dishwasher, wall cabinets floating in mid-air over the south yard and intersecting the GF kitchen counters).
+- [walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html): `isPlayerExterior()` treated plan y < 0 as "YARD / DRIVEWAY"; upper floors now allow y ≥ -762 so the service bands and south balconies label correctly.
+
+### Verification
+- `node --check` clean; zero console errors in both viewers.
+- Raycast geometry audit (fresh `HouseScene.build` + `THREE.Raycaster`): old shell wall gone in both bands (rays reach the slider/kitchen walls at 1.93 m / 1.91 m), GF yard junk gone (ray hits grass at 0.045 m), washer porthole at x 7.21, C.B door face at x 8.756, hob top at f1+0.875, basin bowl at f1+0.87, grill-door approach clear to floor tile.
+- Walkthrough visual pass: HUD labels (WET KITCHEN / UTILITY / DINING), sink+DW counter, stove + cupboards + grill door, washer stack, basin under window, C.B cupboard, dining slider sight line, and the south facade massing all confirmed on screen.
+
+---
+
+## Verification & Testing
+
+- **Syntax & Compilation**: Verified [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js) with Node.js script execution — 0 errors.
+- **Interactive Viewers**:
+  - Orbit Viewer ([index.html](file:///c:/Users/sreek/Desktop/VC/House3D/index.html)): All layers render cleanly; south balcony overhangs and raised east balcony decks align perfectly.
+  - Walkthrough ([walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html)): First-person walking controller navigates transition steps onto the raised East balcony and through doors out to the south service balcony.
+
 
 

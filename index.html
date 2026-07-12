@@ -189,6 +189,9 @@
 <div id="infoCard" class="hidden">
   <button id="cardClose" aria-label="Close">×</button>
   <h4 id="cardName"></h4>
+  <div class="mm" id="cardMM"></div>
+  <div class="ft" id="cardFT"></div>
+  <div class="ar" id="cardAR"></div>
 </div>
 
 <nav id="views">
@@ -205,7 +208,7 @@
 </div>
 <button id="hintBtn" aria-label="Show controls hint" title="Show controls">?</button>
 
-<button id="mobileRoomBtn" aria-label="Browse rooms" style="display:none">☰</button>
+<button id="mobileRoomBtn" aria-label="Browse rooms">☰</button>
 <div id="drawerOverlay"></div>
 <div id="mobileDrawer" aria-label="Rooms drawer">
   <div class="drawer-handle"></div>
@@ -223,18 +226,37 @@
 <!-- Three.js: served locally from the edge (fast, reliable); CDN as fallback -->
 <script src="lib/three.min.js"></script>
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
-<script>if(!window.THREE){document.querySelector('#loading .ls').textContent='FAILED TO LOAD 3D ENGINE — CHECK NETWORK';document.querySelector('#loading .bar').style.display='none';throw new Error('Three.js failed to load')}</script>
+<!-- GLTF/DRACO loaders (r128) for the real car GLB -->
+<script src="lib/GLTFLoader.js"></script>
+<script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
+<script src="lib/DRACOLoader.js"></script>
+<script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js"></script>
+<script src="houseScene.js?v=20260703_v3"></script>
 <script>
 /* ============================================================
    app.js — interactive layer for the Chandrasekhar Residence
-   Requires: THREE (r128) + HouseScene (scene.js) already loaded.
+   Requires: THREE (r128) + HouseScene (houseScene.js) loaded.
    ============================================================ */
 (function () {
   'use strict';
-  if (!window.THREE || !window.HouseScene) return;
+  function bootFail(msg) {
+    var ls = document.querySelector('#loading .ls');
+    var bar = document.querySelector('#loading .bar');
+    if (ls) ls.textContent = msg;
+    if (bar) bar.style.display = 'none';
+  }
+
+  if (!window.THREE) {
+    bootFail('FAILED TO LOAD 3D ENGINE — CHECK NETWORK CONNECTION');
+    return;
+  }
+  if (!window.HouseScene) {
+    bootFail('FAILED TO INITIALISE SCENE — HOUSESCENE NOT LOADED');
+    return;
+  }
   const THREE = window.THREE;
+  try {
 
   /* ---------- named constants ---------- */
   const ORBIT_SENSITIVITY = 0.0052;
@@ -587,6 +609,18 @@
     if (room.li) room.li.classList.add('sel');
     if (room.mli) room.mli.classList.add('sel');
     $('cardName').textContent = room.r.name;
+    // populate dimension / area fields
+    const dims = room.r.dims;  // e.g. '4575 × 3430'
+    if (dims) {
+      const parts = dims.split(/\s*[×x]\s*/i);
+      if (parts.length === 2) {
+        const wMM = parseInt(parts[0], 10), dMM = parseInt(parts[1], 10);
+        $('cardMM').textContent = (wMM / 1000).toFixed(2) + ' × ' + (dMM / 1000).toFixed(2) + ' m';
+        $('cardFT').textContent = ftin(wMM) + ' × ' + ftin(dMM);
+        const sqft = (wMM * dMM) / (304.8 * 304.8);
+        $('cardAR').textContent = sqft.toFixed(0) + ' sq ft';
+      }
+    }
     card.classList.remove('hidden');
     announce('Selected ' + room.r.name);
     if (fly) {
@@ -723,8 +757,21 @@
   }
   wake(1500);                                    // render through startup
   requestAnimationFrame(frame);
-})();
 
+  // Fail-safe: dismiss loading screen after boot if firstFrame flag hasn't cleared
+  setTimeout(function () {
+    const lo = $('loading');
+    if (lo && !lo.classList.contains('done')) {
+      lo.classList.add('done');
+      setTimeout(() => lo.remove(), 650);
+    }
+  }, 2500);
+
+  } catch (err) {
+    bootFail('FAILED TO RENDER 3D SCENE — ' + (err.message || err));
+    console.error('App boot error:', err);
+  }
+})();
 </script>
 </body>
 </html>

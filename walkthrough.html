@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, interactive-widget=resizes-visual, viewport-fit=cover">
 <title>Chandrasekhar Residence · Walkthrough</title>
 <meta name="description" content="Photoreal first-person walkthrough — Mr Chandrasekhar Family Residence, G+2, Anantapur.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -168,6 +168,11 @@
 </div>
 
 <script>
+  // early error trap: collects uncaught errors so tooling can read them
+  window.__errs = [];
+  window.addEventListener('error', function(e){
+    window.__errs.push((e.message || 'err') + ' @ ' + (e.filename || '') + ':' + (e.lineno || 0));
+  });
   function bootFail(msg){
     var e=document.getElementById('err'); if(e){e.style.display='block';e.textContent=msg;}
     var b=document.getElementById('barFill'); if(b)b.style.background='#e08b7a';
@@ -178,7 +183,7 @@
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <script src="perf.js"></script>
-<script src="houseScene.js"></script>
+<script src="houseScene.js?v=20260703_v2"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -231,11 +236,221 @@ if(!window.THREE || !window.HouseScene){
   camera.rotation.order = 'YXZ';
 
   /* ============================================================
-     procedural textures (canvas based) — give surfaces grain,
-     grout, weave and bump so PBR lighting has detail to react to
+     post pipeline — the single biggest de-cartooning step.
+     scene → HDR target (+depth) → half-res SSAO → depth-aware blur
+     → composite (AO ▸ exposure ▸ ACES ▸ grade ▸ sRGB) → FXAA +
+     vignette + grain → screen. WebGL2 + mid/high tiers only; the
+     low tier keeps the direct MSAA path.
+     ============================================================ */
+  const POST = { on: false };
+  (function buildPost() {
+    if (!renderer.capabilities.isWebGL2 || Q.tier === 'low' || Q.tier === 'potato') return;
+    POST.on = true;
+    // tone mapping moves into the composite pass (scene renders linear HDR)
+    renderer.toneMapping = THREE.NoToneMapping;
+
+    const fsCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const fsGeo = new THREE.PlaneGeometry(2, 2);
+    function pass(frag, uniforms) {
+      const m = new THREE.ShaderMaterial({
+        uniforms, depthTest: false, depthWrite: false,
+        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+        fragmentShader: frag
+      });
+      const sc = new THREE.Scene(); sc.add(new THREE.Mesh(fsGeo, m));
+      return { scene: sc, mat: m, u: uniforms };
+    }
+
+    const aoPass = pass(`
+      varying vec2 vUv;
+      uniform sampler2D tDepth;
+      uniform mat4 projInv;
+      uniform vec2 res;
+      uniform float projScale;   // proj[1][1] * 0.5 (world→UV radius at z=-1)
+      uniform float radius;      // view-space metres
+      float readDepth(vec2 uv){ return texture2D(tDepth, uv).x; }
+      vec3 viewPos(vec2 uv){
+        float d = readDepth(uv);
+        vec4 ndc = vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+        vec4 v = projInv * ndc;
+        return v.xyz / v.w;
+      }
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+      void main(){
+        float d0 = readDepth(vUv);
+        if (d0 >= 0.9999) { gl_FragColor = vec4(1.0); return; }
+        vec3 P = viewPos(vUv);
+        vec3 N = normalize(cross(dFdx(P), dFdy(P)));
+        vec2 aspect = vec2(res.y / res.x, 1.0);
+        float rUV = radius * projScale / max(0.12, -P.z);
+        float ang = hash(vUv * res) * 6.2831853;
+        float sum = 0.0;
+        const int S = 11;
+        for (int i = 0; i < S; i++) {
+          float fi = float(i);
+          float a = ang + fi * 2.3999632;                  // golden-angle spiral
+          vec2 off = vec2(cos(a), sin(a)) * aspect * (rUV * (fi + 0.6) / float(S));
+          vec3 Ps = viewPos(vUv + off);
+          vec3 v = Ps - P;
+          float rangeW = 1.0 - smoothstep(radius, radius * 2.5, length(v));
+          // bias scales with distance: kills flat-wall banding from 24-bit
+          // depth quantisation at glancing angles
+          float bias = 0.02 + 0.004 * -P.z;
+          sum += rangeW * max(0.0, dot(v, N) - bias) / (dot(v, v) + 0.06);
+        }
+        float ao = clamp(1.0 - sum * (1.9 / float(S)), 0.0, 1.0);
+        gl_FragColor = vec4(vec3(ao), 1.0);
+      }`,
+      { tDepth: { value: null }, projInv: { value: new THREE.Matrix4() },
+        res: { value: new THREE.Vector2(1, 1) }, projScale: { value: 1 }, radius: { value: 0.45 } });
+
+    const blurFrag = `
+      varying vec2 vUv;
+      uniform sampler2D tAO; uniform sampler2D tDepth;
+      uniform vec2 dir; uniform vec2 res; uniform vec2 nearFar;
+      float linZ(float d){ return nearFar.x * nearFar.y / (nearFar.y - d * (nearFar.y - nearFar.x)); }
+      void main(){
+        float z0 = linZ(texture2D(tDepth, vUv).x);
+        float sum = texture2D(tAO, vUv).r, wsum = 1.0;
+        for (int i = 1; i <= 4; i++) {
+          vec2 o = dir * float(i) / res;
+          for (int s = 0; s < 2; s++) {
+            vec2 uv = s == 0 ? vUv + o : vUv - o;
+            float z = linZ(texture2D(tDepth, uv).x);
+            // relative view-depth compare smooths walls at glancing angles too
+            float w = exp(-float(i * i) * 0.16) * smoothstep(0.06, 0.0, abs(z - z0) / max(z0, 0.2));
+            sum += texture2D(tAO, uv).r * w; wsum += w;
+          }
+        }
+        gl_FragColor = vec4(vec3(sum / wsum), 1.0);
+      }`;
+    const blurH = pass(blurFrag, { tAO: { value: null }, tDepth: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, res: { value: new THREE.Vector2(1, 1) }, nearFar: { value: new THREE.Vector2(0.1, 460) } });
+    const blurV = pass(blurFrag, { tAO: { value: null }, tDepth: { value: null }, dir: { value: new THREE.Vector2(0, 1) }, res: { value: new THREE.Vector2(1, 1) }, nearFar: { value: new THREE.Vector2(0.1, 460) } });
+
+    const compPass = pass(`
+      varying vec2 vUv;
+      uniform sampler2D tCol; uniform sampler2D tAO;
+      uniform float exposure; uniform float aoStrength;
+      // three.js's fitted ACES (Stephen Hill) — keeps the filmic punch the
+      // built-in ACESFilmicToneMapping had before tone mapping moved here
+      vec3 RRTAndODTFit(vec3 v){
+        vec3 a = v * (v + 0.0245786) - 0.000090537;
+        vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
+        return a / b;
+      }
+      vec3 acesFilmic(vec3 color){
+        const mat3 inM = mat3(
+          vec3(0.59719, 0.07600, 0.02840),
+          vec3(0.35458, 0.90834, 0.13383),
+          vec3(0.04823, 0.01566, 0.83777));
+        const mat3 outM = mat3(
+          vec3(1.60475, -0.10208, -0.00327),
+          vec3(-0.53108, 1.10813, -0.07276),
+          vec3(-0.07367, -0.00605, 1.07602));
+        color *= 1.0 / 0.6;
+        return clamp(outM * RRTAndODTFit(inM * color), 0.0, 1.0);
+      }
+      void main(){
+        vec3 c = texture2D(tCol, vUv).rgb;
+        float ao = mix(1.0, texture2D(tAO, vUv).r, aoStrength);
+        c *= ao;
+        c = acesFilmic(c * exposure);
+        float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        c = mix(vec3(l), c, 1.03);                       // gentle saturation
+        c = pow(max(c, 0.0), vec3(1.0 / 2.2));           // to sRGB
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+      { tCol: { value: null }, tAO: { value: null }, exposure: { value: 0.98 }, aoStrength: { value: 0.55 } });
+
+    const finalPass = pass(`
+      varying vec2 vUv;
+      uniform sampler2D tCol; uniform vec2 res; uniform float t;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+      void main(){
+        vec2 px = 1.0 / res;
+        // FXAA (compact luma-based)
+        vec3 rgbNW = texture2D(tCol, vUv + px * vec2(-1.0, -1.0)).rgb;
+        vec3 rgbNE = texture2D(tCol, vUv + px * vec2( 1.0, -1.0)).rgb;
+        vec3 rgbSW = texture2D(tCol, vUv + px * vec2(-1.0,  1.0)).rgb;
+        vec3 rgbSE = texture2D(tCol, vUv + px * vec2( 1.0,  1.0)).rgb;
+        vec3 rgbM  = texture2D(tCol, vUv).rgb;
+        vec3 luma = vec3(0.299, 0.587, 0.114);
+        float lNW = dot(rgbNW, luma), lNE = dot(rgbNE, luma);
+        float lSW = dot(rgbSW, luma), lSE = dot(rgbSE, luma), lM = dot(rgbM, luma);
+        float lMin = min(lM, min(min(lNW, lNE), min(lSW, lSE)));
+        float lMax = max(lM, max(max(lNW, lNE), max(lSW, lSE)));
+        vec2 d;
+        d.x = -((lNW + lNE) - (lSW + lSE));
+        d.y =  ((lNW + lSW) - (lNE + lSE));
+        float dirReduce = max((lNW + lNE + lSW + lSE) * 0.03125, 0.0078125);
+        float rcpMin = 1.0 / (min(abs(d.x), abs(d.y)) + dirReduce);
+        d = clamp(d * rcpMin, -8.0, 8.0) * px;
+        vec3 rgbA = 0.5 * (texture2D(tCol, vUv + d * (1.0/3.0 - 0.5)).rgb + texture2D(tCol, vUv + d * (2.0/3.0 - 0.5)).rgb);
+        vec3 rgbB = rgbA * 0.5 + 0.25 * (texture2D(tCol, vUv + d * -0.5).rgb + texture2D(tCol, vUv + d * 0.5).rgb);
+        float lB = dot(rgbB, luma);
+        vec3 c = (lB < lMin || lB > lMax) ? rgbA : rgbB;
+        // vignette + grain (also dithers away gradient banding)
+        float vd = distance(vUv, vec2(0.5)) * 1.4142;
+        c *= 1.0 - 0.26 * pow(smoothstep(0.45, 1.0, vd), 1.7);
+        float l0 = dot(c, luma);
+        c += (hash(vUv * res + vec2(t, t * 1.7)) - 0.5) * 0.022 * (1.0 - l0 * 0.65);
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+      { tCol: { value: null }, res: { value: new THREE.Vector2(1, 1) }, t: { value: 0 } });
+
+    let rtScene = null, rtAO = null, rtAOb = null, rtLDR = null, rw = 0, rh = 0;
+    const _dbs = new THREE.Vector2();
+    function ensureRT() {
+      renderer.getDrawingBufferSize(_dbs);
+      const w = Math.max(2, _dbs.x | 0), h = Math.max(2, _dbs.y | 0);
+      if (w === rw && h === rh) return;
+      rw = w; rh = h;
+      [rtScene, rtAO, rtAOb, rtLDR].forEach(rt => { if (rt) rt.dispose(); });
+      const dt = new THREE.DepthTexture(w, h);
+      dt.type = THREE.UnsignedIntType;
+      rtScene = new THREE.WebGLRenderTarget(w, h, {
+        type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+        depthBuffer: true, stencilBuffer: false, depthTexture: dt
+      });
+      const hw = Math.max(2, w >> 1), hh = Math.max(2, h >> 1);
+      rtAO = new THREE.WebGLRenderTarget(hw, hh, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false });
+      rtAOb = new THREE.WebGLRenderTarget(hw, hh, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false });
+      rtLDR = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false });
+      aoPass.u.res.value.set(hw, hh);
+      blurH.u.res.value.set(hw, hh); blurV.u.res.value.set(hw, hh);
+      finalPass.u.res.value.set(w, h);
+    }
+    let frameNo = 0;
+    POST.render = function () {
+      ensureRT();
+      renderer.setRenderTarget(rtScene);
+      renderer.render(scene, camera);
+      aoPass.u.tDepth.value = rtScene.depthTexture;
+      aoPass.u.projInv.value.copy(camera.projectionMatrix).invert();
+      aoPass.u.projScale.value = camera.projectionMatrix.elements[5] * 0.5;
+      renderer.setRenderTarget(rtAO); renderer.render(aoPass.scene, fsCam);
+      blurH.u.tAO.value = rtAO.texture; blurH.u.tDepth.value = rtScene.depthTexture;
+      renderer.setRenderTarget(rtAOb); renderer.render(blurH.scene, fsCam);
+      blurV.u.tAO.value = rtAOb.texture; blurV.u.tDepth.value = rtScene.depthTexture;
+      renderer.setRenderTarget(rtAO); renderer.render(blurV.scene, fsCam);
+      compPass.u.tCol.value = rtScene.texture; compPass.u.tAO.value = rtAO.texture;
+      renderer.setRenderTarget(rtLDR); renderer.render(compPass.scene, fsCam);
+      finalPass.u.tCol.value = rtLDR.texture; finalPass.u.t.value = (frameNo = (frameNo + 1) % 1024);
+      renderer.setRenderTarget(null); renderer.render(finalPass.scene, fsCam);
+    };
+  })();
+  // single entry point used by the frame loop AND the capture hook
+  function renderFrame() {
+    if (POST.on) POST.render(); else renderer.render(scene, camera);
+  }
+
+  /* ============================================================
+     procedural textures v2 — FBM-based albedo + normal + roughness
+     kits so every surface has grain, wear and relief for light to
+     catch. Albedo canvases stay light-toned (material.color tints).
      ============================================================ */
   const texCache = {};
-  function cv(size) { const c = document.createElement('canvas'); c.width = c.height = size; return c; }
+  function cv(size, h) { const c = document.createElement('canvas'); c.width = size; c.height = h || size; return c; }
   function asTex(canvas, srgb) {
     const t = new THREE.CanvasTexture(canvas);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -243,135 +458,311 @@ if(!window.THREE || !window.HouseScene){
     if (srgb) { if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; else t.encoding = THREE.sRGBEncoding; }
     return t;
   }
-  // value-noise helper drawn straight onto a 2d context
-  function noise(ctx, size, n, alpha, spread, base) {
-    const img = ctx.getImageData(0, 0, size, size), d = img.data;
+  // per-pixel monochrome speckle (adds ±spread to every pixel)
+  function speckle(x, w, h, spread) {
+    const img = x.getImageData(0, 0, w, h), d = img.data;
     for (let i = 0; i < d.length; i += 4) {
       const r = (Math.random() - 0.5) * spread;
       d[i] = clamp(d[i] + r, 0, 255); d[i + 1] = clamp(d[i + 1] + r, 0, 255); d[i + 2] = clamp(d[i + 2] + r, 0, 255);
     }
-    ctx.putImageData(img, 0, 0);
+    x.putImageData(img, 0, 0);
   }
-  function plasterTex() {
-    if (texCache.plaster) return texCache.plaster;
-    const s = 256, c = cv(s), x = c.getContext('2d');
-    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
-    noise(x, s, 0, 1, 10, 0);
-    // barely-there trowel mottling
-    x.globalAlpha = 0.015;
-    for (let i = 0; i < 28; i++) {
-      x.fillStyle = Math.random() > .5 ? '#000' : '#fff';
-      const r = 5 + Math.random() * 16;
-      x.beginPath(); x.arc(Math.random() * s, Math.random() * s, r, 0, 7); x.fill();
+  // low-res random gray layer (upscaled smoothed = one FBM octave)
+  function noiseLayer(res) {
+    const n = cv(res), nx = n.getContext('2d');
+    const img = nx.createImageData(res, res);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = (Math.random() * 256) | 0;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+    }
+    nx.putImageData(img, 0, 0);
+    return n;
+  }
+  // smooth multi-octave value noise, mid-gray centred
+  function fbmCanvas(size, base, oct) {
+    const c = cv(size), x = c.getContext('2d');
+    x.fillStyle = '#808080'; x.fillRect(0, 0, size, size);
+    let alpha = 0.5, res = base || 4;
+    x.imageSmoothingEnabled = true;
+    for (let o = 0; o < (oct || 5); o++) {
+      x.globalAlpha = alpha;
+      x.drawImage(noiseLayer(res), 0, 0, size, size);
+      alpha *= 0.55; res = Math.min(res * 2, size);
     }
     x.globalAlpha = 1;
-    return texCache.plaster = asTex(c, true);
+    return c;
   }
-  function woodTex() {
+  // Sobel height→normal (OpenGL-style, +Y up), linear colourspace
+  function normalFromHeight(hc, strength) {
+    const w = hc.width, h = hc.height;
+    const src = hc.getContext('2d').getImageData(0, 0, w, h).data;
+    const out = cv(w, h), ox = out.getContext('2d');
+    const img = ox.createImageData(w, h);
+    const H = (X, Y) => src[(((Y + h) % h) * w + ((X + w) % w)) * 4] / 255;
+    for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) {
+      const dx = (H(X + 1, Y) - H(X - 1, Y)) * strength;
+      const dy = (H(X, Y + 1) - H(X, Y - 1)) * strength;
+      const il = 1 / Math.sqrt(dx * dx + dy * dy + 1);
+      const i = (Y * w + X) * 4;
+      img.data[i] = (-dx * il * 0.5 + 0.5) * 255;
+      img.data[i + 1] = (dy * il * 0.5 + 0.5) * 255;
+      img.data[i + 2] = (il * 0.5 + 0.5) * 255;
+      img.data[i + 3] = 255;
+    }
+    ox.putImageData(img, 0, 0);
+    return out;
+  }
+  // paint a roughness canvas: base value + soft smudge blobs/streaks
+  function roughCanvas(size, base, blobs, blobVal, streaky) {
+    const c = cv(size), x = c.getContext('2d');
+    const b = (base * 255) | 0;
+    x.fillStyle = 'rgb(' + b + ',' + b + ',' + b + ')'; x.fillRect(0, 0, size, size);
+    for (let i = 0; i < blobs; i++) {
+      const v = ((blobVal + (Math.random() - 0.5) * 0.1) * 255) | 0;
+      x.fillStyle = 'rgba(' + v + ',' + v + ',' + v + ',0.35)';
+      const px = Math.random() * size, py = Math.random() * size;
+      x.save(); x.translate(px, py); x.rotate(Math.random() * Math.PI);
+      if (streaky) x.scale(3 + Math.random() * 3, 1);
+      x.beginPath(); x.arc(0, 0, 6 + Math.random() * 22, 0, 7); x.fill(); x.restore();
+    }
+    speckle(x, size, size, 14);
+    return c;
+  }
+
+  /* ---- texture kits: {map, normalMap?, roughnessMap?, ns} ---- */
+  function kitPlaster() {
+    if (texCache.plaster) return texCache.plaster;
+    const s = 512, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    // broad, faint tonal drift (NOT blobs — the old dots read as stains)
+    x.globalAlpha = 0.028; x.drawImage(fbmCanvas(s, 3, 4), 0, 0); x.globalAlpha = 1;
+    speckle(x, s, s, 5);
+    const height = fbmCanvas(256, 8, 5);
+    speckle(height.getContext('2d'), 256, 256, 26);
+    return texCache.plaster = {
+      map: asTex(c, true),
+      normalMap: asTex(normalFromHeight(height, 0.9), false), ns: 0.32
+    };
+  }
+  function kitWood() {
     if (texCache.wood) return texCache.wood;
     const s = 512, c = cv(s), x = c.getContext('2d');
-    // warm mid-brown base; grain runs vertically (along the texture's V)
-    x.fillStyle = '#b89164'; x.fillRect(0, 0, s, s);
-    // soft, low-contrast vertical grain built from several gentle waves
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    // desaturated walnut-teak base; grain along V
     for (let col = 0; col < s; col++) {
-      let g = 0;
-      g += Math.sin(col * 0.018 + 0.5) * 0.5;
-      g += Math.sin(col * 0.061 + 2.0) * 0.28;
-      g += Math.sin(col * 0.140 + 4.0) * 0.12;
-      g += (Math.random() - 0.5) * 0.18;
-      const t = clamp(0.5 + g * 0.32, 0, 1);
-      const r = (150 + t * 70) | 0, gg = (110 + t * 60) | 0, b = (70 + t * 44) | 0;
+      let g = Math.sin(col * 0.017 + 0.5) * 0.5 + Math.sin(col * 0.055 + 2.0) * 0.27
+            + Math.sin(col * 0.16 + 4.0) * 0.1 + (Math.random() - 0.5) * 0.16;
+      const t = clamp(0.5 + g * 0.3, 0, 1);
+      const r = (128 + t * 52) | 0, gg = (100 + t * 44) | 0, b = (72 + t * 34) | 0;
       x.fillStyle = 'rgb(' + r + ',' + gg + ',' + b + ')';
       x.fillRect(col, 0, 1, s);
+      const hv = (110 + t * 60) | 0;
+      hx.fillStyle = 'rgb(' + hv + ',' + hv + ',' + hv + ')';
+      hx.fillRect(col, 0, 1, s);
     }
-    // fine cathedral fibres, faint
-    x.globalAlpha = .08;
-    for (let i = 0; i < 90; i++) {
-      x.strokeStyle = i % 2 ? '#6e5236' : '#d8b483';
+    // cathedral fibres + pores
+    x.globalAlpha = 0.09;
+    for (let i = 0; i < 110; i++) {
+      x.strokeStyle = i % 2 ? '#57422c' : '#c4a172';
       x.lineWidth = 0.5 + Math.random(); x.beginPath();
       const px = Math.random() * s; x.moveTo(px, 0);
-      x.bezierCurveTo(px + 5, s / 3, px - 5, 2 * s / 3, px + (Math.random() - .5) * 6, s); x.stroke();
+      x.bezierCurveTo(px + 5, s / 3, px - 5, 2 * s / 3, px + (Math.random() - 0.5) * 7, s); x.stroke();
     }
-    // a couple of plank seams
-    x.globalAlpha = .22; x.strokeStyle = '#4a371f'; x.lineWidth = 1.5;
-    for (const sx of [s * 0.5]) { x.beginPath(); x.moveTo(sx, 0); x.lineTo(sx, s); x.stroke(); }
-    x.globalAlpha = 1;
-    return texCache.wood = asTex(c, true);
+    x.globalAlpha = 1; speckle(x, s, s, 8);
+    speckle(hx, s, s, 12);
+    return texCache.wood = {
+      map: asTex(c, true),
+      normalMap: asTex(normalFromHeight(hgt, 0.7), false), ns: 0.3,
+      roughnessMap: asTex(roughCanvas(256, 0.5, 26, 0.66, true), false)
+    };
   }
-  function tileTex() {
+  function kitTile() {
     if (texCache.tile) return texCache.tile;
-    const s = 512, c = cv(s), x = c.getContext('2d'), h = s / 2;
-    // 2x2 large-format tiles, each a subtly different off-white tone
-    const tones = ['#ffffff', '#fafafa', '#fdfdfd', '#f7f7f7'];
-    let ti = 0;
-    for (const ty of [0, h]) for (const tx of [0, h]) { x.fillStyle = tones[ti++]; x.fillRect(tx, ty, h, h); }
-    noise(x, s, 0, 1, 5, 0);
-    // soft cloudy mottling for a polished-stone feel
-    x.globalAlpha = 0.035;
-    for (let i = 0; i < 26; i++) { x.fillStyle = Math.random() > .5 ? '#000' : '#fff'; x.beginPath(); x.arc(Math.random() * s, Math.random() * s, 12 + Math.random() * 44, 0, 7); x.fill(); }
-    x.globalAlpha = 1;
-    // thin recessed grout lines
-    x.strokeStyle = 'rgba(92,92,98,.6)'; x.lineWidth = 2.5;
-    x.strokeRect(1, 1, h - 2, h - 2); x.strokeRect(h + 1, 1, h - 2, h - 2);
-    x.strokeRect(1, h + 1, h - 2, h - 2); x.strokeRect(h + 1, h + 1, h - 2, h - 2);
-    return texCache.tile = asTex(c, true);
+    // 3x3 vitrified 600mm tiles per repeat (use with tile≈1.8)
+    const s = 768, n = 3, ts = s / n, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    hx.fillStyle = '#e8e8e8'; hx.fillRect(0, 0, s, s);
+    for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) {
+      const tone = 246 + ((Math.random() * 8) | 0) - 4;
+      x.fillStyle = 'rgb(' + tone + ',' + (tone - 1) + ',' + (tone - 3) + ')';
+      x.fillRect(tx * ts, ty * ts, ts, ts);
+      // soft mineral clouding, clipped to the tile
+      x.save(); x.beginPath(); x.rect(tx * ts, ty * ts, ts, ts); x.clip();
+      x.globalAlpha = 0.05;
+      x.drawImage(fbmCanvas(256, 3, 4), tx * ts - Math.random() * 80, ty * ts - Math.random() * 80, ts * 1.6, ts * 1.6);
+      x.globalAlpha = 1; x.restore();
+    }
+    speckle(x, s, s, 4);
+    // warm-grey grout, recessed in the height map
+    x.strokeStyle = 'rgba(150,143,132,0.85)'; x.lineWidth = 3;
+    hx.strokeStyle = '#303030'; hx.lineWidth = 5;
+    for (let i = 0; i <= n; i++) {
+      const p = clamp(i * ts, 1.5, s - 1.5);
+      x.beginPath(); x.moveTo(p, 0); x.lineTo(p, s); x.stroke();
+      x.beginPath(); x.moveTo(0, p); x.lineTo(s, p); x.stroke();
+      hx.beginPath(); hx.moveTo(p, 0); hx.lineTo(p, s); hx.stroke();
+      hx.beginPath(); hx.moveTo(0, p); hx.lineTo(s, p); hx.stroke();
+    }
+    speckle(hx, s, s, 6);
+    // gloss variation: smudges + scuffs so reflections aren't mirror-uniform
+    return texCache.tile = {
+      map: asTex(c, true),
+      normalMap: asTex(normalFromHeight(hgt, 1.6), false), ns: 0.55,
+      roughnessMap: asTex(roughCanvas(384, 0.17, 34, 0.34, true), false)
+    };
   }
-  function marbleTex() {
-    if (texCache.marble) return texCache.marble;
-    const s = 256, c = cv(s), x = c.getContext('2d');
+  function kitGranite() {
+    if (texCache.granite) return texCache.granite;
+    const s = 512, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#b9b9bb'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.25; x.drawImage(fbmCanvas(s, 4, 5), 0, 0); x.globalAlpha = 1;
+    // dense mineral speckle field + sparse quartz glints
+    for (let i = 0; i < 26000; i++) {
+      const v = 120 + ((Math.random() * 150) | 0);
+      x.fillStyle = 'rgba(' + v + ',' + v + ',' + (v + 4) + ',0.55)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 1.6, 1 + Math.random() * 1.6);
+    }
+    for (let i = 0; i < 260; i++) {
+      x.fillStyle = 'rgba(235,235,240,0.8)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1.5 + Math.random() * 2, 1.5 + Math.random() * 2);
+    }
+    return texCache.granite = {
+      map: asTex(c, true),
+      roughnessMap: asTex(roughCanvas(256, 0.14, 20, 0.3, true), false)
+    };
+  }
+  function kitGrass() {
+    if (texCache.grass) return texCache.grass;
+    const s = 512, c = cv(s), x = c.getContext('2d');
     x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
-    noise(x, s, 0, 1, 10, 0);
-    x.globalAlpha = .35;
-    for (let i = 0; i < 22; i++) {
-      x.strokeStyle = i % 3 ? 'rgba(70,70,80,.5)' : 'rgba(140,140,150,.5)';
-      x.lineWidth = .5 + Math.random() * 1.5; x.beginPath();
-      let px = Math.random() * s, py = 0;
-      x.moveTo(px, py);
-      while (py < s) { px += (Math.random() - .5) * 30; py += 8 + Math.random() * 14; x.lineTo(px, py); }
+    // patchy dry/lush drift underneath the blades
+    x.globalAlpha = 0.4; x.drawImage(fbmCanvas(s, 3, 4), 0, 0); x.globalAlpha = 1;
+    for (let i = 0; i < 26000; i++) {
+      const g = 0.5 + Math.random() * 0.5, dry = Math.random() < 0.16;
+      x.fillStyle = dry
+        ? 'rgba(' + ((165 * g) | 0) + ',' + ((150 * g) | 0) + ',' + ((84 * g) | 0) + ',0.75)'
+        : 'rgba(' + ((105 * g) | 0) + ',' + ((150 * g) | 0) + ',' + ((78 * g) | 0) + ',0.75)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1.3, 2.5 + Math.random() * 3.5);
+    }
+    return texCache.grass = { map: asTex(c, true) };
+  }
+  function kitConcrete() {
+    if (texCache.concrete) return texCache.concrete;
+    const s = 512, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.12; x.drawImage(fbmCanvas(s, 4, 5), 0, 0); x.globalAlpha = 1;
+    speckle(x, s, s, 18);
+    // aggregate pinholes + faint weather streaks
+    x.fillStyle = 'rgba(60,60,60,0.35)';
+    for (let i = 0; i < 220; i++) { x.beginPath(); x.arc(Math.random() * s, Math.random() * s, 0.6 + Math.random() * 1.6, 0, 7); x.fill(); }
+    x.globalAlpha = 0.05;
+    for (let i = 0; i < 10; i++) {
+      x.fillStyle = '#3a3a3a';
+      const px = Math.random() * s; x.fillRect(px, Math.random() * s * 0.3, 3 + Math.random() * 10, s * (0.4 + Math.random() * 0.5));
+    }
+    x.globalAlpha = 1;
+    const hgt = fbmCanvas(256, 6, 5); speckle(hgt.getContext('2d'), 256, 256, 30);
+    return texCache.concrete = {
+      map: asTex(c, true),
+      normalMap: asTex(normalFromHeight(hgt, 0.8), false), ns: 0.4
+    };
+  }
+  function kitFabric() {
+    if (texCache.fabric) return texCache.fabric;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    hx.fillStyle = '#808080'; hx.fillRect(0, 0, s, s);
+    // fine twill weave
+    for (let i = 0; i < s; i += 3) {
+      x.fillStyle = 'rgba(0,0,0,0.10)'; x.fillRect(i, 0, 1.2, s); x.fillRect(0, i, s, 1.2);
+      x.fillStyle = 'rgba(255,255,255,0.06)'; x.fillRect(i + 1.5, 0, 1, s);
+      hx.fillStyle = 'rgba(40,40,40,0.5)'; hx.fillRect(i, 0, 1.2, s); hx.fillRect(0, i, s, 1.2);
+    }
+    // slubs
+    x.globalAlpha = 0.05;
+    for (let i = 0; i < 30; i++) { x.fillStyle = i % 2 ? '#000' : '#fff'; x.fillRect(Math.random() * s, Math.random() * s, 8 + Math.random() * 26, 1.6); }
+    x.globalAlpha = 1; speckle(x, s, s, 10);
+    return texCache.fabric = {
+      map: asTex(c, true),
+      normalMap: asTex(normalFromHeight(hgt, 0.5), false), ns: 0.25
+    };
+  }
+  function kitCurtain() {
+    if (texCache.curtain) return texCache.curtain;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    // soft vertical drape folds (shading + height ridges)
+    for (let px = 0; px < s; px++) {
+      const f = Math.sin(px * Math.PI * 2 / 42) * 0.5 + Math.sin(px * Math.PI * 2 / 90 + 1.2) * 0.3;
+      const sh = clamp(0.5 + f * 0.42, 0, 1);
+      x.fillStyle = 'rgba(0,0,0,' + (0.26 * (1 - sh)).toFixed(3) + ')';
+      x.fillRect(px, 0, 1, s);
+      const hv = (60 + sh * 140) | 0;
+      hx.fillStyle = 'rgb(' + hv + ',' + hv + ',' + hv + ')';
+      hx.fillRect(px, 0, 1, s);
+    }
+    speckle(x, s, s, 8);
+    return texCache.curtain = {
+      map: asTex(c, true),
+      normalMap: asTex(normalFromHeight(hgt, 2.4), false), ns: 0.8
+    };
+  }
+  function kitAsphalt() {
+    if (texCache.asphalt) return texCache.asphalt;
+    const s = 512, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#bdbdbf'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.14; x.drawImage(fbmCanvas(s, 4, 5), 0, 0); x.globalAlpha = 1;
+    speckle(x, s, s, 34);
+    // lighter aggregate + wheel-wear bands + hairline cracks
+    for (let i = 0; i < 900; i++) {
+      const v = 150 + ((Math.random() * 70) | 0);
+      x.fillStyle = 'rgba(' + v + ',' + v + ',' + v + ',0.5)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1, 1);
+    }
+    x.globalAlpha = 0.08; x.fillStyle = '#000';
+    x.fillRect(s * 0.18, 0, s * 0.16, s); x.fillRect(s * 0.66, 0, s * 0.16, s);
+    x.globalAlpha = 0.25; x.strokeStyle = '#2c2c2c'; x.lineWidth = 1;
+    for (let i = 0; i < 4; i++) {
+      x.beginPath(); let px = Math.random() * s, py = 0; x.moveTo(px, py);
+      while (py < s) { px += (Math.random() - 0.5) * 26; py += 12 + Math.random() * 22; x.lineTo(px, py); }
       x.stroke();
     }
     x.globalAlpha = 1;
-    return texCache.marble = asTex(c, true);
+    return texCache.asphalt = { map: asTex(c, true) };
   }
-  function grassTex() {
-    if (texCache.grass) return texCache.grass;
-    const s = 256, c = cv(s), x = c.getContext('2d');
-    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
-    for (let i = 0; i < 9000; i++) {
-      const g = 0.55 + Math.random() * 0.45;
-      x.fillStyle = 'rgba(' + ((120 * g) | 0) + ',' + ((150 * g) | 0) + ',' + ((90 * g) | 0) + ',.8)';
-      const px = Math.random() * s, py = Math.random() * s;
-      x.fillRect(px, py, 1.4, 2.4 + Math.random() * 2);
+  function kitPaver() {
+    if (texCache.paver) return texCache.paver;
+    const s = 512, n = 2, ts = s / n, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    hx.fillStyle = '#d8d8d8'; hx.fillRect(0, 0, s, s);
+    for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) {
+      const tone = 226 + ((Math.random() * 18) | 0) - 9;
+      x.fillStyle = 'rgb(' + tone + ',' + tone + ',' + (tone - 2) + ')';
+      x.fillRect(tx * ts, ty * ts, ts, ts);
     }
-    return texCache.grass = asTex(c, true);
+    speckle(x, s, s, 20);
+    x.strokeStyle = 'rgba(110,106,100,0.9)'; x.lineWidth = 4;
+    hx.strokeStyle = '#404040'; hx.lineWidth = 7;
+    for (let i = 0; i <= n; i++) {
+      const p = clamp(i * ts, 2, s - 2);
+      x.beginPath(); x.moveTo(p, 0); x.lineTo(p, s); x.stroke();
+      x.beginPath(); x.moveTo(0, p); x.lineTo(s, p); x.stroke();
+      hx.beginPath(); hx.moveTo(p, 0); hx.lineTo(p, s); hx.stroke();
+      hx.beginPath(); hx.moveTo(0, p); hx.lineTo(s, p); hx.stroke();
+    }
+    speckle(hx, s, s, 14);
+    return texCache.paver = {
+      map: asTex(c, true),
+      normalMap: asTex(normalFromHeight(hgt, 1.2), false), ns: 0.5
+    };
   }
-  function concreteTex() {
-    if (texCache.concrete) return texCache.concrete;
-    const s = 256, c = cv(s), x = c.getContext('2d');
-    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
-    noise(x, s, 0, 1, 22, 0);
-    x.globalAlpha = .06;
-    for (let i = 0; i < 60; i++) { x.fillStyle = Math.random() > .5 ? '#000' : '#fff'; const r = Math.random() * 3; x.beginPath(); x.arc(Math.random() * s, Math.random() * s, r, 0, 7); x.fill(); }
-    x.globalAlpha = 1;
-    return texCache.concrete = asTex(c, true);
-  }
-  function fabricTex() {
-    if (texCache.fabric) return texCache.fabric;
-    const s = 128, c = cv(s), x = c.getContext('2d');
-    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
-    x.globalAlpha = .10;
-    for (let i = 0; i < s; i += 2) { x.strokeStyle = '#000'; x.beginPath(); x.moveTo(i, 0); x.lineTo(i, s); x.stroke(); x.beginPath(); x.moveTo(0, i); x.lineTo(s, i); x.stroke(); }
-    x.globalAlpha = 1; noise(x, s, 0, 1, 12, 0);
-    return texCache.fabric = asTex(c, true);
-  }
-  // bump map shared by plaster / concrete / tile for micro-relief
-  function bumpTex() {
-    if (texCache.bump) return texCache.bump;
-    const s = 256, c = cv(s), x = c.getContext('2d');
-    x.fillStyle = '#808080'; x.fillRect(0, 0, s, s);
-    noise(x, s, 0, 1, 40, 128);
-    return texCache.bump = asTex(c, false);
-  }
+  const TEX = {
+    plaster: kitPlaster, wood: kitWood, tile: kitTile, granite: kitGranite,
+    grass: kitGrass, concrete: kitConcrete, fabric: kitFabric, curtain: kitCurtain,
+    asphalt: kitAsphalt, paver: kitPaver
+  };
 
   /* ============================================================
      material treatment table — keyed by palette name.
@@ -381,44 +772,58 @@ if(!window.THREE || !window.HouseScene){
   const FLOORTINT = new Set(['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tOut', 'tCirc', 'tOffice', 'tPooja', 'tWalk']);
 
   function treatment(name) {
-    if (name === 'glass' || name === 'carGlass') return { glass: true };
-    if (name === 'lamp') return { emissive: true };
-    if (FLOORTINT.has(name)) return { tex: 'tile', tile: 1.1, rough: 0.16, metal: 0.0, env: 1.15 };
+    if (name === 'glass' || name === 'carGlass') return { glass: true, dark: name !== 'glass' };
+    if (name === 'nbrWin') return { rough: 0.1, metal: 0.4, env: 1.3 };
+    if (name === 'lamp' || name === 'downlight') return { emissive: true, strong: name === 'downlight' };
+    if (FLOORTINT.has(name)) return { tex: 'tile', tile: 1.8, rough: 0.2, metal: 0.0, env: 0.75, interior: true };
     switch (name) {
       case 'white': case 'white2':
-        return { tex: 'plaster', tile: 2.6, rough: 0.92, metal: 0, env: 0.35, bump: 0.4 };
+        return { tex: 'plaster', tile: 3.0, rough: 0.88, metal: 0, env: 0.38, interior: true };
+      case 'nbr1': case 'nbr2': case 'nbr3':
+        return { tex: 'plaster', tile: 3.4, rough: 0.92, metal: 0, env: 0.25 };
       case 'charcoal': case 'charDark': case 'solarFrm':
-        return { tex: 'plaster', tile: 2.2, rough: 0.86, metal: 0, env: 0.4, bump: 0.5 };
+        return { tex: 'plaster', tile: 2.4, rough: 0.82, metal: 0, env: 0.35 };
       case 'plinth':
-        return { tex: 'concrete', tile: 1.6, rough: 0.9, metal: 0, env: 0.3, bump: 0.7 };
-      case 'concrete': case 'paver': case 'paver2':
-        return { tex: 'concrete', tile: 1.3, rough: 0.95, metal: 0, env: 0.25, bump: 0.8 };
+        return { tex: 'concrete', tile: 2.0, rough: 0.9, metal: 0, env: 0.28 };
+      case 'concrete':
+        return { tex: 'concrete', tile: 2.2, rough: 0.95, metal: 0, env: 0.25 };
+      case 'paver': case 'paver2': case 'pave':
+        return { tex: 'paver', tile: 1.2, rough: 0.9, metal: 0, env: 0.3 };
+      case 'road':
+        return { tex: 'asphalt', tile: 4.0, rough: 0.96, metal: 0, env: 0.18 };
+      case 'roadLine':
+        return { rough: 0.85, metal: 0, env: 0.2 };
       case 'terraceF': case 'balcTile':
-        return { tex: 'tile', tile: 1.0, rough: 0.5, metal: 0, env: 0.6, bump: 0.3 };
-      case 'walnut': case 'woodF': case 'woodD':
-        return { tex: 'wood', tile: 1.1, rough: 0.55, metal: 0, env: 0.5 };
-      case 'ms': return { rough: 0.5, metal: 0.7, env: 0.9 };
-      case 'steel': case 'liftDoor': return { rough: 0.34, metal: 0.85, env: 1.1 };
-      case 'brass': return { rough: 0.32, metal: 0.92, env: 1.2 };
-      case 'chrome': return { rough: 0.05, metal: 1.0, env: 1.4 };
-      case 'frame': return { rough: 0.42, metal: 0.6, env: 0.9 };
-      case 'counter': return { rough: 0.6, metal: 0, env: 0.4 };
-      case 'counterTop': return { tex: 'marble', tile: 1.4, rough: 0.18, metal: 0.05, env: 1.0 };
-      case 'whiteG': return { rough: 0.08, metal: 0.04, env: 1.2 };       // glazed ceramic
-      case 'tv': return { rough: 0.12, metal: 0.2, env: 1.0 };
-      case 'solar': return { rough: 0.18, metal: 0.3, env: 1.1 };
-      case 'tank': return { rough: 0.55, metal: 0, env: 0.4 };
-      case 'tharRed': case 'carBody': return { rough: 0.22, metal: 0.55, env: 1.3, clear: true };
+        return { tex: 'tile', tile: 1.8, rough: 0.55, metal: 0, env: 0.45, matte: true };
+      case 'walnut': case 'woodF': case 'woodD': case 'skirt':
+        return { tex: 'wood', tile: 1.1, rough: 0.5, metal: 0, env: 0.5, interior: true };
+      case 'curtain': case 'curtain2':
+        return { tex: 'curtain', tile: 0.85, rough: 0.94, metal: 0, env: 0.25, interior: true };
+      case 'ms': return { rough: 0.48, metal: 0.15, env: 0.6 };            // painted MS
+      case 'steel': case 'liftDoor': return { rough: 0.3, metal: 1.0, env: 1.0 };
+      case 'brass': return { rough: 0.28, metal: 1.0, env: 1.1, interior: true };
+      case 'chrome': return { rough: 0.07, metal: 1.0, env: 1.3, interior: true };
+      case 'frame': return { rough: 0.4, metal: 0.7, env: 0.9 };
+      case 'counter': return { rough: 0.55, metal: 0, env: 0.35, interior: true };
+      case 'counterTop': return { tex: 'granite', tile: 1.2, rough: 0.15, metal: 0.04, env: 0.9, interior: true };
+      case 'whiteG': return { rough: 0.09, metal: 0.02, env: 1.0, interior: true };  // glazed ceramic
+      case 'tv': return { rough: 0.07, metal: 0.1, env: 1.25, interior: true };
+      case 'solar': return { rough: 0.12, metal: 0.4, env: 1.3 };
+      case 'tank': return { rough: 0.6, metal: 0, env: 0.35 };
+      case 'tharRed': case 'carBody': return { rough: 0.25, metal: 0.75, env: 1.35 };
       case 'carDark': return { rough: 0.7, metal: 0.1, env: 0.4 };
       case 'fabric': case 'fabric2': case 'rug':
-        return { tex: 'fabric', tile: 1.4, rough: 0.95, metal: 0, env: 0.2 };
+        return { tex: 'fabric', tile: 0.7, rough: 0.95, metal: 0, env: 0.22, interior: true };
       case 'mattress': case 'pillow': case 'bedding':
-        return { tex: 'fabric', tile: 1.6, rough: 0.92, metal: 0, env: 0.2 };
-      case 'grass': return { tex: 'grass', tile: 0.9, rough: 1.0, metal: 0, env: 0.15 };
+        return { tex: 'fabric', tile: 0.9, rough: 0.94, metal: 0, env: 0.22, interior: true };
+      case 'grass': return { tex: 'grass', tile: 1.6, rough: 1.0, metal: 0, env: 0.15 };
+      case 'soil': return { tex: 'concrete', tile: 0.8, rough: 1.0, metal: 0, env: 0.1 };
       case 'green': case 'green2': case 'boug': case 'ixora':
-        return { rough: 0.85, metal: 0, env: 0.2 };
+      case 'leafDark': case 'leafLight': case 'flowerPink':
+        return { rough: 0.8, metal: 0, env: 0.25 };
       case 'ground': case 'plotPad':
-        return { tex: 'concrete', tile: 2.0, rough: 1.0, metal: 0, env: 0.1, bump: 0.5 };
+        return { tex: 'concrete', tile: 3.0, rough: 1.0, metal: 0, env: 0.12 };
+      case 'dark': return { rough: 0.6, metal: 0, env: 0.3, interior: true };
       default: return { rough: 0.85, metal: 0, env: 0.4 };
     }
   }
@@ -430,17 +835,22 @@ if(!window.THREE || !window.HouseScene){
      original cool greys. Applied on top of the palette during re-skin;
      for textured surfaces these tint the (light-based) texture. */
   const COL = {
-    white: 0xece5d8, white2: 0xe7dece,                 // warm ivory plaster
+    white: 0xe9e3d6, white2: 0xefebe2,                 // warm ivory walls / near-white ceilings
     charcoal: 0x3a3733, charDark: 0x2b2825, plinth: 0x3a3733, frame: 0x3b3e42,
     // per-room vitrified floor tones (warm living spaces, cool baths)
-    tLiving: 0xd2c9b6, tBed: 0xdacfb9, tBath: 0xc5ced1, tKitch: 0xd3cdbf,
-    tUtil: 0xc7c7c1, tOut: 0x9a9d96, tCirc: 0xd2caba, tOffice: 0xd1cbbc,
-    tPooja: 0xe6dabf, tWalk: 0xd7cebd,
+    tLiving: 0xcfc5b0, tBed: 0xd6cab2, tBath: 0xbfc6c6, tKitch: 0xcdc6b6,
+    tUtil: 0xc3c2ba, tOut: 0x8f9089, tCirc: 0xcfc7b5, tOffice: 0xccc6b6,
+    tPooja: 0xe2d5b8, tWalk: 0xd3cab8,
     // furnishings (wood keeps its own brown texture, so it's not recoloured here)
-    fabric: 0x9c8f7b, fabric2: 0x6f6354, rug: 0xb6a98d, counterTop: 0x383a3e,
-    brass: 0xcaa15e, tank: 0xdedbd3,
-    // planting
-    green: 0x4c6838, green2: 0x607d45, grass: 0x4f6d3d, boug: 0xc44f86, ixora: 0xe16b39
+    fabric: 0x9c8f7b, fabric2: 0x6f6354, rug: 0xb6a98d, counterTop: 0x54565a,
+    brass: 0xc9a15e, chrome: 0xf0f2f4, steel: 0xbfc3c8, liftDoor: 0xb4b8bd,
+    tank: 0xdedbd3, tv: 0x0b0c0d,
+    // planting + outdoors
+    green: 0x4c6838, green2: 0x607d45, grass: 0x55703f, boug: 0xc44f86, ixora: 0xe16b39,
+    road: 0x3f4043, roadLine: 0xd8d5c8, pave: 0xa8a49b, soil: 0x4a3b2d,
+    ground: 0x81796b, plotPad: 0x767061,
+    skirt: 0x54453a, curtain: 0xbcab94, curtain2: 0x8d7c68,
+    nbr1: 0xd9d2c4, nbr2: 0xc7bfb3, nbr3: 0xb8b3a8
   };
 
   /* world-aligned (box-projected) UVs for the merged geometry, which
@@ -463,71 +873,142 @@ if(!window.THREE || !window.HouseScene){
   }
 
   /* ---------------- environment / sky / sun ---------------- */
-  // procedural sky gradient used both as background dome and IBL source
+  const SUN_DIR = new THREE.Vector3(0.5, 0.62, 0.42).normalize();
+  // isotropic, tile-safe cloud noise: soft radial blobs (FBM upscaling makes
+  // axis-aligned bands that stretch into fake streaks at glancing angles)
+  function cloudNoiseCanvas(size) {
+    const c = cv(size), x = c.getContext('2d');
+    x.fillStyle = '#6f6f6f'; x.fillRect(0, 0, size, size);
+    for (let i = 0; i < 850; i++) {
+      const r = 5 + Math.pow(Math.random(), 2.2) * 64;
+      const px = Math.random() * size, py = Math.random() * size;
+      const bright = Math.random() > 0.48;
+      const a = 0.05 + Math.random() * 0.11;
+      for (const ox of [0, -size, size]) for (const oy of [0, -size, size]) {
+        if ((ox && Math.abs(px + ox - size / 2) > size / 2 + r) ||
+            (oy && Math.abs(py + oy - size / 2) > size / 2 + r)) continue;
+        const g = x.createRadialGradient(px + ox, py + oy, 0, px + ox, py + oy, r);
+        g.addColorStop(0, (bright ? 'rgba(255,255,255,' : 'rgba(18,18,18,') + a.toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(128,128,128,0)');
+        x.fillStyle = g;
+        x.fillRect(px + ox - r, py + oy - r, r * 2, r * 2);
+      }
+    }
+    return c;
+  }
+  // procedural sky: gradient + horizon haze + blob-noise cloud field + sun
   function skyMaterial() {
+    const noiseTex = asTex(cloudNoiseCanvas(512), false);
     return new THREE.ShaderMaterial({
       side: THREE.BackSide, depthWrite: false,
       uniforms: {
-        top: { value: new THREE.Color(0x2f6cb0) },
-        mid: { value: new THREE.Color(0x9fc1da) },
-        bot: { value: new THREE.Color(0xe7e3d6) },
-        sunDir: { value: new THREE.Vector3(0.45, 0.6, 0.45).normalize() }
+        top: { value: new THREE.Color(0x2d5fa4) },
+        mid: { value: new THREE.Color(0x7fa8cd) },
+        bot: { value: new THREE.Color(0xd9d3c5) },
+        sunDir: { value: SUN_DIR.clone() },
+        tNoise: { value: noiseTex }
       },
       vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);} `,
       fragmentShader: `
-        varying vec3 vDir; uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir;
+        varying vec3 vDir;
+        uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir;
+        uniform sampler2D tNoise;
         void main(){
-          float h = clamp(vDir.y, -1.0, 1.0);
-          vec3 col = h > 0.0 ? mix(mid, top, pow(h, 0.7)) : mix(mid, bot, pow(-h, 0.5));
-          float s = max(dot(normalize(vDir), normalize(sunDir)), 0.0);
-          col += vec3(1.0,0.92,0.78) * pow(s, 220.0) * 1.4;          // sun disc
-          col += vec3(1.0,0.85,0.6) * pow(s, 6.0) * 0.18;            // halo
+          vec3 d = normalize(vDir);
+          float h = clamp(d.y, -1.0, 1.0);
+          vec3 col = h > 0.0 ? mix(mid, top, pow(h, 0.62)) : mix(mid, bot, pow(-h, 0.5));
+          float haze = pow(1.0 - abs(h), 6.0);
+          col = mix(col, vec3(0.89, 0.89, 0.86), haze * 0.3);
+          float s = max(dot(d, normalize(sunDir)), 0.0);
+          if (h > 0.015) {                                   // cumulus field
+            vec2 uv = d.xz / (d.y + 0.18);
+            float n1 = texture2D(tNoise, uv * 0.32 + vec2(0.13, 0.40)).r;
+            float n2 = texture2D(tNoise, uv * 0.83 + vec2(0.55, 0.10)).r;
+            float n = n1 * 0.72 + n2 * 0.28;
+            float cov = smoothstep(0.54, 0.68, n);
+            float fade = smoothstep(0.04, 0.28, h);
+            float dense = smoothstep(0.64, 0.82, n);
+            vec3 cloudCol = mix(vec3(1.03, 1.02, 1.0), vec3(0.78, 0.79, 0.82), dense * 0.85);
+            cloudCol += vec3(1.0, 0.9, 0.75) * pow(s, 3.0) * 0.12;
+            col = mix(col, cloudCol, cov * fade * 0.9);
+          }
+          col += vec3(1.0, 0.93, 0.80) * pow(s, 900.0) * 2.2;   // sun disc
+          col += vec3(1.0, 0.88, 0.66) * pow(s, 8.0) * 0.15;    // glare
           gl_FragColor = vec4(col, 1.0);
         }`
     });
   }
-  const SUN_DIR = new THREE.Vector3(0.5, 0.62, 0.42).normalize();
-  const skyMat = skyMaterial(); skyMat.uniforms.sunDir.value.copy(SUN_DIR);
+  const skyMat = skyMaterial();
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), skyMat);
   scene.add(skyDome);
 
-  // image-based lighting from a matching equirectangular sky gradient.
+  // Two IBL environments: the sky feeds exterior surfaces; interiors reflect
+  // a warm neutral room gradient instead of blue sky (indoor counters/floors
+  // picking up sky-blue was a major realism killer).
   // (fromEquirectangular is the robust path — a custom ShaderMaterial inside
   //  pmrem.fromScene can yield a malformed env map that NaNs PBR shading.)
+  const ENV = { sky: null, interior: null };
   (function buildEnv() {
-    const w = 1024, h = 512, c = cv(w); c.height = h;
-    const x = c.getContext('2d');
-    const g = x.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0.00, '#2c66a8');   // zenith
-    g.addColorStop(0.42, '#8fb6d4');
-    g.addColorStop(0.50, '#d4dbdf');   // horizon haze
-    g.addColorStop(0.52, '#b9ad95');   // ground line
-    g.addColorStop(1.00, '#6f665a');   // ground bounce
-    x.fillStyle = g; x.fillRect(0, 0, w, h);
-    // soft sun glow baked into the equirect so reflections catch it
-    const az = Math.atan2(SUN_DIR.x, SUN_DIR.z), el = Math.asin(SUN_DIR.y);
-    const sx = (az / (Math.PI * 2) + 0.5) * w, sy = (0.5 - el / Math.PI) * h;
-    const sg = x.createRadialGradient(sx, sy, 0, sx, sy, 120);
-    sg.addColorStop(0, 'rgba(255,246,224,0.95)'); sg.addColorStop(1, 'rgba(255,246,224,0)');
-    x.fillStyle = sg; x.fillRect(0, 0, w, h);
-    const eq = new THREE.CanvasTexture(c);
-    eq.mapping = THREE.EquirectangularReflectionMapping;
-    if ('colorSpace' in eq) eq.colorSpace = THREE.SRGBColorSpace; else eq.encoding = THREE.sRGBEncoding;
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
-    try {
+    function equirectToEnv(paint) {
+      const w = 1024, h = 512, c = cv(w, h), x = c.getContext('2d');
+      paint(x, w, h);
+      const eq = new THREE.CanvasTexture(c);
+      eq.mapping = THREE.EquirectangularReflectionMapping;
+      if ('colorSpace' in eq) eq.colorSpace = THREE.SRGBColorSpace; else eq.encoding = THREE.sRGBEncoding;
       const rt = pmrem.fromEquirectangular(eq);
-      scene.environment = rt.texture;
+      eq.dispose();
+      return rt.texture;
+    }
+    try {
+      ENV.sky = equirectToEnv((x, w, h) => {
+        const g = x.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0.00, '#316dac');   // zenith
+        g.addColorStop(0.42, '#93b8d4');
+        g.addColorStop(0.50, '#d8dcda');   // horizon haze
+        g.addColorStop(0.52, '#b9ad95');   // ground line
+        g.addColorStop(1.00, '#6f665a');   // ground bounce
+        x.fillStyle = g; x.fillRect(0, 0, w, h);
+        // rough cloud blobs so reflections carry them too
+        for (let i = 0; i < 16; i++) {
+          const cx = Math.random() * w, cy = h * (0.12 + Math.random() * 0.28);
+          const cg = x.createRadialGradient(cx, cy, 0, cx, cy, 26 + Math.random() * 50);
+          cg.addColorStop(0, 'rgba(255,253,248,0.5)'); cg.addColorStop(1, 'rgba(255,253,248,0)');
+          x.fillStyle = cg; x.fillRect(0, 0, w, h);
+        }
+        const az = Math.atan2(SUN_DIR.x, SUN_DIR.z), el = Math.asin(SUN_DIR.y);
+        const sx = (az / (Math.PI * 2) + 0.5) * w, sy = (0.5 - el / Math.PI) * h;
+        const sg = x.createRadialGradient(sx, sy, 0, sx, sy, 120);
+        sg.addColorStop(0, 'rgba(255,246,224,0.95)'); sg.addColorStop(1, 'rgba(255,246,224,0)');
+        x.fillStyle = sg; x.fillRect(0, 0, w, h);
+      });
+      ENV.interior = equirectToEnv((x, w, h) => {
+        const g = x.createLinearGradient(0, 0, 0, h);
+        g.addColorStop(0.00, '#fff6e6');   // lit ceiling
+        g.addColorStop(0.45, '#e2d9c9');
+        g.addColorStop(0.55, '#c6bbaa');
+        g.addColorStop(1.00, '#585045');   // floor bounce
+        x.fillStyle = g; x.fillRect(0, 0, w, h);
+        // faint warm 'window' hotspots for lively reflections on gloss
+        for (let i = 0; i < 4; i++) {
+          const cx = (i + 0.5) * w / 4, cy = h * 0.42;
+          const cg = x.createRadialGradient(cx, cy, 0, cx, cy, 60);
+          cg.addColorStop(0, 'rgba(255,250,235,0.55)'); cg.addColorStop(1, 'rgba(255,250,235,0)');
+          x.fillStyle = cg; x.fillRect(0, 0, w, h);
+        }
+      });
+      scene.environment = ENV.sky;
     } catch (e) { /* IBL optional */ }
-    eq.dispose(); pmrem.dispose();
+    pmrem.dispose();
   })();
 
-  scene.fog = new THREE.Fog(0xcdd6dd, 55, 340);
+  scene.fog = new THREE.Fog(0xd6dce0, 70, 380);
 
-  // hemisphere ambient + warm directional sun with crisp soft shadows.
-  // (lower sky fill + stronger sun = more shape/contrast and less flat grey)
-  scene.add(new THREE.HemisphereLight(0xc6d2dc, 0x70614e, 0.42));
-  const sun = new THREE.DirectionalLight(0xfff1d8, 3.4);
+  // warm sun + cooler sky fill; interiors are carried by the fixture light
+  // pool + emissive downlights instead of a flat ambient wash.
+  scene.add(new THREE.HemisphereLight(0xbfccda, 0x8a7a66, 0.4));
+  const sun = new THREE.DirectionalLight(0xfff0d4, 3.25);
   sun.position.copy(SUN_DIR).multiplyScalar(80).add(new THREE.Vector3(9, 0, -5));
   sun.castShadow = Q.shadows;
   sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
@@ -536,10 +1017,10 @@ if(!window.THREE || !window.HouseScene){
   sun.shadow.bias = -0.00035; sun.shadow.normalBias = 0.025;
   const sunTarget = new THREE.Object3D(); sunTarget.position.set(9, 2, -5);
   scene.add(sunTarget); sun.target = sunTarget; scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xb9c4d0, 0.28);
+  const fill = new THREE.DirectionalLight(0xb9c4d0, 0.18);
   fill.position.set(-40, 30, -20); scene.add(fill);
   // soft warm interior bounce so rooms away from windows don't read cold/grey
-  const warmFill = new THREE.HemisphereLight(0xf6e8d0, 0x3a3631, 0.32);
+  const warmFill = new THREE.HemisphereLight(0xf6e8d0, 0x3a3631, 0.3);
   scene.add(warmFill);
 
   /* ============================================================
@@ -561,21 +1042,28 @@ if(!window.THREE || !window.HouseScene){
     m.userData.name = name;
     const t = treatment(name || '');
     if (t.glass) {
-      m.roughness = 0.04; m.metalness = 0.0; m.envMapIntensity = 1.5;
-      m.transparent = true; m.opacity = Math.min(m.opacity != null ? m.opacity : 0.5, 0.32);
-      m.depthWrite = false; m.color.setHex(0xafc4d2);
+      m.roughness = 0.05; m.metalness = 0.0; m.envMapIntensity = 0.9;
+      m.transparent = true; m.depthWrite = false;
+      if (t.dark) { m.opacity = Math.max(m.opacity != null ? m.opacity : 0.85, 0.82); m.color.setHex(0x20262b); }
+      else { m.opacity = 0.22; m.color.setHex(0xa9bec6); }
       m.needsUpdate = true; return;
     }
-    if (t.emissive) { m.emissiveIntensity = Math.max(m.emissiveIntensity || 1.6, 2.2); m.envMapIntensity = 0.4; m.needsUpdate = true; return; }
+    if (t.emissive) {
+      if (m.emissive) m.emissive.setHex(t.strong ? 0xffdcae : 0xffd9a0);
+      m.emissiveIntensity = t.strong ? 3.2 : Math.max(m.emissiveIntensity || 1.6, 2.4);
+      m.envMapIntensity = 0.2; m.needsUpdate = true; return;
+    }
     if ('roughness' in m) m.roughness = t.rough;
     if ('metalness' in m) m.metalness = t.metal;
     m.envMapIntensity = t.env != null ? t.env : 0.5;
+    if (t.interior && ENV.interior) m.envMap = ENV.interior;   // warm room reflections indoors
     if (COL[name] != null && m.color) m.color.setHex(COL[name]);   // curated palette
-    if (t.tex) {
-      m.map = ({ plaster: plasterTex, wood: woodTex, tile: tileTex, marble: marbleTex, grass: grassTex, concrete: concreteTex, fabric: fabricTex })[t.tex]();
-      // albedo = original palette colour × texture detail (textures are light-based)
+    if (t.tex && TEX[t.tex]) {
+      const kit = TEX[t.tex]();
+      m.map = kit.map;   // albedo = palette colour × light-toned texture detail
+      if (kit.normalMap) { m.normalMap = kit.normalMap; m.normalScale = new THREE.Vector2(kit.ns, kit.ns); }
+      if (kit.roughnessMap && !t.matte) { m.roughnessMap = kit.roughnessMap; m.roughness = 1.0; }  // map carries the value
     }
-    if (t.bump) { m.bumpMap = bumpTex(); m.bumpScale = t.bump * 0.012; }
     m.needsUpdate = true;
   });
 
@@ -600,9 +1088,39 @@ if(!window.THREE || !window.HouseScene){
     });
   });
 
+  /* ------------- interior fixture lights -------------
+     A small pool of real point lights teleports to the downlight
+     fixtures nearest the camera each few frames, so every room lights
+     up as you move through it without paying for 100+ live lights. */
+  const FIXTURES = (data.lights || []).map(l => new THREE.Vector3(l.x, l.y, l.z));
+  const POOL_N = FIXTURES.length ? (Q.tier === 'high' ? 8 : Q.tier === 'medium' ? 5 : 3) : 0;
+  const lightPool = [];
+  for (let i = 0; i < POOL_N; i++) {
+    const p = new THREE.PointLight(0xffdcb2, 0, 8.5, 2);
+    p.visible = false; scene.add(p); lightPool.push(p);
+  }
+  const _fd = [];
+  function updateLightPool() {
+    if (!lightPool.length) return;
+    _fd.length = 0;
+    for (let i = 0; i < FIXTURES.length; i++) {
+      const f = FIXTURES[i];
+      const dx = f.x - player.pos.x, dy = f.y - player.pos.y, dz = f.z - player.pos.z;
+      _fd.push([dx * dx + dy * dy * 1.8 + dz * dz, f]);   // penalise other floors
+    }
+    _fd.sort((a, b) => a[0] - b[0]);
+    for (let i = 0; i < lightPool.length; i++) {
+      const p = lightPool[i];
+      if (i < _fd.length && _fd[i][0] < 150) {
+        p.position.copy(_fd[i][1]); p.position.y -= 0.1;
+        p.intensity = 6.5; p.visible = true;
+      } else p.visible = false;
+    }
+  }
+
   /* collidable mesh list (everything solid; glass/doors excluded so you can walk through them). Built once. */
   const colliders = [];
-  const nonCollidableMaterials = new Set(['glass', 'carGlass', 'walnut', 'liftDoor', 'woodD', 'woodF', 'frame', 'brass']);
+  const nonCollidableMaterials = new Set(['glass', 'carGlass', 'walnut', 'liftDoor', 'woodD', 'woodF', 'frame', 'brass', 'curtain', 'curtain2']);
   data.root.traverse(o => {
     if (o.isMesh && o !== skyDome) {
       const name = o.material && o.material.userData ? o.material.userData.name : undefined;
@@ -718,6 +1236,7 @@ if(!window.THREE || !window.HouseScene){
     const s = SPAWNS[i];
     player.pos.copy(s.pos); player.yaw = s.yaw; player.pitch = -0.04;
     player.velY = 0; moveVel.set(0, 0, 0);
+    toggleFly(false);
     document.querySelectorAll('#levels button').forEach(b =>
       b.classList.toggle('on', +b.dataset.spawn === i));
     placeCamera();
@@ -750,7 +1269,7 @@ if(!window.THREE || !window.HouseScene){
     const k = e.key.toLowerCase();
     if (k === 'f') { toggleFly(); }
     if (k >= '1' && k <= '5') spawnTo(+k - 1);
-    if (k === ' ' && !player.fly && player.onGround) { player.velY = 6.0; player.onGround = false; }
+    if (k === ' ' && !pressed[' '] && !player.fly && player.onGround) { player.velY = 6.0; player.onGround = false; }
     pressed[k] = true; setMove();
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   }, { passive: false });
@@ -822,7 +1341,7 @@ if(!window.THREE || !window.HouseScene){
           'translate(calc(-50% + ' + dx.toFixed(0) + 'px), calc(-50% + ' + dy.toFixed(0) + 'px))';
       } else if (t.identifier === lookId) {
         player.yaw -= (t.clientX - lookLast.x) * 0.005;
-        player.pitch = clamp(player.pitch - (t.clientY - lookLast.y) * 0.005, -1.45, 1.45);
+        player.pitch = clamp(player.pitch - (t.clientY - lookLast.y) * 0.005, -1.5, 1.5);
         lookLast.x = t.clientX; lookLast.y = t.clientY;
       }
     }
@@ -865,7 +1384,9 @@ if(!window.THREE || !window.HouseScene){
   function isPlayerExterior() {
     if (player.pos.y < L.f0 - 0.2) return true;
     const px = player.pos.x * 1000, py = -player.pos.z * 1000;
-    if (px < 0 || px > 16600 || py < 0 || py > 8870) return true;
+    // upper floors extend south to py -762 (FF service bands / south balconies)
+    const pyMin = currentFloorIndex() >= 1 ? -762 : 0;
+    if (px < 0 || px > 16600 || py < pyMin || py > 8870) return true;
     return false;
   }
   function getSpecialRoom(fi, px, py) {
@@ -948,7 +1469,8 @@ if(!window.THREE || !window.HouseScene){
     updatePlayer(dt);
     placeCamera(dt);
     skyDome.position.copy(camera.position);
-    renderer.render(scene, camera);
+    if ((frames & 7) === 0) updateLightPool();
+    renderFrame();
     if ((frames++ & 3) === 0) updateHUD();
 
     if (!firstFrame) { firstFrame = true; enableEntry(); }
@@ -971,6 +1493,29 @@ if(!window.THREE || !window.HouseScene){
     setTimeout(() => intro.remove(), 650);
     if (!coarse) lockPointer();
   });
+
+  /* ---------------- debug / capture hook (tooling only) ----------------
+     Renders synchronously on demand so frames can be captured even when
+     the tab is hidden (rAF is throttled there and toDataURL would be blank). */
+  window.__wt = {
+    renderer, scene, camera, player, spawnTo,
+    goto(x, y, z, yaw, pitch) {
+      player.pos.set(x, y, z); player.yaw = yaw || 0; player.pitch = pitch || 0;
+      player.velY = 0; placeCamera();
+    },
+    shot(w, q) {
+      w = w || 960; q = q || 0.7;
+      placeCamera();
+      skyDome.position.copy(camera.position);
+      updateLightPool();
+      renderFrame();
+      const c = renderer.domElement;
+      const s = document.createElement('canvas');
+      s.width = w; s.height = Math.max(1, Math.round(w * c.height / c.width));
+      s.getContext('2d').drawImage(c, 0, 0, s.width, s.height);
+      return s.toDataURL('image/jpeg', q);
+    }
+  };
 })();
 </script>
 </body>
