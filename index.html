@@ -232,7 +232,7 @@
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20260703_v3"></script>
+<script src="houseScene.js?v=20260712_render"></script>
 <script>
 /* ============================================================
    app.js — interactive layer for the Chandrasekhar Residence
@@ -288,8 +288,18 @@
   const canvas = $('c');
   // adaptive quality: pick render settings to match the device's hardware
   const Q = window.Perf ? Perf.detect()
-    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7 };
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: Q.antialias, powerPreference: 'high-performance' });
+    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7, logDepth: true, powerPreference: 'high-performance' };
+  let renderer;
+  try {
+    const opts = window.Perf && Perf.rendererOpts
+      ? Perf.rendererOpts(Q, canvas)
+      : { canvas, antialias: Q.antialias, powerPreference: Q.powerPreference || 'high-performance', failIfMajorPerformanceCaveat: false, alpha: false };
+    renderer = new THREE.WebGLRenderer(opts);
+  } catch (err) {
+    const lo = document.getElementById('loading');
+    if (lo) lo.innerHTML = '<div style="color:#e8e4da;padding:2rem;text-align:center;font-family:system-ui">WebGL could not start on this device.<br><small>Try updating your browser or graphics drivers.</small></div>';
+    throw err;
+  }
   renderer.setClearColor(0x101214, 1);
   // Forward-compatible encoding: use outputColorSpace on r152+, fall back to outputEncoding on r128
   if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -302,10 +312,35 @@
   // scene + sun are static → render the shadow map ONCE, never per-frame
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = Q.shadows;
+  function refreshShadows() {
+    if (Q.shadows) renderer.shadowMap.needsUpdate = true;
+    wake(800);
+  }
+  window.addEventListener('houseCarReady', refreshShadows);
   // dynamic resolution scaler holds the framerate steady on any GPU
-  const scaler = window.Perf ? Perf.makeScaler(renderer, Q, { targetFps: 58, minFps: 30 })
-    : { sample: function () {}, apply: function () { renderer.setPixelRatio(Q.dpr); } };
+  const scaler = window.Perf ? Perf.makeScaler(renderer, Q, {
+    targetFps: Q.mobile ? 52 : 58,
+    minFps: Q.mobile ? 28 : 30,
+    maxPixels: Q.mobile ? 2.2e6 : 8e6
+  }) : { sample: function () {}, apply: function () { renderer.setPixelRatio(Q.dpr); } };
   scaler.apply();
+
+  let contextLost = false;
+  if (window.Perf && Perf.onContextLoss) {
+    Perf.onContextLoss(canvas, function () { contextLost = true; }, function () {
+      contextLost = false;
+      try {
+        if (scaler.unfreeze) scaler.unfreeze();
+        scaler.apply();
+        resize();
+        refreshShadows();
+      } catch (_) { /* ignore */ }
+    });
+  }
+
+  const reduceMotion = !!(Q.reducedMotion || (window.Perf && Perf.prefersReducedMotion()));
+  // Auto-rotate exterior briefly on load (disabled when reduced-motion is set)
+  let autoRotateUntil = reduceMotion ? 0 : (performance.now() + 12000);
 
   /* on-demand rendering: only draw when something is moving or the user just
      interacted, so an idle floor view costs ~zero GPU/battery */
@@ -449,14 +484,17 @@
     });
   }
 
-  /* pointer input */
+  /* pointer input — accumulate deltas so high-rate mice don't drop moves */
   const pointers = new Map();
   let lastPinch = 0, moved = 0, downAt = null;
   let ptrMoveQueued = false;
+  let pendDx = 0, pendDy = 0, pendShift = false, pendBtn = 0;
+  let pendPinch = 0, hasPendPinch = false;
   canvas.addEventListener('pointerdown', e => {
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, button: e.button });
     ctl.interacted = true; tween = null; moved = 0; downAt = { x: e.clientX, y: e.clientY };
+    autoRotateUntil = 0; // stop auto-rotate once the user takes control
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       lastPinch = Math.hypot(a.x - b.x, a.y - b.y);
@@ -468,22 +506,32 @@
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
     p.x = e.clientX; p.y = e.clientY;
     moved += Math.abs(dx) + Math.abs(dy);
+    pendDx += dx; pendDy += dy;
+    pendShift = e.shiftKey; pendBtn = p.button;
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const pinch = Math.hypot(a.x - b.x, a.y - b.y);
+      pendPinch = pinch; hasPendPinch = true;
+    }
     if (ptrMoveQueued) return;
     ptrMoveQueued = true;
     requestAnimationFrame(() => {
       ptrMoveQueued = false;
+      const adx = pendDx, ady = pendDy;
+      pendDx = 0; pendDy = 0;
       if (pointers.size === 1) {
-        if (p.button === 2 || e.shiftKey) pan(dx, dy);
+        if (pendBtn === 2 || pendShift) pan(adx, ady);
         else {
-          ctl.tTheta -= dx * ORBIT_SENSITIVITY;
-          ctl.tPhi = clamp(ctl.tPhi - dy * TILT_SENSITIVITY, MIN_PHI, MAX_PHI);
+          ctl.tTheta -= adx * ORBIT_SENSITIVITY;
+          ctl.tPhi = clamp(ctl.tPhi - ady * TILT_SENSITIVITY, MIN_PHI, MAX_PHI);
         }
       } else if (pointers.size === 2) {
-        const [a, b] = [...pointers.values()];
-        const pinch = Math.hypot(a.x - b.x, a.y - b.y);
-        if (lastPinch > 0) ctl.tRadius = clamp(ctl.tRadius * lastPinch / pinch, MIN_RADIUS, MAX_RADIUS);
-        lastPinch = pinch;
-        pan(dx * 0.5, dy * 0.5);
+        if (hasPendPinch) {
+          if (lastPinch > 0) ctl.tRadius = clamp(ctl.tRadius * lastPinch / pendPinch, MIN_RADIUS, MAX_RADIUS);
+          lastPinch = pendPinch;
+          hasPendPinch = false;
+        }
+        pan(adx * 0.5, ady * 0.5);
       }
     });
   });
@@ -521,8 +569,13 @@
   function setView(name, instant) {
     activeView = name;
     const fi = VIEW_KEYS.indexOf(name) - 1; // -1 for exterior
-    data.exterior.visible = name === 'exterior';
-    data.floors.forEach((f, i) => f.group.visible = (i === fi));
+    // Keep exterior shell visible in floor views so balconies / lift / outdoor
+    // structure remain (those live only on `exterior` now, avoiding walkthrough
+    // coplanar duplicates with full outdoor slabs on every floor bag).
+    data.exterior.visible = true;
+    data.floors.forEach((f, i) => {
+      f.group.visible = (name === 'exterior') ? false : (i === fi);
+    });
     clearSelection();
     document.querySelectorAll('#views button').forEach(b =>
       b.classList.toggle('on', b.dataset.view === name));
@@ -609,17 +662,21 @@
     if (room.li) room.li.classList.add('sel');
     if (room.mli) room.mli.classList.add('sel');
     $('cardName').textContent = room.r.name;
-    // populate dimension / area fields
-    const dims = room.r.dims;  // e.g. '4575 × 3430'
-    if (dims) {
-      const parts = dims.split(/\s*[×x]\s*/i);
+    // Prefer plan coordinates (always present); fall back to dims string
+    let wMM = Math.round(room.r.x1 - room.r.x0);
+    let dMM = Math.round(room.r.y1 - room.r.y0);
+    if (!(wMM > 0 && dMM > 0) && room.r.dims) {
+      const parts = room.r.dims.split(/\s*[×x]\s*/i);
       if (parts.length === 2) {
-        const wMM = parseInt(parts[0], 10), dMM = parseInt(parts[1], 10);
-        $('cardMM').textContent = (wMM / 1000).toFixed(2) + ' × ' + (dMM / 1000).toFixed(2) + ' m';
-        $('cardFT').textContent = ftin(wMM) + ' × ' + ftin(dMM);
-        const sqft = (wMM * dMM) / (304.8 * 304.8);
-        $('cardAR').textContent = sqft.toFixed(0) + ' sq ft';
+        wMM = parseInt(parts[0], 10);
+        dMM = parseInt(parts[1], 10);
       }
+    }
+    if (wMM > 0 && dMM > 0) {
+      $('cardMM').textContent = (wMM / 1000).toFixed(2) + ' × ' + (dMM / 1000).toFixed(2) + ' m';
+      $('cardFT').textContent = ftin(wMM) + ' × ' + ftin(dMM);
+      const sqft = (wMM * dMM) / (304.8 * 304.8);
+      $('cardAR').textContent = sqft.toFixed(0) + ' sq ft';
     }
     card.classList.remove('hidden');
     announce('Selected ' + room.r.name);
@@ -644,7 +701,9 @@
     // Hide all labels for other floors
     floorsUI.forEach((f, fi) => {
       if (fi !== activeFi) {
-        f.rooms.forEach(room => room.el.style.display = 'none');
+        f.rooms.forEach(room => {
+          if (room.el.style.display !== 'none') room.el.style.display = 'none';
+        });
       }
     });
 
@@ -653,8 +712,16 @@
     for (const room of floorsUI[activeFi].rooms) {
       v3.set(room.cx, fY + LABEL_Y_OFFSET, room.cz).project(camera);
       const onScreen = v3.z < 1 && v3.x > -1.08 && v3.x < 1.08 && v3.y > -1.1 && v3.y < 1.1;
-      if (!onScreen) { room.el.style.display = 'none'; continue; }
+      if (!onScreen) {
+        if (room.el.style.display !== 'none') room.el.style.display = 'none';
+        room._lx = room._ly = undefined;
+        continue;
+      }
       const x = (v3.x * 0.5 + 0.5) * w, y = (-v3.y * 0.5 + 0.5) * h;
+      // Skip DOM writes when the label barely moved (<1px)
+      if (room._lx != null && Math.abs(room._lx - x) < 1 && Math.abs(room._ly - y) < 1
+          && room.el.style.display === 'block') continue;
+      room._lx = x; room._ly = y;
       _v3b.set(room.cx, fY, room.cz);
       const d = camera.position.distanceTo(_v3b);
       const op = clamp((40 - d) / 22, 0, 1) * 0.85 + 0.15;
@@ -675,14 +742,17 @@
 
   /* ---------- resize ---------- */
   function resize() {
-    const w = window.innerWidth, h = window.innerHeight;
+    const vv = window.visualViewport;
+    const w = Math.max(1, Math.floor((vv && vv.width) || window.innerWidth));
+    const h = Math.max(1, Math.floor((vv && vv.height) || window.innerHeight));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    if (scaler && scaler.apply) scaler.apply();
     wake(600);
   }
-  window.addEventListener('resize', resize);
-  resize();
+  if (window.Perf && Perf.attachViewport) Perf.attachViewport(resize);
+  else { window.addEventListener('resize', resize); resize(); }
 
   /* ---------- main loop ---------- */
   setView('exterior', true);
@@ -716,11 +786,11 @@
   function frame(now) {
     requestAnimationFrame(frame);
     const frameMs = now - last; last = now;
-    if (document.hidden) return;                 // pause all work when tab is hidden
+    if (document.hidden || contextLost) return;  // pause when tab hidden / GPU lost
     const dt = Math.min(0.05, frameMs / 1000);
     scaler.sample(frameMs);
 
-    // advance camera state every frame (cheap); auto-rotate keeps exterior alive
+    // advance camera state every frame (cheap); auto-rotate keeps exterior alive briefly
     if (tween) {
       const t = clamp((now - tween.t0) / tween.dur, 0, 1);
       const k = easeInOutCubic(t);
@@ -731,7 +801,9 @@
       ctl.tTarget.copy(ctl.target); ctl.tRadius = ctl.radius; ctl.tPhi = ctl.phi; ctl.tTheta = ctl.theta;
       if (t >= 1) tween = null;
     } else {
-      if (activeView === 'exterior' && !ctl.interacted) ctl.tTheta += dt * AUTO_ROTATE_SPEED;
+      if (activeView === 'exterior' && !ctl.interacted && !reduceMotion && now < autoRotateUntil) {
+        ctl.tTheta += dt * AUTO_ROTATE_SPEED;
+      }
       const k = 1 - Math.exp(-dt * DAMPING_RATE);
       ctl.target.lerp(ctl.tTarget, k);
       ctl.radius += (ctl.tRadius - ctl.radius) * k;
@@ -752,6 +824,8 @@
         lo.classList.add('done');
         setTimeout(() => lo.remove(), 650);
         setTimeout(hideHint, 6000);
+        // Re-bake shadows after car may have loaded / first full frame
+        requestAnimationFrame(refreshShadows);
       }
     }
   }

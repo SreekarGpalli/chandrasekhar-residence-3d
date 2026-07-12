@@ -142,6 +142,7 @@
   <span class="d kbd-hint"><b>Shift</b> run</span><span class="sep d kbd-hint"></span>
   <span class="d kbd-hint"><b>Space</b> jump</span><span class="sep kbd-hint"></span>
   <span id="btnFly" style="cursor:pointer; transition: color 0.18s"><b>F</b> fly</span><span class="sep kbd-hint"></span>
+  <span id="btnNight" style="cursor:pointer; transition: color 0.18s"><b>N</b> night</span><span class="sep kbd-hint"></span>
   <span class="kbd-hint"><b>Esc</b> release</span>
 </div>
 
@@ -153,16 +154,18 @@
   <div id="keys">
     <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</span>
     <span><kbd>Mouse</kbd> look around</span>
-    <span><kbd>Shift</kbd> run</span>
-    <span><kbd>Space</kbd> jump</span>
-    <span><kbd>F</kbd> fly (no collision)</span>
+    <span><kbd>Shift</kbd> run / fly boost</span>
+    <span><kbd>Space</kbd> jump / fly up · <kbd>C</kbd> fly down</span>
+    <span><kbd>F</kbd> fly (free, no collision)</span>
+    <span><kbd>N</kbd> day / night</span>
     <span><kbd>1</kbd>-<kbd>5</kbd> floor / roof / ext</span>
   </div>
   <div id="keysTouch">
-    <span><b>Left half</b> — move</span>
+    <span><b>Left half</b> — move (edge = run)</span>
     <span><b>Right half</b> — look around</span>
     <span><b>JUMP</b> button — hop</span>
     <span><b>G·1·2·R·E</b> — change level</span>
+    <span><b>F fly</b> · <b>N night</b> in footer</span>
   </div>
   <div id="err"></div>
 </div>
@@ -182,8 +185,13 @@
 <script src="lib/three.min.js"></script>
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
+<!-- GLTF/DRACO loaders (r128) for the real car GLB -->
+<script src="lib/GLTFLoader.js"></script>
+<script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
+<script src="lib/DRACOLoader.js"></script>
+<script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20260703_v2"></script>
+<script src="houseScene.js?v=20260712_render"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -211,12 +219,26 @@ if(!window.THREE || !window.HouseScene){
   const canvas = $('c');
   // adaptive quality: render settings chosen to match the device's hardware
   const Q = window.Perf ? Perf.detect()
-    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7 };
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: Q.antialias, powerPreference: 'high-performance' });
+    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7, logDepth: true, powerPreference: 'high-performance' };
+  let renderer;
+  try {
+    const opts = window.Perf && Perf.rendererOpts
+      ? Perf.rendererOpts(Q, canvas)
+      : { canvas, antialias: Q.antialias, powerPreference: Q.powerPreference || 'high-performance', failIfMajorPerformanceCaveat: false, alpha: false };
+    renderer = new THREE.WebGLRenderer(opts);
+  } catch (err) {
+    bootFail('WebGL could not start on this device. Try updating your browser or graphics drivers.');
+    throw err;
+  }
+  if (!renderer || !renderer.getContext || !renderer.getContext()) {
+    bootFail('WebGL is unavailable. This walkthrough needs a browser with WebGL support.');
+    throw new Error('no webgl');
+  }
   if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
   else renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.96;
+  // Cap shadow filter when BasicShadowMap is requested
   const SHADOW_TYPE = { basic: THREE.BasicShadowMap, pcf: THREE.PCFShadowMap, pcfsoft: THREE.PCFSoftShadowMap };
   renderer.shadowMap.enabled = Q.shadows;
   renderer.shadowMap.type = SHADOW_TYPE[Q.shadowType] || THREE.PCFSoftShadowMap;
@@ -225,14 +247,35 @@ if(!window.THREE || !window.HouseScene){
   renderer.shadowMap.needsUpdate = Q.shadows;
   if ('physicallyCorrectLights' in renderer) renderer.physicallyCorrectLights = true;
   // dynamic resolution scaler holds the framerate steady on any GPU
-  const scaler = window.Perf ? Perf.makeScaler(renderer, Q, { targetFps: 55, minFps: 30 })
-    : { sample: function () {}, apply: function () { renderer.setPixelRatio(Q.dpr); } };
+  const scaler = window.Perf ? Perf.makeScaler(renderer, Q, {
+    targetFps: Q.mobile ? 50 : 55,
+    minFps: Q.mobile ? 28 : 30,
+    maxPixels: Q.mobile ? 2.2e6 : 8e6
+  }) : { sample: function () {}, apply: function () { renderer.setPixelRatio(Q.dpr); } };
   scaler.apply();
+
+  // Recover after GPU process death (common on phones after backgrounding)
+  let contextLost = false;
+  if (window.Perf && Perf.onContextLoss) {
+    Perf.onContextLoss(canvas, function () {
+      contextLost = true;
+    }, function () {
+      contextLost = false;
+      try {
+        scaler.unfreeze && scaler.unfreeze();
+        scaler.apply();
+        resize();
+        if (Q.shadows) renderer.shadowMap.needsUpdate = true;
+      } catch (_) { /* ignore */ }
+    });
+  }
 
   const scene = new THREE.Scene();
   // near/far kept tight (sky dome r=400) so the depth buffer keeps precision —
   // a wide range (e.g. 0.05/600) makes near-coincident surfaces z-fight.
-  const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 460);
+  // Slightly narrower FOV on phones reduces edge distortion + pixel cost.
+  const camFov = Q.mobile ? 64 : 70;
+  const camera = new THREE.PerspectiveCamera(camFov, 1, 0.1, 460);
   camera.rotation.order = 'YXZ';
 
   /* ============================================================
@@ -244,7 +287,10 @@ if(!window.THREE || !window.HouseScene){
      ============================================================ */
   const POST = { on: false };
   (function buildPost() {
-    if (!renderer.capabilities.isWebGL2 || Q.tier === 'low' || Q.tier === 'potato') return;
+    // Full SSAO/FXAA stack only on high-tier WebGL2. Medium uses MSAA + ACES
+    // (much cheaper); low/potato stay on the direct path.
+    const wantPost = Q.post === 'full' || (Q.post == null && Q.tier === 'high');
+    if (!renderer.capabilities.isWebGL2 || !wantPost || Q.tier === 'low' || Q.tier === 'potato') return;
     POST.on = true;
     // tone mapping moves into the composite pass (scene renders linear HDR)
     renderer.toneMapping = THREE.NoToneMapping;
@@ -399,13 +445,24 @@ if(!window.THREE || !window.HouseScene){
       { tCol: { value: null }, res: { value: new THREE.Vector2(1, 1) }, t: { value: 0 } });
 
     let rtScene = null, rtAO = null, rtAOb = null, rtLDR = null, rw = 0, rh = 0;
+    let lastRTBuild = 0;
     const _dbs = new THREE.Vector2();
+    const reduceMotion = !!(Q.reducedMotion || (window.Perf && Perf.prefersReducedMotion()));
     function ensureRT() {
       renderer.getDrawingBufferSize(_dbs);
       const w = Math.max(2, _dbs.x | 0), h = Math.max(2, _dbs.y | 0);
       if (w === rw && h === rh) return;
+      // throttle RT rebuilds when the dynamic scaler is adjusting DPR
+      const now = performance.now();
+      if (rw && rh && now - lastRTBuild < 400) return;
+      lastRTBuild = now;
       rw = w; rh = h;
-      [rtScene, rtAO, rtAOb, rtLDR].forEach(rt => { if (rt) rt.dispose(); });
+      [rtScene, rtAO, rtAOb, rtLDR].forEach(rt => {
+        if (rt) {
+          if (rt.depthTexture) rt.depthTexture.dispose();
+          rt.dispose();
+        }
+      });
       const dt = new THREE.DepthTexture(w, h);
       dt.type = THREE.UnsignedIntType;
       rtScene = new THREE.WebGLRenderTarget(w, h, {
@@ -421,21 +478,28 @@ if(!window.THREE || !window.HouseScene){
       finalPass.u.res.value.set(w, h);
     }
     let frameNo = 0;
+    let aoFrame = 0;
     POST.render = function () {
       ensureRT();
+      if (!rtScene) { renderer.render(scene, camera); return; }
       renderer.setRenderTarget(rtScene);
       renderer.render(scene, camera);
-      aoPass.u.tDepth.value = rtScene.depthTexture;
-      aoPass.u.projInv.value.copy(camera.projectionMatrix).invert();
-      aoPass.u.projScale.value = camera.projectionMatrix.elements[5] * 0.5;
-      renderer.setRenderTarget(rtAO); renderer.render(aoPass.scene, fsCam);
-      blurH.u.tAO.value = rtAO.texture; blurH.u.tDepth.value = rtScene.depthTexture;
-      renderer.setRenderTarget(rtAOb); renderer.render(blurH.scene, fsCam);
-      blurV.u.tAO.value = rtAOb.texture; blurV.u.tDepth.value = rtScene.depthTexture;
-      renderer.setRenderTarget(rtAO); renderer.render(blurV.scene, fsCam);
+      // AO every other frame on medium-ish loads — reuse last AO texture
+      const runAO = (aoFrame++ & 1) === 0 || !aoPass.u.tDepth.value;
+      if (runAO) {
+        aoPass.u.tDepth.value = rtScene.depthTexture;
+        aoPass.u.projInv.value.copy(camera.projectionMatrix).invert();
+        aoPass.u.projScale.value = camera.projectionMatrix.elements[5] * 0.5;
+        renderer.setRenderTarget(rtAO); renderer.render(aoPass.scene, fsCam);
+        blurH.u.tAO.value = rtAO.texture; blurH.u.tDepth.value = rtScene.depthTexture;
+        renderer.setRenderTarget(rtAOb); renderer.render(blurH.scene, fsCam);
+        blurV.u.tAO.value = rtAOb.texture; blurV.u.tDepth.value = rtScene.depthTexture;
+        renderer.setRenderTarget(rtAO); renderer.render(blurV.scene, fsCam);
+      }
       compPass.u.tCol.value = rtScene.texture; compPass.u.tAO.value = rtAO.texture;
       renderer.setRenderTarget(rtLDR); renderer.render(compPass.scene, fsCam);
-      finalPass.u.tCol.value = rtLDR.texture; finalPass.u.t.value = (frameNo = (frameNo + 1) % 1024);
+      finalPass.u.tCol.value = rtLDR.texture;
+      finalPass.u.t.value = reduceMotion ? 0 : (frameNo = (frameNo + 1) % 1024);
       renderer.setRenderTarget(null); renderer.render(finalPass.scene, fsCam);
     };
   })();
@@ -450,6 +514,9 @@ if(!window.THREE || !window.HouseScene){
      catch. Albedo canvases stay light-toned (material.color tints).
      ============================================================ */
   const texCache = {};
+  // Tier-capped texture edge — low/potato use much smaller canvases
+  const TEX_S = window.Perf ? Perf.texSize(Q, 512) : Math.min(512, Q.texSize || 512);
+  const TEX_S_SM = Math.max(64, TEX_S >> 1);
   function cv(size, h) { const c = document.createElement('canvas'); c.width = size; c.height = h || size; return c; }
   function asTex(canvas, srgb) {
     const t = new THREE.CanvasTexture(canvas);
@@ -532,21 +599,21 @@ if(!window.THREE || !window.HouseScene){
   /* ---- texture kits: {map, normalMap?, roughnessMap?, ns} ---- */
   function kitPlaster() {
     if (texCache.plaster) return texCache.plaster;
-    const s = 512, c = cv(s), x = c.getContext('2d');
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
     x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
     // broad, faint tonal drift (NOT blobs — the old dots read as stains)
     x.globalAlpha = 0.028; x.drawImage(fbmCanvas(s, 3, 4), 0, 0); x.globalAlpha = 1;
     speckle(x, s, s, 5);
-    const height = fbmCanvas(256, 8, 5);
-    speckle(height.getContext('2d'), 256, 256, 26);
-    return texCache.plaster = {
-      map: asTex(c, true),
-      normalMap: asTex(normalFromHeight(height, 0.9), false), ns: 0.32
-    };
+    const hs = TEX_S_SM;
+    const height = fbmCanvas(hs, 8, Q.tier === 'high' ? 5 : 3);
+    speckle(height.getContext('2d'), hs, hs, 26);
+    const kit = { map: asTex(c, true), ns: 0.32 };
+    if (Q.tier !== 'potato') kit.normalMap = asTex(normalFromHeight(height, 0.9), false);
+    return texCache.plaster = kit;
   }
   function kitWood() {
     if (texCache.wood) return texCache.wood;
-    const s = 512, c = cv(s), x = c.getContext('2d');
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
     const hgt = cv(s), hx = hgt.getContext('2d');
     // desaturated walnut-teak base; grain along V
     for (let col = 0; col < s; col++) {
@@ -570,18 +637,21 @@ if(!window.THREE || !window.HouseScene){
     }
     x.globalAlpha = 1; speckle(x, s, s, 8);
     speckle(hx, s, s, 12);
-    return texCache.wood = {
-      map: asTex(c, true),
-      normalMap: asTex(normalFromHeight(hgt, 0.7), false), ns: 0.3,
-      roughnessMap: asTex(roughCanvas(256, 0.5, 26, 0.66, true), false)
+    const woodKit = {
+      map: asTex(c, true), ns: 0.3,
+      roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.5, 26, 0.66, true), false)
     };
+    if (Q.tier !== 'potato') woodKit.normalMap = asTex(normalFromHeight(hgt, 0.7), false);
+    return texCache.wood = woodKit;
   }
   function kitTile() {
     if (texCache.tile) return texCache.tile;
     // 3x3 vitrified 600mm tiles per repeat (use with tile≈1.8)
-    const s = 768, n = 3, ts = s / n, c = cv(s), x = c.getContext('2d');
+    const s = Math.min(768, TEX_S === 512 ? 768 : TEX_S * 1.5) | 0;
+    const n = 3, ts = s / n, c = cv(s), x = c.getContext('2d');
     const hgt = cv(s), hx = hgt.getContext('2d');
     hx.fillStyle = '#e8e8e8'; hx.fillRect(0, 0, s, s);
+    const fbmTile = fbmCanvas(TEX_S_SM, 3, Q.tier === 'high' ? 4 : 2);
     for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) {
       const tone = 246 + ((Math.random() * 8) | 0) - 4;
       x.fillStyle = 'rgb(' + tone + ',' + (tone - 1) + ',' + (tone - 3) + ')';
@@ -589,7 +659,7 @@ if(!window.THREE || !window.HouseScene){
       // soft mineral clouding, clipped to the tile
       x.save(); x.beginPath(); x.rect(tx * ts, ty * ts, ts, ts); x.clip();
       x.globalAlpha = 0.05;
-      x.drawImage(fbmCanvas(256, 3, 4), tx * ts - Math.random() * 80, ty * ts - Math.random() * 80, ts * 1.6, ts * 1.6);
+      x.drawImage(fbmTile, tx * ts - Math.random() * 80, ty * ts - Math.random() * 80, ts * 1.6, ts * 1.6);
       x.globalAlpha = 1; x.restore();
     }
     speckle(x, s, s, 4);
@@ -604,20 +674,21 @@ if(!window.THREE || !window.HouseScene){
       hx.beginPath(); hx.moveTo(0, p); hx.lineTo(s, p); hx.stroke();
     }
     speckle(hx, s, s, 6);
-    // gloss variation: smudges + scuffs so reflections aren't mirror-uniform
-    return texCache.tile = {
-      map: asTex(c, true),
-      normalMap: asTex(normalFromHeight(hgt, 1.6), false), ns: 0.55,
-      roughnessMap: asTex(roughCanvas(384, 0.17, 34, 0.34, true), false)
+    const tileKit = {
+      map: asTex(c, true), ns: 0.55,
+      roughnessMap: asTex(roughCanvas(Math.min(384, TEX_S), 0.17, 34, 0.34, true), false)
     };
+    if (Q.tier !== 'potato' && Q.tier !== 'low') tileKit.normalMap = asTex(normalFromHeight(hgt, 1.6), false);
+    return texCache.tile = tileKit;
   }
   function kitGranite() {
     if (texCache.granite) return texCache.granite;
-    const s = 512, c = cv(s), x = c.getContext('2d');
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
     x.fillStyle = '#b9b9bb'; x.fillRect(0, 0, s, s);
-    x.globalAlpha = 0.25; x.drawImage(fbmCanvas(s, 4, 5), 0, 0); x.globalAlpha = 1;
-    // dense mineral speckle field + sparse quartz glints
-    for (let i = 0; i < 26000; i++) {
+    x.globalAlpha = 0.25; x.drawImage(fbmCanvas(s, 4, Q.tier === 'high' ? 5 : 3), 0, 0); x.globalAlpha = 1;
+    // dense mineral speckle field + sparse quartz glints (count scales with tier)
+    const nSpec = Q.tier === 'high' ? 26000 : (Q.tier === 'medium' ? 10000 : 4000);
+    for (let i = 0; i < nSpec; i++) {
       const v = 120 + ((Math.random() * 150) | 0);
       x.fillStyle = 'rgba(' + v + ',' + v + ',' + (v + 4) + ',0.55)';
       x.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 1.6, 1 + Math.random() * 1.6);
@@ -628,16 +699,17 @@ if(!window.THREE || !window.HouseScene){
     }
     return texCache.granite = {
       map: asTex(c, true),
-      roughnessMap: asTex(roughCanvas(256, 0.14, 20, 0.3, true), false)
+      roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.14, 20, 0.3, true), false)
     };
   }
   function kitGrass() {
     if (texCache.grass) return texCache.grass;
-    const s = 512, c = cv(s), x = c.getContext('2d');
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
     x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
     // patchy dry/lush drift underneath the blades
     x.globalAlpha = 0.4; x.drawImage(fbmCanvas(s, 3, 4), 0, 0); x.globalAlpha = 1;
-    for (let i = 0; i < 26000; i++) {
+    const nBlade = Q.tier === 'high' ? 26000 : (Q.tier === 'medium' ? 12000 : 5000);
+    for (let i = 0; i < nBlade; i++) {
       const g = 0.5 + Math.random() * 0.5, dry = Math.random() < 0.16;
       x.fillStyle = dry
         ? 'rgba(' + ((165 * g) | 0) + ',' + ((150 * g) | 0) + ',' + ((84 * g) | 0) + ',0.75)'
@@ -648,9 +720,9 @@ if(!window.THREE || !window.HouseScene){
   }
   function kitConcrete() {
     if (texCache.concrete) return texCache.concrete;
-    const s = 512, c = cv(s), x = c.getContext('2d');
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
     x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
-    x.globalAlpha = 0.12; x.drawImage(fbmCanvas(s, 4, 5), 0, 0); x.globalAlpha = 1;
+    x.globalAlpha = 0.12; x.drawImage(fbmCanvas(s, 4, Q.tier === 'high' ? 5 : 3), 0, 0); x.globalAlpha = 1;
     speckle(x, s, s, 18);
     // aggregate pinholes + faint weather streaks
     x.fillStyle = 'rgba(60,60,60,0.35)';
@@ -661,15 +733,16 @@ if(!window.THREE || !window.HouseScene){
       const px = Math.random() * s; x.fillRect(px, Math.random() * s * 0.3, 3 + Math.random() * 10, s * (0.4 + Math.random() * 0.5));
     }
     x.globalAlpha = 1;
-    const hgt = fbmCanvas(256, 6, 5); speckle(hgt.getContext('2d'), 256, 256, 30);
-    return texCache.concrete = {
-      map: asTex(c, true),
-      normalMap: asTex(normalFromHeight(hgt, 0.8), false), ns: 0.4
-    };
+    const concKit = { map: asTex(c, true), ns: 0.4 };
+    if (Q.tier !== 'potato') {
+      const hgt = fbmCanvas(TEX_S_SM, 6, 4); speckle(hgt.getContext('2d'), TEX_S_SM, TEX_S_SM, 30);
+      concKit.normalMap = asTex(normalFromHeight(hgt, 0.8), false);
+    }
+    return texCache.concrete = concKit;
   }
   function kitFabric() {
     if (texCache.fabric) return texCache.fabric;
-    const s = 256, c = cv(s), x = c.getContext('2d');
+    const s = Math.min(256, TEX_S), c = cv(s), x = c.getContext('2d');
     const hgt = cv(s), hx = hgt.getContext('2d');
     x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
     hx.fillStyle = '#808080'; hx.fillRect(0, 0, s, s);
@@ -683,14 +756,13 @@ if(!window.THREE || !window.HouseScene){
     x.globalAlpha = 0.05;
     for (let i = 0; i < 30; i++) { x.fillStyle = i % 2 ? '#000' : '#fff'; x.fillRect(Math.random() * s, Math.random() * s, 8 + Math.random() * 26, 1.6); }
     x.globalAlpha = 1; speckle(x, s, s, 10);
-    return texCache.fabric = {
-      map: asTex(c, true),
-      normalMap: asTex(normalFromHeight(hgt, 0.5), false), ns: 0.25
-    };
+    const fabKit = { map: asTex(c, true), ns: 0.25 };
+    if (Q.tier !== 'potato') fabKit.normalMap = asTex(normalFromHeight(hgt, 0.5), false);
+    return texCache.fabric = fabKit;
   }
   function kitCurtain() {
     if (texCache.curtain) return texCache.curtain;
-    const s = 256, c = cv(s), x = c.getContext('2d');
+    const s = Math.min(256, TEX_S), c = cv(s), x = c.getContext('2d');
     const hgt = cv(s), hx = hgt.getContext('2d');
     x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
     // soft vertical drape folds (shading + height ridges)
@@ -704,19 +776,19 @@ if(!window.THREE || !window.HouseScene){
       hx.fillRect(px, 0, 1, s);
     }
     speckle(x, s, s, 8);
-    return texCache.curtain = {
-      map: asTex(c, true),
-      normalMap: asTex(normalFromHeight(hgt, 2.4), false), ns: 0.8
-    };
+    const curKit = { map: asTex(c, true), ns: 0.8 };
+    if (Q.tier !== 'potato') curKit.normalMap = asTex(normalFromHeight(hgt, 2.4), false);
+    return texCache.curtain = curKit;
   }
   function kitAsphalt() {
     if (texCache.asphalt) return texCache.asphalt;
-    const s = 512, c = cv(s), x = c.getContext('2d');
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
     x.fillStyle = '#bdbdbf'; x.fillRect(0, 0, s, s);
-    x.globalAlpha = 0.14; x.drawImage(fbmCanvas(s, 4, 5), 0, 0); x.globalAlpha = 1;
+    x.globalAlpha = 0.14; x.drawImage(fbmCanvas(s, 4, Q.tier === 'high' ? 5 : 3), 0, 0); x.globalAlpha = 1;
     speckle(x, s, s, 34);
     // lighter aggregate + wheel-wear bands + hairline cracks
-    for (let i = 0; i < 900; i++) {
+    const nAgg = Q.tier === 'high' ? 900 : 400;
+    for (let i = 0; i < nAgg; i++) {
       const v = 150 + ((Math.random() * 70) | 0);
       x.fillStyle = 'rgba(' + v + ',' + v + ',' + v + ',0.5)';
       x.fillRect(Math.random() * s, Math.random() * s, 1, 1);
@@ -734,7 +806,7 @@ if(!window.THREE || !window.HouseScene){
   }
   function kitPaver() {
     if (texCache.paver) return texCache.paver;
-    const s = 512, n = 2, ts = s / n, c = cv(s), x = c.getContext('2d');
+    const s = TEX_S, n = 2, ts = s / n, c = cv(s), x = c.getContext('2d');
     const hgt = cv(s), hx = hgt.getContext('2d');
     hx.fillStyle = '#d8d8d8'; hx.fillRect(0, 0, s, s);
     for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) {
@@ -753,10 +825,9 @@ if(!window.THREE || !window.HouseScene){
       hx.beginPath(); hx.moveTo(0, p); hx.lineTo(s, p); hx.stroke();
     }
     speckle(hx, s, s, 14);
-    return texCache.paver = {
-      map: asTex(c, true),
-      normalMap: asTex(normalFromHeight(hgt, 1.2), false), ns: 0.5
-    };
+    const pavKit = { map: asTex(c, true), ns: 0.5 };
+    if (Q.tier !== 'potato' && Q.tier !== 'low') pavKit.normalMap = asTex(normalFromHeight(hgt, 1.2), false);
+    return texCache.paver = pavKit;
   }
   const TEX = {
     plaster: kitPlaster, wood: kitWood, tile: kitTile, granite: kitGranite,
@@ -802,6 +873,11 @@ if(!window.THREE || !window.HouseScene){
       case 'ms': return { rough: 0.48, metal: 0.15, env: 0.6 };            // painted MS
       case 'steel': case 'liftDoor': return { rough: 0.3, metal: 1.0, env: 1.0 };
       case 'brass': return { rough: 0.28, metal: 1.0, env: 1.1, interior: true };
+      case 'murtiGold': return { rough: 0.32, metal: 0.92, env: 1.05, interior: true };
+      case 'murtiDark': return { rough: 0.55, metal: 0.15, env: 0.55, interior: true };
+      case 'murtiBlue': return { rough: 0.45, metal: 0.2, env: 0.5, interior: true };
+      case 'saffron': case 'vermilion': case 'lotusPink': case 'peetaRed':
+        return { rough: 0.7, metal: 0.05, env: 0.35, interior: true };
       case 'chrome': return { rough: 0.07, metal: 1.0, env: 1.3, interior: true };
       case 'frame': return { rough: 0.4, metal: 0.7, env: 0.9 };
       case 'counter': return { rough: 0.55, metal: 0, env: 0.35, interior: true };
@@ -843,7 +919,9 @@ if(!window.THREE || !window.HouseScene){
     tPooja: 0xe2d5b8, tWalk: 0xd3cab8,
     // furnishings (wood keeps its own brown texture, so it's not recoloured here)
     fabric: 0x9c8f7b, fabric2: 0x6f6354, rug: 0xb6a98d, counterTop: 0x54565a,
-    brass: 0xc9a15e, chrome: 0xf0f2f4, steel: 0xbfc3c8, liftDoor: 0xb4b8bd,
+    brass: 0xc9a15e, chrome: 0xf0f2f4, steel: 0xbfc3c8, liftDoor: 0xc8ccd1,
+    murtiGold: 0xd4ad55, murtiDark: 0x2c2e32, murtiBlue: 0x4568a8,
+    saffron: 0xe08a30, vermilion: 0xd44532, lotusPink: 0xe08aaa, peetaRed: 0x9a3530,
     tank: 0xdedbd3, tv: 0x0b0c0d,
     // planting + outdoors
     green: 0x4c6838, green2: 0x607d45, grass: 0x55703f, boug: 0xc44f86, ixora: 0xe16b39,
@@ -952,7 +1030,10 @@ if(!window.THREE || !window.HouseScene){
     const pmrem = new THREE.PMREMGenerator(renderer);
     pmrem.compileEquirectangularShader();
     function equirectToEnv(paint) {
-      const w = 1024, h = 512, c = cv(w, h), x = c.getContext('2d');
+      // Smaller env maps on weak tiers — PMREM is a boot bottleneck
+      const w = Q.tier === 'high' ? 1024 : (Q.tier === 'medium' ? 512 : 256);
+      const h = w >> 1;
+      const c = cv(w, h), x = c.getContext('2d');
       paint(x, w, h);
       const eq = new THREE.CanvasTexture(c);
       eq.mapping = THREE.EquirectangularReflectionMapping;
@@ -1004,10 +1085,14 @@ if(!window.THREE || !window.HouseScene){
   })();
 
   scene.fog = new THREE.Fog(0xd6dce0, 70, 380);
+  // Two fog presets (outdoor vs indoor). Declared early so day/night toggle can tint both.
+  const FOG_OUT = scene.fog;
+  const FOG_IN = new THREE.Fog(0xd6dce0, 120, 420);
 
   // warm sun + cooler sky fill; interiors are carried by the fixture light
   // pool + emissive downlights instead of a flat ambient wash.
-  scene.add(new THREE.HemisphereLight(0xbfccda, 0x8a7a66, 0.4));
+  const hemi = new THREE.HemisphereLight(0xbfccda, 0x8a7a66, 0.4);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff0d4, 3.25);
   sun.position.copy(SUN_DIR).multiplyScalar(80).add(new THREE.Vector3(9, 0, -5));
   sun.castShadow = Q.shadows;
@@ -1023,13 +1108,85 @@ if(!window.THREE || !window.HouseScene){
   const warmFill = new THREE.HemisphereLight(0xf6e8d0, 0x3a3631, 0.3);
   scene.add(warmFill);
 
+  /* ---- day / night exposure toggle (N key + footer) ---- */
+  let isNight = false;
+  const DAY = {
+    hemiI: 0.4, hemiSky: 0xbfccda, hemiGnd: 0x8a7a66,
+    sunI: 3.25, sunC: 0xfff0d4, fillI: 0.18, warmI: 0.3,
+    fogC: 0xd6dce0, fogN: 70, fogF: 380,
+    skyTop: 0x2d5fa4, skyMid: 0x7fa8cd, skyBot: 0xd9d3c5,
+    bg: 0xd6dce0, exp: 1.0, lampBoost: 1
+  };
+  const NIGHT = {
+    hemiI: 0.08, hemiSky: 0x1a2438, hemiGnd: 0x12100e,
+    sunI: 0.06, sunC: 0x8899bb, fillI: 0.04, warmI: 0.12,
+    fogC: 0x0c1018, fogN: 40, fogF: 220,
+    skyTop: 0x060a14, skyMid: 0x121a2c, skyBot: 0x1a1820,
+    bg: 0x0a0e16, exp: 0.85, lampBoost: 1.55
+  };
+  function applyTimeOfDay(night) {
+    isNight = !!night;
+    const S = isNight ? NIGHT : DAY;
+    hemi.intensity = S.hemiI;
+    hemi.color.setHex(S.hemiSky);
+    hemi.groundColor.setHex(S.hemiGnd);
+    sun.intensity = S.sunI;
+    sun.color.setHex(S.sunC);
+    fill.intensity = S.fillI;
+    warmFill.intensity = S.warmI;
+    // Update outdoor + indoor fog presets (frame loop swaps which is active)
+    FOG_OUT.color.setHex(S.fogC);
+    FOG_OUT.near = S.fogN;
+    FOG_OUT.far = S.fogF;
+    FOG_IN.color.setHex(isNight ? 0x141820 : 0xd6dce0);
+    FOG_IN.near = isNight ? 80 : 120;
+    FOG_IN.far = isNight ? 280 : 420;
+    if (renderer.toneMappingExposure != null) renderer.toneMappingExposure = S.exp;
+    if (scene.background && scene.background.isColor) scene.background.setHex(S.bg);
+    else scene.background = new THREE.Color(S.bg);
+    if (skyMat && skyMat.uniforms) {
+      skyMat.uniforms.top.value.setHex(S.skyTop);
+      skyMat.uniforms.mid.value.setHex(S.skyMid);
+      skyMat.uniforms.bot.value.setHex(S.skyBot);
+    }
+    // Boost emissive lamp materials at night so sconces / canopy strips glow
+    if (typeof data !== 'undefined' && data.root) {
+      data.root.traverse(o => {
+        if (!o.isMesh || !o.material) return;
+        const m = o.material;
+        // Prefer colour-name, fall back to mesh matKey (bag.build sets this)
+        const n = (m.userData && m.userData.name) || o.userData.matKey;
+        if ((n === 'lamp' || n === 'downlight') && m.emissiveIntensity != null) {
+          if (m.userData._dayEmissive == null) m.userData._dayEmissive = m.emissiveIntensity;
+          m.emissiveIntensity = m.userData._dayEmissive * S.lampBoost;
+        }
+      });
+    }
+    const btn = document.getElementById('btnNight');
+    if (btn) {
+      if (isNight) {
+        btn.style.color = 'var(--brass)';
+        btn.innerHTML = '<b>N</b> day';
+      } else {
+        btn.style.color = '';
+        btn.innerHTML = '<b>N</b> night';
+      }
+    }
+  }
+  function toggleNight(force) {
+    applyTimeOfDay(force !== undefined ? force : !isNight);
+  }
+
   /* ============================================================
      build the house (verified geometry) and re-skin it
      ============================================================ */
   const data = window.HouseScene.build(THREE);
   const L = data.LEVELS;
+  const FP = data.footprint || window.HouseScene.FOOTPRINT || { x0: 0, x1: 16600, y0: 0, y1: 8870, upperY0: -762, northBalcY1: 9900 };
   scene.add(data.root);
-  // everything visible at once → one continuous enclosed building
+  // Full building always visible: site + context + exterior shell + all floors.
+  // Hiding the exterior shell removed portico/balcony/roof terrace geometry and
+  // made outdoor walking fall through (those surfaces live on `exterior`).
   data.root.children.forEach(g => { g.visible = true; });
 
   // 1) upgrade each unique material in place (shared instances)
@@ -1050,7 +1207,8 @@ if(!window.THREE || !window.HouseScene){
     }
     if (t.emissive) {
       if (m.emissive) m.emissive.setHex(t.strong ? 0xffdcae : 0xffd9a0);
-      m.emissiveIntensity = t.strong ? 3.2 : Math.max(m.emissiveIntensity || 1.6, 2.4);
+      // Bump lamp/downlight emissive so exterior sconces & canopy strips read at night
+      m.emissiveIntensity = t.strong ? 4.0 : Math.max(m.emissiveIntensity || 1.6, 3.2);
       m.envMapIntensity = 0.2; m.needsUpdate = true; return;
     }
     if ('roughness' in m) m.roughness = t.rough;
@@ -1067,20 +1225,28 @@ if(!window.THREE || !window.HouseScene){
     m.needsUpdate = true;
   });
 
-  // 2) compute world-aligned UVs per mesh geometry (so tiling textures sit right)
-  //    and clone+offset floor-group materials to defeat z-fighting where the
-  //    floor "shells" coincide with the exterior shell.
+  // 2) world-aligned UVs + one shared polygonOffset material clone per
+  //    material key per floor group (avoids exterior/floor z-fight without
+  //    cloning every mesh's material).
   const FLOOR_GROUPS = new Set(['floor0', 'floor1', 'floor2']);
   data.root.children.forEach(group => {
     const isFloor = FLOOR_GROUPS.has(group.name);
+    const matClone = isFloor ? new Map() : null;
     group.traverse(o => {
       if (!o.isMesh) return;
       if (isFloor && o.material && !o.material.userData.poff) {
-        o.material = o.material.clone();
-        o.material.polygonOffset = true;
-        o.material.polygonOffsetFactor = -1.2;
-        o.material.polygonOffsetUnits = -1.2;
-        o.material.userData.poff = true;
+        const src = o.material;
+        let cloned = matClone.get(src);
+        if (!cloned) {
+          cloned = src.clone();
+          cloned.polygonOffset = true;
+          cloned.polygonOffsetFactor = -1.2;
+          cloned.polygonOffsetUnits = -1.2;
+          cloned.userData.poff = true;
+          if (src.userData && src.userData.name) cloned.userData.name = src.userData.name;
+          matClone.set(src, cloned);
+        }
+        o.material = cloned;
       }
       const name = o.material && o.material.userData ? o.material.userData.name : undefined;
       const t = treatment(name || '');
@@ -1092,43 +1258,127 @@ if(!window.THREE || !window.HouseScene){
      A small pool of real point lights teleports to the downlight
      fixtures nearest the camera each few frames, so every room lights
      up as you move through it without paying for 100+ live lights. */
-  const FIXTURES = (data.lights || []).map(l => new THREE.Vector3(l.x, l.y, l.z));
+  const FIXTURES = (data.lights || []).map(l => ({
+    x: l.x, y: l.y, z: l.z, floor: l.floor != null ? l.floor : -1,
+    v: new THREE.Vector3(l.x, l.y, l.z), warm: !!l.warm
+  }));
+  // Slightly larger pool so exterior sconces + interior fixtures can coexist
   const POOL_N = FIXTURES.length ? (Q.tier === 'high' ? 8 : Q.tier === 'medium' ? 5 : 3) : 0;
   const lightPool = [];
   for (let i = 0; i < POOL_N; i++) {
-    const p = new THREE.PointLight(0xffdcb2, 0, 8.5, 2);
+    const p = new THREE.PointLight(0xffe0b8, 0, 9.5, 1.8);
     p.visible = false; scene.add(p); lightPool.push(p);
+  }
+  // pre-bucket fixtures by floor so we only scan nearby levels
+  const fixturesByFloor = { 0: [], 1: [], 2: [], other: [] };
+  for (let i = 0; i < FIXTURES.length; i++) {
+    const f = FIXTURES[i];
+    if (f.floor === 0 || f.floor === 1 || f.floor === 2) fixturesByFloor[f.floor].push(f);
+    else fixturesByFloor.other.push(f);
   }
   const _fd = [];
   function updateLightPool() {
     if (!lightPool.length) return;
     _fd.length = 0;
-    for (let i = 0; i < FIXTURES.length; i++) {
-      const f = FIXTURES[i];
-      const dx = f.x - player.pos.x, dy = f.y - player.pos.y, dz = f.z - player.pos.z;
-      _fd.push([dx * dx + dy * dy * 1.8 + dz * dz, f]);   // penalise other floors
+    const fi = currentFloorIndex();
+    const buckets = [];
+    if (fi >= 0 && fi <= 2) {
+      buckets.push(fixturesByFloor[fi]);
+      if (fi > 0) buckets.push(fixturesByFloor[fi - 1]);
+      if (fi < 2) buckets.push(fixturesByFloor[fi + 1]);
+      // always consider exterior / special warm fixtures (portico, entry, lift)
+      buckets.push(fixturesByFloor.other);
+    } else {
+      buckets.push(fixturesByFloor[0], fixturesByFloor[1], fixturesByFloor[2], fixturesByFloor.other);
     }
-    _fd.sort((a, b) => a[0] - b[0]);
+    const px = player.pos.x, py = player.pos.y, pz = player.pos.z;
+    for (let b = 0; b < buckets.length; b++) {
+      const list = buckets[b];
+      for (let i = 0; i < list.length; i++) {
+        const f = list[i];
+        const dx = f.x - px, dy = f.y - py, dz = f.z - pz;
+        const d2 = dx * dx + dy * dy * 1.8 + dz * dz;
+        if (d2 < 150) _fd.push(d2, f);
+      }
+    }
+    // partial select: pick POOL_N nearest without full sort when n is large
+    const nCand = _fd.length >> 1;
+    const order = [];
+    for (let i = 0; i < nCand; i++) order.push(i);
+    order.sort((a, b) => _fd[a * 2] - _fd[b * 2]);
     for (let i = 0; i < lightPool.length; i++) {
       const p = lightPool[i];
-      if (i < _fd.length && _fd[i][0] < 150) {
-        p.position.copy(_fd[i][1]); p.position.y -= 0.1;
-        p.intensity = 6.5; p.visible = true;
+      if (i < order.length) {
+        const f = _fd[order[i] * 2 + 1];
+        p.position.set(f.x, f.y - 0.08, f.z);
+        // Warm exterior/entry fixtures: brighter & wider; extra boost at night
+        const nightMul = (typeof isNight !== 'undefined' && isNight) ? 1.65 : 1.0;
+        p.intensity = (f.warm ? 7.8 : 6.8) * nightMul;
+        p.distance = f.warm ? (isNight ? 18.0 : 14.0) : 9.0;
+        p.decay = f.warm ? 1.6 : 2.0;
+        p.visible = true;
       } else p.visible = false;
     }
   }
 
-  /* collidable mesh list (everything solid; glass/doors excluded so you can walk through them). Built once. */
+  /* collidable mesh list — blacklist portals + foliage only.
+     CRITICAL: outdoor ground / plotPad / grass / road / floors / walls MUST
+     stay collidable or the player falls into the void outdoors. */
   const colliders = [];
-  const nonCollidableMaterials = new Set(['glass', 'carGlass', 'walnut', 'liftDoor', 'woodD', 'woodF', 'frame', 'brass', 'curtain', 'curtain2']);
-  data.root.traverse(o => {
-    if (o.isMesh && o !== skyDome) {
-      const name = o.material && o.material.userData ? o.material.userData.name : undefined;
-      if (!nonCollidableMaterials.has(name)) {
-        colliders.push(o);
-      }
+  const NON_COLLIDE = data.nonCollideMaterials
+    || window.HouseScene.NON_COLLIDE_MATERIALS
+    || {
+      glass: 1, carGlass: 1, walnut: 1, liftDoor: 1, frame: 1,
+      brass: 1, chrome: 1, curtain: 1, curtain2: 1, woodD: 1, woodF: 1,
+      fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
+      rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
+      skirt: 1, whiteG: 1, accentWarm: 1,
+      lamp: 1, downlight: 1,
+      green: 1, green2: 1, leafDark: 1, leafLight: 1,
+      boug: 1, ixora: 1, flowerPink: 1, soil: 1, bark: 1, barkLight: 1,
+      roadLine: 1,
+      murtiGold: 1, murtiDark: 1, murtiBlue: 1, saffron: 1,
+      vermilion: 1, lotusPink: 1, peetaRed: 1
+    };
+  function meshMatKey(o) {
+    if (o.userData && o.userData.matKey) return o.userData.matKey;
+    if (o.material && o.material.userData && o.material.userData.name) return o.material.userData.name;
+    return undefined;
+  }
+  function rebuildColliders() {
+    colliders.length = 0;
+    data.root.traverse(o => {
+      if (!o.isMesh || o === skyDome) return;
+      // Skip meshes whose entire ancestor chain is hidden (shouldn't happen now)
+      let p = o;
+      while (p) { if (p.visible === false) return; p = p.parent; }
+      const key = meshMatKey(o);
+      // Unknown keys still collide (safe default). Only listed portals/foliage skip.
+      if (key && NON_COLLIDE[key]) return;
+      colliders.push(o);
+    });
+  }
+  rebuildColliders();
+  // Extra AABB colliders (car, etc.) — cheap, no triangle tests
+  const boxColliders = [];
+  function registerCarCollider() {
+    const car = data.root.getObjectByName('car');
+    if (!car || !car.userData || !car.userData.colliderBox) return;
+    for (let i = boxColliders.length - 1; i >= 0; i--) {
+      if (boxColliders[i].id === 'car') boxColliders.splice(i, 1);
     }
+    boxColliders.push({ id: 'car', b: car.userData.colliderBox });
+  }
+  registerCarCollider();
+  function refreshShadows() {
+    if (Q.shadows) renderer.shadowMap.needsUpdate = true;
+  }
+  window.addEventListener('houseCarReady', function () {
+    registerCarCollider();
+    refreshShadows();
   });
+  // Re-bake shadows once after first frame of reskin settles
+  requestAnimationFrame(function () { requestAnimationFrame(refreshShadows); });
 
   /* ============================================================
      first-person controller — walk + fly, gravity, stair stepping
@@ -1147,72 +1397,190 @@ if(!window.THREE || !window.HouseScene){
     velY: 0, onGround: false, fly: false,
     eye: 1.66, radius: 0.27, step: 0.42
   };
-  const GRAV = 18, WALK = 3.0, RUN = 5.6, FLY = 7.5, ACCEL = 12;
-  const move = { f: 0, r: 0, up: 0 };
+  const GRAV = 18, WALK = 3.0, RUN = 5.6, FLY = 7.5, FLY_FAST = 14, ACCEL = 12;
+  const move = { f: 0, r: 0, up: 0, run: false };
   const moveVel = new THREE.Vector3();
+  // Soft world bounds — freefly stays near the house, never "lost in void"
+  const WORLD = { minX: -8, maxX: 42, minY: -0.5, maxY: 28, minZ: -28, maxZ: 12 };
 
   const ray = new THREE.Raycaster();
   const _o = new THREE.Vector3(), _d = new THREE.Vector3();
+  // World Y of the main outdoor ground top (ground box center -0.09, half-height 0.09 → top ~0)
+  const GROUND_Y = 0.0;
+  const VOID_Y = -2.5;
+
+  function firstHit(x, y, z, dx, dy, dz, maxDist) {
+    _o.set(x, y, z); _d.set(dx, dy, dz);
+    if (_d.lengthSq() < 1e-12) return null;
+    _d.normalize();
+    ray.set(_o, _d);
+    ray.far = maxDist;
+    ray.near = 0;
+    const hit = ray.intersectObjects(colliders, false);
+    return hit.length ? hit[0] : null;
+  }
+  function boxBlockDist(x, y, z, dirX, dirZ, max) {
+    let best = Infinity;
+    const len = Math.hypot(dirX, dirZ) || 1;
+    const dx = dirX / len, dz = dirZ / len;
+    for (let i = 0; i < boxColliders.length; i++) {
+      const b = boxColliders[i].b;
+      const minX = b.minX - player.radius, maxX = b.maxX + player.radius;
+      const minZ = b.minZ - player.radius, maxZ = b.maxZ + player.radius;
+      if (y < b.minY - 0.05 || y > b.maxY + 0.1) continue;
+      let tmin = 0, tmax = max;
+      if (Math.abs(dx) < 1e-8) {
+        if (x < minX || x > maxX) continue;
+      } else {
+        let t1 = (minX - x) / dx, t2 = (maxX - x) / dx;
+        if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+        tmin = Math.max(tmin, t1); tmax = Math.min(tmax, t2);
+        if (tmin > tmax) continue;
+      }
+      if (Math.abs(dz) < 1e-8) {
+        if (z < minZ || z > maxZ) continue;
+      } else {
+        let t1 = (minZ - z) / dz, t2 = (maxZ - z) / dz;
+        if (t1 > t2) { const tmp = t1; t1 = t2; t2 = tmp; }
+        tmin = Math.max(tmin, t1); tmax = Math.min(tmax, t2);
+        if (tmin > tmax) continue;
+      }
+      if (tmin >= 0 && tmin < best) best = tmin;
+    }
+    return best;
+  }
 
   function groundAt(x, z, fromY) {
-    // highest surface at or below (fromY + step), searching downward
-    _o.set(x, fromY + player.step, z); _d.set(0, -1, 0);
-    ray.set(_o, _d); ray.far = player.step + 4.5;
-    const hit = ray.intersectObjects(colliders, false);
-    return hit.length ? hit[0].point.y : null;
+    // Cast from above the player far enough to always reach outdoor ground,
+    // even when falling from an upper floor or the roof.
+    const startY = fromY + player.step;
+    const far = Math.max(player.step + 6.0, startY - VOID_Y + 1.0);
+    const hit = firstHit(x, startY, z, 0, -1, 0, far);
+    if (hit) return hit.point.y;
+    // Safety floor: infinite outdoor ground plane so we never fall forever
+    // if a mesh is missing (should rarely trigger once ground is collidable).
+    if (fromY < L.f0 + 1.0) return GROUND_Y;
+    return null;
   }
   function blockedDist(x, y, z, dirX, dirZ, max) {
-    _o.set(x, y, z); _d.set(dirX, 0, dirZ).normalize();
-    ray.set(_o, _d); ray.far = max;
-    const hit = ray.intersectObjects(colliders, false);
-    return hit.length ? hit[0].distance : Infinity;
+    const hit = firstHit(x, y, z, dirX, 0, dirZ, max);
+    let d = hit ? hit.distance : Infinity;
+    const bd = boxBlockDist(x, y, z, dirX, dirZ, max);
+    if (bd < d) d = bd;
+    return d;
   }
   function moveAxis(axis, delta) {
     if (Math.abs(delta) < 1e-5) return;
     const dir = delta > 0 ? 1 : -1, dist = Math.abs(delta);
     const need = dist + player.radius;
-    // lowest ray must sit ABOVE the step-up height, otherwise the next
-    // stair tread reads as a wall and blocks the climb. Treads within
-    // step height are walked up via the downward ground-follow ray.
+    // lowest ray ABOVE step-up height so stair treads aren't treated as walls
     const heights = [player.step + 0.04, 1.05, player.eye - 0.05];
     const lat = [-0.20, 0, 0.20];
     let allow = dist;
-    for (const h of heights) for (const l of lat) {
-      const ox = player.pos.x + (axis === 'z' ? l : 0);
-      const oz = player.pos.z + (axis === 'x' ? l : 0);
-      const d = axis === 'x'
-        ? blockedDist(ox, player.pos.y + h, oz, dir, 0, need)
-        : blockedDist(ox, player.pos.y + h, oz, 0, dir, need);
-      if (d < need) allow = Math.min(allow, Math.max(0, d - player.radius));
+    for (let hi = 0; hi < heights.length; hi++) {
+      for (let li = 0; li < lat.length; li++) {
+        const h = heights[hi], l = lat[li];
+        const ox = player.pos.x + (axis === 'z' ? l : 0);
+        const oz = player.pos.z + (axis === 'x' ? l : 0);
+        const d = axis === 'x'
+          ? blockedDist(ox, player.pos.y + h, oz, dir, 0, need)
+          : blockedDist(ox, player.pos.y + h, oz, 0, dir, need);
+        if (d < need) allow = Math.min(allow, Math.max(0, d - player.radius));
+      }
     }
     player.pos[axis] += dir * allow;
   }
 
+  /** True when mid-body is tightly boxed in by colliders (stuck inside solid). */
+  function isWedgedAt(x, y, z) {
+    const probe = player.radius + 0.08;
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    let tight = 0;
+    for (let i = 0; i < dirs.length; i++) {
+      const d = blockedDist(x, y + 1.0, z, dirs[i][0], dirs[i][1], probe);
+      if (d < probe * 0.85) tight++;
+    }
+    return tight >= 3;
+  }
+
+  /** Nudge out of furniture / wall interiors after leaving fly mode. */
+  function unstickIfNeeded() {
+    const y = player.pos.y;
+    if (!isWedgedAt(player.pos.x, y, player.pos.z)) return false;
+    const steps = [0.35, 0.7, 1.1, 1.6, 2.2];
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+    for (let s = 0; s < steps.length; s++) {
+      for (let i = 0; i < dirs.length; i++) {
+        const nx = player.pos.x + dirs[i][0] * steps[s];
+        const nz = player.pos.z + dirs[i][1] * steps[s];
+        if (isWedgedAt(nx, y, nz)) continue;
+        player.pos.x = nx;
+        player.pos.z = nz;
+        const g = groundAt(nx, nz, y + 1.5);
+        if (g !== null) player.pos.y = g;
+        moveVel.set(0, 0, 0);
+        player.velY = 0;
+        return true;
+      }
+    }
+    // Last resort: lift clear and keep free-flight so the user is never trapped
+    player.pos.y = Math.min(WORLD.maxY - 1, y + 2.0);
+    player.fly = true;
+    moveVel.set(0, 0, 0);
+    player.velY = 0;
+    player.onGround = false;
+    syncFlyButton();
+    return true;
+  }
+
+  function clampWorld() {
+    player.pos.x = Math.max(WORLD.minX, Math.min(WORLD.maxX, player.pos.x));
+    player.pos.y = Math.max(WORLD.minY, Math.min(WORLD.maxY, player.pos.y));
+    player.pos.z = Math.max(WORLD.minZ, Math.min(WORLD.maxZ, player.pos.z));
+  }
+
   function updatePlayer(dt) {
-    // desired horizontal velocity from input, relative to yaw
-    const sp = move.run ? RUN : (player.fly ? FLY : WALK);
+    const k = 1 - Math.exp(-ACCEL * dt);
+
+    if (player.fly) {
+      // True freefly: W/S along look ray, A/D strafe, Space/C vertical, Shift boost.
+      // No mesh collision — this is the intentional "never stuck" explorer mode.
+      const sp = move.run ? FLY_FAST : FLY;
+      const cp = Math.cos(player.pitch), spn = Math.sin(player.pitch);
+      const lookX = -Math.sin(player.yaw) * cp;
+      const lookY = -spn;
+      const lookZ = -Math.cos(player.yaw) * cp;
+      const rgtX = Math.cos(player.yaw), rgtZ = -Math.sin(player.yaw);
+      const tx = (lookX * move.f + rgtX * move.r) * sp;
+      const ty = (lookY * move.f + move.up) * sp;
+      const tz = (lookZ * move.f + rgtZ * move.r) * sp;
+      moveVel.x += (tx - moveVel.x) * k;
+      moveVel.y += (ty - moveVel.y) * k;
+      moveVel.z += (tz - moveVel.z) * k;
+      player.pos.x += moveVel.x * dt;
+      player.pos.y += moveVel.y * dt;
+      player.pos.z += moveVel.z * dt;
+      player.velY = 0;
+      player.onGround = false;
+      clampWorld();
+      return;
+    }
+
+    // Walk: horizontal only (yaw plane)
+    const sp = move.run ? RUN : WALK;
     const fwdX = -Math.sin(player.yaw), fwdZ = -Math.cos(player.yaw);
     const rgtX = Math.cos(player.yaw), rgtZ = -Math.sin(player.yaw);
     const tx = (fwdX * move.f + rgtX * move.r) * sp;
     const tz = (fwdZ * move.f + rgtZ * move.r) * sp;
-    const k = 1 - Math.exp(-ACCEL * dt);
     moveVel.x += (tx - moveVel.x) * k;
+    moveVel.y = 0;
     moveVel.z += (tz - moveVel.z) * k;
-
-    if (player.fly) {
-      player.pos.x += moveVel.x * dt;
-      player.pos.z += moveVel.z * dt;
-      player.pos.y += move.up * FLY * dt;
-      player.velY = 0; player.onGround = false;
-      return;
-    }
 
     moveAxis('x', moveVel.x * dt);
     moveAxis('z', moveVel.z * dt);
     // gravity + floor follow with stair step-up
     const g = groundAt(player.pos.x, player.pos.z, player.pos.y);
     if (g !== null && player.pos.y <= g + 0.02 + 1e-4) {
-      // standing on / stepping up to a surface
       player.pos.y = g; player.velY = 0; player.onGround = true;
     } else {
       player.velY -= GRAV * dt;
@@ -1220,6 +1588,22 @@ if(!window.THREE || !window.HouseScene){
       player.onGround = false;
       if (g !== null && player.pos.y < g) { player.pos.y = g; player.velY = 0; player.onGround = true; }
     }
+    // If wedged inside solid geometry (e.g. left fly inside a cabinet), free the player
+    if ((move.f || move.r) && isWedgedAt(player.pos.x, player.pos.y, player.pos.z)) {
+      unstickIfNeeded();
+    }
+    // Void recovery — if we somehow fell through the world, snap to outdoor spawn
+    if (player.pos.y < VOID_Y) {
+      const s = SPAWNS[4]; // EXTERIOR driveway
+      player.pos.copy(s.pos);
+      player.yaw = s.yaw;
+      player.velY = 0;
+      moveVel.set(0, 0, 0);
+      const g2 = groundAt(player.pos.x, player.pos.z, L.f0 + 2);
+      if (g2 !== null) player.pos.y = g2;
+      player.onGround = true;
+    }
+    clampWorld();
   }
 
   // smoothing the eye height takes the jerk out of stair treads / small
@@ -1236,7 +1620,14 @@ if(!window.THREE || !window.HouseScene){
     const s = SPAWNS[i];
     player.pos.copy(s.pos); player.yaw = s.yaw; player.pitch = -0.04;
     player.velY = 0; moveVel.set(0, 0, 0);
+    // Level jumps land in walk mode on solid ground (intentional)
     toggleFly(false);
+    // Snap feet to the real surface under the spawn (handles outdoor ground
+    // height, floor slabs, roof terrace) so we never start mid-air.
+    const g = groundAt(player.pos.x, player.pos.z, s.pos.y + 1.5);
+    if (g !== null) player.pos.y = g;
+    player.onGround = true;
+    unstickIfNeeded();
     document.querySelectorAll('#levels button').forEach(b =>
       b.classList.toggle('on', +b.dataset.spawn === i));
     placeCamera();
@@ -1247,34 +1638,74 @@ if(!window.THREE || !window.HouseScene){
   function setMove() {
     move.f = (pressed['w'] || pressed['arrowup'] ? 1 : 0) - (pressed['s'] || pressed['arrowdown'] ? 1 : 0);
     move.r = (pressed['d'] || pressed['arrowright'] ? 1 : 0) - (pressed['a'] || pressed['arrowleft'] ? 1 : 0);
-    move.up = (pressed[' '] ? 1 : 0) - (pressed['shift'] && player.fly ? 1 : 0);
-    move.run = !!pressed['shift'] && !player.fly;
+    // Fly vertical: Space up, C / Ctrl down. Shift is boost (not descend).
+    const down = !!(pressed['c'] || pressed['control']);
+    move.up = (pressed[' '] ? 1 : 0) - (down && player.fly ? 1 : 0);
+    move.run = !!pressed['shift'];
+  }
+  function syncFlyButton() {
+    const btn = $('btnFly');
+    if (!btn) return;
+    if (player.fly) {
+      btn.innerHTML = '<b>F</b> walk';
+      btn.style.color = 'var(--brass)';
+    } else {
+      btn.innerHTML = '<b>F</b> fly';
+      btn.style.color = '';
+    }
   }
   function toggleFly(forceValue) {
-    player.fly = forceValue !== undefined ? forceValue : !player.fly;
-    player.velY = 0;
-    const btn = $('btnFly');
-    if (btn) {
-      if (player.fly) {
-        btn.innerHTML = '<b>F</b> walk';
-        btn.style.color = 'var(--brass)';
-      } else {
-        btn.innerHTML = '<b>F</b> fly';
-        btn.style.color = '';
-      }
+    const next = forceValue !== undefined ? !!forceValue : !player.fly;
+    if (next === player.fly) {
+      // Still refresh UI (e.g. spawn forced walk while already walking)
+      syncFlyButton();
+      return;
     }
+    player.fly = next;
+    player.velY = 0;
+    moveVel.set(0, 0, 0);
+    if (!player.fly) {
+      // Leaving freefly: plant on nearest floor and escape any solid you were inside
+      const g = groundAt(player.pos.x, player.pos.z, player.pos.y + 2.0);
+      if (g !== null && player.pos.y - g < 3.5) player.pos.y = g;
+      player.onGround = true;
+      unstickIfNeeded();
+    } else {
+      player.onGround = false;
+      // Lift slightly so eyes clear any slab you were standing on
+      player.pos.y += 0.15;
+    }
+    setMove();
+    syncFlyButton();
   }
 
   window.addEventListener('keydown', e => {
     const k = e.key.toLowerCase();
-    if (k === 'f') { toggleFly(); }
-    if (k >= '1' && k <= '5') spawnTo(+k - 1);
-    if (k === ' ' && !pressed[' '] && !player.fly && player.onGround) { player.velY = 6.0; player.onGround = false; }
+    // Ignore OS key-repeat on toggles — holding F used to flip fly/walk every
+    // frame and leave the player wedged inside furniture in walk mode.
+    if (!e.repeat) {
+      if (k === 'f') toggleFly();
+      if (k === 'n') toggleNight();
+      if (k >= '1' && k <= '5') spawnTo(+k - 1);
+    }
+    if (k === ' ' && !e.repeat && !pressed[' '] && !player.fly && player.onGround) {
+      player.velY = 6.0; player.onGround = false;
+    }
     pressed[k] = true; setMove();
     if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
   }, { passive: false });
   window.addEventListener('keyup', e => { pressed[e.key.toLowerCase()] = false; setMove(); });
   window.addEventListener('blur', () => { for (const k in pressed) pressed[k] = false; setMove(); });
+
+  const btnNight = $('btnNight');
+  if (btnNight) {
+    btnNight.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      toggleNight();
+    });
+  }
+  // Init day lighting (also stamps lamp baseline emissive after materials are skinned)
+  applyTimeOfDay(false);
 
   // mouse look (pointer lock)
   let locked = false;
@@ -1337,6 +1768,8 @@ if(!window.THREE || !window.HouseScene){
         if (mag > JOY_MAX) { dx *= JOY_MAX / mag; dy *= JOY_MAX / mag; }
         move.r = dx / JOY_MAX;        // strafe (analog -1..1)
         move.f = -dy / JOY_MAX;       // forward (up on screen)
+        // outer ring of the stick = run (touch substitute for Shift)
+        move.run = !player.fly && mag > JOY_MAX * 0.88;
         if (joyKnob) joyKnob.style.transform =
           'translate(calc(-50% + ' + dx.toFixed(0) + 'px), calc(-50% + ' + dy.toFixed(0) + 'px))';
       } else if (t.identifier === lookId) {
@@ -1349,7 +1782,7 @@ if(!window.THREE || !window.HouseScene){
   function touchEnd(e) {
     for (const t of e.changedTouches) {
       if (t.identifier === moveId) {
-        moveId = null; move.f = 0; move.r = 0;
+        moveId = null; move.f = 0; move.r = 0; move.run = false;
         if (joy) joy.classList.remove('act');
       } else if (t.identifier === lookId) {
         lookId = null;
@@ -1374,30 +1807,44 @@ if(!window.THREE || !window.HouseScene){
   /* ---------------- HUD: current room + floor ---------------- */
   const roomEl = $('roomName'), floorEl = $('floorName');
   const FLOOR_LABEL = ['GROUND FLOOR', 'FIRST FLOOR', 'SECOND FLOOR'];
+  // Stairwell plan band (internal stair roughly x 4800-6500, y 4430-6500)
+  const STAIR_X0 = 4800, STAIR_X1 = 6600, STAIR_Y0 = 4300, STAIR_Y1 = 6600;
   function currentFloorIndex() {
     const y = player.pos.y;
     if (y >= L.roof - 0.6) return 3;
-    if (y >= L.f2 - 0.6) return 2;
-    if (y >= L.f1 - 0.6) return 1;
+    // On stairs: interpolate floor by height between landings
+    const px = player.pos.x * 1000, py = -player.pos.z * 1000;
+    const onStair = px >= STAIR_X0 && px <= STAIR_X1 && py >= STAIR_Y0 && py <= STAIR_Y1;
+    if (onStair) {
+      if (y >= L.f2 - 0.15) return 2;
+      if (y >= L.f1 - 0.15) return 1;
+      return 0;
+    }
+    if (y >= L.f2 - 0.35) return 2;
+    if (y >= L.f1 - 0.35) return 1;
     return 0;
   }
   function isPlayerExterior() {
     if (player.pos.y < L.f0 - 0.2) return true;
     const px = player.pos.x * 1000, py = -player.pos.z * 1000;
-    // upper floors extend south to py -762 (FF service bands / south balconies)
-    const pyMin = currentFloorIndex() >= 1 ? -762 : 0;
-    if (px < 0 || px > 16600 || py < pyMin || py > 8870) return true;
+    const fi = currentFloorIndex();
+    if (typeof data.isOutsideFootprint === 'function') return data.isOutsideFootprint(px, py, fi);
+    const yMin = fi >= 1 ? FP.upperY0 : FP.y0;
+    if (px < FP.x0 || px > FP.x1 || py < yMin || py > FP.y1) {
+      if (fi >= 1 && px >= FP.x0 && px <= FP.x1 && py > FP.y1 && py <= FP.northBalcY1) return false;
+      return true;
+    }
     return false;
   }
   function getSpecialRoom(fi, px, py) {
     if (fi === 3) return { room: 'TERRACE', floor: 'ROOF · OPEN SKY' };
-    
-    // Check if on North Balcony (for FF or SF)
-    if (px >= 0 && px <= 16600 && py >= 8870 && py <= 9900) {
+
+    // North balcony
+    if (px >= FP.x0 && px <= FP.x1 && py >= FP.y1 && py <= FP.northBalcY1) {
       return { room: 'NORTH BALCONY', floor: fi === 1 ? 'FIRST FLOOR' : 'SECOND FLOOR' };
     }
-    
-    // Check if on East Balcony/Terrace
+
+    // East balcony / terrace
     if (px >= 12650 && px <= 16600) {
       if (fi === 1 && py >= 4140 && py <= 8870) {
         return { room: 'EAST BALCONY', floor: 'FIRST FLOOR' };
@@ -1406,69 +1853,89 @@ if(!window.THREE || !window.HouseScene){
         return { room: 'EAST BALCONY', floor: 'SECOND FLOOR' };
       }
     }
-    
-    // Check if in Portico (GF exterior under the slab)
+
+    // Portico (GF under slab)
     if (fi === 0 && px >= 12650 && px <= 16600 && py >= 3975 && py <= 8870) {
       return { room: 'PORTICO', floor: 'GROUND FLOOR' };
     }
-    
-    // Check if in Lift
+
+    // Lift
     if (px >= 12650 && px <= 14270 && py >= 0 && py <= 2035) {
       return { room: 'LIFT', floor: fi === 0 ? 'GROUND FLOOR' : (fi === 1 ? 'FIRST FLOOR' : 'SECOND FLOOR') };
     }
 
+    // Internal stair
+    if (px >= STAIR_X0 && px <= STAIR_X1 && py >= STAIR_Y0 && py <= STAIR_Y1 && fi < 3) {
+      return { room: 'STAIRCASE', floor: FLOOR_LABEL[fi] || 'STAIRS' };
+    }
+
     return null;
   }
-  let lastRoom = '';
+  let lastRoom = '', lastFloor = '';
   function updateHUD() {
     const fi = currentFloorIndex();
     const px = player.pos.x * 1000, py = -player.pos.z * 1000;
-    
-    // 1. Check special areas (balconies, terrace, portico, lift)
+
+    // 1. Special areas (balconies, terrace, portico, lift, stairs)
     const special = getSpecialRoom(fi, px, py);
     if (special) {
       setHUD(special.room, special.floor);
       return;
     }
-    
-    // 2. Check if general exterior (yard, driveway, compound)
+
+    // 2. Yard / driveway / compound
     if (isPlayerExterior()) {
       setHUD('YARD / DRIVEWAY', 'EXTERIOR');
       return;
     }
-    
-    // 3. Regular rooms
-    const rooms = data.floors[fi] ? data.floors[fi].rooms : [];
-    let found = null;
-    for (const r of rooms) {
-      if (px >= r.x0 && px <= r.x1 && py >= r.y0 && py <= r.y1) { found = r.name; break; }
+
+    // 3. Regular rooms (only when fi is a real floor)
+    if (fi >= 0 && fi <= 2) {
+      const rooms = data.floors[fi] ? data.floors[fi].rooms : [];
+      let found = null;
+      for (const r of rooms) {
+        if (px >= r.x0 && px <= r.x1 && py >= r.y0 && py <= r.y1) { found = r.name; break; }
+      }
+      setHUD(found || 'CIRCULATION', FLOOR_LABEL[fi]);
+      return;
     }
-    setHUD(found || 'CIRCULATION', FLOOR_LABEL[fi]);
+    setHUD('CIRCULATION', 'EXTERIOR');
   }
   function setHUD(room, floor) {
     if (room !== lastRoom) { roomEl.textContent = room; lastRoom = room; }
-    floorEl.textContent = floor;
+    if (floor !== lastFloor) { floorEl.textContent = floor; lastFloor = floor; }
   }
 
   /* ---------------- resize + loop ---------------- */
   function resize() {
-    const w = window.innerWidth, h = window.innerHeight;
+    // Prefer visualViewport on mobile (URL bar show/hide) for correct aspect
+    const vv = window.visualViewport;
+    const w = Math.max(1, Math.floor((vv && vv.width) || window.innerWidth));
+    const h = Math.max(1, Math.floor((vv && vv.height) || window.innerHeight));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
+    // Re-apply dpr clamp against new area (post RT rebuilds on next ensureRT)
+    if (scaler && scaler.apply) scaler.apply();
   }
-  window.addEventListener('resize', resize); resize();
+  if (window.Perf && Perf.attachViewport) Perf.attachViewport(resize);
+  else { window.addEventListener('resize', resize); resize(); }
 
   let intro = $('intro'), introOpen = true;
   let last = performance.now(), firstFrame = false, frames = 0;
   function frame(now) {
     requestAnimationFrame(frame);
     const frameMs = now - last; last = now;
-    if (document.hidden) return;            // pause all work when tab is hidden
+    if (document.hidden || contextLost) return; // pause when tab hidden / GPU lost
     const dt = Math.min(0.05, frameMs / 1000);
     scaler.sample(frameMs);
     updatePlayer(dt);
     placeCamera(dt);
     skyDome.position.copy(camera.position);
+
+    // Lighter fog indoors so rooms don't haze; full fog outside
+    const outside = isPlayerExterior() || currentFloorIndex() >= 3;
+    scene.fog = outside ? FOG_OUT : FOG_IN;
+
     if ((frames & 7) === 0) updateLightPool();
     renderFrame();
     if ((frames++ & 3) === 0) updateHUD();
