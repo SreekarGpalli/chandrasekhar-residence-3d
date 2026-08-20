@@ -191,7 +191,7 @@
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20260712_render"></script>
+<script src="houseScene.js?v=20260818_sf_lighting_cleaned_v5"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -845,11 +845,34 @@ if(!window.THREE || !window.HouseScene){
   function treatment(name) {
     if (name === 'glass' || name === 'carGlass') return { glass: true, dark: name !== 'glass' };
     if (name === 'nbrWin') return { rough: 0.1, metal: 0.4, env: 1.3 };
+    if (name === 'coveLED') return { emissive: true, cove: true };
     if (name === 'lamp' || name === 'downlight') return { emissive: true, strong: name === 'downlight' };
     if (FLOORTINT.has(name)) return { tex: 'tile', tile: 1.8, rough: 0.2, metal: 0.0, env: 0.75, interior: true };
     switch (name) {
       case 'white': case 'white2':
         return { tex: 'plaster', tile: 3.0, rough: 0.88, metal: 0, env: 0.38, interior: true };
+      /* ---- keys added with the V33 exterior ----
+         eastPlaster is the sand-float on the whole east face; fin/fin2 are the
+         SE screen rods; sand/stone are secondary planes and sills; liftSteel /
+         liftChrome are the lift portal and its meeting stile, split off from
+         steel/chrome so the shaft reads as one assembly. Without these seven
+         the new exterior fell through to the default branch and lost its kit. */
+      case 'eastPlaster':
+        return { tex: 'plaster', tile: 1.6, rough: 0.96, metal: 0, env: 0.30 };
+      case 'fin': case 'fin2':
+        return { tex: 'plaster', tile: 2.2, rough: 0.90, metal: 0, env: 0.40 };
+      case 'sand':
+        return { tex: 'plaster', tile: 2.8, rough: 0.93, metal: 0, env: 0.36 };
+      case 'stone': case 'copingLight':
+        return { tex: 'concrete', tile: 1.8, rough: 0.62, metal: 0, env: 0.42 };
+      case 'liftSteel':
+        return { rough: 0.32, metal: 0.85, env: 1.0, interior: true };
+      case 'liftChrome':
+        return { rough: 0.10, metal: 1.0, env: 1.25, interior: true };
+      case 'accentWarm':
+        return { rough: 0.55, metal: 0.25, env: 0.7 };
+      case 'bark': case 'barkLight':
+        return { tex: 'concrete', tile: 0.5, rough: 0.95, metal: 0, env: 0.2 };
       case 'nbr1': case 'nbr2': case 'nbr3':
         return { tex: 'plaster', tile: 3.4, rough: 0.92, metal: 0, env: 0.25 };
       case 'charcoal': case 'charDark': case 'solarFrm':
@@ -903,32 +926,62 @@ if(!window.THREE || !window.HouseScene){
       default: return { rough: 0.85, metal: 0, env: 0.4 };
     }
   }
-  // hex -> name lookup so we can resolve a treatment from a mesh material's colour
+  /* hex -> name lookup, kept only as a fallback.
+
+     This used to be the primary path, and it broke: buildMaterials() now runs
+     every palette colour through convertSRGBToLinear(), so m.color.getHex() no
+     longer equals C[k] for ANY key and every treatment silently resolved to ''.
+     The reliable source is o.userData.matKey, which makeBag stamps on every
+     mesh from the bucket it came out of. The map below is built from the
+     CONVERTED values so the fallback still works if a mesh ever lacks a key. */
   const hex2name = {};
-  for (const k in C) { if (!(C[k] in hex2name)) hex2name[C[k]] = k; }
+  for (const k in C) {
+    const lin = new THREE.Color(C[k]).convertSRGBToLinear().getHex();
+    if (!(lin in hex2name)) hex2name[lin] = k;
+    if (!(C[k] in hex2name)) hex2name[C[k]] = k;   // pre-conversion value too
+  }
 
   /* curated colour overrides — a warmer, more cohesive palette than the
      original cool greys. Applied on top of the palette during re-skin;
      for textured surfaces these tint the (light-based) texture. */
+  /* This map used to restate the whole warm-ivory palette, which made it a
+     SECOND source of truth for colour. Now that houseScene carries V33's
+     palette, restating the old values here would have quietly reverted the
+     walkthrough to the pre-V33 house while index.html showed the new one.
+
+     So it now carries exactly what index.html's COL carries — the exterior
+     scheme — and nothing else. Every interior key is absent on purpose: those
+     surfaces take their colour straight from houseScene's C, which is what
+     makes the inside and the outside the same building. */
   const COL = {
-    white: 0xe9e3d6, white2: 0xefebe2,                 // warm ivory walls / near-white ceilings
-    charcoal: 0x3a3733, charDark: 0x2b2825, plinth: 0x3a3733, frame: 0x3b3e42,
-    // per-room vitrified floor tones (warm living spaces, cool baths)
-    tLiving: 0xcfc5b0, tBed: 0xd6cab2, tBath: 0xbfc6c6, tKitch: 0xcdc6b6,
-    tUtil: 0xc3c2ba, tOut: 0x8f9089, tCirc: 0xcfc7b5, tOffice: 0xccc6b6,
-    tPooja: 0xe2d5b8, tWalk: 0xd3cab8,
-    // furnishings (wood keeps its own brown texture, so it's not recoloured here)
-    fabric: 0x9c8f7b, fabric2: 0x6f6354, rug: 0xb6a98d, counterTop: 0x54565a,
-    brass: 0xc9a15e, chrome: 0xf0f2f4, steel: 0xbfc3c8, liftDoor: 0xc8ccd1,
-    murtiGold: 0xd4ad55, murtiDark: 0x2c2e32, murtiBlue: 0x4568a8,
-    saffron: 0xe08a30, vermilion: 0xd44532, lotusPink: 0xe08aaa, peetaRed: 0x9a3530,
-    tank: 0xdedbd3, tv: 0x0b0c0d,
-    // planting + outdoors
-    green: 0x4c6838, green2: 0x607d45, grass: 0x55703f, boug: 0xc44f86, ixora: 0xe16b39,
-    road: 0x3f4043, roadLine: 0xd8d5c8, pave: 0xa8a49b, soil: 0x4a3b2d,
-    ground: 0x81796b, plotPad: 0x767061,
-    skirt: 0x54453a, curtain: 0xbcab94, curtain2: 0x8d7c68,
-    nbr1: 0xd9d2c4, nbr2: 0xc7bfb3, nbr3: 0xb8b3a8
+    white:      0xf7f6f4,   // reads as white, not cream
+    white2:     0xfbfaf9,
+    fin:        0xf1f0ee,
+    fin2:       0xf7f6f5,
+    eastPlaster:0xd9dad9,   // light neutral grey, half a step off the body
+    sand:       0xd6d7d6,
+    stone:      0xd4d5d4,
+    copingLight:0xe9eae9,
+    tank:       0xe9eaea,
+    plinth:     0x9fa1a1,
+    charDark:   0x76797a,   // slab fascias + soffits
+    charcoal:   0x6a6d6e,   // compound wall + site masonry
+    walnut:     0x8a5c31,   // door leaves — teak, the one warm accent
+    woodD:      0x6b4524,
+    woodF:      0x9a6e40,
+    skirt:      0x4a4e51,
+    brass:      0x8d9295,
+    accentWarm: 0x93989b,
+    ms:         0x3c4043,
+    frame:      0x26292c,
+    steel:      0x44484c,
+    chrome:     0x9aa1a7,
+    solarFrm:   0x4a4640,
+    ground: 0x9c9078, plotPad: 0xa3977d, soil: 0x5d4b34,
+    grass:  0x66794a, road: 0x494b4f,
+    leafDark: 0x34492a, leafLight: 0x5d7838,
+    green: 0x4a5f34, green2: 0x5a7239,
+    boug: 0xa8496f, ixora: 0xbc5c33, flowerPink: 0xc06a86
   };
 
   /* world-aligned (box-projected) UVs for the merged geometry, which
@@ -1113,14 +1166,14 @@ if(!window.THREE || !window.HouseScene){
   const DAY = {
     hemiI: 0.4, hemiSky: 0xbfccda, hemiGnd: 0x8a7a66,
     sunI: 3.25, sunC: 0xfff0d4, fillI: 0.18, warmI: 0.3,
-    fogC: 0xd6dce0, fogN: 70, fogF: 380,
+    fogC: 0xd6dce0, fogN: 70, fogF: 380, envMul: 1.0,
     skyTop: 0x2d5fa4, skyMid: 0x7fa8cd, skyBot: 0xd9d3c5,
     bg: 0xd6dce0, exp: 1.0, lampBoost: 1
   };
   const NIGHT = {
     hemiI: 0.08, hemiSky: 0x1a2438, hemiGnd: 0x12100e,
     sunI: 0.06, sunC: 0x8899bb, fillI: 0.04, warmI: 0.12,
-    fogC: 0x0c1018, fogN: 40, fogF: 220,
+    fogC: 0x0c1018, fogN: 40, fogF: 220, envMul: 0.16,
     skyTop: 0x060a14, skyMid: 0x121a2c, skyBot: 0x1a1820,
     bg: 0x0a0e16, exp: 0.85, lampBoost: 1.55
   };
@@ -1156,9 +1209,15 @@ if(!window.THREE || !window.HouseScene){
         const m = o.material;
         // Prefer colour-name, fall back to mesh matKey (bag.build sets this)
         const n = (m.userData && m.userData.name) || o.userData.matKey;
-        if ((n === 'lamp' || n === 'downlight') && m.emissiveIntensity != null) {
+        if ((n === 'lamp' || n === 'downlight' || n === 'coveLED') && m.emissiveIntensity != null) {
           if (m.userData._dayEmissive == null) m.userData._dayEmissive = m.emissiveIntensity;
           m.emissiveIntensity = m.userData._dayEmissive * S.lampBoost;
+        }
+        // Image-based light has to come down with the sun, or the sky PMREM
+        // keeps lighting every surface at noon levels all night.
+        if (m.envMapIntensity != null) {
+          if (m.userData._dayEnvI == null) m.userData._dayEnvI = m.envMapIntensity;
+          m.envMapIntensity = m.userData._dayEnvI * S.envMul;
         }
       });
     }
@@ -1195,7 +1254,8 @@ if(!window.THREE || !window.HouseScene){
     if (!o.isMesh || !o.material || seen.has(o.material)) return;
     seen.add(o.material);
     const m = o.material;
-    const name = hex2name[m.color ? m.color.getHex() : -1];
+    // matKey first — see the note on hex2name above
+    const name = o.userData.matKey || hex2name[m.color ? m.color.getHex() : -1];
     m.userData.name = name;
     const t = treatment(name || '');
     if (t.glass) {
@@ -1206,9 +1266,12 @@ if(!window.THREE || !window.HouseScene){
       m.needsUpdate = true; return;
     }
     if (t.emissive) {
-      if (m.emissive) m.emissive.setHex(t.strong ? 0xffdcae : 0xffd9a0);
-      // Bump lamp/downlight emissive so exterior sconces & canopy strips read at night
-      m.emissiveIntensity = t.strong ? 4.0 : Math.max(m.emissiveIntensity || 1.6, 3.2);
+      if (m.emissive) m.emissive.setHex(t.cove ? 0xffe3b4 : t.strong ? 0xffdcae : 0xffd9a0);
+      /* Emissive is the LOOK of the fitting, not the light in the room — the
+         point-light pool does the lighting. Held low on purpose: a big oyster
+         disc at 3.2+ clips to flat white under ACES and reads as glare. Coves
+         are lowest of all; they are meant to be seen only as a wash. */
+      m.emissiveIntensity = t.cove ? 1.00 : t.strong ? 1.55 : 1.20;
       m.envMapIntensity = 0.2; m.needsUpdate = true; return;
     }
     if ('roughness' in m) m.roughness = t.rough;
@@ -1260,10 +1323,23 @@ if(!window.THREE || !window.HouseScene){
      up as you move through it without paying for 100+ live lights. */
   const FIXTURES = (data.lights || []).map(l => ({
     x: l.x, y: l.y, z: l.z, floor: l.floor != null ? l.floor : -1,
-    v: new THREE.Vector3(l.x, l.y, l.z), warm: !!l.warm
+    v: new THREE.Vector3(l.x, l.y, l.z), warm: !!l.warm,
+    kind: l.kind || null,            // interior layer this fitting belongs to
+    i: l.i != null ? l.i : 1         // relative weight within the scheme
   }));
   // Slightly larger pool so exterior sconces + interior fixtures can coexist
-  const POOL_N = FIXTURES.length ? (Q.tier === 'high' ? 8 : Q.tier === 'medium' ? 5 : 3) : 0;
+  // Raised with the layered scheme: with ~125 interior fittings a pool of 8
+  // left whole layers (coves especially) unlit and made the composition shift
+  // as you walked. No shadow maps on these, so the cost is lighting math only.
+  const POOL_N = FIXTURES.length ? (Q.tier === 'high' ? 12 : Q.tier === 'medium' ? 7 : 4) : 0;
+  /* Interior fixture gain, in the renderer's candela-ish units (this renderer
+     runs physicallyCorrectLights, so falloff is 1/d^2 and these numbers behave
+     like real intensities). Measured, not guessed: at the old value a white
+     wall sat at ~238/255 during the DAY and ~239 at night — i.e. the pool was
+     brighter after dark than the sun was, and every surface clipped, which is
+     what "too much glare" looked like. `night` is a mild lift, not a boost:
+     after dark the fittings are the only source, so they need less, not more. */
+  const LUM_GAIN = { base: 3.0, night: 1.25 };
   const lightPool = [];
   for (let i = 0; i < POOL_N; i++) {
     const p = new THREE.PointLight(0xffe0b8, 0, 9.5, 1.8);
@@ -1298,7 +1374,11 @@ if(!window.THREE || !window.HouseScene){
         const f = list[i];
         const dx = f.x - px, dy = f.y - py, dz = f.z - pz;
         const d2 = dx * dx + dy * dy * 1.8 + dz * dz;
-        if (d2 < 150) _fd.push(d2, f);
+        /* Rank by distance BIASED BY LAYER WEIGHT. On pure distance a bathroom
+           vanity light two rooms over could take a slot from the cove defining
+           the room you are standing in. The ambient/indirect layers earn their
+           slots; small accents still win when you are right next to them. */
+        if (d2 < 150) _fd.push(d2 / (0.55 + (f.i != null ? f.i : 1)), f);
       }
     }
     // partial select: pick POOL_N nearest without full sort when n is large
@@ -1310,12 +1390,26 @@ if(!window.THREE || !window.HouseScene){
       const p = lightPool[i];
       if (i < order.length) {
         const f = _fd[order[i] * 2 + 1];
-        p.position.set(f.x, f.y - 0.08, f.z);
-        // Warm exterior/entry fixtures: brighter & wider; extra boost at night
         const nightMul = (typeof isNight !== 'undefined' && isNight) ? 1.65 : 1.0;
-        p.intensity = (f.warm ? 7.8 : 6.8) * nightMul;
-        p.distance = f.warm ? (isNight ? 18.0 : 14.0) : 9.0;
-        p.decay = f.warm ? 1.6 : 2.0;
+        if (f.kind) {
+          /* Interior architectural fixture. `w` is the layer weight authored in
+             houseScene (ambient 1.0, task 0.7, cove 0.5, accent lower still) —
+             it is what keeps the scheme from flattening into one bright plane.
+             decay 2.0 is true inverse-square: a contained pool under each
+             fitting instead of a broad wash, which is what read as glare. */
+          const w = f.i != null ? f.i : 1;
+          // a cove throws UP at the slab; everything else sits below its lens
+          p.position.set(f.x, f.y + (f.kind === 'cove' ? 0.05 : -0.08), f.z);
+          p.intensity = LUM_GAIN.base * w * (isNight ? LUM_GAIN.night : 1);
+          p.distance = f.kind === 'cove' ? 6.0 : 7.5;
+          p.decay = 2.0;
+        } else {
+          // Exterior / site fixture: wider throw, softer falloff, night boost
+          p.position.set(f.x, f.y - 0.08, f.z);
+          p.intensity = 7.8 * nightMul;
+          p.distance = isNight ? 18.0 : 14.0;
+          p.decay = 1.8;
+        }
         p.visible = true;
       } else p.visible = false;
     }
@@ -1966,6 +2060,8 @@ if(!window.THREE || !window.HouseScene){
      the tab is hidden (rAF is throttled there and toDataURL would be blank). */
   window.__wt = {
     renderer, scene, camera, player, spawnTo,
+    // day/night from the console (the footer pill is the user-facing control)
+    night(v) { applyTimeOfDay(v === undefined ? true : !!v); return isNight; },
     goto(x, y, z, yaw, pitch) {
       player.pos.set(x, y, z); player.yaw = yaw || 0; player.pitch = pitch || 0;
       player.velY = 0; placeCamera();

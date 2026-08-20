@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "house3d",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "http-server", "-p", "8129", "-c-1", "--silent"],
-      "port": 8129
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["serve.js"],
+      "port": 8080
     }
   ]
 }

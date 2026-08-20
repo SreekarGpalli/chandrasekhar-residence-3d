@@ -6,8 +6,29 @@ No build step, no framework — just static files.
 
 - **`index.html`** — orbit / dollhouse viewer: rotate the building, switch
   between Exterior · Ground · First · Second, and tap rooms to inspect them.
+  A **DESIGN** row swaps the exterior between the full house and any of the
+  four elevation versions without leaving the page (see below).
 - **`walkthrough.html`** — photoreal first-person walkthrough: WASD + mouse to
   walk the house, with collision, stair-climbing and a fly mode.
+- **`elevations/`** — the exterior-only variants (V38 · V40 · V41 · V43), each with its own `houseScene.js` and a standalone viewer.
+  See [`elevations/README.md`](elevations/README.md) for what each one changes.
+
+## Switching design versions
+
+The viewer picks its scene from a `?v=` query parameter and reloads in place:
+
+| URL | Code | Design Name | Architecture Highlights |
+|-----|------|-------------|-------------------------|
+| `/` | `FULL` | **Full House** | Complete interactive house with furnished interiors & V43 rods |
+| `/?v=v43` | `V43` | **Continuous Rods** | Extended unbroken vertical rods (~4.87 m) + recessed floor slabs |
+| `/?v=v41` | `V41` | **Clover Jali** | 4-leaf clover heart breeze block screen on East facade |
+| `/?v=v38` | `V38` | **Splayed Rod Box** | Full-height splayed white box frame with vertical rods to SF |
+| `/?v=v40` | `V40` | **Rod Box to Roof** | Continuous East rod box to terrace roof + open SF South railing |
+
+`v43 · v41 · v38 · v40` are all valid. The elevation scenes
+are exterior-only, so the Ground/First/Second floor pills and the room list are
+disabled while one is selected — pick **FULL** to get the interiors back.
+An unknown `?v=` value falls back to the full house rather than failing.
 
 ## Runs on any hardware
 
@@ -35,12 +56,13 @@ smooth on old laptops and budget phones as well as high-end machines:
 It's a static site — serve the folder with any static server:
 
 ```bash
-npx http-server -p 8129 -c-1
-# then open http://localhost:8129/
+node serve.js
+# then open http://localhost:8080
 ```
 
-(Opening `index.html` directly via `file://` won't work because the browser
-blocks loading `houseScene.js` cross-origin; use a local server.)
+(Opening the pages directly via `file://` won't work because the browser blocks
+loading `houseScene.js` cross-origin; use a local server. `serve.js` also
+resolves directory URLs, which the `elevations/version-*/` viewers rely on.)
 
 ## Deploy to Vercel
 

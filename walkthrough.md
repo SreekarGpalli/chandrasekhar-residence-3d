@@ -1,6 +1,6 @@
 # House3D — Development Changelog
 
-All modifications have been successfully implemented and verified in [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js) (3D model) with the orbit viewer ([index.html](file:///c:/Users/sreek/Desktop/VC/House3D/index.html)) and first-person walkthrough ([walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html)).
+All modifications have been successfully implemented and verified in [houseScene.js](./houseScene.js) (3D model) with the orbit viewer ([index.html](./index.html)) and first-person walkthrough ([walkthrough.html](./walkthrough.html)).
 
 ---
 
@@ -120,20 +120,20 @@ We replaced the separate window and door separating the first-floor dining room 
 ### Changes Made
 
 #### 1. Added Modern Sliding Glass Door Glazing Renderer
-- Implemented `type: 'slider'` in the `glazing()` renderer inside [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js).
+- Implemented `type: 'slider'` in the `glazing()` renderer inside [houseScene.js](./houseScene.js).
 - Features an outer boundary frame, individual panel frames with depth offsets (placed on inner/outer tracks to simulate realistic overlapping panels), glass panes, and dual-sided brass pull handles.
 - Supporting configurations for 2, 3, or 4 panels.
 
 #### 2. Updated First Floor (FF) Wall Layout
-- Modified the balcony slider wall entry in `IW[1]` and the full-height `wallRun` calls in [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js) to replace the window and door openings with a single, centered opening of width $2400\text{ mm}$ and height $2400\text{ mm}$.
+- Modified the balcony slider wall entry in `IW[1]` and the full-height `wallRun` calls in [houseScene.js](./houseScene.js) to replace the window and door openings with a single, centered opening of width $2400\text{ mm}$ and height $2400\text{ mm}$.
 - Replaced the separate window and door glazing calls with a single sliding glass door glazing call of `type: 'slider'` with 3 panes.
 
 #### 3. Ensured Smooth Traversal in Walkthrough
-- Added `'frame'` and `'brass'` materials to the `nonCollidableMaterials` set in [walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html).
+- Added `'frame'` and `'brass'` materials to the `nonCollidableMaterials` set in [walkthrough.html](./walkthrough.html).
 - This prevents the player from colliding with the door frame or the brass handle, allowing completely smooth walk-through access.
 
 #### 4. Unified Scene Builder Loading
-- Replaced the inline duplicated `HouseScene` script block in [index.html](file:///c:/Users/sreek/Desktop/VC/House3D/index.html) with a reference to the shared [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js) file.
+- Replaced the inline duplicated `HouseScene` script block in [index.html](./index.html) with a reference to the shared [houseScene.js](./houseScene.js) file.
 - This eliminated ~2,500 lines of duplicate code, synchronized all previous modeling updates (such as bedroom door relocations, furniture/wardrobe adjustments, and the new terrace staircase) to the home page, and resolved the issue where the homepage and walkthrough were out of sync.
 
 ---
@@ -145,7 +145,7 @@ We identified and resolved the cause of the hovering object in the first-floor d
 ### Key Details
 
 #### 1. Identified Copy-Paste Type Division Errors
-- **The Issue**: A coordinate conversion typo inside `Fur.sink()` and `Fur.basin()` in [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js) caused the midpoint of horizontal spouts and nozzles to divide their millimeter coordinate offset by `2000` instead of `1000` when converting to Three.js world space meters.
+- **The Issue**: A coordinate conversion typo inside `Fur.sink()` and `Fur.basin()` in [houseScene.js](./houseScene.js) caused the midpoint of horizontal spouts and nozzles to divide their millimeter coordinate offset by `2000` instead of `1000` when converting to Three.js world space meters.
 - **The Impact**: This halved their X-coordinate or Z-coordinate values, causing these steel and chrome elements to render far away from their sinks. For the first-floor kitchen sink, this offset placed the faucet spout directly inside the dining room space (`x ≈ 6.1m` instead of the kitchen sink's `x ≈ 12.1m`), floating at about $1.24\text{ m}$ height above the floor near the dining chairs.
 
 #### 2. Resolved the Typos
@@ -172,7 +172,7 @@ We optimized the service balcony layout on the first floor and fixed the renderi
 - Replaced the solid white balcony cheek box `pb(eBag, 'white', 6480, 6595, ...)` in `exterior()` with a `wallRun` featuring the matching door opening (`[{ c: 1080, w: 650 }]`). This ensures the door is visible in the rendering and is not overlapped by a solid white wall block.
 
 #### 4. Walkthrough Collision & UV Resolution
-- Fixed a bug in [walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html) where in-place material modifications during the first scene traversal (such as upgrading the glass color to `0xafc4d2` and frame color to `0x3b3e42`) caused name resolution via `hex2name` to return `undefined` in later steps. This previously resulted in glass door frames, glass panes, and brass handles being treated as colliders, blocking the player from walking into the service balcony.
+- Fixed a bug in [walkthrough.html](./walkthrough.html) where in-place material modifications during the first scene traversal (such as upgrading the glass color to `0xafc4d2` and frame color to `0x3b3e42`) caused name resolution via `hex2name` to return `undefined` in later steps. This previously resulted in glass door frames, glass panes, and brass handles being treated as colliders, blocking the player from walking into the service balcony.
 - Cached the original material names in `o.material.userData.name` during the first reskinning pass, and updated both the world-aligned UV texture mapper and first-person collision detector to read from `userData.name`. This enables smooth, walk-through traversal into the service balcony.
 
 ---
@@ -184,7 +184,7 @@ We installed premium, modern shower head fixtures (riser pipe, mixer handle, han
 ### Changes Made
 
 #### 1. Added Modern Shower Fixture 3D Modeling Helper
-- Implemented `Fur.showerHead(bag, cx, cy, fY, facing)` inside [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js).
+- Implemented `Fur.showerHead(bag, cx, cy, fY, facing)` inside [houseScene.js](./houseScene.js).
 - The helper renders:
   - A wall-mounted backplate (`chrome`) with a thermostatic mixer handle (`charcoal` and `chrome`) at height `fY + 1.0m`.
   - A vertical riser rail pipe (`chrome`) up to height `fY + 2.0m`.
@@ -206,7 +206,7 @@ The common bathroom on the first floor is correctly excluded from modifications,
 
 ## Phase 8 — Architectural Revisions: South Balconies, Expanded Portico & Raised East Balconies (Completed)
 
-We implemented requested architectural design updates to the 3D model in [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js):
+We implemented requested architectural design updates to the 3D model in [houseScene.js](./houseScene.js):
 
 ### Summary of Changes Made
 
@@ -245,7 +245,7 @@ Implemented the owner's hand-drawn first-floor plan: the south side now properly
 
 ### Fixes found along the way
 - Deleted a misplaced duplicate of the utility program on the **Ground Floor** (counters, hob, range hood, dishwasher, wall cabinets floating in mid-air over the south yard and intersecting the GF kitchen counters).
-- [walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html): `isPlayerExterior()` treated plan y < 0 as "YARD / DRIVEWAY"; upper floors now allow y ≥ -762 so the service bands and south balconies label correctly.
+- [walkthrough.html](./walkthrough.html): `isPlayerExterior()` treated plan y < 0 as "YARD / DRIVEWAY"; upper floors now allow y ≥ -762 so the service bands and south balconies label correctly.
 
 ### Verification
 - `node --check` clean; zero console errors in both viewers.
@@ -256,10 +256,10 @@ Implemented the owner's hand-drawn first-floor plan: the south side now properly
 
 ## Verification & Testing
 
-- **Syntax & Compilation**: Verified [houseScene.js](file:///c:/Users/sreek/Desktop/VC/House3D/houseScene.js) with Node.js script execution — 0 errors.
+- **Syntax & Compilation**: Verified [houseScene.js](./houseScene.js) with Node.js script execution — 0 errors.
 - **Interactive Viewers**:
-  - Orbit Viewer ([index.html](file:///c:/Users/sreek/Desktop/VC/House3D/index.html)): All layers render cleanly; south balcony overhangs and raised east balcony decks align perfectly.
-  - Walkthrough ([walkthrough.html](file:///c:/Users/sreek/Desktop/VC/House3D/walkthrough.html)): First-person walking controller navigates transition steps onto the raised East balcony and through doors out to the south service balcony.
+  - Orbit Viewer ([index.html](./index.html)): All layers render cleanly; south balcony overhangs and raised east balcony decks align perfectly.
+  - Walkthrough ([walkthrough.html](./walkthrough.html)): First-person walking controller navigates transition steps onto the raised East balcony and through doors out to the south service balcony.
 
 
 

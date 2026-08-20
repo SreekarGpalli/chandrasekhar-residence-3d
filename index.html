@@ -82,26 +82,89 @@
   #infoCard h4{font-family:Archivo;font-size:13px;font-weight:600;letter-spacing:.18em;padding-right:22px}
   #infoCard .mm{margin-top:7px;font-size:12px;color:var(--ink)}
   #infoCard .ft{margin-top:2px;font-size:11px;color:var(--ink-dim)}
+  /* info card */
+  #infoCard{position:fixed;left:22px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:7;width:236px;
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:15px 16px 14px;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    transition:opacity .3s, transform .3s}
+  #infoCard.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
+  #infoCard h4{font-family:Archivo;font-size:13px;font-weight:600;letter-spacing:.18em;padding-right:22px}
+  #infoCard .mm{margin-top:7px;font-size:12px;color:var(--ink)}
+  #infoCard .ft{margin-top:2px;font-size:11px;color:var(--ink-dim)}
   #infoCard .ar{margin-top:8px;font-size:10.5px;letter-spacing:.08em;color:var(--brass)}
   #cardClose{position:absolute;top:9px;right:11px;background:none;border:none;color:var(--ink-dim);
     font-size:15px;cursor:pointer;line-height:1;padding:3px}
   #cardClose:hover{color:var(--ink)}
-  /* view switcher */
-  #views{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:7;
-    display:flex;background:var(--panel);border:1px solid var(--panel-line);border-radius:11px;overflow:hidden;
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-  #views button, #views a{appearance:none;background:none;border:none;color:var(--ink-dim);cursor:pointer;
-    font-family:Archivo,Inter,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.18em;
-    padding:13px 17px 12px;position:relative;transition:color .2s;text-decoration:none;display:flex;align-items:center;gap:6px}
-  #views button + button, #views button + a, #views a + button{border-left:1px solid var(--panel-line)}
-  #views button.on{color:var(--ink)}
-  #views button.on::after{content:"";position:absolute;left:14px;right:14px;bottom:7px;height:2px;background:var(--brass)}
-  #views button:hover, #views a:hover{color:var(--ink)}
-  #views .wt-link{color:var(--brass);border-left:1px solid var(--panel-line)}
-  #views .wt-link:hover{color:#e0c48e;background:rgba(201,163,106,.08)}
-  #views .wt-link svg{width:13px;height:13px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+  /* ==========================================================================
+     TOP DESIGN SELECTOR
+     ========================================================================== */
+  #design{position:fixed;top:max(16px, env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:8;
+    display:flex;align-items:center;background:rgba(18,20,23,.88);border:1px solid var(--panel-line);
+    border-radius:12px;overflow:hidden;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 8px 32px rgba(0,0,0,.35);max-width:min(900px, calc(100vw - 32px))}
+  #design .lbl{padding:9px 12px 8px;font-family:Archivo,Inter,sans-serif;font-size:9.5px;font-weight:700;
+    letter-spacing:.22em;color:var(--brass);border-right:1px solid var(--panel-line);flex:none;
+    background:rgba(201,163,106,.06)}
+  #design .scroller{display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  #design .scroller::-webkit-scrollbar{display:none}
+  #design button, #design a.all-link{appearance:none;background:none;border:none;color:var(--ink-dim);cursor:pointer;
+    padding:8px 14px 7px;position:relative;transition:all .2s cubic-bezier(0.16,1,0.3,1);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    white-space:nowrap;flex:none;text-decoration:none}
+  #design button + button, #design button + a, #design a + button{border-left:1px solid var(--panel-line)}
+  #design button .d-code{font-family:Archivo,Inter,sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;line-height:1}
+  #design button .d-name{font-size:8.5px;letter-spacing:.08em;color:rgba(255,255,255,.45);font-weight:500;line-height:1}
+  #design button:hover{background:rgba(255,255,255,.05);color:var(--ink)}
+  #design button:hover .d-name{color:rgba(255,255,255,.8)}
+  #design button.on{color:var(--ink);background:rgba(201,163,106,.12)}
+  #design button.on .d-code{color:var(--brass)}
+  #design button.on .d-name{color:var(--ink)}
+  #design button.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;
+    background:var(--brass);box-shadow:0 0 8px var(--brass)}
+  #design a.all-link{font-family:Archivo,Inter,sans-serif;font-size:9.5px;font-weight:700;
+    letter-spacing:.16em;color:var(--brass);padding:9px 13px 8px;background:rgba(201,163,106,.04)}
+  #design a.all-link:hover{background:rgba(201,163,106,.15);color:#f0d6a8}
+
+  /* ==========================================================================
+     UNIFIED BOTTOM CONTROL DOCK (FLOORS + SUN + WALKTHROUGH)
+     ========================================================================== */
+  #bottomDock{position:fixed;bottom:max(18px, env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+    z-index:7;display:flex;align-items:center;background:rgba(18,20,23,.88);border:1px solid var(--panel-line);
+    border-radius:12px;overflow:hidden;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:calc(100vw - 32px)}
+  .dock-group{display:flex;align-items:center}
+  .dock-lbl{padding:12px 10px 11px 13px;font-family:Archivo,Inter,sans-serif;font-size:9px;font-weight:700;
+    letter-spacing:.22em;color:var(--brass);opacity:.85;user-select:none;flex:none}
+  .dock-divider{width:1px;height:22px;background:var(--panel-line);flex:none}
+
+  #views, #sun{display:flex;align-items:center;background:none;border:none;border-radius:0}
+  #views button, #sun button, #bottomDock .wt-link{appearance:none;background:none;border:none;color:var(--ink-dim);
+    cursor:pointer;font-family:Archivo,Inter,sans-serif;font-size:10px;font-weight:600;letter-spacing:.16em;
+    padding:12px 14px 11px;position:relative;transition:all .2s;white-space:nowrap;flex:none;
+    text-decoration:none;display:flex;align-items:center;gap:6px}
+  #views button + button, #sun button + button{border-left:1px solid rgba(255,255,255,.05)}
+  #views button:hover, #sun button:hover, #bottomDock .wt-link:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+  #views button.on, #sun button.on{color:var(--ink)}
+  #views button.on::after, #sun button.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;
+    height:2px;background:var(--brass);box-shadow:0 0 6px var(--brass)}
+  #views button[disabled]{opacity:.32;cursor:not-allowed}
+  #views button[disabled]:hover{color:var(--ink-dim);background:none}
+
+  #bottomDock .wt-link{color:var(--brass);font-weight:700;padding:12px 15px 11px;background:rgba(201,163,106,.06)}
+  #bottomDock .wt-link:hover{background:rgba(201,163,106,.16);color:#f0d6a8}
+  #bottomDock .wt-link svg{width:12px;height:12px;flex-shrink:0;fill:none;stroke:currentColor;
+    stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  /* convergence readout */
+  #conv{position:fixed;right:20px;bottom:max(18px, env(safe-area-inset-bottom));z-index:7;
+    font-family:Archivo,Inter,sans-serif;font-size:9.5px;letter-spacing:.16em;color:var(--ink-dim);
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:9px;padding:9px 12px;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:opacity .5s;pointer-events:none}
+  #conv.done{opacity:0}
+
   /* hint */
-  #hint{position:fixed;left:50%;bottom:calc(72px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
+  #hint{position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
     font-size:10.5px;letter-spacing:.12em;color:var(--ink-dim);transition:opacity .8s;white-space:nowrap}
   #hint.fade{opacity:0}
   #hint .d{display:none}
@@ -155,8 +218,12 @@
     #mobileDrawer{display:flex}
     #titleblock h1{font-size:13.5px;letter-spacing:.26em}
     #titleblock p{font-size:9px}
-    #views button, #views a{padding:12px 11px 11px;font-size:9.5px;letter-spacing:.12em}
-    #views .wt-link svg{width:11px;height:11px}
+    #design{top:max(12px, env(safe-area-inset-top));left:12px;right:12px;transform:none;max-width:none}
+    #design button{padding:6px 9px 5px}
+    #design button .d-code{font-size:10px}
+    #design button .d-name{font-size:7.5px}
+    #bottomDock{bottom:max(12px, env(safe-area-inset-bottom));left:12px;right:12px;transform:none;max-width:none;overflow-x:auto}
+    #views button, #sun button, #bottomDock .wt-link{padding:10px 9px 9px;font-size:9px;letter-spacing:.12em}
     #infoCard{left:14px;right:14px;width:auto}
     #hint .d{display:none}#hint .m{display:inline}
     #hintBtn{transform:translateX(70px)}
@@ -168,9 +235,28 @@
     #loading .bar i{animation:none}
   }
 </style>
+<script>
+/* Which scene this page builds. Default is the full V43 house, interiors and
+   all; ?v=v38 … ?v=v43 load that elevation version's exterior-only shell.
+   Declared in <head> so the DESIGN chooser can render before the 3D bootstrap
+   at the end of <body> has run. */
+window.DESIGNS = {
+  full: { dir: null,                   code: 'FULL', title: 'FULL HOUSE',       sub: 'With Interiors · V43 Rods', interiors: true  },
+  v43:  { dir: 'version-forty-three',  code: 'V43',  title: 'CONTINUOUS RODS',  sub: 'Unbroken Rods · Recessed Slabs', interiors: false },
+  v41:  { dir: 'version-forty-one',    code: 'V41',  title: 'CLOVER JALI',      sub: '4-Leaf Heart Clover Screen', interiors: false },
+  v38:  { dir: 'version-thirty-eight', code: 'V38',  title: 'SPLAYED ROD BOX',  sub: 'Full-Height Splayed Frame', interiors: false },
+  v40:  { dir: 'version-forty',        code: 'V40',  title: 'ROD BOX TO ROOF',  sub: 'Continuous Rods to Roof', interiors: false }
+};
+(function () {
+  var q = (location.search.match(/[?&]v=([A-Za-z0-9]+)/) || [])[1];
+  q = q ? q.toLowerCase() : 'full';
+  // An unknown ?v= falls back to the full house rather than failing to boot.
+  window.DESIGN = window.DESIGNS[q] ? q : 'full';
+})();
+</script>
 </head>
 <body>
-<canvas id="c"></canvas>
+<canvas id="c" aria-label="Interactive 3D model of Chandrasekhar Residence"></canvas>
 <div id="labels"></div>
 
 <header id="titleblock">
@@ -194,13 +280,67 @@
   <div class="ar" id="cardAR"></div>
 </div>
 
-<nav id="views">
-  <button data-view="exterior" class="on">EXTERIOR</button>
-  <button data-view="floor0">GROUND</button>
-  <button data-view="floor1">FIRST</button>
-  <button data-view="floor2">SECOND</button>
-  <a href="walkthrough.html" class="wt-link" title="First-person walkthrough"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>WALKTHROUGH</a>
+<!-- Top Design Selector -->
+<nav id="design" aria-label="Design version">
+  <span class="lbl">DESIGN</span>
+  <div class="scroller" id="designPills"></div>
+  <a href="elevations/" class="all-link" title="Compare all elevation versions">ALL DESIGNS →</a>
 </nav>
+<script>
+/* Built outside the 3D bootstrap so the chooser still works if WebGL fails. */
+(function () {
+  var pills = document.getElementById('designPills');
+  Object.keys(window.DESIGNS).forEach(function (key) {
+    var d = window.DESIGNS[key], b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = '<span class="d-code">' + d.code + '</span><span class="d-name">' + d.title + '</span>';
+    b.title = d.title + ' (' + d.code + ') — ' + d.sub;
+    b.setAttribute('aria-pressed', String(key === window.DESIGN));
+    if (key === window.DESIGN) b.classList.add('on');
+    b.addEventListener('click', function () {
+      if (key === window.DESIGN) return;
+      if (window.__saveCamera) window.__saveCamera();   // keep the angle across the reload
+      location.href = location.pathname + (key === 'full' ? '' : '?v=' + key);
+    });
+    pills.appendChild(b);
+  });
+  var on = pills.querySelector('button.on');
+  if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+})();
+</script>
+
+<!-- Unified Bottom Control Dock -->
+<div id="bottomDock" aria-label="Viewer controls">
+  <div class="dock-group">
+    <span class="dock-lbl">LEVEL</span>
+    <nav id="views">
+      <button data-view="exterior" class="on" aria-pressed="true">EXTERIOR</button>
+      <button data-view="floor0" aria-pressed="false">GROUND</button>
+      <button data-view="floor1" aria-pressed="false">FIRST</button>
+      <button data-view="floor2" aria-pressed="false">SECOND</button>
+    </nav>
+  </div>
+
+  <div class="dock-divider"></div>
+
+  <div class="dock-group">
+    <span class="dock-lbl">SUN</span>
+    <nav id="sun">
+      <button data-sun="morning" class="on" aria-pressed="true">MORNING</button>
+      <button data-sun="midday" aria-pressed="false">MIDDAY</button>
+      <button data-sun="golden" aria-pressed="false">GOLDEN</button>
+    </nav>
+  </div>
+
+  <div class="dock-divider"></div>
+
+  <a href="walkthrough.html" class="wt-link" title="First-person walkthrough">
+    <svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
+    <span>WALKTHROUGH</span>
+  </a>
+</div>
+
+<div id="conv"></div>
 
 <div id="hint">
   <span class="d">DRAG TO ORBIT · SCROLL TO ZOOM · RIGHT-DRAG TO PAN</span>
@@ -220,7 +360,7 @@
 <div id="loading">
   <div class="lt">CHANDRASEKHAR RESIDENCE</div>
   <div class="ls">ANANTAPUR · PREPARING 3D MODEL</div>
-  <div class="bar"><i></i></div>
+  <div class="bar" role="progressbar" aria-label="Loading 3D model"><i></i></div>
 </div>
 
 <!-- Three.js: served locally from the edge (fast, reliable); CDN as fallback -->
@@ -232,7 +372,16 @@
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20260712_render"></script>
+<script>
+/* Loads the scene chosen in the <head> above. document.write keeps it
+   synchronous — the inline viewer below expects window.HouseScene to exist. */
+(function () {
+  var d = window.DESIGNS[window.DESIGN];
+  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=design1'
+                  : 'houseScene.js?v=20260818_sf_lighting_cleaned_v5';
+  document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
+})();
+</script>
 <script>
 /* ============================================================
    app.js — interactive layer for the Chandrasekhar Residence
@@ -246,13 +395,29 @@
     if (ls) ls.textContent = msg;
     if (bar) bar.style.display = 'none';
   }
+  /* Progress line on the loading screen. The ported pipeline calls this at each
+     stage; building 2K PBR kits and the IBL takes a couple of seconds and a
+     blank screen for that long reads as a hang. */
+  function say(msg) {
+    var ls = document.querySelector('#loading .ls');
+    if (ls) ls.textContent = msg;
+  }
 
   if (!window.THREE) {
     bootFail('FAILED TO LOAD 3D ENGINE — CHECK NETWORK CONNECTION');
     return;
   }
   if (!window.HouseScene) {
-    bootFail('FAILED TO INITIALISE SCENE — HOUSESCENE NOT LOADED');
+    /* The elevation scenes live under elevations/, which is a separate set of
+       files from the main viewer — name the one that is missing rather than
+       showing a generic failure, and offer the way back. */
+    if (window.DESIGN && window.DESIGN !== 'full') {
+      bootFail('COULD NOT LOAD ' + window.DESIGNS[window.DESIGN].name +
+               ' — elevations/' + window.DESIGNS[window.DESIGN].dir + '/houseScene.js IS MISSING. ' +
+               'OPEN THE PAGE WITHOUT ?v= FOR THE FULL HOUSE.');
+    } else {
+      bootFail('FAILED TO INITIALISE SCENE — HOUSESCENE NOT LOADED');
+    }
     return;
   }
   const THREE = window.THREE;
@@ -351,53 +516,1276 @@
   if (window.Perf) Perf.onHidden(function (h) { if (!h) wake(300); });
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x101214, 70, 180);
+  /* near/far are the pipeline's, not the old dollhouse's (0.1 / 400).
+     Two things break at 0.1/400: the sky dome sits at r = 1000 and was clipped
+     away entirely, and — worse — a 4000:1 depth range leaves a building 30 m out
+     with depth values all crowded around 0.9999. Every screen-space pass here
+     reconstructs world position from that depth, so the reconstruction was noise
+     and the GI/SSR rays hit the wrong surfaces, compositing the scene back over
+     itself. That is what made every wall read as semi-transparent. */
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 1200);
 
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+  /* Constants the ported pipeline expects from its own boot block. */
+  const TIER = Q.tier || 'high';
+  const HI = TIER === 'high';
+  const WEBGL2 = !!renderer.capabilities.isWebGL2;
+  const MAXANISO = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 4;
+  const ANISO = Math.min(MAXANISO, HI ? 16 : 4);
+  const MAXTEX = renderer.capabilities.maxTextureSize || 4096;
 
-  /* lights */
-  scene.add(new THREE.HemisphereLight(0x8fa3b8, 0x26292c, 0.5));
-  const sun = new THREE.DirectionalLight(0xffe3c0, 1.25);
-  sun.position.set(38, 46, 16);
-  sun.castShadow = Q.shadows;
-  sun.shadow.mapSize.set(Q.shadowMap, Q.shadowMap);
-  const sc = sun.shadow.camera;
-  sc.left = -28; sc.right = 28; sc.top = 28; sc.bottom = -28;
-  sc.near = 5; sc.far = 140;
-  sun.shadow.bias = SHADOW_BIAS;
+  /* ==========================================================================
+     1 · PROCEDURAL TEXTURE KITS
+     ========================================================================== */
+  const texCache = {};
+  const TEX_S = HI ? Math.min(2048, MAXTEX) : (TIER === 'medium' ? 1024 : 512);
+  const TEX_S_SM = Math.max(256, TEX_S >> 2);
+
+  function cv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h || w; return c; }
+  function asTex(canvas, srgb) {
+    const t = new THREE.CanvasTexture(canvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = ANISO;
+    if (srgb) { if ('colorSpace' in t && THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace; else t.encoding = THREE.sRGBEncoding; }
+    return t;
+  }
+  function speckle(x, w, h, spread) {
+    const img = x.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = (Math.random() - 0.5) * spread;
+      d[i] = clamp(d[i] + r, 0, 255); d[i + 1] = clamp(d[i + 1] + r, 0, 255); d[i + 2] = clamp(d[i + 2] + r, 0, 255);
+    }
+    x.putImageData(img, 0, 0);
+  }
+  function noiseLayer(res) {
+    const n = cv(res), nx = n.getContext('2d');
+    const img = nx.createImageData(res, res);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = (Math.random() * 256) | 0;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+    }
+    nx.putImageData(img, 0, 0);
+    return n;
+  }
+  function fbmCanvas(size, base, oct) {
+    const c = cv(size), x = c.getContext('2d');
+    x.fillStyle = '#808080'; x.fillRect(0, 0, size, size);
+    let alpha = 0.5, res = base || 4;
+    x.imageSmoothingEnabled = true;
+    for (let o = 0; o < (oct || 5); o++) {
+      x.globalAlpha = alpha;
+      x.drawImage(noiseLayer(res), 0, 0, size, size);
+      alpha *= 0.55; res = Math.min(res * 2, size);
+    }
+    x.globalAlpha = 1;
+    return c;
+  }
+  function normalFromHeight(hc, strength) {
+    const w = hc.width, h = hc.height;
+    const src = hc.getContext('2d').getImageData(0, 0, w, h).data;
+    const out = cv(w, h), ox = out.getContext('2d');
+    const img = ox.createImageData(w, h);
+    const H = (X, Y) => src[(((Y + h) % h) * w + ((X + w) % w)) * 4] / 255;
+    for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) {
+      const dx = (H(X + 1, Y) - H(X - 1, Y)) * strength;
+      const dy = (H(X, Y + 1) - H(X, Y - 1)) * strength;
+      const il = 1 / Math.sqrt(dx * dx + dy * dy + 1);
+      const i = (Y * w + X) * 4;
+      img.data[i] = (-dx * il * 0.5 + 0.5) * 255;
+      img.data[i + 1] = (dy * il * 0.5 + 0.5) * 255;
+      img.data[i + 2] = (il * 0.5 + 0.5) * 255;
+      img.data[i + 3] = 255;
+    }
+    ox.putImageData(img, 0, 0);
+    return out;
+  }
+  function roughCanvas(size, base, blobs, blobVal, streaky) {
+    const c = cv(size), x = c.getContext('2d');
+    const b = (base * 255) | 0;
+    x.fillStyle = 'rgb(' + b + ',' + b + ',' + b + ')'; x.fillRect(0, 0, size, size);
+    for (let i = 0; i < blobs; i++) {
+      const v = ((blobVal + (Math.random() - 0.5) * 0.1) * 255) | 0;
+      x.fillStyle = 'rgba(' + v + ',' + v + ',' + v + ',0.35)';
+      const px = Math.random() * size, py = Math.random() * size;
+      x.save(); x.translate(px, py); x.rotate(Math.random() * Math.PI);
+      if (streaky) x.scale(3 + Math.random() * 3, 1);
+      x.beginPath(); x.arc(0, 0, 6 + Math.random() * 22, 0, 7); x.fill(); x.restore();
+    }
+    speckle(x, size, size, 14);
+    return c;
+  }
+
+  function kitPlaster() {
+    if (texCache.plaster) return texCache.plaster;
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.115; x.drawImage(fbmCanvas(s, 10, 5), 0, 0);
+    x.globalAlpha = 0.080; x.drawImage(fbmCanvas(s, 24, 4), 0, 0);
+    x.globalAlpha = 1;
+    /* A faint float direction, same principle as the east wall: broad
+       horizontal sweeps at low amplitude. It is what stops a large flat wall
+       reading as paint on cardboard, and because it is DIRECTIONAL it adds
+       surface without ever looking like staining. */
+    x.globalAlpha = 0.05;
+    for (let i = 0; i < 40; i++) {
+      const yy = Math.random() * s, hh = s * (0.010 + Math.random() * 0.035);
+      const gg = x.createLinearGradient(0, yy - hh, 0, yy + hh);
+      const up = Math.random() < 0.5;
+      gg.addColorStop(0, 'rgba(255,255,255,0)');
+      gg.addColorStop(0.5, up ? 'rgba(255,255,255,0.9)' : 'rgba(158,155,150,0.9)');
+      gg.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = gg; x.fillRect(0, yy - hh, s, hh * 2);
+    }
+    x.globalAlpha = 1;
+    // patch repairs: a real wall is skimmed in sections and they never match
+    x.globalAlpha = 0.05;
+    for (let i = 0; i < 9; i++) {
+      x.save(); x.translate(Math.random() * s, Math.random() * s); x.rotate(Math.random() * 0.5 - 0.25);
+      x.fillStyle = Math.random() < 0.5 ? '#8d8880' : '#ffffff';
+      x.fillRect(0, 0, s * (0.1 + Math.random() * 0.25), s * (0.08 + Math.random() * 0.2));
+      x.restore();
+    }
+    x.globalAlpha = 0.055;
+    for (let i = 0; i < 26; i++) {
+      const px = Math.random() * s, w = 2 + Math.random() * 9;
+      const g = x.createLinearGradient(0, 0, 0, s);
+      g.addColorStop(0, 'rgba(118,112,102,0.55)');
+      g.addColorStop(0.5, 'rgba(140,134,124,0.20)');
+      g.addColorStop(1, 'rgba(160,154,144,0)');
+      x.fillStyle = g; x.fillRect(px, Math.random() * s * 0.2, w, s);
+    }
+    x.globalAlpha = 1;
+    speckle(x, s, s, 7);
+    const hs = TEX_S >> 1;
+    const height = fbmCanvas(hs, 12, HI ? 6 : 3);
+    speckle(height.getContext('2d'), hs, hs, 34);
+    const kit = { map: asTex(c, true), ns: 0.72,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.88, 22, 0.78, false), false) };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(height, 1.7), false);
+    return texCache.plaster = kit;
+  }
+  /* Sand-float / sponge-float plaster for the east walls.
+
+     Ported from V19's own sandFloat() — the version the owner likes — rather
+     than reinvented. Its key ingredient, which two attempts here missed, is
+     the TROWEL term: horizontal striation at two frequencies, warped by noise.
+
+     That is the whole distinction. Directional striation reads as a surface a
+     human floated. Random blobs of the same amplitude read as damp, which is
+     exactly what my previous version produced. Same energy, opposite meaning —
+     it is the DIRECTION that carries the craft, not the contrast.
+
+     Kept from the original: the value-noise octaves, the trowel frequencies,
+     and an albedo amplitude in the same range (raised a little, to ~13 %, as
+     asked). Improved: 4x the resolution, a real tangent-space normal derived
+     from the field instead of a 0.032 bumpScale, and fine grit on top for
+     close range. */
+  function kitSandFloat() {
+    if (texCache.sandfloat) return texCache.sandfloat;
+    const SIZE = HI ? Math.min(2048, MAXTEX) : 512;
+    const cell = SIZE / 64;                       // same ratio as the original 512/8
+    const gw = Math.round(SIZE / cell), gh = gw;
+    const grid = new Float32Array(gw * gh);
+    for (let i = 0; i < grid.length; i++) grid[i] = Math.random();
+    const gAt = (ix, iy) => grid[(((iy % gh) + gh) % gh) * gw + (((ix % gw) + gw) % gw)];
+    function smooth(px, py) {
+      const x0 = Math.floor(px), y0 = Math.floor(py);
+      const tx = px - x0, ty = py - y0;
+      const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+      const a = gAt(x0, y0), b = gAt(x0 + 1, y0), c2 = gAt(x0, y0 + 1), d2 = gAt(x0 + 1, y0 + 1);
+      return a + (b - a) * sx + (c2 - a) * sy + (a - b - c2 + d2) * sx * sy;
+    }
+    const field = new Float32Array(SIZE * SIZE);
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        const n1 = smooth(x / cell, y / cell);
+        const n2 = smooth(x / (cell * 2), y / (cell * 2));
+        const n3 = smooth(x / (cell / 2), y / (cell / 2));
+        // the trowel: horizontal sweeps, noise-warped so they never look ruled
+        const trowel = Math.sin((y / SIZE) * Math.PI * 2 * 7 + n2 * 1.4) * 0.18
+                     + Math.sin((y / SIZE) * Math.PI * 2 * 18 + x * (0.012 * 512 / SIZE)) * 0.08;
+        field[y * SIZE + x] = n1 * 0.45 + n2 * 0.25 + n3 * 0.15 + 0.5 + trowel;
+      }
+    }
+    function fieldCanvas(amp, grey) {
+      const cn = cv(SIZE), cx2 = cn.getContext('2d');
+      const img = cx2.createImageData(SIZE, SIZE), d = img.data;
+      for (let i = 0; i < field.length; i++) {
+        const k = (field[i] - 0.5) * amp;
+        const o = i * 4;
+        const v = clamp((grey ? 128 : 236) + k, 0, 255);
+        d[o] = d[o + 1] = d[o + 2] = v;
+        d[o + 3] = 255;
+      }
+      cx2.putImageData(img, 0, 0);
+      return cn;
+    }
+    // albedo: neutral so material.color sets the grey, amplitude ~13 %
+    const alb = fieldCanvas(34, false);
+    const ax2 = alb.getContext('2d');
+    // fine grit for close range, on top of the trowel
+    const grains = HI ? 90000 : 10000;
+    for (let i = 0; i < grains; i++) {
+      const px = Math.random() * SIZE, py = Math.random() * SIZE;
+      const r = 0.9 + Math.random() * 1.5;
+      ax2.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,0.16)' : 'rgba(150,150,150,0.16)';
+      ax2.beginPath(); ax2.arc(px, py, r, 0, 7); ax2.fill();
+    }
+    const hgt = fieldCanvas(150, true);
+    const hx2 = hgt.getContext('2d');
+    for (let i = 0; i < grains; i++) {
+      const px = Math.random() * SIZE, py = Math.random() * SIZE;
+      const r = 0.9 + Math.random() * 1.5;
+      hx2.fillStyle = Math.random() < 0.5 ? 'rgba(245,245,245,0.6)' : 'rgba(24,24,24,0.55)';
+      hx2.beginPath(); hx2.arc(px, py, r, 0, 7); hx2.fill();
+    }
+    const kit = {
+      map: asTex(alb, true), ns: 1.05,
+      roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.97, 10, 0.93, false), false)
+    };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(hgt, 2.6), false);
+    return texCache.sandfloat = kit;
+  }
+
+  function kitStone() {
+    if (texCache.stone) return texCache.stone;
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#f2efe9'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.10; x.drawImage(fbmCanvas(s, 6, 5), 0, 0); x.globalAlpha = 1;
+    x.globalAlpha = 0.05; x.strokeStyle = '#9d9689'; x.lineWidth = 1.2;
+    for (let i = 0; i < 26; i++) {
+      x.beginPath(); let px = 0, py = Math.random() * s; x.moveTo(px, py);
+      while (px < s) { px += 18 + Math.random() * 30; py += (Math.random() - 0.5) * 12; x.lineTo(px, py); }
+      x.stroke();
+    }
+    x.globalAlpha = 1;
+    for (let i = 0; i < (HI ? 5200 : 1400); i++) {
+      const v = 190 + ((Math.random() * 55) | 0);
+      x.fillStyle = 'rgba(' + v + ',' + (v - 3) + ',' + (v - 8) + ',0.5)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1, 1 + Math.random());
+    }
+    speckle(x, s, s, 9);
+    const hgt = fbmCanvas(TEX_S >> 1, 8, 4); speckle(hgt.getContext('2d'), TEX_S >> 1, TEX_S >> 1, 20);
+    const kit = { map: asTex(c, true), ns: 0.35,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.62, 24, 0.5, false), false) };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(hgt, 0.7), false);
+    return texCache.stone = kit;
+  }
+  function kitConcrete() {
+    if (texCache.concrete) return texCache.concrete;
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.14; x.drawImage(fbmCanvas(s, 6, HI ? 6 : 3), 0, 0); x.globalAlpha = 1;
+    speckle(x, s, s, 20);
+    x.fillStyle = 'rgba(60,60,60,0.35)';
+    for (let i = 0; i < (HI ? 1200 : 320); i++) { x.beginPath(); x.arc(Math.random() * s, Math.random() * s, 0.6 + Math.random() * 1.7, 0, 7); x.fill(); }
+    x.globalAlpha = 0.055;
+    for (let i = 0; i < 14; i++) {
+      x.fillStyle = '#3a3a3a';
+      const px = Math.random() * s; x.fillRect(px, Math.random() * s * 0.3, 3 + Math.random() * 11, s * (0.4 + Math.random() * 0.5));
+    }
+    x.globalAlpha = 1;
+    const kit = { map: asTex(c, true), ns: 0.5,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.9, 20, 0.78, true), false) };
+    if (TIER !== 'potato') {
+      const hgt = fbmCanvas(TEX_S >> 1, 8, 4); speckle(hgt.getContext('2d'), TEX_S >> 1, TEX_S >> 1, 32);
+      kit.normalMap = asTex(normalFromHeight(hgt, 1.0), false);
+    }
+    return texCache.concrete = kit;
+  }
+  function kitWood() {
+    if (texCache.wood) return texCache.wood;
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    for (let col = 0; col < s; col++) {
+      const g = Math.sin(col * 0.0085 + 0.5) * 0.5 + Math.sin(col * 0.0275 + 2.0) * 0.27
+              + Math.sin(col * 0.08 + 4.0) * 0.1 + (Math.random() - 0.5) * 0.16;
+      const t = clamp(0.5 + g * 0.3, 0, 1);
+      /* Neutral grain, not brown.
+
+         An albedo map carrying its own hue fights the palette: a grey door
+         colour multiplied by a brown grain map lands on muddy grey-brown, not
+         grey. Keeping the map neutral lets material.color set the tone exactly
+         and leaves the grain as pure light-and-dark — which is all it should
+         ever have been. Same reason the plaster maps are painted near-white. */
+      const v = (176 + t * 56) | 0;
+      x.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')';
+      x.fillRect(col, 0, 1, s);
+      const hv = (110 + t * 60) | 0;
+      hx.fillStyle = 'rgb(' + hv + ',' + hv + ',' + hv + ')'; hx.fillRect(col, 0, 1, s);
+    }
+    x.globalAlpha = 0.10;
+    for (let i = 0; i < 260; i++) {
+      x.strokeStyle = i % 2 ? '#6e6e6e' : '#d2d2d2';
+      x.lineWidth = 0.5 + Math.random() * 2; x.beginPath();
+      const px = Math.random() * s; x.moveTo(px, 0);
+      x.bezierCurveTo(px + 10, s / 3, px - 10, 2 * s / 3, px + (Math.random() - 0.5) * 14, s); x.stroke();
+    }
+    x.globalAlpha = 1; speckle(x, s, s, 8); speckle(hx, s, s, 12);
+    const kit = { map: asTex(c, true), ns: 0.38,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.42, 26, 0.6, true), false) };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(hgt, 0.8), false);
+    return texCache.wood = kit;
+  }
+  function kitTile() {
+    if (texCache.tile) return texCache.tile;
+    const s = TEX_S, n = 2, ts = s / n, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    hx.fillStyle = '#e8e8e8'; hx.fillRect(0, 0, s, s);
+    const fbmTile = fbmCanvas(TEX_S >> 2, 3, HI ? 5 : 2);
+    for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) {
+      const tone = 244 + ((Math.random() * 10) | 0) - 5;
+      x.fillStyle = 'rgb(' + tone + ',' + (tone - 1) + ',' + (tone - 4) + ')';
+      x.fillRect(tx * ts, ty * ts, ts, ts);
+      x.save(); x.beginPath(); x.rect(tx * ts, ty * ts, ts, ts); x.clip();
+      x.globalAlpha = 0.075;
+      x.drawImage(fbmTile, tx * ts - Math.random() * 160, ty * ts - Math.random() * 160, ts * 1.7, ts * 1.7);
+      x.globalAlpha = 1; x.restore();
+    }
+    speckle(x, s, s, 5);
+    x.strokeStyle = 'rgba(148,141,130,0.85)'; x.lineWidth = 5;
+    hx.strokeStyle = '#303030'; hx.lineWidth = 10;
+    for (let i = 0; i <= n; i++) {
+      const q = clamp(i * ts, 2.5, s - 2.5);
+      x.beginPath(); x.moveTo(q, 0); x.lineTo(q, s); x.stroke();
+      x.beginPath(); x.moveTo(0, q); x.lineTo(s, q); x.stroke();
+      hx.beginPath(); hx.moveTo(q, 0); hx.lineTo(q, s); hx.stroke();
+      hx.beginPath(); hx.moveTo(0, q); hx.lineTo(s, q); hx.stroke();
+    }
+    speckle(hx, s, s, 6);
+    const kit = { map: asTex(c, true), ns: 0.6,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.35, 30, 0.55, true), false) };
+    if (TIER !== 'potato' && TIER !== 'low') kit.normalMap = asTex(normalFromHeight(hgt, 1.6), false);
+    return texCache.tile = kit;
+  }
+  function kitPaver() {
+    if (texCache.paver) return texCache.paver;
+    const s = TEX_S, n = 3, ts = s / n, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    hx.fillStyle = '#d8d8d8'; hx.fillRect(0, 0, s, s);
+    for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) {
+      const tone = 224 + ((Math.random() * 22) | 0) - 11;
+      x.fillStyle = 'rgb(' + tone + ',' + (tone - 1) + ',' + (tone - 4) + ')';
+      x.fillRect(tx * ts, ty * ts, ts, ts);
+    }
+    speckle(x, s, s, 24);
+    x.globalAlpha = 0.12;
+    for (let i = 0; i < 24; i++) {
+      x.fillStyle = '#6b675f';
+      x.beginPath(); x.arc(Math.random() * s, Math.random() * s, 16 + Math.random() * 70, 0, 7); x.fill();
+    }
+    x.globalAlpha = 1;
+    x.strokeStyle = 'rgba(105,101,94,0.9)'; x.lineWidth = 6;
+    hx.strokeStyle = '#3c3c3c'; hx.lineWidth = 12;
+    for (let i = 0; i <= n; i++) {
+      const q = clamp(i * ts, 3, s - 3);
+      x.beginPath(); x.moveTo(q, 0); x.lineTo(q, s); x.stroke();
+      x.beginPath(); x.moveTo(0, q); x.lineTo(s, q); x.stroke();
+      hx.beginPath(); hx.moveTo(q, 0); hx.lineTo(q, s); hx.stroke();
+      hx.beginPath(); hx.moveTo(0, q); hx.lineTo(s, q); hx.stroke();
+    }
+    speckle(hx, s, s, 16);
+    const kit = { map: asTex(c, true), ns: 0.6,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.85, 22, 0.72, false), false) };
+    if (TIER !== 'potato' && TIER !== 'low') kit.normalMap = asTex(normalFromHeight(hgt, 1.4), false);
+    return texCache.paver = kit;
+  }
+  function kitAsphalt() {
+    if (texCache.asphalt) return texCache.asphalt;
+    // Quarter res on purpose. Tarmac is background: it is seen at a glancing
+    // angle, tiled at 7 m, and never inspected. The detail budget belongs on
+    // the walls the house is actually made of.
+    const s = Math.max(256, TEX_S >> 2), c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#bdbdbf'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.16; x.drawImage(fbmCanvas(s, 6, HI ? 6 : 3), 0, 0); x.globalAlpha = 1;
+    speckle(x, s, s, 38);
+    for (let i = 0; i < (HI ? 900 : 300); i++) {
+      const v = 150 + ((Math.random() * 75) | 0);
+      x.fillStyle = 'rgba(' + v + ',' + v + ',' + v + ',0.5)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1.5, 1.5);
+    }
+    x.globalAlpha = 0.09; x.fillStyle = '#000';
+    x.fillRect(s * 0.18, 0, s * 0.16, s); x.fillRect(s * 0.66, 0, s * 0.16, s);
+    x.globalAlpha = 0.25; x.strokeStyle = '#2c2c2c'; x.lineWidth = 1.5;
+    for (let i = 0; i < 7; i++) {
+      x.beginPath(); let px = Math.random() * s, py = 0; x.moveTo(px, py);
+      while (py < s) { px += (Math.random() - 0.5) * 50; py += 24 + Math.random() * 44; x.lineTo(px, py); }
+      x.stroke();
+    }
+    // tar-band repairs — every Indian road has them and they read instantly
+    x.globalAlpha = 0.16; x.strokeStyle = '#111'; x.lineWidth = 7;
+    for (let i = 0; i < 4; i++) {
+      x.beginPath(); let px = Math.random() * s, py = 0; x.moveTo(px, py);
+      while (py < s) { px += (Math.random() - 0.5) * 70; py += 40 + Math.random() * 60; x.lineTo(px, py); }
+      x.stroke();
+    }
+    x.globalAlpha = 1;
+    const kit = { map: asTex(c, true), ns: 0.3,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.92, 18, 0.8, true), false) };
+    if (HI) {
+      const hgt = fbmCanvas(TEX_S >> 1, 24, 4); speckle(hgt.getContext('2d'), TEX_S >> 1, TEX_S >> 1, 46);
+      kit.normalMap = asTex(normalFromHeight(hgt, 0.8), false);
+    }
+    return texCache.asphalt = kit;
+  }
+  function kitGrass() {
+    if (texCache.grass) return texCache.grass;
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    hx.fillStyle = '#808080'; hx.fillRect(0, 0, s, s);
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.30; x.drawImage(fbmCanvas(s, 7, 6), 0, 0);
+    x.globalAlpha = 0.22; x.drawImage(fbmCanvas(s, 18, 5), 0, 0);
+    x.globalAlpha = 1;
+    const nBlade = HI ? 180000 : (TIER === 'medium' ? 30000 : 6000);
+    for (let i = 0; i < nBlade; i++) {
+      const g = 0.5 + Math.random() * 0.5, dry = Math.random() < 0.18;
+      const bx = Math.random() * s, by = Math.random() * s;
+      x.fillStyle = dry
+        ? 'rgba(' + ((172 * g) | 0) + ',' + ((156 * g) | 0) + ',' + ((88 * g) | 0) + ',0.75)'
+        : 'rgba(' + ((104 * g) | 0) + ',' + ((152 * g) | 0) + ',' + ((76 * g) | 0) + ',0.75)';
+      x.fillRect(bx, by, 1.6, 3.5 + Math.random() * 5);
+      const hv = (110 + g * 120) | 0;
+      hx.fillStyle = 'rgba(' + hv + ',' + hv + ',' + hv + ',0.55)';
+      hx.fillRect(bx, by, 1.6, 3.5 + Math.random() * 5);
+    }
+    const kit = { map: asTex(c, true), ns: 0.9 };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(hgt, 1.6), false);
+    return texCache.grass = kit;
+  }
+  function kitDirt() {
+    if (texCache.dirt) return texCache.dirt;
+    const s = TEX_S, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.34; x.drawImage(fbmCanvas(s, 5, 6), 0, 0);
+    x.globalAlpha = 0.20; x.drawImage(fbmCanvas(s, 16, 5), 0, 0); x.globalAlpha = 1;
+    for (let i = 0; i < (HI ? 22000 : 1200); i++) {
+      const v = 120 + ((Math.random() * 110) | 0);
+      x.fillStyle = 'rgba(' + v + ',' + ((v * 0.95) | 0) + ',' + ((v * 0.85) | 0) + ',0.45)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1 + Math.random() * 3, 1 + Math.random() * 3);
+    }
+    for (let i = 0; i < (HI ? 11000 : 600); i++) {
+      const g = 0.5 + Math.random() * 0.5;
+      x.fillStyle = 'rgba(' + ((128 * g) | 0) + ',' + ((136 * g) | 0) + ',' + ((78 * g) | 0) + ',0.35)';
+      x.fillRect(Math.random() * s, Math.random() * s, 1.6, 3 + Math.random() * 5);
+    }
+    speckle(x, s, s, 22);
+    const hgt = fbmCanvas(TEX_S >> 1, 7, 5); speckle(hgt.getContext('2d'), TEX_S >> 1, TEX_S >> 1, 40);
+    const kit = { map: asTex(c, true), ns: 0.7 };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(hgt, 1.2), false);
+    return texCache.dirt = kit;
+  }
+  /* Leaf clusters. The mask carries CLUMP-scale holes only: per-leaf holes are
+     correct but average away in the mip chain, and an alphaTest against a fully
+     averaged mask passes everywhere — which is how a cut-out canopy silently
+     becomes a solid balloon again a few metres out. */
+  function kitLeaf() {
+    if (texCache.leaf) return texCache.leaf;
+    const s = Math.min(1024, TEX_S), c = cv(s), x = c.getContext('2d');
+    const msk = cv(s), mx = msk.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    x.fillStyle = '#6d8452'; x.fillRect(0, 0, s, s);
+    mx.fillStyle = '#000000'; mx.fillRect(0, 0, s, s);
+    hx.fillStyle = '#585858'; hx.fillRect(0, 0, s, s);
+    const K = s / 512;
+    const drawWrapped = (ctx, px, py, rr, ry, rot, paint) => {
+      for (const ox of [0, -s, s]) for (const oy of [0, -s, s]) {
+        if ((ox && Math.abs(px + ox - s / 2) > s / 2 + rr) || (oy && Math.abs(py + oy - s / 2) > s / 2 + rr)) continue;
+        ctx.save(); ctx.translate(px + ox, py + oy); ctx.rotate(rot);
+        paint(ctx);
+        ctx.beginPath(); ctx.ellipse(0, 0, rr, ry, 0, 0, 7); ctx.fill();
+        ctx.restore();
+      }
+    };
+    for (let i = 0; i < (HI ? 120 : 60); i++) {
+      const d = { px: Math.random() * s, py: Math.random() * s,
+                  rr: (20 + Math.random() * 46) * K, sq: 0.55 + Math.random() * 0.4,
+                  rot: Math.random() * Math.PI, lit: Math.random() };
+      drawWrapped(mx, d.px, d.py, d.rr, d.rr * d.sq, d.rot, (ctx) => { ctx.fillStyle = '#ffffff'; });
+      const v = (86 + d.lit * 120) | 0;
+      drawWrapped(hx, d.px, d.py, d.rr, d.rr * d.sq, d.rot, (ctx) => { ctx.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')'; });
+      drawWrapped(x, d.px, d.py, d.rr, d.rr * d.sq, d.rot, (ctx) => {
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = 'rgb(' + ((62 + d.lit * 74) | 0) + ',' + ((84 + d.lit * 82) | 0) + ',' + ((40 + d.lit * 46) | 0) + ')';
+      });
+    }
+    x.globalAlpha = 1;
+    for (let i = 0; i < (HI ? 9000 : 1000); i++) {
+      const rr = (3 + Math.random() * 7) * K, lit = Math.random();
+      x.save(); x.translate(Math.random() * s, Math.random() * s); x.rotate(Math.random() * Math.PI);
+      x.globalAlpha = 0.42;
+      x.fillStyle = 'rgb(' + ((54 + lit * 64) | 0) + ',' + ((74 + lit * 66) | 0) + ',' + ((34 + lit * 38) | 0) + ')';
+      x.beginPath(); x.ellipse(0, 0, rr, rr * 0.5, 0, 0, 7); x.fill();
+      x.restore();
+    }
+    x.globalAlpha = 1;
+    speckle(x, s, s, 14); speckle(hx, s, s, 22);
+    return texCache.leaf = {
+      map: asTex(c, true), ns: 1.0,
+      alphaMap: asTex(msk, false),
+      normalMap: TIER === 'potato' ? null : asTex(normalFromHeight(hgt, 1.5), false)
+    };
+  }
+  /* A single leaf-cluster card: opaque cluster in the middle, ragged toward the
+     edge, fully transparent at the rim. Used for the fuzz shell over canopies. */
+  function kitLeafCard() {
+    if (texCache.leafCard) return texCache.leafCard;
+    const s = 256, c = cv(s), x = c.getContext('2d');
+    const a = cv(s), ax = a.getContext('2d');
+    x.fillStyle = '#5f7a45'; x.fillRect(0, 0, s, s);
+    ax.fillStyle = '#000'; ax.fillRect(0, 0, s, s);
+    for (let i = 0; i < 150; i++) {
+      // bias toward the centre so the card fades out at its border
+      const ang = Math.random() * Math.PI * 2;
+      const rad = Math.pow(Math.random(), 0.65) * s * 0.44;
+      const px = s / 2 + Math.cos(ang) * rad, py = s / 2 + Math.sin(ang) * rad;
+      const rr = 10 + Math.random() * 26, lit = Math.random();
+      const rot = Math.random() * Math.PI;
+      ax.save(); ax.translate(px, py); ax.rotate(rot);
+      ax.fillStyle = '#ffffff';
+      ax.beginPath(); ax.ellipse(0, 0, rr, rr * 0.6, 0, 0, 7); ax.fill(); ax.restore();
+      x.save(); x.translate(px, py); x.rotate(rot);
+      x.fillStyle = 'rgb(' + ((52 + lit * 86) | 0) + ',' + ((72 + lit * 88) | 0) + ',' + ((32 + lit * 48) | 0) + ')';
+      x.beginPath(); x.ellipse(0, 0, rr, rr * 0.6, 0, 0, 7); x.fill(); x.restore();
+    }
+    // hard rim cut so cards never show a square edge
+    ax.globalCompositeOperation = 'destination-in';
+    const rg = ax.createRadialGradient(s / 2, s / 2, s * 0.2, s / 2, s / 2, s * 0.5);
+    rg.addColorStop(0, 'rgba(255,255,255,1)');
+    rg.addColorStop(1, 'rgba(255,255,255,0)');
+    ax.fillStyle = rg; ax.fillRect(0, 0, s, s);
+    ax.globalCompositeOperation = 'source-over';
+    speckle(x, s, s, 12);
+    const t = asTex(c, true), am = asTex(a, false);
+    t.wrapS = t.wrapT = am.wrapS = am.wrapT = THREE.ClampToEdgeWrapping;
+    return texCache.leafCard = { map: t, alphaMap: am };
+  }
+  function kitBark() {
+    if (texCache.bark) return texCache.bark;
+    const s = Math.min(1024, TEX_S), c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    hx.fillStyle = '#808080'; hx.fillRect(0, 0, s, s);
+    for (let i = 0; i < 520; i++) {
+      const px = Math.random() * s, w = 2 + Math.random() * 10;
+      const dark = Math.random() < 0.55;
+      x.fillStyle = dark ? 'rgba(70,58,44,0.5)' : 'rgba(215,200,178,0.28)';
+      hx.fillStyle = dark ? 'rgba(30,30,30,0.6)' : 'rgba(210,210,210,0.4)';
+      let py = 0;
+      while (py < s) {
+        const seg = 16 + Math.random() * 68;
+        const jx = px + (Math.random() - 0.5) * 10;
+        x.fillRect(jx, py, w, seg); hx.fillRect(jx, py, w, seg);
+        py += seg + Math.random() * 10;
+      }
+    }
+    speckle(x, s, s, 20); speckle(hx, s, s, 24);
+    const kit = { map: asTex(c, true), ns: 0.9,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.95, 12, 0.85, false), false) };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(hgt, 1.6), false);
+    return texCache.bark = kit;
+  }
+  function kitMetal() {
+    if (texCache.metal) return texCache.metal;
+    const s = TEX_S_SM * 2, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    x.globalAlpha = 0.05; x.drawImage(fbmCanvas(s, 12, 3), 0, 0); x.globalAlpha = 1;
+    speckle(x, s, s, 5);
+    const hgt = fbmCanvas(s, 24, 3);
+    const kit = { map: asTex(c, true), ns: 0.18,
+                  roughnessMap: asTex(roughCanvas(s, 0.45, 14, 0.55, false), false) };
+    if (TIER !== 'potato') kit.normalMap = asTex(normalFromHeight(hgt, 0.35), false);
+    return texCache.metal = kit;
+  }
+  function kitCarPaint() {
+    if (texCache.carPaint) return texCache.carPaint;
+    const s = TEX_S_SM, c = cv(s), x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, s, s);
+    speckle(x, s, s, 4);
+    return texCache.carPaint = { map: asTex(c, true), ns: 0.1,
+      roughnessMap: asTex(roughCanvas(s, 0.2, 8, 0.28, false), false) };
+  }
+  function kitField() {
+    if (texCache.field) return texCache.field;
+    const s = HI ? 768 : 384, c = cv(s), x = c.getContext('2d');   // distant farmland, never inspected
+    x.fillStyle = '#8d8468'; x.fillRect(0, 0, s, s);
+    const plots = ['#94895f', '#7f8b52', '#a09468', '#6e7d47', '#9b9070', '#87834f', '#a89a72', '#77854c'];
+    for (let i = 0; i < 54; i++) {
+      x.save();
+      x.translate(Math.random() * s, Math.random() * s);
+      x.rotate(Math.random() * Math.PI);
+      x.fillStyle = plots[(Math.random() * plots.length) | 0];
+      x.globalAlpha = 0.55 + Math.random() * 0.35;
+      const w = s * (0.07 + Math.random() * 0.20), h = s * (0.05 + Math.random() * 0.16);
+      x.fillRect(-w / 2, -h / 2, w, h);
+      x.globalAlpha = 0.32;
+      x.fillStyle = '#4d5c33';
+      x.fillRect(-w / 2, -h / 2, w, s * 0.005);
+      x.fillRect(-w / 2, -h / 2, s * 0.005, h);
+      x.restore();
+    }
+    x.globalAlpha = 0.5; x.drawImage(fbmCanvas(s, 6, 6), 0, 0);
+    x.globalAlpha = 0.2; x.drawImage(fbmCanvas(s, 18, 5), 0, 0);
+    x.globalAlpha = 1;
+    speckle(x, s, s, 18);
+    return texCache.field = { map: asTex(c, true), ns: 0.3 };
+  }
+
+  const TEX = {
+    plaster: kitPlaster, sandfloat: kitSandFloat, stone: kitStone, concrete: kitConcrete, wood: kitWood,
+    tile: kitTile, paver: kitPaver, asphalt: kitAsphalt, grass: kitGrass,
+    dirt: kitDirt, leaf: kitLeaf, bark: kitBark, metal: kitMetal,
+    carPaint: kitCarPaint, field: kitField
+  };
+
+  /* ==========================================================================
+     2 · MATERIAL TREATMENTS
+     ========================================================================== */
+  const C = window.HouseScene.COLORS;
+  const UNMAPPED = {};
+
+  function treatment(name) {
+    switch (name) {
+      case 'white':       return { tex: 'plaster', tile: 3.0, rough: 0.93, metal: 0, env: 0.45, grime: 1.0 };
+      case 'white2':      return { tex: 'plaster', tile: 2.6, rough: 0.90, metal: 0, env: 0.48, grime: 0.7 };
+      /* 1.0 m tile. At 2048 px that is ~0.5 mm per texel, so the grains land
+         at roughly their real size instead of being stretched into patches.
+         Low grime as well — the previous 0.9 was adding its own streaks on top
+         of an already-blotchy map and compounding the stained look. */
+      case 'eastPlaster': return { tex: 'sandfloat', tile: 1.0, rough: 0.98, metal: 0, env: 0.34, grime: 0.35 };
+      case 'sand':        return { tex: 'plaster', tile: 2.8, rough: 0.94, metal: 0, env: 0.42, grime: 1.0 };
+      case 'tank':        return { tex: 'plaster', tile: 1.4, rough: 0.62, metal: 0, env: 0.45, grime: 0.5 };
+      case 'nbr1': case 'nbr2': case 'nbr3':
+        return { tex: 'plaster', tile: 3.6, rough: 0.95, metal: 0, env: 0.38, grime: 1.4 };
+      case 'stone':       return { tex: 'stone', tile: 2.4, rough: 0.62, metal: 0, env: 0.55, grime: 0.8 };
+      case 'copingLight': return { tex: 'stone', tile: 2.0, rough: 0.60, metal: 0, env: 0.58, grime: 0.9 };
+      case 'plinth':      return { tex: 'stone', tile: 1.8, rough: 0.72, metal: 0, env: 0.48, grime: 1.5 };
+      case 'charcoal': case 'charDark': case 'solarFrm':
+        return { tex: 'concrete', tile: 3.4, rough: 0.86, metal: 0, env: 0.45, grime: 1.1 };
+      case 'concrete':    return { tex: 'concrete', tile: 2.6, rough: 0.92, metal: 0, env: 0.40, grime: 1.2 };
+      case 'terraceF': case 'balcTile': case 'tOut':
+        return { tex: 'tile', tile: 1.35, rough: 0.5, metal: 0, env: 0.65, reflect: 0.35 };
+      // Dry paving is not a mirror — it only reflects at grazing angles, and
+      // the SSR pass already applies Fresnel on top of these. Anything above
+      // ~0.1 here and the street reads as wet.
+      case 'pave': case 'paver': case 'paver2':
+        return { tex: 'paver', tile: 1.4, rough: 0.88, metal: 0, env: 0.40, reflect: 0.07 };
+      case 'road':        return { tex: 'asphalt', tile: 7.0, rough: 0.95, metal: 0, env: 0.26, reflect: 0.09 };
+      case 'roadLine':    return { tex: 'concrete', tile: 1.4, rough: 0.80, metal: 0, env: 0.30 };
+      case 'ground':      return { tex: 'field', tile: 46, rough: 1.0, metal: 0, env: 0.28 };
+      case 'plotPad':     return { tex: 'dirt', tile: 9.0, rough: 1.0, metal: 0, env: 0.28 };
+      case 'soil':        return { tex: 'dirt', tile: 0.7, rough: 1.0, metal: 0, env: 0.20 };
+      case 'grass':       return { tex: 'grass', tile: 2.4, rough: 1.0, metal: 0, env: 0.30 };
+      case 'leafDark': case 'leafLight':
+        return { tex: 'leaf', tile: 1.5, rough: 0.90, metal: 0, env: 0.42, cutout: 0.48, twoSided: true };
+      case 'green': case 'green2':
+        return { tex: 'leaf', tile: 1.1, rough: 0.90, metal: 0, env: 0.40, cutout: 0.40, twoSided: true };
+      case 'boug': case 'ixora': case 'flowerPink':
+        return { tex: 'leaf', tile: 0.45, rough: 0.85, metal: 0, env: 0.4 };
+      case 'bark': case 'barkLight':
+        return { tex: 'bark', tile: 0.6, rough: 0.95, metal: 0, env: 0.28 };
+      case 'walnut': case 'woodF': case 'woodD': case 'skirt':
+        return { tex: 'wood', tile: 1.0, rough: 0.42, metal: 0, env: 0.75, reflect: 0.3 };
+      case 'ms':         return { tex: 'metal', tile: 0.8, rough: 0.42, metal: 0.30, env: 1.0, reflect: 0.35 };
+      case 'frame':      return { tex: 'metal', tile: 0.6, rough: 0.36, metal: 0.65, env: 1.05, reflect: 0.5 };
+      /* Balustrades and the gate. The palette calls these stainless and at
+         metalness 1.0 with a light base they behave like one: a mirror pointed
+         at a bright sky, which renders as a pale washed-out line exactly where
+         the facade most needs a crisp one. Real architectural balustrades are
+         nearly always powder-coated mild steel — a dielectric with a dark
+         colour and a soft sheen. Treated as that, so the horizontals read as
+         fine dark lines instead of dissolving into the wall behind them. */
+      case 'steel':
+        return { tex: 'metal', tile: 0.5, rough: 0.44, metal: 0.28, env: 0.80, reflect: 0.28 };
+      case 'liftSteel': case 'liftDoor':
+        return { rough: 0.26, metal: 1.0, env: 1.15, reflect: 0.8 };
+      case 'brass': case 'accentWarm':
+        return { rough: 0.30, metal: 0.92, env: 1.15, reflect: 0.7 };
+      case 'chrome': case 'liftChrome':
+        return { rough: 0.14, metal: 1.0, env: 1.15, reflect: 0.9 };
+      case 'solar':      return { rough: 0.10, metal: 0.55, env: 1.45, reflect: 0.9 };
+      case 'nbrWin':     return { rough: 0.08, metal: 0.45, env: 1.35, reflect: 0.9 };
+      case 'whiteG':     return { rough: 0.08, metal: 0.02, env: 1.1, reflect: 0.6 };
+      case 'tharRed': case 'carBody':
+        return { tex: 'carPaint', tile: 0.5, rough: 0.16, metal: 0.85, env: 1.5, reflect: 0.95 };
+      case 'carDark':    return { rough: 0.55, metal: 0.25, env: 0.6 };
+      case 'fabric': case 'fabric2': case 'curtain': case 'curtain2': case 'rug':
+        return { tex: 'plaster', tile: 0.7, rough: 0.95, metal: 0, env: 0.3 };
+      /* The east vertical fins. Thin members, so a small tile: box-projected
+         UVs give a 40 mm-wide fin a near-constant u, which makes it display one
+         entire copy of the texture down its face — any low-frequency blob in
+         the map then lands on the screen as a metre-wide stain. Low grime too;
+         a vertical fin sheds rather than collects. Colour is left exactly as
+         the palette has it. */
+      case 'fin': case 'fin2':
+        return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
+      // Handled by their own branches in the re-skin loop, but named here so
+      // they do not register as unmapped and make the coverage report lie.
+      case 'glass': case 'carGlass':  return { handledElsewhere: true };
+      case 'lamp': case 'downlight':  return { handledElsewhere: true };
+      case 'dark':       return { rough: 0.55, metal: 0.1, env: 0.4 };
+
+      /* ---- interior surfaces ----------------------------------------------
+         The elevation study this pipeline came from had no interiors, so none
+         of the following had a case and all 22 fell through to `default`,
+         landing in UNMAPPED and taking a generic plaster kit. They are
+         `interior: true` so they pick up the warm indoor IBL rather than
+         reflecting open sky, which is the single biggest indoor realism tell. */
+      // Vitrified floor tiles, one tone per room type. Polished but not mirrors:
+      // a domestic floor returns the room, not the window.
+      case 'tLiving': case 'tBed': case 'tKitch': case 'tOffice': case 'tWalk':
+        return { tex: 'tile', tile: 0.9, rough: 0.30, metal: 0, env: 0.62, reflect: 0.30, interior: true };
+      case 'tBath': case 'tUtil':
+        return { tex: 'tile', tile: 0.6, rough: 0.26, metal: 0, env: 0.66, reflect: 0.34, interior: true };
+      case 'tCirc':
+        return { tex: 'tile', tile: 1.0, rough: 0.30, metal: 0, env: 0.62, reflect: 0.30, interior: true };
+      case 'tPooja':
+        return { tex: 'tile', tile: 0.8, rough: 0.34, metal: 0, env: 0.58, reflect: 0.26, interior: true };
+      // Soft goods — no reflection, no gloss, and a cloth weave rather than plaster
+      case 'mattress': case 'pillow': case 'bedding':
+        return { tex: 'plaster', tile: 0.35, rough: 0.97, metal: 0, env: 0.22, interior: true };
+      // Worktops: stone. `counter` is the cabinet body, `counterTop` the slab.
+      case 'counter':
+        return { tex: 'stone', tile: 1.1, rough: 0.55, metal: 0, env: 0.45, interior: true };
+      case 'counterTop':
+        return { tex: 'stone', tile: 0.7, rough: 0.22, metal: 0, env: 0.70, reflect: 0.30, interior: true };
+      // A switched-off panel is the darkest, glossiest thing in any room
+      case 'tv':
+        return { rough: 0.09, metal: 0.05, env: 0.9, reflect: 0.55, interior: true };
+      // Pooja: cast brass murtis, stone/painted figures, and matte pigments
+      case 'murtiGold':
+        return { tex: 'metal', tile: 0.25, rough: 0.30, metal: 0.82, env: 1.0, reflect: 0.40, interior: true };
+      case 'murtiDark': case 'murtiBlue':
+        return { tex: 'stone', tile: 0.3, rough: 0.52, metal: 0.10, env: 0.5, interior: true };
+      case 'saffron': case 'vermilion': case 'lotusPink': case 'peetaRed':
+        return { rough: 0.92, metal: 0, env: 0.25, interior: true };
+      default:
+        // Anything reaching here is an untextured surface. Recorded so coverage
+        // can be asserted rather than assumed — see the report below.
+        UNMAPPED[name] = (UNMAPPED[name] || 0) + 1;
+        return { tex: 'plaster', tile: 2.4, rough: 0.85, metal: 0, env: 0.5 };
+    }
+  }
+
+  /* ---- palette: white + a grey scale, nothing warm ----------------------
+     Every warm note is gone. The lime-white now reads as white, the greige
+     becomes a true neutral light grey, and the timber doors become dark grey
+     like the rest of the metalwork. A monochrome scheme cannot clash with
+     itself — the only job left is spacing the values evenly, which is what
+     makes it read as designed rather than as beige.
+
+     Value ladder, lightest to darkest:
+       white2 / white   body plaster, soffits, reveals   — bright
+       fin / fin2       east screen                       — bright
+       copingLight      wall copings                      — light
+       eastPlaster      east face                         — light grey, TEXTURED
+       sand / stone     secondary planes                  — light grey
+       plinth           base course                       — mid grey
+       charDark         slab fascias, soffits             — grey
+       charcoal         compound wall, site masonry       — deeper grey
+       walnut / woodD   doors                             — dark grey
+       steel            balustrades, gate                 — anthracite
+       ms               grilles, railings                 — graphite
+       frame            window frames                     — near-black          */
+  const COL = {
+    white:      0xf7f6f4,   // brighter — it should read as white, not cream
+    white2:     0xfbfaf9,
+    fin:        0xf1f0ee,
+    fin2:       0xf7f6f5,
+    // East face: a light NEUTRAL grey, half a step off the body, so the
+    // sand-float has something to sit on and the plane reads as its own.
+    eastPlaster:0xd9dad9,
+    sand:       0xd6d7d6,
+    stone:      0xd4d5d4,
+    copingLight:0xe9eae9,
+    tank:       0xe9eaea,
+    plinth:     0x9fa1a1,
+    charDark:   0x76797a,   // slab fascias + soffits
+    charcoal:   0x6a6d6e,   // compound wall + site masonry
+    /* Doors in timber. 'walnut' is the door leaf and 'woodD' its mouldings
+       and frames, so both are wood; 'woodF' is balcony furniture, kept in the
+       same family. The grain map is neutral now, so these colours land true
+       instead of the muddy grey-brown a warm map would have given.
+       One warm accent against white walls and graphite metal — which is the
+       classic reason it works, and the only warmth left in the scheme. */
+    walnut:     0x8a5c31,   // GF / FF / terrace door leaves — teak
+    woodD:      0x6b4524,   // door mouldings, frames, furniture edges
+    woodF:      0x9a6e40,   // balcony furniture tops
+    skirt:      0x4a4e51,   // skirting stays grey — it is not joinery
+    // and the brass line becomes a satin grey, so nothing gold remains
+    brass:      0x8d9295,
+    accentWarm: 0x93989b,
+    ms:         0x3c4043,
+    frame:      0x26292c,
+    steel:      0x44484c,
+    chrome:     0x9aa1a7,
+    solarFrm:   0x4a4640,
+
+    ground:  0x9c9078, plotPad: 0xa3977d, soil: 0x5d4b34,
+    grass:   0x66794a, road: 0x494b4f,
+    leafDark: 0x34492a, leafLight: 0x5d7838,
+    green: 0x4a5f34, green2: 0x5a7239,
+    boug: 0xa8496f, ixora: 0xbc5c33, flowerPink: 0xc06a86
+  };
+
+  const hex2name = {};
+  for (const k in C) { if (!(C[k] in hex2name)) hex2name[C[k]] = k; }
+
+  function boxUV(geo, tile) {
+    const p = geo.attributes.position, n = geo.attributes.normal;
+    if (!p || !n) return;
+    const uv = new Float32Array(p.count * 2), inv = 1 / tile;
+    for (let i = 0; i < p.count; i++) {
+      const px = p.getX(i), py = p.getY(i), pz = p.getZ(i);
+      const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i));
+      let u, v;
+      if (ay >= ax && ay >= az) { u = px; v = pz; }
+      else if (ax >= az) { u = pz; v = py; }
+      else { u = px; v = py; }
+      uv[2 * i] = u * inv; uv[2 * i + 1] = v * inv;
+    }
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  }
+
+  /* ==========================================================================
+     3 · SKY, IBL, SUN
+     ========================================================================== */
+  /* Anantapur: 14°N, semi-arid, ~300 clear days a year. The sky is a pale
+     hazy blue rather than an alpine one, there is dust in the air, and the
+     ground is dry ochre — so warm bounce reaches every shaded face. That bounce
+     is the climate signature and it is present in all three presets.
+
+     The three now differ mainly in SUN ANGLE, which is what actually changes a
+     facade. Hue moves only a little. The previous set swung the whole sky from
+     blue (0x87b2da) to grey-lavender (0x9fa2b6) and the haze from cold to
+     orange, so they read as three different colour schemes rather than one
+     house at three hours of the same day. */
+  const SUNS = {
+    morning: {                                    // ~9 am, low ESE
+      dir: [0.83, 0.39, 0.22], sunC: 0xfff0d8, sunI: 2.30,
+      hemiSky: 0xc3d4e4, hemiGnd: 0xd0a878, hemiI: 0.34,
+      skyTop: 0x3a72b4, skyMid: 0x9dc0dd, skyBot: 0xe8ddc8,
+      fog: 0xd6dbd8, exp: 0.96, fillC: 0xdcc9a8, fillI: 0.17,
+      envHz: '#e9e2d0', envGnd: '#b18f61'
+    },
+    midday: {                                     // high sun, bleached and flat
+      dir: [0.30, 0.90, 0.24], sunC: 0xfff8ec, sunI: 2.55,
+      hemiSky: 0xbed0e4, hemiGnd: 0xcda875, hemiI: 0.38,
+      skyTop: 0x3570b0, skyMid: 0xa2c4e0, skyBot: 0xe4dcc9,
+      fog: 0xd4dad9, exp: 0.91, fillC: 0xdac9ac, fillI: 0.16,
+      envHz: '#e7e0ce', envGnd: '#b2926a'
+    },
+    golden: {                                     // ~5 pm, raking, warm not orange
+      dir: [0.88, 0.235, 0.20], sunC: 0xffdcae, sunI: 2.20,
+      hemiSky: 0xc8cbd4, hemiGnd: 0xc89a68, hemiI: 0.30,
+      skyTop: 0x3a6ba2, skyMid: 0xb9bfcb, skyBot: 0xf0cfa4,
+      fog: 0xe2cfb4, exp: 0.99, fillC: 0xd0b490, fillI: 0.15,
+      envHz: '#f0dcbc', envGnd: '#a07f56'
+    }
+  };
+  let sunKey = 'morning';
+  const SUN_DIR = new THREE.Vector3().fromArray(SUNS.morning.dir).normalize();
+
+  function cloudNoiseCanvas(size) {
+    const c = cv(size), x = c.getContext('2d');
+    x.fillStyle = '#828282'; x.fillRect(0, 0, size, size);
+    for (let i = 0; i < 1100; i++) {
+      const r = 5 + Math.pow(Math.random(), 2.2) * 72;
+      const px = Math.random() * size, py = Math.random() * size;
+      const bright = Math.random() > 0.44;
+      const a = 0.05 + Math.random() * 0.13;
+      for (const ox of [0, -size, size]) for (const oy of [0, -size, size]) {
+        if ((ox && Math.abs(px + ox - size / 2) > size / 2 + r) ||
+            (oy && Math.abs(py + oy - size / 2) > size / 2 + r)) continue;
+        const g = x.createRadialGradient(px + ox, py + oy, 0, px + ox, py + oy, r);
+        g.addColorStop(0, (bright ? 'rgba(255,255,255,' : 'rgba(18,18,18,') + a.toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(128,128,128,0)');
+        x.fillStyle = g; x.fillRect(px + ox - r, py + oy - r, r * 2, r * 2);
+      }
+    }
+    return c;
+  }
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: {
+      top: { value: new THREE.Color(SUNS.morning.skyTop) },
+      mid: { value: new THREE.Color(SUNS.morning.skyMid) },
+      bot: { value: new THREE.Color(SUNS.morning.skyBot) },
+      sunDir: { value: SUN_DIR.clone() },
+      sunTint: { value: new THREE.Color(0xffeecf) },
+      skyGain: { value: 1.15 },
+      tNoise: { value: asTex(cloudNoiseCanvas(512), false) }
+    },
+    vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    fragmentShader: `
+      varying vec3 vDir;
+      uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir; uniform vec3 sunTint;
+      uniform float skyGain;
+      uniform sampler2D tNoise;
+      /* Every colour reaching this shader is LINEAR radiance, converted on the
+         JS side. A raw ShaderMaterial is not touched by three's tone mapping or
+         output encoding, so writing sRGB-valued numbers here used to look right
+         on a direct-to-canvas render purely by accident — the canvas
+         reinterpreted them as sRGB. Feed the same numbers into an HDR buffer
+         that a real tone map then reads as radiance and the sky blows out to a
+         white wash. */
+      void main(){
+        vec3 d = normalize(vDir);
+        float h = clamp(d.y, -1.0, 1.0);
+        vec3 col = h > 0.0 ? mix(mid, top, pow(h, 0.52)) : mix(mid, bot, pow(-h, 0.5));
+        float haze = pow(1.0 - abs(h), 7.0);
+        col = mix(col, vec3(0.86, 0.88, 0.88), haze * 0.16);
+        float s = max(dot(d, normalize(sunDir)), 0.0);
+        if (h > 0.012) {
+          vec2 uv = d.xz / (d.y + 0.34);
+          float n1 = texture2D(tNoise, uv * 0.30 + vec2(0.13, 0.40)).r;
+          float n2 = texture2D(tNoise, uv * 0.84 + vec2(0.55, 0.10)).r;
+          float n3 = texture2D(tNoise, uv * 2.20 + vec2(0.31, 0.77)).r;
+          float n = n1 * 0.58 + n2 * 0.29 + n3 * 0.13;
+          float cov = smoothstep(0.505, 0.655, n);
+          float fade = smoothstep(0.055, 0.30, h);
+          float dense = smoothstep(0.58, 0.78, n);
+          vec3 cloudCol = mix(vec3(1.35, 1.34, 1.30), vec3(0.66, 0.68, 0.75), dense * 0.9);
+          cloudCol += sunTint * pow(s, 3.0) * 0.45;
+          col = mix(col, cloudCol, cov * fade * 0.88);
+        }
+        col *= skyGain;
+        col += sunTint * pow(s, 1400.0) * 26.0;               // sun disc
+        col += sunTint * pow(s, 6.0) * 0.28;                  // forward glare
+        gl_FragColor = vec4(col, 1.0);
+      }`
+  });
+  const skyDome = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), skyMat);
+  skyDome.frustumCulled = false;
+  scene.add(skyDome);
+
+  // fromEquirectangular is the robust path — pmrem.fromScene() over a custom
+  // ShaderMaterial sky yields a malformed env map that NaNs every PBR surface.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  let envRT = null;
+  function buildEnv(S) {
+    const w = HI ? 1024 : (TIER === 'medium' ? 512 : 256), h = w >> 1;
+    const c = cv(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    const hex = (n) => '#' + ('000000' + n.toString(16)).slice(-6);
+    g.addColorStop(0.00, hex(S.skyTop));
+    g.addColorStop(0.40, hex(S.skyMid));
+    g.addColorStop(0.50, S.envHz);
+    g.addColorStop(0.52, S.envGnd);
+    g.addColorStop(1.00, S.envGnd);
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 18; i++) {
+      const cx = Math.random() * w, cy = h * (0.12 + Math.random() * 0.28);
+      const cg = x.createRadialGradient(cx, cy, 0, cx, cy, 26 + Math.random() * 54);
+      cg.addColorStop(0, 'rgba(255,253,248,0.55)'); cg.addColorStop(1, 'rgba(255,253,248,0)');
+      x.fillStyle = cg; x.fillRect(0, 0, w, h);
+    }
+    const d = new THREE.Vector3().fromArray(S.dir).normalize();
+    const az = Math.atan2(d.x, d.z), el = Math.asin(d.y);
+    const sx = (az / (Math.PI * 2) + 0.5) * w, sy = (0.5 - el / Math.PI) * h;
+    const sg = x.createRadialGradient(sx, sy, 0, sx, sy, w * 0.11);
+    sg.addColorStop(0, 'rgba(255,248,228,1)'); sg.addColorStop(1, 'rgba(255,248,228,0)');
+    x.fillStyle = sg; x.fillRect(0, 0, w, h);
+    const eq = new THREE.CanvasTexture(c);
+    eq.mapping = THREE.EquirectangularReflectionMapping;
+    if ('colorSpace' in eq && THREE.SRGBColorSpace) eq.colorSpace = THREE.SRGBColorSpace; else eq.encoding = THREE.sRGBEncoding;
+    const rt = pmrem.fromEquirectangular(eq);
+    eq.dispose();
+    if (envRT) envRT.dispose();
+    envRT = rt;
+    scene.environment = rt.texture;
+    buildInteriorEnv(S);
+  }
+
+  /* Second IBL, for surfaces that cannot see the sky.
+     This pipeline was written for an exterior-only model, so every glossy
+     surface reflected the sky dome. Indoors that is wrong and very visible: a
+     polished floor tile or a granite worktop three rooms deep would mirror open
+     blue, which reads as plastic more than any other single error. Interior
+     treatments get this instead — the room's own bounce, warm and low-contrast,
+     tinted by the sun preset so the two IBLs stay in the same light. */
+  let intRT = null;
+  function buildInteriorEnv(S) {
+    const w = HI ? 256 : 128, h = w >> 1;
+    const c = cv(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    // ceiling bounce above, wall tone at the horizon, floor bounce below
+    g.addColorStop(0.00, '#efe9dd');
+    g.addColorStop(0.45, '#ddd4c4');
+    g.addColorStop(0.55, '#c7bda9');
+    g.addColorStop(1.00, '#9d947f');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    // a soft window-shaped patch so reflections have somewhere bright to land
+    const wg = x.createRadialGradient(w * 0.72, h * 0.38, 0, w * 0.72, h * 0.38, w * 0.16);
+    const sk = '#' + ('000000' + S.skyMid.toString(16)).slice(-6);
+    wg.addColorStop(0, sk); wg.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = wg; x.fillRect(0, 0, w, h);
+    const eq = new THREE.CanvasTexture(c);
+    eq.mapping = THREE.EquirectangularReflectionMapping;
+    if ('colorSpace' in eq && THREE.SRGBColorSpace) eq.colorSpace = THREE.SRGBColorSpace; else eq.encoding = THREE.sRGBEncoding;
+    const rt = pmrem.fromEquirectangular(eq);
+    eq.dispose();
+    if (intRT) intRT.dispose();
+    intRT = rt;
+    INTERIOR_MATS.forEach(m => { m.envMap = rt.texture; m.needsUpdate = true; });
+  }
+  const INTERIOR_MATS = [];
+
+  const hemi = new THREE.HemisphereLight(SUNS.morning.hemiSky, SUNS.morning.hemiGnd, SUNS.morning.hemiI);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(SUNS.morning.sunC, SUNS.morning.sunI);
+  sun.castShadow = Q.shadows !== false;
+  const SHMAP = Math.min(MAXTEX, HI ? 4096 : (Q.shadowMap || 2048));
+  sun.shadow.mapSize.set(SHMAP, SHMAP);
+  const shc = sun.shadow.camera;
+  shc.left = -42; shc.right = 42; shc.top = 42; shc.bottom = -42; shc.near = 20; shc.far = 210;
+  sun.shadow.bias = -0.0004;
+  sun.shadow.normalBias = 0.035;
   const sunTarget = new THREE.Object3D();
-  sunTarget.position.set(8, 0, -4.4);
-  scene.add(sunTarget); sun.target = sunTarget;
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xa9b6c6, 0.18);
-  fill.position.set(-30, 18, 6);
+  sunTarget.position.set(8.3, 4.0, -4.4);
+  scene.add(sunTarget); sun.target = sunTarget; scene.add(sun);
+  const fill = new THREE.DirectionalLight(SUNS.morning.fillC, SUNS.morning.fillI);
+  fill.position.set(-50, 34, -26);
   scene.add(fill);
 
-  /* soft light pool under the building */
-  (function pool() {
-    if (typeof document === 'undefined') return;
-    const cv = document.createElement('canvas'); cv.width = cv.height = 512;
-    const ctx = cv.getContext && cv.getContext('2d');
-    if (!ctx) return;
-    const g = ctx.createRadialGradient(256, 256, 30, 256, 256, 250);
-    g.addColorStop(0, 'rgba(74,79,86,0.85)');
-    g.addColorStop(0.55, 'rgba(46,50,55,0.45)');
-    g.addColorStop(1, 'rgba(26,28,30,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 512);
-    const tex = new THREE.CanvasTexture(cv);
-    const m = new THREE.Mesh(
-      new THREE.PlaneGeometry(92, 92),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
-    );
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(9.5, 0.018, -4.2);
-    m.renderOrder = 1;
-    scene.add(m);
-  })();
+  scene.fog = new THREE.Fog(SUNS.morning.fog, 250, 1100);
+  scene.background = new THREE.Color(SUNS.morning.fog);
+
+  const SKY_UP = new THREE.Color(), SKY_DN = new THREE.Color();
+  function applySun(key) {
+    const S = SUNS[key] || SUNS.morning;
+    sunKey = key;
+    SUN_DIR.fromArray(S.dir).normalize();
+    sun.position.copy(SUN_DIR).multiplyScalar(110).add(sunTarget.position);
+    sun.color.setHex(S.sunC); sun.intensity = S.sunI;
+    hemi.color.setHex(S.hemiSky); hemi.groundColor.setHex(S.hemiGnd); hemi.intensity = S.hemiI;
+    fill.color.setHex(S.fillC); fill.intensity = S.fillI;
+    // The sky dome, the fog colour and the clear colour all feed a linear HDR
+    // buffer when the pipeline is on, so they must be linear radiance. On the
+    // fallback path they go straight to an sRGB canvas and must not be.
+    const asLin = (hex) => POST.on ? new THREE.Color(hex).convertSRGBToLinear() : new THREE.Color(hex);
+    skyMat.uniforms.top.value.copy(asLin(S.skyTop));
+    skyMat.uniforms.mid.value.copy(asLin(S.skyMid));
+    skyMat.uniforms.bot.value.copy(asLin(S.skyBot));
+    skyMat.uniforms.sunDir.value.copy(SUN_DIR);
+    skyMat.uniforms.sunTint.value.copy(asLin(S.sunC));
+    skyMat.uniforms.skyGain.value = POST.on ? 1.15 : 1.0;
+    scene.fog.color.copy(asLin(S.fog));
+    scene.background.copy(asLin(S.fog));
+    SKY_UP.setHex(S.skyMid).convertSRGBToLinear();
+    SKY_DN.set(S.envGnd).convertSRGBToLinear();
+    POST.exposure = S.exp;
+    if (!POST.on) renderer.toneMappingExposure = S.exp;
+    buildEnv(S);
+    if (Q.shadows !== false) renderer.shadowMap.needsUpdate = true;
+    document.querySelectorAll('#sun button').forEach(b => {
+      b.classList.toggle('on', b.getAttribute('data-sun') === key);
+      b.setAttribute('aria-pressed', b.getAttribute('data-sun') === key);
+    });
+    resetAccum();
+  }
 
   /* ---------- house ---------- */
   const data = window.HouseScene.build(THREE);
   scene.add(data.root);
+
+  /* ==========================================================================
+     4 · RE-SKIN
+     The donor pipeline built the scene here; this viewer already did so above,
+     and owns group visibility through setView(). Only the re-skin is kept.
+     ========================================================================== */
+
+  /* Grime. Water runs down a wall, collects dirt, and leaves it where the wall
+     meets the ground and under every horizontal that sheds. No real building is
+     the same tone top to bottom, and a uniform one is the single most reliable
+     "this is CG" signal on a plaster facade. Patched into the standard shader
+     so it works off true world position rather than baked UVs. */
+  function addGrime(m, amount) {
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uGrime = { value: amount };
+      sh.vertexShader = 'varying vec3 vWP_;\nvarying vec3 vWN_;\n' + sh.vertexShader.replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\n  vWP_ = (modelMatrix * vec4(transformed, 1.0)).xyz;\n  vWN_ = normalize(mat3(modelMatrix) * objectNormal);'
+      );
+      sh.fragmentShader = 'varying vec3 vWP_;\nvarying vec3 vWN_;\nuniform float uGrime;\n' + sh.fragmentShader.replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+         {
+           float vert = 1.0 - abs(vWN_.y);                       // walls, not slabs
+           float splash = exp(-max(vWP_.y - 0.05, 0.0) * 4.5);   // rain splash-back
+           float base   = exp(-max(vWP_.y - 0.05, 0.0) * 1.1) * 0.45;
+           float g = (splash * 0.85 + base) * vert * uGrime;
+           // horizontal dust ledges: dirt sits on top of every up-facing plane
+           float ledge = max(vWN_.y, 0.0) * 0.10 * uGrime;
+           diffuseColor.rgb *= (1.0 - clamp(g, 0.0, 0.42));
+           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.94, 0.92, 0.86), clamp(ledge, 0.0, 0.3));
+         }`
+      );
+    };
+    m.customProgramCacheKey = () => 'grime' + amount.toFixed(2);
+  }
+
+  say('APPLYING PBR MATERIALS');
+  const REFLECTIVE = [];                     // meshes worth tracing reflections for
+  const doneMat = new Set();
+  const COVERAGE = {};
+  /* V19's garden is real 3D geometry that already carries its own photographic
+     leaf cards, hedge and grass-blade textures, built in houseScene from the
+     owner's own plant photos. Re-skinning it here would overwrite all of that
+     with generic procedural foliage, so it is left alone — it still gets a
+     normal-buffer material below, so GI, SSR and the edge pass all see it. */
+  const gardenGroup = data.root.getObjectByName('garden');
+  const inGarden = (o) => {
+    for (let p = o; p; p = p.parent) if (p === gardenGroup) return true;
+    return false;
+  };
+
+  data.root.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const key = o.userData.matKey || hex2name[o.material.color ? o.material.color.getHex() : -1] || '';
+    COVERAGE[key] = (COVERAGE[key] || 0) + 1;
+    if (inGarden(o)) {
+      o.castShadow = true; o.receiveShadow = true;
+      o.userData.reflect = 0;
+      return;
+    }
+    const t = treatment(key);
+    const m = o.material;
+
+    if (!doneMat.has(m)) {
+      doneMat.add(m);
+      m.userData.name = key;
+      if (key === 'glass' || key === 'carGlass') {
+        m.transparent = true; m.depthWrite = false;
+        m.roughness = 0.045; m.metalness = 0.0;
+        m.envMapIntensity = 1.6;
+        if (key === 'carGlass') { m.color.setHex(0x171b1f); m.opacity = 0.86; }
+        else { m.color.setHex(0x1e262c); m.opacity = 0.72; }
+      } else if (key === 'lamp' || key === 'downlight') {
+        if (m.emissive) m.emissive.setHex(0xffdcae);
+        m.emissiveIntensity = 2.2; m.envMapIntensity = 0.2;
+      } else {
+        if ('roughness' in m) m.roughness = t.rough;
+        if ('metalness' in m) m.metalness = t.metal || 0;
+        m.envMapIntensity = t.env != null ? t.env : 0.5;
+        if (COL[key] != null && m.color) m.color.copy(new THREE.Color(COL[key]).convertSRGBToLinear());
+        /* Highlight shoulder, not a full-range squeeze.
+
+           The old curve (0.035 + 0.76c) pulled the lime-white down 20 % — which
+           it should, 0.87 linear is brighter than snow — but it also LIFTED the
+           window frames by 16 %, because the +0.035 floor does proportionally
+           most to the darkest values. It compressed the picture from both ends
+           at once and took wall-to-railing contrast from 3.4:1 to 3.0:1.
+
+           A shoulder only touches the top. Whites land where they should and
+           every dark stays exactly as dark as the palette intended. */
+        if (m.color) {
+          const sh = (v) => v <= 0.45 ? v : 0.45 + (v - 0.45) * 0.58;
+          m.color.r = sh(m.color.r);
+          m.color.g = sh(m.color.g);
+          m.color.b = sh(m.color.b);
+        }
+        m.bumpMap = null; m.bumpScale = 1;      // houseScene ships its own; it fights the normalMap
+        if (t.tex && TEX[t.tex]) {
+          const kit = TEX[t.tex]();
+          m.map = kit.map;
+          if (kit.normalMap) { m.normalMap = kit.normalMap; m.normalScale = new THREE.Vector2(kit.ns, kit.ns); }
+          if (kit.roughnessMap) { m.roughnessMap = kit.roughnessMap; m.roughness = 1.0; }
+          if (t.cutout && kit.alphaMap) { m.alphaMap = kit.alphaMap; m.alphaTest = t.cutout; }
+        }
+        if (t.twoSided) m.side = THREE.DoubleSide;
+        if (t.grime) addGrime(m, t.grime);
+        // Indoor surfaces reflect the room, not the sky (see buildInteriorEnv)
+        if (t.interior) {
+          INTERIOR_MATS.push(m);
+          if (intRT) m.envMap = intRT.texture;
+        }
+      }
+      m.needsUpdate = true;
+    }
+
+    if (t.tex) boxUV(o.geometry, t.tile);
+
+    const isGlass = key === 'glass' || key === 'carGlass';
+    o.castShadow = !(isGlass || key === 'ground' || key === 'plotPad' || key === 'road' || key === 'roadLine');
+    o.receiveShadow = !isGlass;
+    o.userData.reflect = isGlass ? 0.9 : (t.reflect || 0);
+    if (o.userData.reflect > 0.05) REFLECTIVE.push(o);
+  });
+
+  /* Coverage report. "Every surface is textured" is a claim worth checking
+     rather than asserting, so every palette key that appears in the geometry is
+     counted and every key that fell through to the default branch is named. */
+  const MATERIAL_COVERAGE = {
+    keysInScene: Object.keys(COVERAGE).sort(),
+    unmapped: Object.keys(UNMAPPED),
+    gardenSkipped: !!gardenGroup
+  };
+  if (MATERIAL_COVERAGE.unmapped.length) {
+    console.warn('[coverage] surfaces with no explicit treatment:', MATERIAL_COVERAGE.unmapped);
+  } else {
+    console.info('[coverage] all ' + MATERIAL_COVERAGE.keysInScene.length + ' surface types explicitly textured');
+  }
+
+  /* Dual representation: every shell wall exists twice — once in the exterior
+     shell and once in the floor group that shares its plane. That is by design
+     (a floor view needs its own walls), and the two are coincident, so on a
+     floor view they z-fight along every wall. The floor groups render very
+     slightly in front. Exterior view is unaffected: the floor groups are hidden.
+
+     makeBag hands the SAME material instance to every group, so this has to
+     clone — setting polygonOffset in place would push the exterior forward
+     against itself too. One clone per material key per floor group, which is
+     what walkthrough.html does for the same reason. */
+  data.floors.forEach(f => {
+    const clones = new Map();
+    f.group.traverse(o => {
+      if (!o.isMesh || !o.material) return;
+      const key = o.userData.matKey || o.material.uuid;
+      let c = clones.get(key);
+      if (!c) {
+        c = o.material.clone();
+        c.polygonOffset = true;
+        c.polygonOffsetFactor = -1.2;
+        c.polygonOffsetUnits = -1.2;
+        clones.set(key, c);
+      }
+      o.material = c;
+    });
+  });
+
+  /* ==========================================================================
+     5 · SURROUNDINGS, FOLIAGE FUZZ, SERVICES
+     ========================================================================== */
+  let seed = 20260814;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+
+  /* The site ground box is 230 m and its edge shows against the sky from any
+     drone-height camera, which reads as a diorama on a table. A field plane out
+     past the fog distance gives a real ground-to-sky horizon.
+
+     No trees, foliage cards or services are added here: V19 builds its own 3D
+     garden (trunks, canopy volumes, hedge, grass tufts) and adding a second set
+     would double it up. Nothing in this file adds an element to the design. */
+  (function farGround() {
+    const m = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(COL.ground).convertSRGBToLinear().multiplyScalar(0.76).addScalar(0.035),
+      roughness: 1.0, metalness: 0.0, envMapIntensity: 0.28, map: TEX.field().map,
+      polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2
+    });
+    const g = new THREE.CircleGeometry(900, 64);
+    g.rotateX(-Math.PI / 2);
+    // world-space UVs, matching how boxUV maps the site ground box — a
+    // local-space mapping offsets the field pattern and the join shows as a
+    // straight line ruled across the landscape
+    const uv = g.attributes.uv, pos = g.attributes.position;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) + 10.5) / 46, (pos.getZ(i) - 9.0) / 46);
+    const mesh = new THREE.Mesh(g, m);
+    mesh.position.set(10.5, 0.0, -9.0);
+    mesh.receiveShadow = false; mesh.castShadow = false; mesh.frustumCulled = false;
+    scene.add(mesh);
+  })();
+
   const FLOOR_NAMES = ['GROUND', 'FIRST', 'SECOND'];
   const VIEW_KEYS = ['exterior', 'floor0', 'floor1', 'floor2'];
 
@@ -584,8 +1972,10 @@
       });
     }
     clearSelection();
-    document.querySelectorAll('#views button').forEach(b =>
-      b.classList.toggle('on', b.dataset.view === name));
+    document.querySelectorAll('#views button').forEach(b => {
+      b.classList.toggle('on', b.dataset.view === name);
+      b.setAttribute('aria-pressed', b.dataset.view === name);
+    });
     buildPanel(fi);
     labelsLayer.style.display = fi >= 0 ? 'block' : 'none';
     if (instant) setFromView(data.views[name], true);
@@ -594,7 +1984,21 @@
     announce(fi >= 0 ? FLOOR_NAMES[fi] + ' floor view' : 'Exterior view');
   }
   document.querySelectorAll('#views button').forEach(b =>
-    b.addEventListener('click', () => setView(b.dataset.view)));
+    b.addEventListener('click', () => { if (!b.disabled) setView(b.dataset.view); }));
+
+  /* The elevation versions are exterior shells — data.floors is empty, so the
+     dollhouse pills have nothing to show and buildPanel() would index into an
+     empty floorsUI. Disable them and stay on the exterior for those scenes. */
+  const hasInteriors = data.floors.length > 0;
+  if (!hasInteriors) {
+    document.querySelectorAll('#views button').forEach(b => {
+      if (b.dataset.view !== 'exterior') {
+        b.disabled = true;
+        b.setAttribute('aria-disabled', 'true');
+        b.title = 'Interiors are only modelled on the full house — pick FULL under DESIGN';
+      }
+    });
+  }
 
   /* ---------- rooms panel ---------- */
   const panel = $('roomsPanel'), list = $('roomsList'), panelTitle = $('panelTitle');
@@ -750,8 +2154,21 @@
   /* ---------- resize ---------- */
   function resize() {
     const vv = window.visualViewport;
-    const w = Math.max(1, Math.floor((vv && vv.width) || window.innerWidth));
-    const h = Math.max(1, Math.floor((vv && vv.height) || window.innerHeight));
+    let w = Math.floor((vv && vv.width) || window.innerWidth || 0);
+    let h = Math.floor((vv && vv.height) || window.innerHeight || 0);
+    /* A viewport of 0 is not a 1-pixel viewport.
+       attachViewport() calls this once during boot, and if the embedder has not
+       laid the page out yet, innerWidth/visualViewport can still read 0. The old
+       Math.max(1, …) turned that into a 1×1 drawing buffer stretched across the
+       window — a single flat colour that never changes and never recovers,
+       because nothing resizes again unless the user drags the window. Fall back
+       to the canvas's own CSS box, and if even that is degenerate, retry next
+       frame rather than committing to a broken size. */
+    if (w < 2 || h < 2) {
+      w = canvas.clientWidth || 0;
+      h = canvas.clientHeight || 0;
+    }
+    if (w < 2 || h < 2) { requestAnimationFrame(resize); return; }
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -761,8 +2178,706 @@
   if (window.Perf && Perf.attachViewport) Perf.attachViewport(resize);
   else { window.addEventListener('resize', resize); resize(); }
 
+  /* ==========================================================================
+     6 · RENDER PIPELINE
+     scene + normals ▸ SSGI ▸ SSR ▸ composite ▸ temporal accumulate ▸ AgX
+     ========================================================================== */
+  const POST = { on: false, exposure: SUNS.morning.exp, render: null, samples: 0, max: 1 };
+  let accumDirty = true;
+  function resetAccum() { accumDirty = true; POST.samples = 0; }
+
+  /* Per-mesh depth/normal/reflectivity material.
+
+     Every visible mesh needs one. A mesh left out does not simply go missing
+     from the buffer — it renders with its ORDINARY material, so its albedo
+     lands in the normal channels and its opaque alpha reads as "fully
+     reflective". That is how the distant fields turned into a lake and the
+     canopies grew white speckles: SSR was faithfully reflecting the sky off
+     everything that had been forgotten here.
+
+     A shared overrideMaterial can't do the job either — three skips re-uploading
+     uniforms when the material instance doesn't change between draws, so
+     per-mesh reflectivity would never reach the shader. Hence one clone each. */
+  const NR_VS = `
+    varying vec3 vN; varying vec2 vUvNR;
+    void main(){
+      vUvNR = uv;
+      #ifdef USE_INSTANCING
+        mat4 im = instanceMatrix;
+        vN = normalize(normalMatrix * (mat3(im) * normal));
+        gl_Position = projectionMatrix * modelViewMatrix * im * vec4(position, 1.0);
+      #else
+        vN = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      #endif
+    }`;
+  const NR_FS = `
+    varying vec3 vN; varying vec2 vUvNR;
+    uniform float uRefl;
+    uniform sampler2D uAlpha; uniform float uUseAlpha; uniform float uCut;
+    void main(){
+      // uUseAlpha: 0 = opaque, 1 = mask in the alphaMap's GREEN channel
+      // (the procedural leaf kit), 2 = mask in the map's ALPHA channel (the
+      // photoreal garden's leaf cards, which carry alphaTest on map).
+      if (uUseAlpha > 0.5) {
+        vec4 a = texture2D(uAlpha, vUvNR);
+        float m = uUseAlpha > 1.5 ? a.a : a.g;
+        if (m < uCut) discard;
+      }
+      gl_FragColor = vec4(normalize(vN) * 0.5 + 0.5, uRefl);
+    }`;
+  const nrList = [];
+  function buildNormalMaterials() {
+    nrList.length = 0;
+    scene.traverse(o => {
+      if (!o.isMesh || !o.material || o === skyDome) return;
+      const m = o.material;
+      const nm = new THREE.ShaderMaterial({
+        vertexShader: NR_VS, fragmentShader: NR_FS,
+        side: m.side, uniforms: {
+          uRefl: { value: o.userData.reflect || 0 },
+          /* The garden's leaf cards are alphaTest cut-outs whose mask lives in
+             map.a, with no alphaMap at all. Testing only for alphaMap left every
+             card a solid quad in the normal buffer, so SSR traced the whole
+             canopy as opaque reflective geometry and composited the scene back
+             over itself — the model looked semi-transparent from every angle. */
+          uAlpha: { value: m.alphaMap || (m.alphaTest > 0 ? m.map : null) || null },
+          uUseAlpha: { value: m.alphaMap ? 1 : (m.alphaTest > 0 && m.map ? 2 : 0) },
+          uCut: { value: m.alphaTest || 0.5 }
+        }
+      });
+      nrList.push({ mesh: o, nr: nm });
+    });
+  }
+
+  function renderNormals(rt) {
+    for (const e of nrList) { e.mesh.userData._m = e.mesh.material; e.mesh.material = e.nr; }
+    const bg = scene.background, fg = scene.fog;
+    scene.background = null; scene.fog = null;
+    skyDome.visible = false;
+    renderer.setRenderTarget(rt);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear();
+    renderer.render(scene, camera);
+    skyDome.visible = true;
+    scene.background = bg; scene.fog = fg;
+    for (const e of nrList) e.mesh.material = e.mesh.userData._m;
+  }
+
+  buildNormalMaterials();   // after every mesh is in the scene, not before
+
+  /* …except two batches are NOT in the scene yet at this point: the car GLB and
+     the photoreal garden, both of which load asynchronously and announce
+     themselves. A mesh with no normal-buffer material does not go missing from
+     that buffer — it renders with its ORDINARY material, so its albedo lands in
+     the normal channels and its opaque alpha reads as "fully reflective". SSR
+     then traces mirror rays off the whole garden and car, which composites the
+     scene back over itself and turns every wall semi-transparent. Rebuild on
+     both events; the garden is ~16,800 instances and by far the worse offender. */
+  ['houseCarReady', 'houseGardenReady'].forEach(ev => {
+    window.addEventListener(ev, () => {
+      buildNormalMaterials();
+      if (Q.shadows !== false) renderer.shadowMap.needsUpdate = true;
+      resetAccum();
+      wake(900);
+    });
+  });
+
+  (function buildPipeline() {
+    if (!WEBGL2 || TIER === 'low' || TIER === 'potato') return;
+    POST.on = true;
+    renderer.toneMapping = THREE.NoToneMapping;
+    POST.max = HI ? 64 : 24;
+    /* Cap the render scale for the pipeline. Every pass here is full-screen and
+       several are per-pixel ray marches, so cost goes with the square of the
+       device pixel ratio: a retina display at dpr 2 is FOUR times the work of
+       dpr 1, on top of a scene that now carries the interiors and ~16,800
+       foliage instances. The temporal accumulation is what resolves edges, so
+       there is nothing to gain from supersampling on top of it. */
+    const BASE_DPR = Math.min(Q.dpr || window.devicePixelRatio || 1, 2);
+    renderer.setPixelRatio(Math.min(BASE_DPR, HI ? 1.5 : 1.0));
+
+    const fsCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const fsGeo = new THREE.PlaneGeometry(2, 2);
+    function pass(frag, uniforms) {
+      const m = new THREE.ShaderMaterial({
+        uniforms, depthTest: false, depthWrite: false,
+        vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+        fragmentShader: frag
+      });
+      const sc = new THREE.Scene(); sc.add(new THREE.Mesh(fsGeo, m));
+      return { scene: sc, mat: m, u: uniforms };
+    }
+
+    const COMMON = `
+      uniform sampler2D tDepth; uniform sampler2D tNorm; uniform sampler2D tColor;
+      uniform mat4 projInv; uniform mat4 proj; uniform vec2 res; uniform float uSeed;
+      float readDepth(vec2 uv){ return texture2D(tDepth, uv).x; }
+      vec3 viewPos(vec2 uv){
+        float d = readDepth(uv);
+        vec4 ndc = vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+        vec4 v = projInv * ndc;
+        return v.xyz / v.w;
+      }
+      vec3 viewNorm(vec2 uv){ return normalize(texture2D(tNorm, uv).xyz * 2.0 - 1.0); }
+      /* Sky test. NOT a depth threshold: the dome sits at r=1000 against a far
+         plane of 1200, so its window depth is 0.99991 — under any "close to
+         1.0" epsilon you would naturally pick. Treated as geometry, every sky
+         pixel gets ray-marched with a garbage normal and has bounce light
+         injected into it, which turns a deep blue sky into flat white haze.
+         The normal buffer is cleared to zero and the dome is excluded from it,
+         so an all-zero texel is exactly and only sky. */
+      bool isSky(vec2 uv){ vec3 r = texture2D(tNorm, uv).xyz; return dot(r, r) < 0.0015; }
+      vec2 project(vec3 vp){
+        vec4 c = proj * vec4(vp, 1.0);
+        return (c.xy / c.w) * 0.5 + 0.5;
+      }
+      float hash13(vec3 p){
+        p = fract(p * 0.1031); p += dot(p, p.yzx + 33.33);
+        return fract((p.x + p.y) * p.z);
+      }`;
+
+    /* --- SSGI. Cosine-sample the hemisphere, march each ray through the depth
+       buffer, and look at what it hits.
+
+       The ray result is stored as a DIFFERENCE, not as radiance: (hit colour −
+       sky reference). This matters. The forward pass has already lit every
+       pixel with an IBL that assumed open sky in all directions, so adding raw
+       bounce radiance on top double-counts and floods the shadows — the whole
+       frame goes milky and cast shadows disappear, which is exactly what raw
+       SSGI does to a forward renderer. As a difference it is self-correcting
+       and unifies both effects: a ray that hits something darker than sky
+       subtracts (that is ambient occlusion), one that hits a sunlit wall adds
+       (that is colour bleed), and one that sees sky changes nothing because the
+       IBL already had it right.
+
+       Two rays per pixel is far too few to be smooth — which is what the
+       temporal accumulation is for. The noise is zero-mean, so 64 frames of
+       different seeds converge on the true integral. */
+    const giPass = pass(COMMON + `
+      varying vec2 vUv;
+      uniform float uRadius; uniform float uThickness; uniform vec3 uSkyRef;
+      void main(){
+        if (isSky(vUv)) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
+        vec3 P = viewPos(vUv);
+        vec3 N = viewNorm(vUv);
+        vec3 T = normalize(abs(N.z) < 0.9 ? cross(N, vec3(0.0, 0.0, 1.0)) : cross(N, vec3(1.0, 0.0, 0.0)));
+        vec3 B = cross(N, T);
+        vec3 gi = vec3(0.0); float occ = 0.0;
+        const int RAYS = 2, STEPS = 12;
+        for (int r = 0; r < RAYS; r++) {
+          float h1 = hash13(vec3(vUv * res, uSeed + float(r) * 17.3));
+          float h2 = hash13(vec3(vUv * res + 91.7, uSeed * 1.7 + float(r) * 7.1));
+          float phi = 6.2831853 * h1;
+          float ct = sqrt(1.0 - h2);              // cosine-weighted
+          float st = sqrt(h2);
+          vec3 dir = normalize(T * (cos(phi) * st) + B * (sin(phi) * st) + N * ct);
+          float stepLen = uRadius / float(STEPS);
+          vec3 pos = P + N * 0.02;
+          bool hit = false;
+          for (int s = 0; s < STEPS; s++) {
+            pos += dir * stepLen * (1.0 + float(s) * 0.35);   // grow strides
+            vec2 uv = project(pos);
+            if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) break;
+            if (isSky(uv)) continue;              // a ray that sees sky is a miss
+            vec3 sp = viewPos(uv);
+            float diff = sp.z - pos.z;            // view space: -z is forward
+            if (diff > 0.0 && diff < uThickness) {
+              // distance falloff: a wall 20 m away contributes far less bounce
+              // than the soffit 1 m overhead, and without this the far side of
+              // the street lights the portico
+              float fall = 1.0 / (1.0 + length(pos - P) * 0.55);
+              gi += (texture2D(tColor, uv).rgb - uSkyRef) * fall;
+              occ += fall; hit = true; break;
+            }
+          }
+          if (!hit) gi += vec3(0.0);
+        }
+        gi /= float(RAYS);
+        float ao = 1.0 - occ / float(RAYS);
+        gl_FragColor = vec4(gi, ao);
+      }`,
+      { tDepth: { value: null }, tNorm: { value: null }, tColor: { value: null },
+        projInv: { value: new THREE.Matrix4() }, proj: { value: new THREE.Matrix4() },
+        res: { value: new THREE.Vector2(1, 1) }, uSeed: { value: 0 },
+        uRadius: { value: 4.0 }, uThickness: { value: 1.4 },
+        uSkyRef: { value: new THREE.Vector3(0.42, 0.46, 0.52) } });
+
+    // depth-aware cross blur — cleans single-frame noise without bleeding
+    // across silhouettes; accumulation then does the rest
+    const blurFrag = `
+      varying vec2 vUv;
+      uniform sampler2D tGI; uniform sampler2D tDepth;
+      uniform vec2 dir; uniform vec2 res; uniform vec2 nearFar;
+      float linZ(float d){ return nearFar.x * nearFar.y / (nearFar.y - d * (nearFar.y - nearFar.x)); }
+      void main(){
+        float z0 = linZ(texture2D(tDepth, vUv).x);
+        vec4 sum = texture2D(tGI, vUv); float wsum = 1.0;
+        for (int i = 1; i <= 5; i++) {
+          vec2 o = dir * float(i) / res;
+          for (int s = 0; s < 2; s++) {
+            vec2 uv = s == 0 ? vUv + o : vUv - o;
+            float z = linZ(texture2D(tDepth, uv).x);
+            float w = exp(-float(i * i) * 0.10) * smoothstep(0.08, 0.0, abs(z - z0) / max(z0, 0.2));
+            sum += texture2D(tGI, uv) * w; wsum += w;
+          }
+        }
+        gl_FragColor = sum / wsum;
+      }`;
+    const nf = { value: new THREE.Vector2(camera.near, camera.far) };
+    const blurH = pass(blurFrag, { tGI: { value: null }, tDepth: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, res: { value: new THREE.Vector2(1, 1) }, nearFar: nf });
+    const blurV = pass(blurFrag, { tGI: { value: null }, tDepth: { value: null }, dir: { value: new THREE.Vector2(0, 1) }, res: { value: new THREE.Vector2(1, 1) }, nearFar: nf });
+
+    /* --- SSR. Only for surfaces flagged reflective (alpha of the normal
+       buffer). Rays that leave the screen fall back to the sky gradient, so a
+       window at the frame edge still reflects something plausible rather than
+       going black — off-screen fallback is the difference between SSR that
+       helps and SSR that draws attention to itself. */
+    const ssrPass = pass(COMMON + `
+      varying vec2 vUv;
+      uniform vec3 skyUp; uniform vec3 skyDn; uniform mat4 viewInv;
+      void main(){
+        float refl = texture2D(tNorm, vUv).a;
+        if (refl < 0.05 || isSky(vUv)) { gl_FragColor = vec4(0.0); return; }
+        vec3 P = viewPos(vUv);
+        vec3 N = viewNorm(vUv);
+        vec3 V = normalize(P);
+        vec3 R = reflect(V, N);
+        float fres = pow(1.0 - max(dot(-V, N), 0.0), 4.0);
+        float strength = refl * mix(0.22, 1.0, fres);
+        vec3 pos = P + N * 0.03;
+        float stepLen = 0.22;
+        vec3 col = vec3(0.0); float found = 0.0;
+        for (int s = 0; s < 28; s++) {
+          pos += R * stepLen;
+          stepLen *= 1.16;
+          vec2 uv = project(pos);
+          if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) break;
+          if (isSky(uv)) continue;               // let the sky fallback handle it
+          vec3 sp = viewPos(uv);
+          float diff = sp.z - pos.z;
+          if (diff > 0.0 && diff < stepLen * 2.2) {
+            // fade at the screen border so reflections don't pop at the edge
+            vec2 e = smoothstep(vec2(0.0), vec2(0.10), uv) * (1.0 - smoothstep(vec2(0.90), vec2(1.0), uv));
+            col = texture2D(tColor, uv).rgb; found = min(e.x, e.y);
+            break;
+          }
+        }
+        vec3 wR = normalize((viewInv * vec4(R, 0.0)).xyz);
+        vec3 sky = mix(skyDn, skyUp, clamp(wR.y * 0.5 + 0.5, 0.0, 1.0));
+        col = mix(sky, col, found);
+        gl_FragColor = vec4(col, strength);
+      }`,
+      { tDepth: { value: null }, tNorm: { value: null }, tColor: { value: null },
+        projInv: { value: new THREE.Matrix4() }, proj: { value: new THREE.Matrix4() },
+        res: { value: new THREE.Vector2(1, 1) }, uSeed: { value: 0 },
+        skyUp: { value: new THREE.Color(0x87b2da) }, skyDn: { value: new THREE.Color(0xad8a5c) },
+        viewInv: { value: new THREE.Matrix4() } });
+
+    /* --- Composite, plus the edge treatment.
+
+       Nothing in the world has a mathematically perfect 90° arris. Every real
+       corner is chipped, chamfered or rendered slightly round by the plaster
+       itself, and at any distance that reads as a bright hairline on the convex
+       edge and a dark one in the concave corner. Their absence is the single
+       most persistent "this is CG" signal left on a clean facade, and it cannot
+       be fixed with textures because it is a geometry cue.
+
+       Rebuilding the model with bevelled solids is the correct fix and is not
+       available here — the geometry arrives pre-merged. So the curvature is
+       recovered in screen space instead: compare each pixel's plane against its
+       neighbours' positions, and light the result the way a real chamfer would
+       catch the sky. */
+    const compPass = pass(`
+      varying vec2 vUv;
+      uniform sampler2D tCol; uniform sampler2D tGI; uniform sampler2D tSSR;
+      uniform sampler2D tDepth; uniform sampler2D tNorm;
+      uniform mat4 projInv; uniform vec2 res;
+      uniform float aoStrength; uniform float giStrength; uniform float edgeAmt;
+
+      vec3 viewPosC(vec2 uv){
+        float d = texture2D(tDepth, uv).x;
+        vec4 ndc = vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+        vec4 v = projInv * ndc;
+        return v.xyz / v.w;
+      }
+      float cavity(vec2 uv){
+        vec3 rawN = texture2D(tNorm, uv).xyz;
+        if (dot(rawN, rawN) < 0.0015) return 0.0;              // sky
+        vec3 N = normalize(rawN * 2.0 - 1.0);
+        vec3 P = viewPosC(uv);
+        vec2 px = 1.0 / res;
+        float acc = 0.0;
+        for (int i = 0; i < 4; i++) {
+          vec2 o = i == 0 ? vec2(px.x, 0.0) : i == 1 ? vec2(-px.x, 0.0)
+                 : i == 2 ? vec2(0.0, px.y) : vec2(0.0, -px.y);
+          vec3 dv = viewPosC(uv + o) - P;
+          float len = length(dv);
+          if (len < 1e-5 || len > 0.35) continue;              // ignore silhouettes
+          acc += dot(dv / len, N);
+        }
+        return clamp(acc * 0.5, -1.0, 1.0);
+      }
+
+      void main(){
+        vec3 c = texture2D(tCol, vUv).rgb;
+        vec4 gi = texture2D(tGI, vUv);
+        // A small extra occlusion term for the tight creases the ray march is
+        // too coarse to resolve — reveals, soffit corners, the stair underside.
+        float ao = mix(1.0, clamp(gi.a, 0.0, 1.0), aoStrength);
+        c *= ao;
+        // Bounce is tinted by the RECEIVER's albedo as well as the source's
+        // colour. A forward renderer has no albedo buffer, so take the
+        // receiver's hue from its own shaded colour normalised to unit
+        // luminance: correct hue, no double-counted brightness.
+        float lum = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-3);
+        vec3 tint = clamp(c / lum, 0.0, 2.0);
+        c += gi.rgb * giStrength * tint;
+        c = max(c, vec3(0.0));
+        // convex arris catches sky, concave corner loses it
+        float cav = cavity(vUv);
+        c *= 1.0 + clamp(-cav, 0.0, 1.0) * edgeAmt * 0.9      // convex: highlight
+                 - clamp( cav, 0.0, 1.0) * edgeAmt * 1.25;    // concave: contact shade
+        vec4 ssr = texture2D(tSSR, vUv);
+        c = mix(c, ssr.rgb, clamp(ssr.a, 0.0, 0.92));
+        gl_FragColor = vec4(max(c, vec3(0.0)), 1.0);
+      }`,
+      { tCol: { value: null }, tGI: { value: null }, tSSR: { value: null },
+        tDepth: { value: null }, tNorm: { value: null },
+        projInv: { value: new THREE.Matrix4() }, res: { value: new THREE.Vector2(1, 1) },
+        aoStrength: { value: 0.30 }, giStrength: { value: 0.42 }, edgeAmt: { value: 0.5 } });
+
+    // temporal accumulation — the whole point of jittering the projection
+    const accPass = pass(`
+      varying vec2 vUv;
+      uniform sampler2D tNew; uniform sampler2D tOld; uniform float w;
+      void main(){
+        vec3 n = texture2D(tNew, vUv).rgb;
+        vec3 o = texture2D(tOld, vUv).rgb;
+        gl_FragColor = vec4(mix(o, n, w), 1.0);
+      }`,
+      { tNew: { value: null }, tOld: { value: null }, w: { value: 1 } });
+
+    /* --- Output. AgX rather than ACES: ACES pushes bright saturated values
+       toward its primaries and skews hue as it clips, which on a sunlit
+       white-plaster facade shows as that faintly plastic, slightly pink
+       highlight roll-off. AgX desaturates into the highlight instead, the way
+       film and every modern camera pipeline does. */
+    const outPass = pass(`
+      varying vec2 vUv;
+      uniform sampler2D tCol; uniform sampler2D tDepth;
+      uniform vec2 res; uniform float exposure; uniform float t;
+      uniform float focusZ; uniform float dofAmt; uniform vec2 nearFar;
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+      float linZ(float d){ return nearFar.x * nearFar.y / (nearFar.y - d * (nearFar.y - nearFar.x)); }
+
+      // three.js's fitted ACES (Stephen Hill). Tried AgX here — it is the more
+      // modern transform and rolls highlights off more gracefully, but it is a
+      // display transform with no look attached, and on this scene it landed
+      // visibly flatter than the reference direct render for no gain worth the
+      // risk. A plain Narkowicz fit is not a substitute: it reads washed grey.
+      vec3 RRTAndODTFit(vec3 v){
+        vec3 a = v * (v + 0.0245786) - 0.000090537;
+        vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
+        return a / b;
+      }
+      vec3 tonemap(vec3 color){
+        const mat3 inM = mat3(
+          0.59719, 0.07600, 0.02840,
+          0.35458, 0.90834, 0.13383,
+          0.04823, 0.01566, 0.83777);
+        const mat3 outM = mat3(
+           1.60475, -0.10208, -0.00327,
+          -0.53108,  1.10813, -0.07276,
+          -0.07367, -0.00605,  1.07602);
+        color *= 1.0 / 0.6;
+        return clamp(outM * RRTAndODTFit(inM * color), 0.0, 1.0);
+      }
+
+      // One sampler for the whole lens model: transverse chromatic aberration
+      // is a per-channel change of MAGNIFICATION, so each channel must travel
+      // the same defocus path with a slightly different scale. Sampling R and B
+      // from a different (sharp) source than G is what puts colour fringes on
+      // every silhouette.
+      vec3 sampleLens(vec2 uv, float coc, vec2 d){
+        float ca = dot(d, d) * 0.0035;
+        vec2 uvR = uv + d * ca, uvG = uv, uvB = uv - d * ca;
+        if (coc <= 0.02) {
+          return vec3(texture2D(tCol, uvR).r, texture2D(tCol, uvG).g, texture2D(tCol, uvB).b);
+        }
+        vec2 px = 1.0 / res;
+        vec3 sum = vec3(0.0);
+        float j = hash(uv * res) * 6.283;
+        for (int i = 0; i < 8; i++) {
+          vec2 o = vec2(cos(float(i) * 0.7853981 + j), sin(float(i) * 0.7853981 + j)) * px * coc * 5.0;
+          sum += vec3(texture2D(tCol, uvR + o).r, texture2D(tCol, uvG + o).g, texture2D(tCol, uvB + o).b);
+        }
+        return sum / 8.0;
+      }
+
+      void main(){
+        vec2 d = vUv - 0.5;
+        /* Depth of field: tiny, but a lens always has some, and its absence is
+           one of the quiet reasons renders read as diagrams.
+
+           It has to be a thin-lens model — defocus goes with the difference of
+           RECIPROCAL distances, not of distances. A linear |z − focus| term
+           saturates everything past the subject, so the sky (at the far plane)
+           lands on maximum blur and the clouds smear into a flat wash. That is
+           not depth of field; that is a fogged lens. */
+        float z = linZ(texture2D(tDepth, vUv).x);
+        float coc = clamp(abs(1.0 / max(z, 0.5) - 1.0 / focusZ) * focusZ * dofAmt, 0.0, 1.0);
+        vec3 c = sampleLens(vUv, coc, d);
+
+        c = tonemap(c * exposure);
+        /* "Dull" on a deliberately minimal palette is almost never a shortage
+           of colour — pushing saturation on a lime-white house just makes it
+           look cheap. It is a shortage of TONAL separation: too little distance
+           between the sunlit face, the shaded face and the sky. So the S-curve
+           does the work, saturation barely moves, and the vignette is eased
+           back because a heavy one reads as murk rather than as a lens. */
+        float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        c = mix(vec3(l), c, 1.18);
+        c = clamp(c, 0.0, 1.0);
+        c = c * c * (3.0 - 2.0 * c) * 0.42 + c * 0.58;
+        // a little extra bite in the top end so sunlit plaster reads crisp
+        // against the haze rather than dissolving into it
+        c = clamp(c * 1.012 - 0.006, 0.0, 1.0);
+        l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+        // hot-climate cast: warm the highlights a touch more than before, and
+        // keep the shadows from going blue — dry-earth bounce, not sky
+        c *= mix(vec3(1.000, 0.998, 0.996), vec3(1.034, 1.010, 0.968), smoothstep(0.10, 0.90, l));
+        float vd = length(d) * 1.4142;
+        c *= 1.0 - 0.14 * pow(smoothstep(0.46, 1.0, vd), 1.8);
+        c = pow(max(c, 0.0), vec3(1.0 / 2.2));
+        c += (hash(vUv * res + vec2(t, t * 1.7)) - 0.5) * 0.012 * (1.0 - l * 0.6);
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+      { tCol: { value: null }, tDepth: { value: null }, res: { value: new THREE.Vector2(1, 1) },
+        exposure: { value: 1 }, t: { value: 0 },
+        /* dofAmt 0 — depth of field is OFF in this viewer.
+           Two reasons. The practical one: this is a navigable dollhouse, not a
+           composed still. You orbit it, switch floors and read room labels, and
+           anything the lens decides is off-subject goes soft — which is wrong
+           for a model you are meant to inspect. The donor was an elevation
+           viewer shooting fixed hero angles, where a little defocus helps.
+           The measured one: the circle of confusion here saturates instead of
+           staying near zero. At focusZ ≈ 26 m a correct thin-lens coc for this
+           building is ~0.03, i.e. sub-pixel; what actually reached sampleLens
+           was large enough to blur every pixel in all 8 taps, and accumulated
+           over 64 jittered samples that read as a veiling haze over the whole
+           frame — walls looked semi-transparent. The depth fetch feeding linZ()
+           is the suspect (UnsignedInt depth texture), not the lens model.
+           Raise this above 0 only after fixing that. */
+        focusZ: { value: 30 }, dofAmt: { value: 0.0 }, nearFar: nf });
+
+    let rtScene = null, rtNorm = null, rtGI = null, rtGIb = null, rtSSR = null,
+        rtHDR = null, rtAcc = [null, null], rw = 0, rh = 0, accIdx = 0;
+    const _dbs = new THREE.Vector2();
+    function ensureRT() {
+      renderer.getDrawingBufferSize(_dbs);
+      const w = Math.max(2, _dbs.x | 0), h = Math.max(2, _dbs.y | 0);
+      if (w === rw && h === rh) return;
+      rw = w; rh = h;
+      [rtScene, rtNorm, rtGI, rtGIb, rtSSR, rtHDR, rtAcc[0], rtAcc[1]].forEach(rt => {
+        if (rt) { if (rt.depthTexture) rt.depthTexture.dispose(); rt.dispose(); }
+      });
+      const dt = new THREE.DepthTexture(w, h);
+      dt.type = THREE.UnsignedIntType;
+      const lin = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false };
+      const hdr = Object.assign({ type: THREE.HalfFloatType }, lin);
+      rtScene = new THREE.WebGLRenderTarget(w, h, {
+        type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+        depthBuffer: true, stencilBuffer: false, depthTexture: dt
+      });
+      rtNorm = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true, stencilBuffer: false });
+      const gw = Math.max(2, w >> 1), gh = Math.max(2, h >> 1);
+      rtGI = new THREE.WebGLRenderTarget(gw, gh, hdr);
+      rtGIb = new THREE.WebGLRenderTarget(gw, gh, hdr);
+      rtSSR = new THREE.WebGLRenderTarget(gw, gh, hdr);
+      rtHDR = new THREE.WebGLRenderTarget(w, h, hdr);
+      rtAcc[0] = new THREE.WebGLRenderTarget(w, h, hdr);
+      rtAcc[1] = new THREE.WebGLRenderTarget(w, h, hdr);
+      giPass.u.res.value.set(gw, gh);
+      ssrPass.u.res.value.set(gw, gh);
+      blurH.u.res.value.set(gw, gh); blurV.u.res.value.set(gw, gh);
+      compPass.u.res.value.set(w, h);
+      outPass.u.res.value.set(w, h);
+      resetAccum();
+    }
+
+    // Halton — a low-discrepancy sequence covers the pixel far more evenly than
+    // random offsets, so the image converges in far fewer samples
+    function halton(i, b) {
+      let f = 1, r = 0;
+      while (i > 0) { f /= b; r += f * (i % b); i = Math.floor(i / b); }
+      return r;
+    }
+    let frameNo = 0;
+    const _pv = new THREE.Vector3();
+
+    POST.render = function () {
+      ensureRT();
+      if (!rtScene) { renderer.render(scene, camera); return; }
+      nf.value.set(camera.near, camera.far);
+
+      if (accumDirty) { POST.samples = 0; accumDirty = false; }
+      const n = POST.samples;
+      if (n >= POST.max) {                       // converged — just re-present
+        outPass.u.tCol.value = rtAcc[accIdx].texture;
+        outPass.u.tDepth.value = rtScene.depthTexture;
+        outPass.u.exposure.value = POST.exposure;
+        outPass.u.t.value = 0;
+        renderer.setRenderTarget(null); renderer.render(outPass.scene, fsCam);
+        return;
+      }
+
+      // --- jitter the projection by a sub-pixel offset for this sample
+      const jx = (halton(n + 1, 2) - 0.5), jy = (halton(n + 1, 3) - 0.5);
+      camera.setViewOffset(rw, rh, jx, jy, rw, rh);
+      camera.updateProjectionMatrix();
+
+      renderer.setClearColor(0x000000, 1);
+      renderer.setRenderTarget(rtScene);
+      renderer.render(scene, camera);
+      renderNormals(rtNorm);
+
+      const projInv = new THREE.Matrix4().copy(camera.projectionMatrix).invert();
+      giPass.u.tDepth.value = rtScene.depthTexture;
+      giPass.u.tNorm.value = rtNorm.texture;
+      giPass.u.tColor.value = rtScene.texture;
+      giPass.u.projInv.value.copy(projInv);
+      giPass.u.proj.value.copy(camera.projectionMatrix);
+      giPass.u.uSeed.value = n * 13.7 + 3.1;
+      renderer.setRenderTarget(rtGI); renderer.render(giPass.scene, fsCam);
+
+      blurH.u.tGI.value = rtGI.texture; blurH.u.tDepth.value = rtScene.depthTexture;
+      renderer.setRenderTarget(rtGIb); renderer.render(blurH.scene, fsCam);
+      blurV.u.tGI.value = rtGIb.texture; blurV.u.tDepth.value = rtScene.depthTexture;
+      renderer.setRenderTarget(rtGI); renderer.render(blurV.scene, fsCam);
+
+      ssrPass.u.tDepth.value = rtScene.depthTexture;
+      ssrPass.u.tNorm.value = rtNorm.texture;
+      ssrPass.u.tColor.value = rtScene.texture;
+      ssrPass.u.projInv.value.copy(projInv);
+      ssrPass.u.proj.value.copy(camera.projectionMatrix);
+      ssrPass.u.viewInv.value.copy(camera.matrixWorld);
+      ssrPass.u.skyUp.value.copy(SKY_UP);
+      ssrPass.u.skyDn.value.copy(SKY_DN);
+      renderer.setRenderTarget(rtSSR); renderer.render(ssrPass.scene, fsCam);
+
+      compPass.u.tCol.value = rtScene.texture;
+      compPass.u.tGI.value = rtGI.texture;
+      compPass.u.tSSR.value = rtSSR.texture;
+      compPass.u.tDepth.value = rtScene.depthTexture;
+      compPass.u.tNorm.value = rtNorm.texture;
+      compPass.u.projInv.value.copy(projInv);
+      renderer.setRenderTarget(rtHDR); renderer.render(compPass.scene, fsCam);
+
+      const src = accIdx, dst = 1 - accIdx;
+      accPass.u.tNew.value = rtHDR.texture;
+      accPass.u.tOld.value = rtAcc[src].texture;
+      accPass.u.w.value = n === 0 ? 1.0 : 1.0 / (n + 1);
+      renderer.setRenderTarget(rtAcc[dst]); renderer.render(accPass.scene, fsCam);
+      accIdx = dst;
+
+      camera.clearViewOffset();
+      camera.updateProjectionMatrix();
+
+      // focus on whatever is at the centre of frame
+      _pv.copy(ctl.target).applyMatrix4(camera.matrixWorldInverse);
+      outPass.u.focusZ.value = Math.max(1, -_pv.z);
+      outPass.u.tCol.value = rtAcc[accIdx].texture;
+      outPass.u.tDepth.value = rtScene.depthTexture;
+      outPass.u.exposure.value = POST.exposure;
+      outPass.u.t.value = (frameNo = (frameNo + 1) % 1024);
+      renderer.setRenderTarget(null); renderer.render(outPass.scene, fsCam);
+
+      POST.samples = n + 1;
+    };
+
+    POST.dbg = { giPass, ssrPass, compPass, outPass, accPass,
+                 rt: () => ({ rtScene, rtNorm, rtGI, rtSSR, rtHDR, rtAcc, accIdx }) };
+  })();
+
+  applySun('morning');
+
+  function renderFrame() {
+    if (POST.on && POST.render) POST.render(); else renderer.render(scene, camera);
+  }
+
+  /* ---------- sun presets ---------- */
+  document.querySelectorAll('#sun button').forEach(btn => {
+    btn.addEventListener('click', () => { applySun(btn.getAttribute('data-sun')); wake(900); });
+  });
+
+  /* Temporal accumulation converges over POST.max jittered samples, so ANY
+     change to what is on screen has to restart it or the new image is blended
+     into the old one. Camera motion is handled inside the pipeline; these are
+     the two this viewer adds. */
+  const _setView = setView;
+  setView = function (name, instant) { _setView(name, instant); resetAccum(); wake(900); };
+
+  /* Convergence readout */
+  const convEl = $('conv');
+  function updateConv() {
+    if (!convEl) return;
+    if (!POST.on) { convEl.style.display = 'none'; return; }
+    const done = POST.samples >= POST.max;
+    convEl.textContent = done ? 'CONVERGED' : 'REFINING ' + POST.samples + '/' + POST.max;
+    convEl.classList.toggle('done', done);
+  }
+
+  /* Handle for offscreen capture + geometry audits (the pane does not always
+     composite, so a synchronous render has to be reachable from outside). */
+  window.__dbg = {
+    THREE, renderer, scene, camera, data, POST, ctl,
+    applySun, setView: (n) => setView(n, true), resetAccum,
+    render: () => { renderFrame(); },
+    /* Point the camera at a target. Must go through ctl, not straight at
+       camera.position: the depth-of-field pass focuses on ctl.target (see the
+       composite), so a camera moved behind the controller's back keeps the old
+       focus distance and the whole frame renders defocused. */
+    look(px, py, pz, tx, ty, tz, fov) {
+      ctl.target.set(tx, ty, tz); ctl.tTarget.copy(ctl.target);
+      const dx = px - tx, dy = py - ty, dz = pz - tz;
+      ctl.radius = ctl.tRadius = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      ctl.phi = ctl.tPhi = Math.acos(Math.max(-1, Math.min(1, dy / ctl.radius)));
+      ctl.theta = ctl.tTheta = Math.atan2(dx, dz);
+      if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      applyCamera();
+      resetAccum();
+    },
+    resolve() { for (let i = 0; i < POST.max; i++) renderFrame(); }
+  };
+
   /* ---------- main loop ---------- */
   setView('exterior', true);
+
+  /* Switching design reloads the page, and each scene has its own exterior
+     preset — so without this the building would jump to a different angle every
+     time you compared two versions. Carry the orbit across the reload instead,
+     so only the building changes. */
+  (function restoreCamera() {
+    let saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem('house3d.cam') || 'null'); } catch (_) {}
+    sessionStorage.removeItem('house3d.cam');
+    if (!saved || typeof saved.radius !== 'number') return;
+    ctl.target.set(saved.tx, saved.ty, saved.tz); ctl.tTarget.copy(ctl.target);
+    ctl.radius = ctl.tRadius = saved.radius;
+    ctl.phi = ctl.tPhi = saved.phi;
+    ctl.theta = ctl.tTheta = saved.theta;
+    ctl.interacted = true;                       // don't auto-rotate away from it
+  })();
+  window.__saveCamera = function () {
+    try {
+      sessionStorage.setItem('house3d.cam', JSON.stringify({
+        tx: ctl.target.x, ty: ctl.target.y, tz: ctl.target.z,
+        radius: ctl.radius, phi: ctl.phi, theta: ctl.theta
+      }));
+    } catch (_) {}
+  };
+
   applyCamera();
 
   /* hint recall */
@@ -790,12 +2905,28 @@
   }
 
   let last = performance.now(), firstFrame = false;
+  /* Float64, not Float32. Matrix4.elements holds doubles; storing them in a
+     Float32Array truncates every value, so the very next comparison against the
+     untruncated original reports a difference and the detector below fires on
+     EVERY frame — resetting the accumulation each time, so the image would sit
+     at sample 0 forever and never resolve. */
+  const _lastCam = new Float64Array(16);
   function frame(now) {
     requestAnimationFrame(frame);
     const frameMs = now - last; last = now;
     if (document.hidden || contextLost) return;  // pause when tab hidden / GPU lost
     const dt = Math.min(0.05, frameMs / 1000);
-    scaler.sample(frameMs);
+    /* The dynamic resolution scaler is OFF while the pipeline is on.
+       It nudges renderer.setPixelRatio() every frame to hold a target fps, but
+       every change to the drawing-buffer size makes ensureRT() dispose and
+       reallocate eight render targets and a depth texture. Against a pipeline
+       that is heavy by design, the scaler oscillates and reallocates constantly,
+       which stutters far worse than the resolution change ever helped — and it
+       resets the accumulation each time, so the image never converges.
+       Supersampling is not this renderer's antialiasing strategy anyway; the
+       jittered accumulation is. Low/potato tiers never enable POST, so they
+       still get the scaler. */
+    if (!POST.on) scaler.sample(frameMs);
 
     // advance camera state every frame (cheap); auto-rotate keeps exterior alive briefly
     if (tween) {
@@ -819,9 +2950,26 @@
     }
     applyCamera();
 
+    /* Restart the accumulation the moment the camera actually moves.
+
+       Temporal accumulation averages POST.max jittered samples into one buffer,
+       which is only valid while the view is FIXED. Nothing here was resetting it
+       on orbit/zoom/pan — so dragging kept blending frames shot from different
+       positions into the same buffer and the picture turned into a smeared
+       collage that looked frozen rather than moving. Compare the camera's world
+       matrix against last frame's and reset on any change; the cost is 16 floats. */
+    if (POST.on) {
+      const e = camera.matrixWorld.elements;
+      let moved = false;
+      for (let i = 0; i < 16; i++) { if (e[i] !== _lastCam[i]) { moved = true; break; } }
+      if (moved) { for (let i = 0; i < 16; i++) _lastCam[i] = e[i]; resetAccum(); }
+    }
+
     // render only when needed: moving, mid-tween, or recently interacted
-    if (now < wakeUntil || tween || !camSettled()) {
-      renderer.render(scene, camera);
+    const converging = POST.on && POST.samples < POST.max;
+    if (now < wakeUntil || tween || !camSettled() || converging) {
+      renderFrame();
+      updateConv();
       updateLabels(window.innerWidth, window.innerHeight);
       updateCompass();
       if (!firstFrame) {
