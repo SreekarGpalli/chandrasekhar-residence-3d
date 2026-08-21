@@ -453,18 +453,38 @@ window.DESIGNS = {
   const canvas = $('c');
   // adaptive quality: pick render settings to match the device's hardware
   const Q = window.Perf ? Perf.detect()
-    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7, logDepth: true, powerPreference: 'high-performance' };
+    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7, logDepth: false, post: 'full', powerPreference: 'high-performance' };
+  /* Will the screen-space pipeline run? Decided here, before the context is
+     created, because two context attributes depend on it.
+
+     MSAA in particular: when the pipeline is on, the scene is rendered into an
+     HDR render target and the canvas only ever receives one full-screen
+     triangle pair with no interior edges. A multisampled default framebuffer
+     therefore antialiases nothing and costs a multisample resolve on every
+     present — real money on a phone's tiled GPU. Jittered accumulation is this
+     renderer's antialiasing; on the tiers without it, MSAA stays on. */
+  let POST_MODE = Q.post ||
+    (Q.tier === 'high' ? 'full' : Q.tier === 'medium' ? 'lite' : 'off');
+  // WebGL2 is required for the depth texture and half-float targets the
+  // pipeline needs. Q.webgl2 is a pre-context probe and only advisory here;
+  // renderer.capabilities.isWebGL2 is the authority and is checked below, as
+  // soon as the real context exists.
+  if (Q.webgl2 === false && (POST_MODE === 'full' || POST_MODE === 'lite')) POST_MODE = 'off';
+  let HEAVY_POST = POST_MODE === 'full' || POST_MODE === 'lite';
   let renderer;
   try {
     const opts = window.Perf && Perf.rendererOpts
       ? Perf.rendererOpts(Q, canvas)
       : { canvas, antialias: Q.antialias, powerPreference: Q.powerPreference || 'high-performance', failIfMajorPerformanceCaveat: false, alpha: false };
+    if (HEAVY_POST) opts.antialias = false;
     renderer = new THREE.WebGLRenderer(opts);
   } catch (err) {
     const lo = document.getElementById('loading');
     if (lo) lo.innerHTML = '<div style="color:#e8e4da;padding:2rem;text-align:center;font-family:system-ui">WebGL could not start on this device.<br><small>Try updating your browser or graphics drivers.</small></div>';
     throw err;
   }
+  // Authoritative WebGL2 check, now that a real context exists.
+  if (!renderer.capabilities.isWebGL2 && HEAVY_POST) { POST_MODE = 'off'; HEAVY_POST = false; }
   renderer.setClearColor(0x101214, 1);
   // Forward-compatible encoding: use outputColorSpace on r152+, fall back to outputEncoding on r128
   if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -537,10 +557,29 @@ window.DESIGNS = {
      1 · PROCEDURAL TEXTURE KITS
      ========================================================================== */
   const texCache = {};
-  const TEX_S = HI ? Math.min(2048, MAXTEX) : (TIER === 'medium' ? 1024 : 512);
+  /* Texture edge for the procedural kits. These are painted pixel by pixel in
+     JavaScript on the main thread at boot, so the cost is quadratic in this
+     number and it is paid before the first frame — on a phone, a 1024 kit set
+     is several seconds of blank screen. Desktop `medium` (an integrated GPU
+     with a real CPU behind it) keeps 1024; anything on a phone drops to 512,
+     which at the tile scales used here is still ~1 mm per texel on plaster. */
+  const TEX_S = HI ? Math.min(2048, MAXTEX)
+    : (TIER === 'medium' ? (Q.mobile ? 512 : 1024) : 512);
   const TEX_S_SM = Math.max(256, TEX_S >> 2);
 
-  function cv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h || w; return c; }
+  /* Every procedural kit canvas is created here, and several of them are read
+     straight back out through getImageData — the height-to-normal conversion
+     and the noise layers both do. Asking for willReadFrequently up front tells
+     the browser to keep the canvas in CPU memory instead of on the GPU, which
+     turns each of those readbacks from a pipeline stall into a memcpy. The
+     option only has effect on the FIRST getContext call for a canvas, which is
+     why it has to happen at creation rather than at the call sites. */
+  function cv(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h || w;
+    c.getContext('2d', { willReadFrequently: true });
+    return c;
+  }
   function asTex(canvas, srgb) {
     const t = new THREE.CanvasTexture(canvas);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -1123,10 +1162,16 @@ window.DESIGNS = {
       x.fillRect(-w / 2, -h / 2, s * 0.005, h);
       x.restore();
     }
-    x.globalAlpha = 0.5; x.drawImage(fbmCanvas(s, 6, 6), 0, 0);
-    x.globalAlpha = 0.2; x.drawImage(fbmCanvas(s, 18, 5), 0, 0);
+    /* Low frequencies down, high frequencies up. Tiled at 46 m, a 6-octave
+       noise starting at base 6 has features tens of metres across, and those
+       land on screen as metre-wide dark stains that read as mud rather than as
+       farmland. The detail that actually sells distant open ground is finer
+       than the tile, so put the energy there. */
+    x.globalAlpha = 0.22; x.drawImage(fbmCanvas(s, 7, 5), 0, 0);
+    x.globalAlpha = 0.30; x.drawImage(fbmCanvas(s, 26, 5), 0, 0);
+    x.globalAlpha = 0.18; x.drawImage(fbmCanvas(s, 64, 4), 0, 0);
     x.globalAlpha = 1;
-    speckle(x, s, s, 18);
+    speckle(x, s, s, 22);
     return texCache.field = { map: asTex(c, true), ns: 0.3 };
   }
 
@@ -1162,14 +1207,25 @@ window.DESIGNS = {
       case 'charcoal': case 'charDark': case 'solarFrm':
         return { tex: 'concrete', tile: 3.4, rough: 0.86, metal: 0, env: 0.45, grime: 1.1 };
       case 'concrete':    return { tex: 'concrete', tile: 2.6, rough: 0.92, metal: 0, env: 0.40, grime: 1.2 };
+      /* Outdoor tile — terrace deck, balcony decks, the open landings.
+
+         `matte` is the important part. It shares the vitrified-tile kit with
+         the indoor floors, and that kit's roughness map is authored around
+         0.35: correct for a polished living-room floor, badly wrong out here.
+         Applied to 560 m² of open terrace it produced a semi-gloss plane that
+         mirrored the pergola, the railing and the furniture — the deck read as
+         wet, or as a swimming pool, from every angle. Real terrace tile in
+         Anantapur is anti-skid: coarse, matte, and reflective only as a faint
+         sheen at grazing incidence. So skip the kit's roughness map, take the
+         literal value below, and keep just enough reflectivity for that sheen. */
       case 'terraceF': case 'balcTile': case 'tOut':
-        return { tex: 'tile', tile: 1.35, rough: 0.5, metal: 0, env: 0.65, reflect: 0.35 };
+        return { tex: 'tile', tile: 1.35, rough: 0.78, metal: 0, env: 0.40, reflect: 0.09, matte: true };
       // Dry paving is not a mirror — it only reflects at grazing angles, and
       // the SSR pass already applies Fresnel on top of these. Anything above
       // ~0.1 here and the street reads as wet.
       case 'pave': case 'paver': case 'paver2':
-        return { tex: 'paver', tile: 1.4, rough: 0.88, metal: 0, env: 0.40, reflect: 0.07 };
-      case 'road':        return { tex: 'asphalt', tile: 7.0, rough: 0.95, metal: 0, env: 0.26, reflect: 0.09 };
+        return { tex: 'paver', tile: 1.4, rough: 0.90, metal: 0, env: 0.36, reflect: 0.05 };
+      case 'road':        return { tex: 'asphalt', tile: 7.0, rough: 0.96, metal: 0, env: 0.24, reflect: 0.05 };
       case 'roadLine':    return { tex: 'concrete', tile: 1.4, rough: 0.80, metal: 0, env: 0.30 };
       case 'ground':      return { tex: 'field', tile: 46, rough: 1.0, metal: 0, env: 0.28 };
       case 'plotPad':     return { tex: 'dirt', tile: 9.0, rough: 1.0, metal: 0, env: 0.28 };
@@ -1184,7 +1240,7 @@ window.DESIGNS = {
       case 'bark': case 'barkLight':
         return { tex: 'bark', tile: 0.6, rough: 0.95, metal: 0, env: 0.28 };
       case 'walnut': case 'woodF': case 'woodD': case 'skirt':
-        return { tex: 'wood', tile: 1.0, rough: 0.42, metal: 0, env: 0.75, reflect: 0.3 };
+        return { tex: 'wood', tile: 1.0, rough: 0.46, metal: 0, env: 0.62, reflect: 0.22 };
       case 'ms':         return { tex: 'metal', tile: 0.8, rough: 0.42, metal: 0.30, env: 1.0, reflect: 0.35 };
       case 'frame':      return { tex: 'metal', tile: 0.6, rough: 0.36, metal: 0.65, env: 1.05, reflect: 0.5 };
       /* Balustrades and the gate. The palette calls these stainless and at
@@ -1233,11 +1289,11 @@ window.DESIGNS = {
       // Vitrified floor tiles, one tone per room type. Polished but not mirrors:
       // a domestic floor returns the room, not the window.
       case 'tLiving': case 'tBed': case 'tKitch': case 'tOffice': case 'tWalk':
-        return { tex: 'tile', tile: 0.9, rough: 0.30, metal: 0, env: 0.62, reflect: 0.30, interior: true };
+        return { tex: 'tile', tile: 0.9, rough: 0.30, metal: 0, env: 0.58, reflect: 0.26, interior: true };
       case 'tBath': case 'tUtil':
-        return { tex: 'tile', tile: 0.6, rough: 0.26, metal: 0, env: 0.66, reflect: 0.34, interior: true };
+        return { tex: 'tile', tile: 0.6, rough: 0.26, metal: 0, env: 0.62, reflect: 0.30, interior: true };
       case 'tCirc':
-        return { tex: 'tile', tile: 1.0, rough: 0.30, metal: 0, env: 0.62, reflect: 0.30, interior: true };
+        return { tex: 'tile', tile: 1.0, rough: 0.30, metal: 0, env: 0.58, reflect: 0.26, interior: true };
       case 'tPooja':
         return { tex: 'tile', tile: 0.8, rough: 0.34, metal: 0, env: 0.58, reflect: 0.26, interior: true };
       // Soft goods — no reflection, no gloss, and a cloth weave rather than plaster
@@ -1383,6 +1439,16 @@ window.DESIGNS = {
     }
   };
   let sunKey = 'morning';
+
+  /* Render-pipeline state. Declared here, well above its own section, because
+     `resize()` and `applySun()` both read it and both run during boot — a
+     `const` further down leaves them reaching into its temporal dead zone,
+     which throws rather than reading undefined. buildPipeline() fills in the
+     rest of the fields further down. */
+  const POST = { on: false, lite: false, exposure: SUNS.morning.exp, render: null,
+                 samples: 0, max: 1, moving: false, movingUntil: 0 };
+  let accumDirty = true;
+  function resetAccum() { accumDirty = true; POST.samples = 0; }
   const SUN_DIR = new THREE.Vector3().fromArray(SUNS.morning.dir).normalize();
 
   function cloudNoiseCanvas(size) {
@@ -1432,8 +1498,11 @@ window.DESIGNS = {
         vec3 d = normalize(vDir);
         float h = clamp(d.y, -1.0, 1.0);
         vec3 col = h > 0.0 ? mix(mid, top, pow(h, 0.52)) : mix(mid, bot, pow(-h, 0.5));
-        float haze = pow(1.0 - abs(h), 7.0);
-        col = mix(col, vec3(0.86, 0.88, 0.88), haze * 0.16);
+        // Horizon haze — widened and strengthened to meet the scene fog the
+        // distant ground now fades into, so the two arrive at the same colour
+        // from opposite sides of the horizon instead of butting up against it.
+        float haze = pow(1.0 - abs(h), 4.5);
+        col = mix(col, vec3(0.86, 0.88, 0.88), haze * 0.30);
         float s = max(dot(d, normalize(sunDir)), 0.0);
         if (h > 0.012) {
           vec2 uv = d.xz / (d.y + 0.34);
@@ -1548,7 +1617,15 @@ window.DESIGNS = {
   fill.position.set(-50, 34, -26);
   scene.add(fill);
 
-  scene.fog = new THREE.Fog(SUNS.morning.fog, 250, 1100);
+  /* Aerial perspective. The far-ground disc ends at r = 900 m and the sky dome
+     is at 1000 m, so with the old 250–1100 range the ground still had a
+     quarter of its own colour left where it ran out — a hard brown line ruled
+     across the bottom of the sky, which is the one thing that gave away that
+     the landscape is a disc on a table. Ending the fog inside the disc's own
+     radius means the field reaches the sky colour before it reaches its edge,
+     and the horizon becomes a haze band instead of a seam. Nothing on the plot
+     is anywhere near 150 m, so the building is untouched. */
+  scene.fog = new THREE.Fog(SUNS.morning.fog, 150, 780);
   scene.background = new THREE.Color(SUNS.morning.fog);
 
   const SKY_UP = new THREE.Color(), SKY_DN = new THREE.Color();
@@ -1625,6 +1702,51 @@ window.DESIGNS = {
     m.customProgramCacheKey = () => 'grime' + amount.toFixed(2);
   }
 
+  /* ---- coincident-plane ordering -------------------------------------
+     A geometry audit of this model finds ~250 places where two DIFFERENT
+     materials put an up-facing (or camera-facing) plane on exactly the same
+     coordinate: a floor finish laid on the slab it covers, a coping on the
+     wall it caps, a door frame flush with its reveal, skirting against the
+     plaster. Every one of them is a coin toss at render time — with equal
+     depth values the winner is whichever mesh the sort happens to draw last,
+     and that order changes as the camera moves. The result is surfaces that
+     swap material mid-orbit and speckle along the triangle seams.
+
+     Fixing 250 coincidences one at a time in the procedural builder is neither
+     safe nor necessary, because they all share a structure: one of the pair is
+     the thing that was built, the other is the thing that was applied to it,
+     and the applied one is always what you should see. So say so once, here —
+     the same technique already used to separate the exterior shell from the
+     per-floor copies of the same wall, one level finer.
+
+     Layer 1 = a finish laid on structure. Layer 2 = joinery, trim and hardware
+     fixed to a finish. The offset is a fraction of a depth unit, far too small
+     to move anything visibly, and it is deterministic — which is the whole
+     point. */
+  const DEPTH_LAYER = {
+    terraceF: 1, balcTile: 1, tOut: 1, pave: 1, paver: 1, paver2: 1, roadLine: 1,
+    tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
+    tPooja: 1, tWalk: 1, copingLight: 1, plinth: 1, soil: 1, grass: 1, rug: 1,
+    skirt: 2, woodD: 2, walnut: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
+    brass: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,
+    counterTop: 2, tv: 2, solar: 2, solarFrm: 2
+  };
+  const DEPTH_STEP = 0.9;
+  /* Within a tier, two different materials still land on the same offset and
+     the tie is back. Break it with a stable hash of the key: an extra 0 – 0.6
+     of a depth unit, always the same value for the same material name, and
+     always less than one tier step so the ordering above still wins. Which of
+     two same-tier materials ends up in front is arbitrary — but it is the same
+     arbitrary answer from every camera angle on every device, and that is the
+     entire problem being solved here. A stable wrong answer is invisible; an
+     unstable right one flickers. */
+  function depthOffset(key) {
+    const layer = DEPTH_LAYER[key] || 0;
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 997;
+    return -(DEPTH_STEP * layer + (h / 997) * 0.6);
+  }
+
   say('APPLYING PBR MATERIALS');
   const REFLECTIVE = [];                     // meshes worth tracing reflections for
   const doneMat = new Set();
@@ -1656,7 +1778,16 @@ window.DESIGNS = {
       doneMat.add(m);
       m.userData.name = key;
       if (key === 'glass' || key === 'carGlass') {
-        m.transparent = true; m.depthWrite = false;
+        /* depthWrite stays ON for glazing. Every screen-space pass pairs the
+           depth texture with the normal buffer, and with depth writing off the
+           two disagreed at exactly the pixels that matter most: the normal
+           buffer held the pane (reflectivity 0.9) while the depth buffer held
+           the wall behind it, so SSR traced its mirror ray from a point that
+           was up to a room's depth away from the surface it was reflecting
+           off. Windows returned a smeared copy of the wrong part of the scene.
+           These are single sheets of glazing that never intersect each other,
+           so back-to-front sorting keeps the blend correct with depth on. */
+        m.transparent = true; m.depthWrite = true;
         m.roughness = 0.045; m.metalness = 0.0;
         m.envMapIntensity = 1.6;
         if (key === 'carGlass') { m.color.setHex(0x171b1f); m.opacity = 0.86; }
@@ -1690,11 +1821,21 @@ window.DESIGNS = {
           const kit = TEX[t.tex]();
           m.map = kit.map;
           if (kit.normalMap) { m.normalMap = kit.normalMap; m.normalScale = new THREE.Vector2(kit.ns, kit.ns); }
-          if (kit.roughnessMap) { m.roughnessMap = kit.roughnessMap; m.roughness = 1.0; }
+          /* `matte` treatments keep their literal roughness. The kits are
+             shared across surfaces that are made of the same STUFF but not
+             finished the same way — the same vitrified-tile kit dresses a
+             polished living-room floor and an anti-skid roof terrace — and the
+             kit's roughness map encodes the polished one. Taking it wholesale
+             is what turned the terrace into a mirror. */
+          if (kit.roughnessMap && !t.matte) { m.roughnessMap = kit.roughnessMap; m.roughness = 1.0; }
           if (t.cutout && kit.alphaMap) { m.alphaMap = kit.alphaMap; m.alphaTest = t.cutout; }
         }
         if (t.twoSided) m.side = THREE.DoubleSide;
         if (t.grime) addGrime(m, t.grime);
+        if (key) {
+          m.polygonOffset = true;
+          m.polygonOffsetFactor = m.polygonOffsetUnits = depthOffset(key);
+        }
         // Indoor surfaces reflect the room, not the sky (see buildInteriorEnv)
         if (t.interior) {
           INTERIOR_MATS.push(m);
@@ -1745,9 +1886,14 @@ window.DESIGNS = {
       let c = clones.get(key);
       if (!c) {
         c = o.material.clone();
+        /* Stack on top of whatever coincident-plane layer the material already
+           carries (see DEPTH_LAYER) rather than overwriting it — the floor
+           copy has to beat the exterior shell AND keep its finish above its
+           own structure. Replacing the value flattened the second ordering. */
+        const base = c.polygonOffset ? c.polygonOffsetFactor : 0;
         c.polygonOffset = true;
-        c.polygonOffsetFactor = -1.2;
-        c.polygonOffsetUnits = -1.2;
+        c.polygonOffsetFactor = base - 1.2;
+        c.polygonOffsetUnits = base - 1.2;
         clones.set(key, c);
       }
       o.material = c;
@@ -2172,7 +2318,20 @@ window.DESIGNS = {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    if (scaler && scaler.apply) scaler.apply();
+    /* Whoever owns the pixel ratio has to re-assert it here, because setSize
+       does not, and the two owners want different numbers. The screen-space
+       pipeline caps itself well below the device ratio — every one of its
+       passes is full-screen, so cost is quadratic in this number and jittered
+       accumulation, not supersampling, is what resolves its edges. The dynamic
+       scaler owns it on the forward path instead.
+
+       Calling the scaler unconditionally, as this used to, quietly undid the
+       pipeline's cap on the very first resize: on a phone at dpr 1.5 that is
+       2.25× the intended pixel count for the heaviest render path, restored
+       silently after every orientation change and every URL-bar slide. It also
+       reverted whatever step the frame-budget watchdog had just taken. */
+    if (POST.on && POST.applyDpr) POST.applyDpr();
+    else if (scaler && scaler.apply) scaler.apply();
     wake(600);
   }
   if (window.Perf && Perf.attachViewport) Perf.attachViewport(resize);
@@ -2182,9 +2341,6 @@ window.DESIGNS = {
      6 · RENDER PIPELINE
      scene + normals ▸ SSGI ▸ SSR ▸ composite ▸ temporal accumulate ▸ AgX
      ========================================================================== */
-  const POST = { on: false, exposure: SUNS.morning.exp, render: null, samples: 0, max: 1 };
-  let accumDirty = true;
-  function resetAccum() { accumDirty = true; POST.samples = 0; }
 
   /* Per-mesh depth/normal/reflectivity material.
 
@@ -2224,7 +2380,13 @@ window.DESIGNS = {
         float m = uUseAlpha > 1.5 ? a.a : a.g;
         if (m < uCut) discard;
       }
-      gl_FragColor = vec4(normalize(vN) * 0.5 + 0.5, uRefl);
+      // Two-sided geometry (leaf cards, curtains) hands the back face the
+      // front face's normal, which points away from the camera. Every pass
+      // downstream builds a hemisphere around this vector, so an inverted one
+      // sends the GI rays straight into the surface they came from.
+      vec3 N = normalize(vN);
+      if (!gl_FrontFacing) N = -N;
+      gl_FragColor = vec4(N * 0.5 + 0.5, uRefl);
     }`;
   const nrList = [];
   function buildNormalMaterials() {
@@ -2246,6 +2408,29 @@ window.DESIGNS = {
           uCut: { value: m.alphaTest || 0.5 }
         }
       });
+      /* The normal buffer must resolve depth EXACTLY the way the beauty pass
+         does, or the two disagree about which surface owns a pixel.
+
+         Every shell wall in this model exists twice — once in the exterior
+         shell, once in the floor group that shares its plane — and the floor
+         copy carries a negative polygonOffset so it wins consistently. Leaving
+         that off here meant the two duplicates z-fought in the normal buffer
+         alone: flat walls came out stippled with the wrong normal and the
+         wrong reflectivity, so SSGI shot rays sideways out of a wall and SSR
+         painted mirror speckle across matte plaster. Worse, the jitter that
+         drives the temporal accumulation reshuffles which duplicate wins on
+         every sample, so it never averaged out — it boiled.
+
+         depthWrite/depthTest and the transparent ordering come along for the
+         same reason. NoBlending keeps the write opaque: `transparent` here is
+         only being used to put the draw in the late queue, not to blend. */
+      nm.polygonOffset = m.polygonOffset;
+      nm.polygonOffsetFactor = m.polygonOffsetFactor;
+      nm.polygonOffsetUnits = m.polygonOffsetUnits;
+      nm.depthWrite = m.depthWrite;
+      nm.depthTest = m.depthTest;
+      nm.transparent = m.transparent;
+      nm.blending = THREE.NoBlending;
       nrList.push({ mesh: o, nr: nm });
     });
   }
@@ -2284,10 +2469,14 @@ window.DESIGNS = {
   });
 
   (function buildPipeline() {
-    if (!WEBGL2 || TIER === 'low' || TIER === 'potato') return;
+    /* Tiers below `lite` never build this at all — see POST_MODE. They render
+       forward with MSAA from the context, which is the right trade on a phone:
+       one geometry pass, no full-screen ray marches, no render targets. */
+    if (!HEAVY_POST) return;
     POST.on = true;
+    POST.lite = POST_MODE === 'lite';
     renderer.toneMapping = THREE.NoToneMapping;
-    POST.max = HI ? 64 : 24;
+    POST.max = POST.lite ? 20 : 64;
     /* Cap the render scale for the pipeline. Every pass here is full-screen and
        several are per-pixel ray marches, so cost goes with the square of the
        device pixel ratio: a retina display at dpr 2 is FOUR times the work of
@@ -2295,7 +2484,19 @@ window.DESIGNS = {
        foliage instances. The temporal accumulation is what resolves edges, so
        there is nothing to gain from supersampling on top of it. */
     const BASE_DPR = Math.min(Q.dpr || window.devicePixelRatio || 1, 2);
-    renderer.setPixelRatio(Math.min(BASE_DPR, HI ? 1.5 : 1.0));
+    const DPR_STEPS = POST.lite ? [1.0, 0.85, 0.7] : [1.5, 1.15, 0.9];
+    let dprStep = 0;
+    POST.applyDpr = function () {
+      renderer.setPixelRatio(Math.min(BASE_DPR, DPR_STEPS[dprStep]));
+    };
+    POST.applyDpr();
+
+    // Ray budgets. The `lite` numbers are what a mid-range phone can hold at
+    // 60 Hz; the temporal filter is what makes them look like more.
+    const GI_RAYS = POST.lite ? 1 : 2;
+    const GI_STEPS = POST.lite ? 8 : 12;
+    const SSR_STEPS = POST.lite ? 14 : 28;
+    const BILATERAL = !POST.lite;      // joint upsample of the half-res buffers
 
     const fsCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     const fsGeo = new THREE.PlaneGeometry(2, 2);
@@ -2335,7 +2536,13 @@ window.DESIGNS = {
       float hash13(vec3 p){
         p = fract(p * 0.1031); p += dot(p, p.yzx + 33.33);
         return fract((p.x + p.y) * p.z);
-      }`;
+      }
+      /* Interleaved gradient noise. Unlike a plain hash it is spatially
+         well-distributed at every scale, so a SINGLE sample per pixel already
+         looks like fine film grain rather than clumped salt-and-pepper. That
+         matters far more than it sounds: while the camera is moving there is
+         only ever one sample to look at. */
+      float ign(vec2 p){ return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }`;
 
     /* --- SSGI. Cosine-sample the hemisphere, march each ray through the depth
        buffer, and look at what it hits.
@@ -2364,11 +2571,12 @@ window.DESIGNS = {
         vec3 T = normalize(abs(N.z) < 0.9 ? cross(N, vec3(0.0, 0.0, 1.0)) : cross(N, vec3(1.0, 0.0, 0.0)));
         vec3 B = cross(N, T);
         vec3 gi = vec3(0.0); float occ = 0.0;
-        const int RAYS = 2, STEPS = 12;
+        // one screen-space rotation per pixel, decorrelated per frame
+        float rot = 6.2831853 * fract(ign(gl_FragCoord.xy) + uSeed * 0.6180339887);
+        const int RAYS = ${GI_RAYS}, STEPS = ${GI_STEPS};
         for (int r = 0; r < RAYS; r++) {
-          float h1 = hash13(vec3(vUv * res, uSeed + float(r) * 17.3));
-          float h2 = hash13(vec3(vUv * res + 91.7, uSeed * 1.7 + float(r) * 7.1));
-          float phi = 6.2831853 * h1;
+          float h2 = fract(ign(gl_FragCoord.xy + vec2(float(r) * 37.0, uSeed * 11.0)) + uSeed * 0.7548776662);
+          float phi = rot + 6.2831853 * float(r) / float(RAYS);
           float ct = sqrt(1.0 - h2);              // cosine-weighted
           float st = sqrt(h2);
           vec3 dir = normalize(T * (cos(phi) * st) + B * (sin(phi) * st) + N * ct);
@@ -2428,27 +2636,50 @@ window.DESIGNS = {
     const blurH = pass(blurFrag, { tGI: { value: null }, tDepth: { value: null }, dir: { value: new THREE.Vector2(1, 0) }, res: { value: new THREE.Vector2(1, 1) }, nearFar: nf });
     const blurV = pass(blurFrag, { tGI: { value: null }, tDepth: { value: null }, dir: { value: new THREE.Vector2(0, 1) }, res: { value: new THREE.Vector2(1, 1) }, nearFar: nf });
 
-    /* --- SSR. Only for surfaces flagged reflective (alpha of the normal
-       buffer). Rays that leave the screen fall back to the sky gradient, so a
-       window at the frame edge still reflects something plausible rather than
-       going black — off-screen fallback is the difference between SSR that
-       helps and SSR that draws attention to itself. */
+    /* --- SSR. Returns the reflected COLOUR only; how much of it survives is
+       decided at full resolution in the composite (see there for why).
+
+       The ray is cone-jittered by the surface's own gloss. A single mirror ray
+       is only correct for a mirror — trace one off dry tarmac and you get a
+       crisp, upside-down photograph of the street lamp, which is exactly what
+       made every road and terrace here read as wet. A rough surface reflects an
+       AVERAGE over a wide lobe: some sky, some wall, some ground, which
+       averages to a dim sheen. Jitter the direction inside that lobe, let the
+       temporal filter integrate it, and dry surfaces come back dry while glass
+       and polished stone keep a real reflection.
+
+       Rays that leave the screen fall back to the sky gradient, so a window at
+       the frame edge still reflects something plausible rather than going
+       black — off-screen fallback is the difference between SSR that helps and
+       SSR that draws attention to itself. */
     const ssrPass = pass(COMMON + `
       varying vec2 vUv;
       uniform vec3 skyUp; uniform vec3 skyDn; uniform mat4 viewInv;
       void main(){
-        float refl = texture2D(tNorm, vUv).a;
-        if (refl < 0.05 || isSky(vUv)) { gl_FragColor = vec4(0.0); return; }
+        float gloss = texture2D(tNorm, vUv).a;
+        if (gloss < 0.04 || isSky(vUv)) { gl_FragColor = vec4(0.0); return; }
         vec3 P = viewPos(vUv);
         vec3 N = viewNorm(vUv);
         vec3 V = normalize(P);
         vec3 R = reflect(V, N);
-        float fres = pow(1.0 - max(dot(-V, N), 0.0), 4.0);
-        float strength = refl * mix(0.22, 1.0, fres);
+
+        // Cone half-angle from gloss. 0.9 (glass) barely spreads; 0.09 (road)
+        // spreads across most of the hemisphere.
+        float spread = (1.0 - gloss) * (1.0 - gloss) * 0.55;
+        if (spread > 0.001) {
+          vec3 T = normalize(abs(R.z) < 0.9 ? cross(R, vec3(0.0, 0.0, 1.0)) : cross(R, vec3(1.0, 0.0, 0.0)));
+          vec3 B = cross(R, T);
+          float a = 6.2831853 * fract(ign(gl_FragCoord.xy) + uSeed * 0.6180339887);
+          float rr = spread * sqrt(fract(ign(gl_FragCoord.xy + 19.0) + uSeed * 0.7548776662));
+          R = normalize(R + (T * cos(a) + B * sin(a)) * rr);
+          // never let the jitter push the ray below the surface
+          if (dot(R, N) < 0.02) R = normalize(R + N * (0.02 - dot(R, N)));
+        }
+
         vec3 pos = P + N * 0.03;
         float stepLen = 0.22;
         vec3 col = vec3(0.0); float found = 0.0;
-        for (int s = 0; s < 28; s++) {
+        for (int s = 0; s < ${SSR_STEPS}; s++) {
           pos += R * stepLen;
           stepLen *= 1.16;
           vec2 uv = project(pos);
@@ -2466,7 +2697,10 @@ window.DESIGNS = {
         vec3 wR = normalize((viewInv * vec4(R, 0.0)).xyz);
         vec3 sky = mix(skyDn, skyUp, clamp(wR.y * 0.5 + 0.5, 0.0, 1.0));
         col = mix(sky, col, found);
-        gl_FragColor = vec4(col, strength);
+        // A single very bright hit inside a wide cone becomes a firefly that
+        // the temporal filter then smears for a second. Clamp the tail.
+        col = min(col, vec3(4.0));
+        gl_FragColor = vec4(col, 1.0);
       }`,
       { tDepth: { value: null }, tNorm: { value: null }, tColor: { value: null },
         projInv: { value: new THREE.Matrix4() }, proj: { value: new THREE.Matrix4() },
@@ -2492,7 +2726,7 @@ window.DESIGNS = {
       varying vec2 vUv;
       uniform sampler2D tCol; uniform sampler2D tGI; uniform sampler2D tSSR;
       uniform sampler2D tDepth; uniform sampler2D tNorm;
-      uniform mat4 projInv; uniform vec2 res;
+      uniform mat4 projInv; uniform vec2 res; uniform vec2 loRes; uniform vec2 nearFar;
       uniform float aoStrength; uniform float giStrength; uniform float edgeAmt;
 
       vec3 viewPosC(vec2 uv){
@@ -2501,6 +2735,39 @@ window.DESIGNS = {
         vec4 v = projInv * ndc;
         return v.xyz / v.w;
       }
+      float linZC(float d){ return nearFar.x * nearFar.y / (nearFar.y - d * (nearFar.y - nearFar.x)); }
+
+      /* Joint-bilateral upsample of a half-resolution buffer.
+
+         Plain bilinear is what put a ghost of the balcony railing on the face
+         of every vertical rod on the east screen. Those rods are ~40 mm wide;
+         at half resolution one texel straddles a rod AND the gap beside it, so
+         it traces its ray through the gap, hits the railing behind, and
+         bilinear then spreads that answer back across the rod. The result
+         reads as if you can see through solid members.
+
+         Weighting each of the four contributing texels by how well its depth
+         matches THIS pixel's depth fixes it: a texel that belongs to the
+         railing 3 m further back gets essentially no vote on a rod pixel. */
+      vec4 upsample(sampler2D t, vec2 uv, float z0){
+        #if ${BILATERAL ? 1 : 0}
+          vec2 tc = uv * loRes - 0.5;
+          vec2 base = floor(tc), f = tc - base;
+          vec4 acc = vec4(0.0); float wsum = 0.0;
+          for (int i = 0; i < 4; i++) {
+            vec2 o = vec2(i == 1 || i == 3 ? 1.0 : 0.0, i >= 2 ? 1.0 : 0.0);
+            vec2 suv = (base + o + 0.5) / loRes;
+            float bw = (i == 1 || i == 3 ? f.x : 1.0 - f.x) * (i >= 2 ? f.y : 1.0 - f.y);
+            float z = linZC(texture2D(tDepth, suv).x);
+            float w = bw / (0.01 + abs(z - z0));
+            acc += texture2D(t, suv) * w; wsum += w;
+          }
+          return wsum > 1e-5 ? acc / wsum : texture2D(t, uv);
+        #else
+          return texture2D(t, uv);
+        #endif
+      }
+
       float cavity(vec2 uv){
         vec3 rawN = texture2D(tNorm, uv).xyz;
         if (dot(rawN, rawN) < 0.0015) return 0.0;              // sky
@@ -2521,10 +2788,13 @@ window.DESIGNS = {
 
       void main(){
         vec3 c = texture2D(tCol, vUv).rgb;
-        vec4 gi = texture2D(tGI, vUv);
+        vec4 rawN = texture2D(tNorm, vUv);
+        bool sky = dot(rawN.xyz, rawN.xyz) < 0.0015;
+        float z0 = linZC(texture2D(tDepth, vUv).x);
+        vec4 gi = upsample(tGI, vUv, z0);
         // A small extra occlusion term for the tight creases the ray march is
         // too coarse to resolve — reveals, soffit corners, the stair underside.
-        float ao = mix(1.0, clamp(gi.a, 0.0, 1.0), aoStrength);
+        float ao = mix(1.0, clamp(gi.a, 0.0, 1.0), sky ? 0.0 : aoStrength);
         c *= ao;
         // Bounce is tinted by the RECEIVER's albedo as well as the source's
         // colour. A forward renderer has no albedo buffer, so take the
@@ -2532,44 +2802,111 @@ window.DESIGNS = {
         // luminance: correct hue, no double-counted brightness.
         float lum = max(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-3);
         vec3 tint = clamp(c / lum, 0.0, 2.0);
-        c += gi.rgb * giStrength * tint;
+        c += gi.rgb * (sky ? 0.0 : giStrength) * tint;
         c = max(c, vec3(0.0));
         // convex arris catches sky, concave corner loses it
-        float cav = cavity(vUv);
+        float cav = sky ? 0.0 : cavity(vUv);
         c *= 1.0 + clamp(-cav, 0.0, 1.0) * edgeAmt * 0.9      // convex: highlight
                  - clamp( cav, 0.0, 1.0) * edgeAmt * 1.25;    // concave: contact shade
-        vec4 ssr = texture2D(tSSR, vUv);
-        c = mix(c, ssr.rgb, clamp(ssr.a, 0.0, 0.92));
+
+        /* Reflection strength is computed HERE, at full resolution, and never
+           read from the half-res SSR buffer's alpha.
+
+           That buffer knows only what a half-res texel covered. On anything
+           thin — the east rods, a balustrade picket, a window mullion — half
+           the texels that land on a solid member actually sampled the gap
+           beside it and came back "this is reflective". Multiplying by the
+           full-res gloss instead means a matte 40 mm rod gets exactly zero
+           reflection regardless of what its neighbours reported, and only the
+           surface that is genuinely glossy takes any.
+
+           Fresnel is damped by roughness on purpose: a smooth surface really
+           does approach a mirror at grazing incidence, but a rough one is
+           shadowed by its own microfacets long before it gets there. Without
+           that term, dry tarmac seen down the street reflects like a canal. */
+        if (!sky && rawN.a > 0.04) {
+          vec3 N = normalize(rawN.xyz * 2.0 - 1.0);
+          vec3 P = viewPosC(vUv);
+          float cosT = clamp(dot(normalize(-P), N), 0.0, 1.0);
+          float gloss = rawN.a;
+          float fres = pow(1.0 - cosT, 5.0) * mix(0.30, 1.0, gloss);
+          float amt = gloss * mix(0.20, 1.0, fres);
+          vec3 ssr = upsample(tSSR, vUv, z0).rgb;
+          c = mix(c, ssr, clamp(amt, 0.0, 0.9));
+        }
         gl_FragColor = vec4(max(c, vec3(0.0)), 1.0);
       }`,
       { tCol: { value: null }, tGI: { value: null }, tSSR: { value: null },
         tDepth: { value: null }, tNorm: { value: null },
         projInv: { value: new THREE.Matrix4() }, res: { value: new THREE.Vector2(1, 1) },
+        loRes: { value: new THREE.Vector2(1, 1) }, nearFar: nf,
         aoStrength: { value: 0.30 }, giStrength: { value: 0.42 }, edgeAmt: { value: 0.5 } });
 
-    // temporal accumulation — the whole point of jittering the projection
+    /* --- Temporal filter.
+
+       Two jobs in one pass. Standing still it is a plain running average over
+       POST.max jittered samples, which is what resolves the ray-marched noise
+       and antialiases every edge. Moving, it REPROJECTS: the scene is static
+       and only the camera moves, so last frame's colour for a given surface
+       point can be found exactly by projecting that point with last frame's
+       view-projection matrix.
+
+       Before this existed, any camera movement threw the history away and put a
+       single 2-ray GI sample on screen — which is precisely the boiling,
+       flickering image that shows up the moment you start to orbit. Now ~86 %
+       of the previous frame survives the move, so the picture stays resolved
+       while it turns.
+
+       The neighbourhood clamp is what keeps that honest. History that no longer
+       agrees with the pixels around it — newly revealed geometry, a surface
+       that just went behind another — is pulled back into the current frame's
+       local colour range instead of smearing across the screen. It is only
+       applied while moving: standing still, clamping to a noisy single frame's
+       local range would stop the average from ever getting cleaner than one
+       sample. */
     const accPass = pass(`
       varying vec2 vUv;
-      uniform sampler2D tNew; uniform sampler2D tOld; uniform float w;
+      uniform sampler2D tNew; uniform sampler2D tOld; uniform sampler2D tDepth;
+      uniform mat4 projInv; uniform mat4 viewInv; uniform mat4 prevVP;
+      uniform vec2 res; uniform float w; uniform float uReproject;
       void main(){
-        vec3 n = texture2D(tNew, vUv).rgb;
-        vec3 o = texture2D(tOld, vUv).rgb;
-        gl_FragColor = vec4(mix(o, n, w), 1.0);
+        vec3 cur = texture2D(tNew, vUv).rgb;
+        if (uReproject < 0.5) {                       // still: plain average
+          gl_FragColor = vec4(mix(texture2D(tOld, vUv).rgb, cur, w), 1.0);
+          return;
+        }
+        float d = texture2D(tDepth, vUv).x;
+        vec4 v = projInv * vec4(vUv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+        vec4 wp = viewInv * vec4(v.xyz / v.w, 1.0);
+        vec4 pc = prevVP * wp;
+        vec2 puv = (pc.xy / pc.w) * 0.5 + 0.5;
+        if (pc.w <= 0.0 || puv.x < 0.0 || puv.x > 1.0 || puv.y < 0.0 || puv.y > 1.0) {
+          gl_FragColor = vec4(cur, 1.0); return;      // came in from off-screen
+        }
+        vec2 px = 1.0 / res;
+        vec3 mn = cur, mx = cur;
+        for (int i = 0; i < 8; i++) {
+          vec2 o = i == 0 ? vec2(1.0, 0.0) : i == 1 ? vec2(-1.0, 0.0)
+                 : i == 2 ? vec2(0.0, 1.0) : i == 3 ? vec2(0.0, -1.0)
+                 : i == 4 ? vec2(1.0, 1.0) : i == 5 ? vec2(-1.0, 1.0)
+                 : i == 6 ? vec2(1.0, -1.0) : vec2(-1.0, -1.0);
+          vec3 s = texture2D(tNew, vUv + o * px).rgb;
+          mn = min(mn, s); mx = max(mx, s);
+        }
+        vec3 hist = clamp(texture2D(tOld, puv).rgb, mn, mx);
+        gl_FragColor = vec4(mix(hist, cur, w), 1.0);
       }`,
-      { tNew: { value: null }, tOld: { value: null }, w: { value: 1 } });
+      { tNew: { value: null }, tOld: { value: null }, tDepth: { value: null },
+        projInv: { value: new THREE.Matrix4() }, viewInv: { value: new THREE.Matrix4() },
+        prevVP: { value: new THREE.Matrix4() }, res: { value: new THREE.Vector2(1, 1) },
+        w: { value: 1 }, uReproject: { value: 0 } });
 
-    /* --- Output. AgX rather than ACES: ACES pushes bright saturated values
-       toward its primaries and skews hue as it clips, which on a sunlit
-       white-plaster facade shows as that faintly plastic, slightly pink
-       highlight roll-off. AgX desaturates into the highlight instead, the way
-       film and every modern camera pipeline does. */
+    /* --- Output: lens, tone map, grade. */
     const outPass = pass(`
       varying vec2 vUv;
-      uniform sampler2D tCol; uniform sampler2D tDepth;
-      uniform vec2 res; uniform float exposure; uniform float t;
-      uniform float focusZ; uniform float dofAmt; uniform vec2 nearFar;
+      uniform sampler2D tCol;
+      uniform vec2 res; uniform float exposure; uniform float t; uniform float sharpen;
       float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
-      float linZ(float d){ return nearFar.x * nearFar.y / (nearFar.y - d * (nearFar.y - nearFar.x)); }
 
       // three.js's fitted ACES (Stephen Hill). Tried AgX here — it is the more
       // modern transform and rolls highlights off more gracefully, but it is a
@@ -2594,40 +2931,42 @@ window.DESIGNS = {
         return clamp(outM * RRTAndODTFit(inM * color), 0.0, 1.0);
       }
 
-      // One sampler for the whole lens model: transverse chromatic aberration
-      // is a per-channel change of MAGNIFICATION, so each channel must travel
-      // the same defocus path with a slightly different scale. Sampling R and B
-      // from a different (sharp) source than G is what puts colour fringes on
-      // every silhouette.
-      vec3 sampleLens(vec2 uv, float coc, vec2 d){
-        float ca = dot(d, d) * 0.0035;
-        vec2 uvR = uv + d * ca, uvG = uv, uvB = uv - d * ca;
-        if (coc <= 0.02) {
-          return vec3(texture2D(tCol, uvR).r, texture2D(tCol, uvG).g, texture2D(tCol, uvB).b);
-        }
-        vec2 px = 1.0 / res;
-        vec3 sum = vec3(0.0);
-        float j = hash(uv * res) * 6.283;
-        for (int i = 0; i < 8; i++) {
-          vec2 o = vec2(cos(float(i) * 0.7853981 + j), sin(float(i) * 0.7853981 + j)) * px * coc * 5.0;
-          sum += vec3(texture2D(tCol, uvR + o).r, texture2D(tCol, uvG + o).g, texture2D(tCol, uvB + o).b);
-        }
-        return sum / 8.0;
-      }
-
       void main(){
         vec2 d = vUv - 0.5;
-        /* Depth of field: tiny, but a lens always has some, and its absence is
-           one of the quiet reasons renders read as diagrams.
+        vec2 px = 1.0 / res;
+        vec3 c0 = texture2D(tCol, vUv).rgb;
 
-           It has to be a thin-lens model — defocus goes with the difference of
-           RECIPROCAL distances, not of distances. A linear |z − focus| term
-           saturates everything past the subject, so the sky (at the far plane)
-           lands on maximum blur and the clouds smear into a flat wash. That is
-           not depth of field; that is a fogged lens. */
-        float z = linZ(texture2D(tDepth, vUv).x);
-        float coc = clamp(abs(1.0 / max(z, 0.5) - 1.0 / focusZ) * focusZ * dofAmt, 0.0, 1.0);
-        vec3 c = sampleLens(vUv, coc, d);
+        /* Unsharp mask, in linear light, before the tone map. Averaging 64
+           jittered samples is a box filter over the pixel and a box filter is
+           soft; a small negative-lobe kernel puts the acutance back without
+           the ringing a wider radius would add.
+
+           It is computed on UNSHIFTED taps, deliberately. Sharpening the
+           already-aberrated colour meant the two operations multiplied: the
+           lens offset became the edge the sharpener then found and amplified,
+           and every road marking grew a red rim on one side and a blue one on
+           the other — a couple of tenths of a pixel of physics turned into two
+           pixels of artefact. */
+        vec3 c = c0;
+        if (sharpen > 0.0) {
+          vec3 blur = (texture2D(tCol, vUv + vec2(px.x, 0.0)).rgb +
+                       texture2D(tCol, vUv - vec2(px.x, 0.0)).rgb +
+                       texture2D(tCol, vUv + vec2(0.0, px.y)).rgb +
+                       texture2D(tCol, vUv - vec2(0.0, px.y)).rgb) * 0.25;
+          c = max(c0 + (c0 - blur) * sharpen, vec3(0.0));
+        }
+
+        /* Transverse chromatic aberration: a per-channel change of
+           MAGNIFICATION, so red and blue are sampled at a slightly different
+           scale about the optical centre. Added afterwards as a difference, at
+           its true magnitude — about half a pixel in the extreme corners at
+           1080p, nothing at the centre. Its absence is one of the quiet
+           reasons a render reads as a diagram; its exaggeration is one of the
+           loud reasons one reads as a filter. */
+        float ca = dot(d, d) * 0.0013;
+        c.r += texture2D(tCol, vUv + d * ca).r - c0.r;
+        c.b += texture2D(tCol, vUv - d * ca).b - c0.b;
+        c = max(c, vec3(0.0));
 
         c = tonemap(c * exposure);
         /* "Dull" on a deliberately minimal palette is almost never a shortage
@@ -2653,23 +2992,8 @@ window.DESIGNS = {
         c += (hash(vUv * res + vec2(t, t * 1.7)) - 0.5) * 0.012 * (1.0 - l * 0.6);
         gl_FragColor = vec4(c, 1.0);
       }`,
-      { tCol: { value: null }, tDepth: { value: null }, res: { value: new THREE.Vector2(1, 1) },
-        exposure: { value: 1 }, t: { value: 0 },
-        /* dofAmt 0 — depth of field is OFF in this viewer.
-           Two reasons. The practical one: this is a navigable dollhouse, not a
-           composed still. You orbit it, switch floors and read room labels, and
-           anything the lens decides is off-subject goes soft — which is wrong
-           for a model you are meant to inspect. The donor was an elevation
-           viewer shooting fixed hero angles, where a little defocus helps.
-           The measured one: the circle of confusion here saturates instead of
-           staying near zero. At focusZ ≈ 26 m a correct thin-lens coc for this
-           building is ~0.03, i.e. sub-pixel; what actually reached sampleLens
-           was large enough to blur every pixel in all 8 taps, and accumulated
-           over 64 jittered samples that read as a veiling haze over the whole
-           frame — walls looked semi-transparent. The depth fetch feeding linZ()
-           is the suspect (UnsignedInt depth texture), not the lens model.
-           Raise this above 0 only after fixing that. */
-        focusZ: { value: 30 }, dofAmt: { value: 0.0 }, nearFar: nf });
+      { tCol: { value: null }, res: { value: new THREE.Vector2(1, 1) },
+        exposure: { value: 1 }, t: { value: 0 }, sharpen: { value: POST.lite ? 0.16 : 0.22 } });
 
     let rtScene = null, rtNorm = null, rtGI = null, rtGIb = null, rtSSR = null,
         rtHDR = null, rtAcc = [null, null], rw = 0, rh = 0, accIdx = 0;
@@ -2702,6 +3026,8 @@ window.DESIGNS = {
       ssrPass.u.res.value.set(gw, gh);
       blurH.u.res.value.set(gw, gh); blurV.u.res.value.set(gw, gh);
       compPass.u.res.value.set(w, h);
+      compPass.u.loRes.value.set(gw, gh);
+      accPass.u.res.value.set(w, h);
       outPass.u.res.value.set(w, h);
       resetAccum();
     }
@@ -2714,18 +3040,26 @@ window.DESIGNS = {
       return r;
     }
     let frameNo = 0;
-    const _pv = new THREE.Vector3();
+    /* The jitter index free-runs, independently of the convergence counter.
+       While the camera moves, POST.samples is pinned near the top of its
+       history window and would otherwise hand back the SAME sub-pixel offset
+       frame after frame — no jitter at all, so no antialiasing exactly when it
+       is most visible. */
+    let jitterIdx = 0;
+    const prevVP = new THREE.Matrix4();
+    const curVP = new THREE.Matrix4();
+    let havePrev = false;
 
     POST.render = function () {
       ensureRT();
       if (!rtScene) { renderer.render(scene, camera); return; }
       nf.value.set(camera.near, camera.far);
 
-      if (accumDirty) { POST.samples = 0; accumDirty = false; }
+      if (accumDirty) { POST.samples = 0; accumDirty = false; havePrev = false; }
+      const moving = !!POST.moving;
       const n = POST.samples;
-      if (n >= POST.max) {                       // converged — just re-present
+      if (!moving && n >= POST.max) {             // converged — just re-present
         outPass.u.tCol.value = rtAcc[accIdx].texture;
-        outPass.u.tDepth.value = rtScene.depthTexture;
         outPass.u.exposure.value = POST.exposure;
         outPass.u.t.value = 0;
         renderer.setRenderTarget(null); renderer.render(outPass.scene, fsCam);
@@ -2733,7 +3067,8 @@ window.DESIGNS = {
       }
 
       // --- jitter the projection by a sub-pixel offset for this sample
-      const jx = (halton(n + 1, 2) - 0.5), jy = (halton(n + 1, 3) - 0.5);
+      jitterIdx = (jitterIdx + 1) & 31;
+      const jx = (halton(jitterIdx + 1, 2) - 0.5), jy = (halton(jitterIdx + 1, 3) - 0.5);
       camera.setViewOffset(rw, rh, jx, jy, rw, rh);
       camera.updateProjectionMatrix();
 
@@ -2743,12 +3078,13 @@ window.DESIGNS = {
       renderNormals(rtNorm);
 
       const projInv = new THREE.Matrix4().copy(camera.projectionMatrix).invert();
+      const seed = jitterIdx * 13.7 + 3.1;
       giPass.u.tDepth.value = rtScene.depthTexture;
       giPass.u.tNorm.value = rtNorm.texture;
       giPass.u.tColor.value = rtScene.texture;
       giPass.u.projInv.value.copy(projInv);
       giPass.u.proj.value.copy(camera.projectionMatrix);
-      giPass.u.uSeed.value = n * 13.7 + 3.1;
+      giPass.u.uSeed.value = seed;
       renderer.setRenderTarget(rtGI); renderer.render(giPass.scene, fsCam);
 
       blurH.u.tGI.value = rtGI.texture; blurH.u.tDepth.value = rtScene.depthTexture;
@@ -2761,6 +3097,7 @@ window.DESIGNS = {
       ssrPass.u.tColor.value = rtScene.texture;
       ssrPass.u.projInv.value.copy(projInv);
       ssrPass.u.proj.value.copy(camera.projectionMatrix);
+      ssrPass.u.uSeed.value = seed;
       ssrPass.u.viewInv.value.copy(camera.matrixWorld);
       ssrPass.u.skyUp.value.copy(SKY_UP);
       ssrPass.u.skyDn.value.copy(SKY_DN);
@@ -2775,25 +3112,66 @@ window.DESIGNS = {
       renderer.setRenderTarget(rtHDR); renderer.render(compPass.scene, fsCam);
 
       const src = accIdx, dst = 1 - accIdx;
+      const reproject = moving && havePrev;
       accPass.u.tNew.value = rtHDR.texture;
       accPass.u.tOld.value = rtAcc[src].texture;
+      accPass.u.tDepth.value = rtScene.depthTexture;
+      accPass.u.projInv.value.copy(projInv);
+      accPass.u.viewInv.value.copy(camera.matrixWorld);
+      accPass.u.prevVP.value.copy(prevVP);
+      accPass.u.uReproject.value = reproject ? 1 : 0;
       accPass.u.w.value = n === 0 ? 1.0 : 1.0 / (n + 1);
       renderer.setRenderTarget(rtAcc[dst]); renderer.render(accPass.scene, fsCam);
       accIdx = dst;
 
+      // remember this frame's view-projection for the next reprojection
+      curVP.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      prevVP.copy(curVP);
+      havePrev = true;
+
       camera.clearViewOffset();
       camera.updateProjectionMatrix();
 
-      // focus on whatever is at the centre of frame
-      _pv.copy(ctl.target).applyMatrix4(camera.matrixWorldInverse);
-      outPass.u.focusZ.value = Math.max(1, -_pv.z);
       outPass.u.tCol.value = rtAcc[accIdx].texture;
-      outPass.u.tDepth.value = rtScene.depthTexture;
       outPass.u.exposure.value = POST.exposure;
       outPass.u.t.value = (frameNo = (frameNo + 1) % 1024);
       renderer.setRenderTarget(null); renderer.render(outPass.scene, fsCam);
 
       POST.samples = n + 1;
+    };
+
+    /* Graceful degradation, in the order that costs the least to look at.
+       Called by the frame loop when measured frame time stays over budget —
+       the static tier guess is only a guess, and a device that turns out to be
+       slower than it claimed should end up smooth rather than correct. */
+    POST.degrade = function () {
+      /* Walk down the resolution ladder, skipping rungs that would not change
+         anything. On a device whose own pixel ratio is already below the next
+         step, setting it is a no-op — and a no-op still costs the watchdog a
+         full re-measurement window before it tries again, so a phone that
+         needed the sample count cut spends several seconds slow first. */
+      while (dprStep < DPR_STEPS.length - 1) {
+        const before = renderer.getPixelRatio();
+        dprStep++;
+        const want = Math.min(BASE_DPR, DPR_STEPS[dprStep]);
+        if (want >= before - 1e-4) continue;         // this rung changes nothing
+        resize();                                   // re-applies via POST.applyDpr
+        return 'dpr ' + want.toFixed(2);
+      }
+      if (POST.max > 12) { POST.max = 12; return 'samples 12'; }
+      /* Last resort: drop the screen-space pipeline and render forward.
+         Tone mapping moves back into the renderer, and applySun has to run
+         again because the sky, fog and clear colours are fed as LINEAR
+         radiance while the pipeline owns the tone map and as sRGB when it does
+         not. The dynamic resolution scaler, which the frame loop keeps parked
+         while the pipeline is on, takes over from here. */
+      POST.on = false;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = POST.exposure;
+      applySun(sunKey);
+      renderer.setPixelRatio(Math.min(BASE_DPR, 1.0));
+      resize();
+      return 'post off';
     };
 
     POST.dbg = { giPass, ssrPass, compPass, outPass, accPass,
@@ -2904,6 +3282,34 @@ window.DESIGNS = {
       && ctl.target.distanceToSquared(ctl.tTarget) < 1e-6;
   }
 
+  /* Frame-time watchdog for the screen-space pipeline.
+
+     The tier in perf.js is a guess made from a GPU name string, a core count
+     and a RAM figure, and on the long tail of Android devices that guess is
+     sometimes wrong by a factor of three. Rather than trust it, measure: if the
+     CPU-side cost of a full pipeline frame stays over budget for a couple of
+     seconds, step the quality down one notch (resolution, then sample count,
+     then the pipeline itself) and measure again. A device that cannot afford
+     this ends up on the forward path automatically instead of at 9 fps.
+
+     Only sustained overruns count. Shader compilation, texture upload and the
+     first shadow bake all land in the first second and none of them repeat. */
+  let budgetOver = 0, budgetSamples = 0, budgetEma = 0;
+  function watchBudget(ms) {
+    if (!POST.on || !POST.degrade) return;
+    if (++budgetSamples < 30) return;              // ignore warm-up
+    budgetEma += (Math.min(ms, 120) - budgetEma) * 0.08;
+    if (budgetEma > 26) {
+      if (++budgetOver > 90) {
+        budgetOver = 0; budgetEma = 0;
+        const step = POST.degrade();
+        console.info('[perf] frame budget exceeded — stepping down:', step);
+      }
+    } else if (budgetOver > 0) {
+      budgetOver--;
+    }
+  }
+
   let last = performance.now(), firstFrame = false;
   /* Float64, not Float32. Matrix4.elements holds doubles; storing them in a
      Float32Array truncates every value, so the very next comparison against the
@@ -2950,34 +3356,60 @@ window.DESIGNS = {
     }
     applyCamera();
 
-    /* Restart the accumulation the moment the camera actually moves.
+    /* Detect camera movement and hand the temporal filter a history window
+       instead of throwing the history away.
 
-       Temporal accumulation averages POST.max jittered samples into one buffer,
-       which is only valid while the view is FIXED. Nothing here was resetting it
-       on orbit/zoom/pan — so dragging kept blending frames shot from different
-       positions into the same buffer and the picture turned into a smeared
-       collage that looked frozen rather than moving. Compare the camera's world
-       matrix against last frame's and reset on any change; the cost is 16 floats. */
+       The accumulation buffer holds an average of POST.max jittered samples,
+       which is only literally valid while the view is fixed. The old code
+       reset it to zero on any camera change — correct, but it meant every
+       frame of an orbit showed a SINGLE 2-ray global-illumination sample, and
+       that is the boiling, crawling image the whole picture dissolved into as
+       soon as you dragged it. The accumulate pass now reprojects the history
+       through last frame's view-projection, so it stays valid through motion;
+       all this has to do is pin the blend weight to a responsive value
+       (1/7 ≈ 0.14, so ~86 % of the history survives each frame) and let it
+       climb back toward a full average once the camera settles. */
     if (POST.on) {
       const e = camera.matrixWorld.elements;
       let moved = false;
       for (let i = 0; i < 16; i++) { if (e[i] !== _lastCam[i]) { moved = true; break; } }
-      if (moved) { for (let i = 0; i < 16; i++) _lastCam[i] = e[i]; resetAccum(); }
+      if (moved) {
+        for (let i = 0; i < 16; i++) _lastCam[i] = e[i];
+        /* 8 → the accumulate pass runs at w = 1/9, so ~89 % of the reprojected
+           history survives each frame. Measured against a per-frame reset on
+           the same camera path, that is 2.5× less frame-to-frame change.
+           Pushing the history weight higher is tempting and is what starts to
+           show as smearing behind moving silhouettes; the neighbourhood clamp
+           only protects so far. */
+        POST.samples = Math.min(POST.samples, 8);
+        POST.movingUntil = now + 90;      // ride out a one-frame pause mid-drag
+      }
+      POST.moving = now < POST.movingUntil;
     }
 
     // render only when needed: moving, mid-tween, or recently interacted
-    const converging = POST.on && POST.samples < POST.max;
+    const converging = POST.on && (POST.moving || POST.samples < POST.max);
     if (now < wakeUntil || tween || !camSettled() || converging) {
+      const t0 = POST.on ? performance.now() : 0;
       renderFrame();
+      if (POST.on) watchBudget(performance.now() - t0);
       updateConv();
       updateLabels(window.innerWidth, window.innerHeight);
       updateCompass();
       if (!firstFrame) {
         firstFrame = true;
-        // Loading screen dismissal tied to actual first render
+        /* Loading screen dismissal tied to actual first render.
+           Null-guarded: the 2.5 s fail-safe below can have removed the element
+           already. That happens whenever the first frame is late — the tab was
+           backgrounded during boot, so requestAnimationFrame never fired and
+           this branch did not reach the DOM until the user came back to a page
+           whose loading screen was long gone. Dereferencing it there threw
+           inside the rAF callback and killed the render loop outright. */
         const lo = $('loading');
-        lo.classList.add('done');
-        setTimeout(() => lo.remove(), 650);
+        if (lo) {
+          lo.classList.add('done');
+          setTimeout(() => lo.remove(), 650);
+        }
         setTimeout(hideHint, 6000);
         // Re-bake shadows after car may have loaded / first full frame
         requestAnimationFrame(refreshShadows);

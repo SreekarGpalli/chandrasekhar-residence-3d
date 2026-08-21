@@ -39,9 +39,27 @@ smooth on old laptops and budget phones as well as high-end machines:
   count, RAM and form factor and picks a tier (`high` / `medium` / `low` /
   `potato`) that sets pixel ratio, antialiasing, shadow resolution + filter, and
   texture anisotropy accordingly.
-- **Dynamic resolution scaling** — every frame the real frame-time is measured
-  and the drawing-buffer resolution is nudged up or down to hold the framerate
-  in a target band. Even if the tier guess is off, it converges to smooth.
+- **Three render paths, one per class of device.** The tier also picks *how* the
+  frame is drawn:
+
+  | Path | Who gets it | What it does |
+  |------|-------------|--------------|
+  | `full` | desktop with a discrete GPU | screen-space GI, screen-space reflections, screen-space cavity/edge shading, 64-sample jittered accumulation, ACES + grade |
+  | `lite` | integrated GPUs, flagship phones | the same pipeline at reduced ray counts and 20 samples, capped at device pixel ratio 1 |
+  | `off`  | ordinary phones, weak or software GPUs | a single forward pass with MSAA and ACES — one geometry pass instead of two, no full-screen ray marches |
+
+  The heavy paths cost roughly 3× a forward frame, which is the wrong trade on a
+  tiled mobile GPU, so phones without a modern GPU get `off` by default.
+- **Temporal reprojection** — while you orbit, the previous frame is reprojected
+  through the camera's motion instead of being discarded, so a moving view stays
+  resolved rather than dissolving into single-sample noise. Measured at ~2.5×
+  less frame-to-frame change than restarting the accumulation each frame.
+- **Frame-budget watchdog** — device detection is a heuristic, so the viewer also
+  measures. Sustained slow frames step the quality down a rung at a time
+  (resolution → sample count → drop the pipeline entirely) until it is smooth.
+- **Dynamic resolution scaling** — on the forward path, the real frame-time is
+  measured every frame and the drawing-buffer resolution is nudged up or down to
+  hold the framerate in a target band.
 - **Static shadows** — the scene and sun never move, so the shadow map is
   rendered **once** instead of every frame (a large GPU saving).
 - **On-demand rendering** (orbit viewer) — an idle, still view costs ~zero GPU;
@@ -50,6 +68,17 @@ smooth on old laptops and budget phones as well as high-end machines:
 - **Self-hosted Three.js** — served from the same origin (Vercel's edge) for
   fast, reliable loading worldwide, with a CDN fallback if the local copy is
   missing.
+
+### Forcing a quality level
+
+Detection is a guess, and sometimes it is wrong. Two query parameters override
+it — useful for testing what a phone sees, and for anyone whose device is
+misidentified:
+
+- `?q=high|medium|low|potato` — force the hardware tier
+- `?post=full|lite|off` — force the render path
+
+They combine with `?v=` (`/?v=v43&q=low`).
 
 ## Run locally
 

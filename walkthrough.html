@@ -219,7 +219,7 @@ if(!window.THREE || !window.HouseScene){
   const canvas = $('c');
   // adaptive quality: render settings chosen to match the device's hardware
   const Q = window.Perf ? Perf.detect()
-    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7, logDepth: true, powerPreference: 'high-performance' };
+    : { tier: 'high', dpr: Math.min(window.devicePixelRatio || 1, 2), antialias: true, shadows: true, shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.7, logDepth: false, powerPreference: 'high-performance' };
   let renderer;
   try {
     const opts = window.Perf && Perf.rendererOpts

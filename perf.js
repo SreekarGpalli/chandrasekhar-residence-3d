@@ -29,25 +29,56 @@ window.Perf = (function () {
   function probeGPU() {
     try {
       const c = document.createElement('canvas');
-      const g = c.getContext('webgl') || c.getContext('experimental-webgl');
+      /* Ask for WebGL2 FIRST. The old order requested 'webgl' and then tested
+         the result with `instanceof WebGL2RenderingContext`, which is false by
+         construction — a webgl context is never a webgl2 one — so this always
+         reported webgl2: false on every device ever made. Anything gating a
+         feature on it silently got the fallback. */
+      const g2 = c.getContext('webgl2');
+      const g = g2 || c.getContext('webgl') || c.getContext('experimental-webgl');
       if (!g) return { name: '', maxTex: 2048, webgl2: false };
       const ext = g.getExtension('WEBGL_debug_renderer_info');
       const name = ext ? String(g.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '') : '';
       const maxTex = g.getParameter(g.MAX_TEXTURE_SIZE) || 2048;
-      const webgl2 = !!(window.WebGL2RenderingContext && g instanceof WebGL2RenderingContext);
       // best-effort cleanup of the probe context
       const lose = g.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
-      return { name: name, maxTex: maxTex, webgl2: webgl2 };
+      return { name: name, maxTex: maxTex, webgl2: !!g2 };
     } catch (_) { return { name: '', maxTex: 2048, webgl2: false }; }
   }
 
   /* Tier presets. scaleFloor = lowest the dynamic scaler may shrink
      the resolution to before it stops (keeps things legible).
      texSize = max edge for procedural canvas textures. */
+  /* logDepth is FALSE on every tier and should stay that way.
+
+     A logarithmic depth buffer writes gl_FragDepth from the fragment shader,
+     and that has three consequences this project cannot afford:
+
+       1. polygonOffset stops working. The offset is applied to the
+          interpolated depth, which the shader then overwrites — so every
+          coincident surface pair the viewers rely on polygonOffset to
+          separate (the exterior shell vs. the per-floor duplicate of the same
+          wall) z-fights instead. That was the flickering seen all over the
+          high tier, and ONLY the high tier, because it was the only preset
+          with this on.
+       2. Any screen-space pass that reconstructs position from the depth
+          texture reads a logarithmic value through a linear un-projection.
+          The SSGI/SSR ray marches in index.html were tracing against a
+          fictional scene as a result.
+       3. Early-Z and hierarchical-Z are disabled for every draw, which costs
+          more than the precision was ever worth here.
+
+     near/far are 0.5/1200 (ratio 2400:1), so a plain 24-bit depth buffer
+     resolves ~0.1 mm at 30 m and ~1 mm at 100 m. There is nothing to fix. */
   const PRESETS = {
-    high:   { dpr: 2.0, antialias: true,  shadows: true,  shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.70, texSize: 512, post: 'full',  logDepth: true,  powerPreference: 'high-performance' },
-    medium: { dpr: 1.5, antialias: true,  shadows: true,  shadowType: 'pcf',     shadowMap: 1024, anisotropy: 4, scaleFloor: 0.55, texSize: 384, post: 'fxaa',  logDepth: false, powerPreference: 'high-performance' },
-    low:    { dpr: 1.0, antialias: false, shadows: true,  shadowType: 'basic',   shadowMap: 512,  anisotropy: 1, scaleFloor: 0.45, texSize: 256, post: 'off',   logDepth: false, powerPreference: 'default' },
+    high:   { dpr: 2.0, antialias: true,  shadows: true,  shadowType: 'pcfsoft', shadowMap: 2048, anisotropy: 8, scaleFloor: 0.70, texSize: 512, post: 'full',  logDepth: false, powerPreference: 'high-performance' },
+    medium: { dpr: 1.5, antialias: true,  shadows: true,  shadowType: 'pcf',     shadowMap: 1024, anisotropy: 4, scaleFloor: 0.55, texSize: 384, post: 'lite',  logDepth: false, powerPreference: 'high-performance' },
+    /* `low` keeps MSAA and a PCF filter on purpose. It renders forward, with
+       no post pipeline at all, so multisampling is its ONLY antialiasing —
+       and on the tiled GPUs that land here, MSAA resolves inside tile memory
+       and is close to free, while jagged railings and a hard-edged shadow map
+       are the two things that actually make this tier look cheap. */
+    low:    { dpr: 1.0, antialias: true,  shadows: true,  shadowType: 'pcf',     shadowMap: 512,  anisotropy: 1, scaleFloor: 0.45, texSize: 256, post: 'off',   logDepth: false, powerPreference: 'default' },
     potato: { dpr: 1.0, antialias: false, shadows: false, shadowType: 'basic',   shadowMap: 256,  anisotropy: 1, scaleFloor: 0.40, texSize: 128, post: 'off',   logDepth: false, powerPreference: 'low-power' }
   };
 
@@ -57,7 +88,26 @@ window.Perf = (function () {
     } catch (_) { return false; }
   }
 
+  /* Read a manual override off the URL: ?q=high|medium|low|potato forces the
+     tier, ?post=full|lite|off forces the render path. Two reasons this earns
+     its place. Testing: the tiers are the whole low-end story and there is no
+     other way to see what a phone sees from a desktop. And support: device
+     detection is heuristic, so when it guesses wrong for someone there needs to
+     be a link you can send them that works. */
+  function urlOverride() {
+    try {
+      const p = new URLSearchParams(location.search);
+      const o = {};
+      const q = (p.get('q') || '').toLowerCase();
+      if (PRESETS[q]) o.tier = q;
+      const post = (p.get('post') || '').toLowerCase();
+      if (post === 'full' || post === 'lite' || post === 'off') o.post = post;
+      return o;
+    } catch (_) { return {}; }
+  }
+
   function detect(overrides) {
+    const forced = urlOverride();
     const probe = probeGPU();
     const gpu = probe.name || '';
     const ua = navigator.userAgent || '';
@@ -82,8 +132,18 @@ window.Perf = (function () {
     if (software || probe.maxTex < 2048) tier = 'potato';
     // Bump real gaming-class desktop back up if we over-downgraded on cores alone
     if (!mobile && strongGPU && mem >= 8 && cores >= 6 && tier === 'medium' && !saveData) tier = 'high';
+    if (forced.tier) tier = forced.tier;
 
-    const preset = Object.assign({}, PRESETS[tier], overrides || {});
+    const preset = Object.assign({}, PRESETS[tier], overrides || {}, forced);
+    /* Phones that are not on a modern GPU do not run the screen-space pipeline
+       at all, whatever tier they landed in. `medium` is where every phone with
+       a plausible core count ends up, and the pipeline's cost there is a second
+       full-screen geometry pass plus four ray-marched full-screen passes — on a
+       tiled mobile GPU that is the difference between 60 fps and 12. The
+       forward path with MSAA is both the cheaper AND the better-looking answer
+       on that hardware, and the frame-time watchdog in the viewer can still
+       step a device down further if even that struggles. */
+    if (mobile && !strongGPU && !forced.post && preset.post !== 'off') preset.post = 'off';
     // Never request a pixel ratio higher than the device actually has.
     // On phones, hard-cap at 1.75 even when reported DPR is 3 — saves fill-rate.
     const dprCap = mobile ? Math.min(1.75, preset.dpr) : preset.dpr;

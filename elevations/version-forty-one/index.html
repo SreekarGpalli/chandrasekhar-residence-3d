@@ -896,14 +896,19 @@ function boot() {
       case 'charcoal': case 'charDark': case 'solarFrm':
         return { tex: 'concrete', tile: 3.4, rough: 0.86, metal: 0, env: 0.45, grime: 1.1 };
       case 'concrete':    return { tex: 'concrete', tile: 2.6, rough: 0.92, metal: 0, env: 0.40, grime: 1.2 };
+      /* Outdoor tile — matte, not polished. It shares the vitrified-tile kit
+         with the indoor floors and that kit's roughness map is authored around
+         0.35, which turned the open terrace into a mirror of its own pergola
+         and railing. `matte` skips the kit's roughness map so the literal
+         value below survives. Same change as the root viewer. */
       case 'terraceF': case 'balcTile': case 'tOut':
-        return { tex: 'tile', tile: 1.35, rough: 0.5, metal: 0, env: 0.65, reflect: 0.35 };
+        return { tex: 'tile', tile: 1.35, rough: 0.78, metal: 0, env: 0.40, reflect: 0.09, matte: true };
       // Dry paving is not a mirror — it only reflects at grazing angles, and
       // the SSR pass already applies Fresnel on top of these. Anything above
       // ~0.1 here and the street reads as wet.
       case 'pave': case 'paver': case 'paver2':
-        return { tex: 'paver', tile: 1.4, rough: 0.88, metal: 0, env: 0.40, reflect: 0.07 };
-      case 'road':        return { tex: 'asphalt', tile: 7.0, rough: 0.95, metal: 0, env: 0.26, reflect: 0.09 };
+        return { tex: 'paver', tile: 1.4, rough: 0.90, metal: 0, env: 0.36, reflect: 0.05 };
+      case 'road':        return { tex: 'asphalt', tile: 7.0, rough: 0.96, metal: 0, env: 0.24, reflect: 0.05 };
       case 'roadLine':    return { tex: 'concrete', tile: 1.4, rough: 0.80, metal: 0, env: 0.30 };
       case 'ground':      return { tex: 'field', tile: 46, rough: 1.0, metal: 0, env: 0.28 };
       case 'plotPad':     return { tex: 'dirt', tile: 9.0, rough: 1.0, metal: 0, env: 0.28 };
@@ -1356,7 +1361,9 @@ function boot() {
           const kit = TEX[t.tex]();
           m.map = kit.map;
           if (kit.normalMap) { m.normalMap = kit.normalMap; m.normalScale = new THREE.Vector2(kit.ns, kit.ns); }
-          if (kit.roughnessMap) { m.roughnessMap = kit.roughnessMap; m.roughness = 1.0; }
+          // `matte` treatments keep their literal roughness — the shared kits
+          // encode the POLISHED version of each material (see 'terraceF').
+          if (kit.roughnessMap && !t.matte) { m.roughnessMap = kit.roughnessMap; m.roughness = 1.0; }
           if (t.cutout && kit.alphaMap) { m.alphaMap = kit.alphaMap; m.alphaTest = t.cutout; }
         }
         if (t.twoSided) m.side = THREE.DoubleSide;

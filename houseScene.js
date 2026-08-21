@@ -162,7 +162,7 @@ window.HouseScene = (function () {
       function map(hex, amp) {
         const cnv = document.createElement('canvas');
         cnv.width = cnv.height = 256;
-        const ctx = cnv.getContext('2d');
+        const ctx = cnv.getContext('2d', { willReadFrequently: true });
         const r = (hex >> 16) & 255, g = (hex >> 8) & 255, b = hex & 255;
         ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
         ctx.fillRect(0, 0, 256, 256);
@@ -227,7 +227,7 @@ window.HouseScene = (function () {
       function texFrom(amp, grey) {
         const cnv = document.createElement('canvas');
         cnv.width = cnv.height = SIZE;
-        const ctx = cnv.getContext('2d');
+        const ctx = cnv.getContext('2d', { willReadFrequently: true });
         const img = ctx.createImageData(SIZE, SIZE), d = img.data;
         const hex = C.white;
         const r = (hex >> 16) & 255, gv = (hex >> 8) & 255, b = hex & 255;
@@ -1171,7 +1171,11 @@ window.HouseScene = (function () {
     }
   }
 
-  /* backdrop neighbour house: simple plaster mass with parapet, slab bands
+  /* Backdrop neighbour house: simple plaster mass with parapet, slab bands.
+     NOTHING CALLS THIS ANY MORE — the owner asked for the neighbouring
+     buildings to come off, so contextBits() no longer places any. It is kept
+     (along with the nbr1/nbr2/nbr3 palette keys) because putting the site
+     context back is then three lines rather than a rewrite.
      and recessed-look dark windows. cx,cy plan-mm; w,d footprint mm;
      yaw radians (slight orientation variety). face: 'W'|'S'|'N' = which
      local side carries the openings (toward the plot). */
@@ -3595,12 +3599,6 @@ window.HouseScene = (function () {
         for (let hx = 900; hx < 21000; hx += 720) {
           plantShrub(bag, hx, 17940, 0.34 + ((hx / 720) % 3) * 0.03, 'green2');
         }
-        const tl = [
-          [8000, 46000], [20000, 50000], [32000, 44000], [44000, 48000],
-          [52000, 28000], [55000, 35000]
-        ];
-        tl.forEach(([tx, ty], ti) =>
-          plantTree(bag, tx, ty, 6.2 + (ti % 3) * 0.6, { low: true, base: 0.02 }));
         g.add(bag.build(THREE, materials));
         notifyGarden();
       }
@@ -3625,7 +3623,7 @@ window.HouseScene = (function () {
         const c = document.createElement('canvas');
         c.width = img.naturalWidth || img.width;
         c.height = img.naturalHeight || img.height;
-        const ctx = c.getContext('2d');
+        const ctx = c.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(img, 0, 0);
         const id = ctx.getImageData(0, 0, c.width, c.height);
         const p = id.data;
@@ -3677,7 +3675,7 @@ window.HouseScene = (function () {
         const out = document.createElement('canvas');
         out.width = w;
         out.height = h;
-        out.getContext('2d').drawImage(c, minX, minY, w, h, 0, 0, w, h);
+        out.getContext('2d', { willReadFrequently: true }).drawImage(c, minX, minY, w, h, 0, 0, w, h);
         return out;
       }
 
@@ -3727,7 +3725,7 @@ window.HouseScene = (function () {
       function findPatch(img, score) {
         const G = 10, c = document.createElement('canvas');
         c.width = c.height = 64;
-        const x = c.getContext('2d');
+        const x = c.getContext('2d', { willReadFrequently: true });
         let best = { s: -1, cx: 0.5, cy: 0.5 };
         for (let gy = 1; gy < G - 1; gy++) {
           for (let gx = 1; gx < G - 1; gx++) {
@@ -3752,7 +3750,7 @@ window.HouseScene = (function () {
         const sy = Math.round(img.height * cyF - src / 2);
         const c = document.createElement('canvas');
         c.width = c.height = S;
-        const x = c.getContext('2d');
+        const x = c.getContext('2d', { willReadFrequently: true });
         x.drawImage(img, Math.max(0, sx), Math.max(0, sy), src, src, 0, 0, S, S);
         // ragged, roughly circular alpha so a card reads as a leaf clump
         const id = x.getImageData(0, 0, S, S), p = id.data;
@@ -4077,24 +4075,6 @@ window.HouseScene = (function () {
         makeHedgeNS('hedge', 900, 12600, 17400, 0.92, 0.55);
         makeHedgeNS('hedge', 20900, 12600, 17400, 0.92, 0.55);
 
-        // 7) Distant backdrop trees (N / NE)
-        const tl = [
-          [8000, 46000, 6.4], [20000, 50000, 7.0], [32000, 44000, 6.2],
-          [44000, 48000, 6.8], [52000, 28000, 6.0], [55000, 35000, 6.6]
-        ];
-        tl.forEach(function (row, i) {
-          makeTree(i % 2 ? 'neem' : 'mango', row[0], row[1], row[2],
-                   { base: -0.05, shadow: false, cards: 140, spread: 0.32 });
-        });
-        /* base −0.05: plants inside the plot stand on the grass slab (top
-           0.045), but these six are north of the plot edge (y 18750) on the raw
-           ground box whose top is exactly 0.000. Fewer cards each — they are
-           40 m out — and no shadow casting, since they sit well outside the
-           sun's ±35 m shadow box and would buy nothing. */
-        tl.forEach(function (row, i) {
-          makeTree(i % 2 ? 'neem' : 'mango', row[0], row[1], row[2],
-                   { base: -0.05, shadow: false, cards: 90, spread: 0.32 });
-        });
 
         /* Real grass. The lawn was one flat green box — a colour, not a
            surface. Now it gets a painted turf texture on the slab itself
@@ -4108,7 +4088,7 @@ window.HouseScene = (function () {
           // --- turf texture on the slab
           const s = 512, c = document.createElement('canvas');
           c.width = c.height = s;
-          const x = c.getContext('2d');
+          const x = c.getContext('2d', { willReadFrequently: true });
           x.fillStyle = '#5c7a3c'; x.fillRect(0, 0, s, s);
           for (let i = 0; i < 42000; i++) {
             const g = 0.62 + rnd3() * 0.42, dry = rnd3() < 0.07;
@@ -4143,7 +4123,7 @@ window.HouseScene = (function () {
           // --- blade tufts
           const bs = 64, bc = document.createElement('canvas');
           bc.width = bc.height = bs;
-          const bx = bc.getContext('2d');
+          const bx = bc.getContext('2d', { willReadFrequently: true });
           for (let i = 0; i < 34; i++) {
             const g = 0.5 + rnd3() * 0.5;
             bx.strokeStyle = 'rgba(' + ((80 * g) | 0) + ',' + ((126 * g) | 0) + ',' + ((50 * g) | 0) + ',1)';
@@ -4551,15 +4531,10 @@ window.HouseScene = (function () {
         pb(cBag, 'roadLine', 29965, 29985, ly, ly + 300, 0.011, 0.018);   // median W edge (solid)
       for (let ly = -19800; ly < 37800; ly += 600)
         pb(cBag, 'roadLine', 32415, 32435, ly, ly + 300, 0.011, 0.018);   // median E edge (solid)
-      // streetlight poles on both kerb lines
-      for (const sy of [1500, 15000]) {
-        cBag.cyl('ms', 23.62, 3.0, -sy / 1000, 0.07, 6.0);
-        cBag.cyl('ms', 24.42, 5.88, -sy / 1000, 0.035, 1.7, 0, 0, Math.PI / 2); // arm over near carriageway
-        cBag.box('lamp', 25.20, 5.83, -sy / 1000, 0.42, 0.10, 0.18);
-        cBag.cyl('ms', 38.70, 3.0, -sy / 1000, 0.07, 6.0);
-        cBag.cyl('ms', 37.90, 5.88, -sy / 1000, 0.035, 1.7, 0, 0, Math.PI / 2); // arm over far carriageway
-        cBag.box('lamp', 37.12, 5.83, -sy / 1000, 0.42, 0.10, 0.18);
-      }
+      /* No streetlights. The owner asked for the street furniture to come off:
+         the poles stood directly in front of the east elevation and read as
+         clutter from every presentation angle. The kerbs, footpaths and
+         carriageways they stood on are all still here. */
       // median greenery: low shrubs softening the divider
       for (let my = -18000; my < 36000; my += 6000)
         plantShrub(cBag, 31200, my, 0.4, (my % 12000 < 6000) ? 'green' : 'ixora', 0.02);
@@ -4579,28 +4554,11 @@ window.HouseScene = (function () {
       const midY = (RD_S + RD_N) / 2;
       for (let lx = -19000; lx < 30000; lx += 3200)
         pb(cBag, 'roadLine', lx, lx + 1800, midY - 90, midY + 90, 0.010, 0.017);
-      // streetlights on south kerb (plan y ≈ mid kerb → world Z = -y/1000)
-      const kerbMid = (KB_S + KB_N) / 2;
-      const armY = kerbMid - 800; // arm over road
-      const lampY = kerbMid - 1580;
-      for (const sx of [1500, 15000]) {
-        cBag.cyl('ms', sx / 1000, 3.0, -kerbMid / 1000, 0.07, 6.0);
-        cBag.cyl('ms', sx / 1000, 5.88, -armY / 1000, 0.035, 1.7, Math.PI / 2, 0, 0);
-        cBag.box('lamp', sx / 1000, 5.83, -lampY / 1000, 0.18, 0.10, 0.42);
-      }
-      // Neighbour houses: north / south context only.
-      // East-side houses (across the main road) removed — they blocked the
-      // east elevation / portico view from the exterior camera.
-      nbrHouse(cBag, 7000, 35500, 11000, 8500, 2, 'nbr2', -0.07, 'S');
-      nbrHouse(cBag, 17500, 34500, 8000, 7000, 1, 'nbr1', 0.12, 'S');
-      nbrHouse(cBag, 4000, -17000, 9500, 8000, 2, 'nbr3', -0.04, 'N');
-      // Distant tree line (N / NE only — no dense east blockers in front of house)
-      const tl = [
-        [8000, 46000], [20000, 50000], [32000, 44000], [44000, 48000],
-        [52000, 28000], [55000, 35000]
-      ];
-      tl.forEach(([tx, ty], ti) =>
-        plantTree(cBag, tx, ty, 6.2 + (ti % 3) * 0.8, { low: true, base: 0.02 }));
+      /* No neighbour houses either. The three generic plaster masses to the
+         north and south were backdrop filler, and beside a plan-faithful model
+         they read as exactly that. nbrHouse() is deliberately left defined
+         (with the nbr1/nbr2/nbr3 palette keys) so the site context can be put
+         back in three lines if it is ever wanted again. */
     })();
     const context = cBag.build(THREE, materials); context.name = 'context'; root.add(context);
 
@@ -5383,18 +5341,36 @@ window.HouseScene = (function () {
         railPillar(eBag, CUT_X - 80, (PARA_YS + yN) / 2, rt, 1.08);
       })();
 
-      // terrace floor with cutouts for stairwell and lift shaft
-      pb(eBag, 'terraceF', 150, SHELTER_X, 150, 230, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 150, 12650, 230, 1805, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 14040, SHELTER_X, 230, 1805, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 150, SHELTER_X, 1805, EAST_RAFTER_YE, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 150, SHELTER_X, EAST_RAFTER_YE, 6496, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 150, 230, 6496, 8641, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 5600, SHELTER_X, 6496, 8641, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 150, SHELTER_X, 8641, Y1n, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 150, SHELTER_X, Y1n, 9720, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 150, SHELTER_X, -612, 150, L.roof - 0.06, L.roof);
-      pb(eBag, 'terraceF', 12650, 14040, 230, 1805, L.roof - 0.06, L.roof);
+      /* Terrace floor, with cutouts for the stairwell and the lift shaft.
+
+         TFIN is why this does not stop at L.roof. The structural roof slab
+         (the 'white' plate a few lines above) tops out at exactly L.roof, and
+         so did this tile finish — two different materials with their up-facing
+         planes on the identical Z. Nothing separates them: they are both in the
+         exterior bag, so the per-floor polygonOffset does not apply, and with
+         equal depth the winner is decided by whichever mesh the renderer sorts
+         last. That flips as the camera orbits, so the whole 560 m² terrace
+         swapped between limestone and white plaster while you turned it, and
+         speckled along the triangle seams in between — the "slab and tiles are
+         sharing the same layer" the terrace has always looked like.
+
+         Lifting the finish 5 mm proud is also what actually happens on site:
+         the tile bed sits ON the slab, it is not flush with it. 5 mm is far
+         above the depth buffer's resolution at any distance this is viewed
+         from (~0.1 mm at 30 m), and it stays under the 12 mm edge fascia, so
+         nothing about the silhouette changes. */
+      const TFIN = L.roof + 0.005;                  // finished terrace level
+      pb(eBag, 'terraceF', 150, SHELTER_X, 150, 230, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, 12650, 230, 1805, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 14040, SHELTER_X, 230, 1805, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, SHELTER_X, 1805, EAST_RAFTER_YE, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, SHELTER_X, EAST_RAFTER_YE, 6496, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, 230, 6496, 8641, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 5600, SHELTER_X, 6496, 8641, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, SHELTER_X, 8641, Y1n, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, SHELTER_X, Y1n, 9720, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, SHELTER_X, -612, 150, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 12650, 14040, 230, 1805, L.roof - 0.055, TFIN);
       // mumty (stair head, expanded to x=5600 and aligned with walls below)
       const mx = [230, 5600], my = [6496, 8641];
       wallRun(eBag, 'white', 'x', mx[0] - 230, mx[1] + 115, my[0] - 115, my[0], L.roof, L.roof + 2.55, L.roof, []);
