@@ -1358,14 +1358,14 @@ window.HouseScene = (function () {
       bag.cyl('lamp', cx / 1000, fY + 0.88, -cy / 1000, 0.055, 0.05);
     },
     // Architectural Full-Slab Height Built-in Wardrobe / Almirah (floor to slab soffit)
-    fullHeightWardrobe(bag, x0, x1, y0, y1, fY, slabH) {
+    fullHeightWardrobe(bag, x0, x1, y0, y1, fY, slabH, facing) {
       if (slabH === undefined) slabH = fY + 3.203;
       const isX = (x1 - x0 > y1 - y0);
       const W = isX ? (x1 - x0) : (y1 - y0);
       const D = isX ? (y1 - y0) : (x1 - x0);
-      const faceWest = (!isX && x0 < 1000);
-      const faceEast = (!isX && x0 > 7000);
-      const faceNorth = (isX && y0 < 4000);
+      const faceWest = facing ? (facing === 'W') : (!isX && x0 < 1000);
+      const faceEast = facing ? (facing === 'E') : (!isX && x0 > 7000);
+      const faceNorth = facing ? (facing === 'N') : (isX && y0 < 6500);
 
       function part(mat, u0, u1, v0, v1, z0, z1) {
         let lx0, lx1, ly0, ly1;
@@ -3297,15 +3297,15 @@ window.HouseScene = (function () {
         { c: 8000, w: 1200, sill: 0, h: 2400, type: 'door' }                     // office door (near north, stacks with FF entry)
       ],
       N: [
-        { c: 2400, w: 1500, sill: 900, h: 1400, type: 'win' },                   // bed02
+        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win' },                    // bed02 (aligned with south door c=4300)
         { c: 6800, w: 1800, sill: 900, h: 1400, type: 'win' },                   // hall
         { c: 8650, w: 1200, sill: 0, h: 2400, type: 'door' },                    // main door
         { c: 11000, w: 1500, sill: 900, h: 1400, type: 'win' }                    // office
       ],
       S: [
-        { c: 2500, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true },
+        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win', chajja: true },     // master bedroom (aligned with north door c=4300)
         { c: 5800, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
-        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'win', chajja: true }, // enlarged utility window replacing door
+        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'grill', chajja: true }, // utility south security grill
         { c: 11000, w: 1200, sill: 1100, h: 900, type: 'win', chajja: true }
       ],
       W: [
@@ -3369,8 +3369,9 @@ window.HouseScene = (function () {
       { dir: 'y', b: [2030, 2145], a: [3776, 5345], ops: [{ c: 4350, w: 750 }] },      // cbath|handwash
       { dir: 'x', b: [3663, 3776], a: [230, 4805], ops: [{ c: 4300, w: 900 }] },       // master north door
       { dir: 'x', b: [2216, 2331], a: [4920, 6752], ops: [] },                          // mbath north
+      { dir: 'x', b: [2216, 2331], a: [6752, 9487], ops: [{ c: 8120, w: 1500, sill: 900, h: 1400 }] }, // dining|utility north wall window
       { dir: 'y', b: [6752, 6870], a: [230, 2332], ops: [] },                           // mbath|utility
-      { dir: 'y', b: [9371, 9487], a: [230, 2331], ops: [] },                           // utility|kitchen
+      { dir: 'y', b: [9371, 9487], a: [230, 2331], ops: [{ c: 1300, w: 800 }] },       // utility|kitchen door
       { dir: 'y', b: [9371, 9487], a: [2331, 4027], ops: [{ c: 3514, w: 1026 }] },     // kitchen|dining
       { dir: 'x', b: [4027, 4142], a: [9371, 12420], ops: [] },                         // kitchen|office
       { dir: 'y', b: [9371, 9487], a: [4142, 8640], ops: [] }                           // hall/dining|office
@@ -4357,10 +4358,10 @@ window.HouseScene = (function () {
     /* curtain schedule: living / bed / office windows */
     const CURT = [
       [ { f: 'E', c: 6150, w: 1500, sill: 900, h: 1500, m: 'curtain' },   // GF office E
-        { f: 'N', c: 2400, w: 1500, sill: 900, h: 1400, m: 'curtain2' },  // GF bed02
+        { f: 'N', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2' },  // GF bed02
         { f: 'N', c: 6800, w: 1800, sill: 900, h: 1400, m: 'curtain' },   // GF hall
         { f: 'N', c: 11000, w: 1500, sill: 900, h: 1400, m: 'curtain' },  // GF office N
-        { f: 'S', c: 2500, w: 1500, sill: 900, h: 1400, m: 'curtain2' },  // GF master S
+        { f: 'S', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2' },  // GF master S
         { f: 'W', c: 3100, w: 1000, sill: 1100, h: 1200, m: 'curtain' },  // GF master W corner
         { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2' } ],// GF bed02 W corner
       [ { f: 'N', c: 5500, w: 1000, sill: 900, h: 1400, m: 'curtain' },   // FF hall W of void
@@ -5547,7 +5548,7 @@ window.HouseScene = (function () {
       // North: GF main door (8650×1200) + each major north window, lamps outside frames
       (function northFacadeLamps() {
         // GF windows — bed02, hall, office
-        for (const o of [{ c: 2400, w: 1500 }, { c: 6800, w: 1800 }, { c: 11000, w: 1500 }]) {
+        for (const o of [{ c: 4300, w: 900 }, { c: 6800, w: 1800 }, { c: 11000, w: 1500 }]) {
           for (const cx of flankCenters(o.c, o.w, 160)) northWallLamp(cx, L.f0);
         }
         // FF / SF north windows (no door on upper north)
@@ -6229,22 +6230,18 @@ window.HouseScene = (function () {
         Lum.downlight(5800, 7800);
         Lum.downlight(8500, 6200);
         Lum.downlight(8500, 7800);
-        Lum.profile('y', 5600, 8400, 9371, null, 'W');// aluminium profile accent light on TV media wall
-        Lum.sconce(4920, 6250, 1.85, 'y', 'E');       // up/down architectural wall sconces on solid west wall
-        Lum.sconce(4920, 7850, 1.85, 'y', 'E');
 
         /* --- DINING (4920..9371, 2331..5345) --- */
         Lum.fan(7150, 3800);                          // ceiling fan centered over 6-seater dining table
         Lum.downlight(6200, 3800);                    // pair of surface canister downlights flanking fan
         Lum.downlight(8100, 3800);
-        Lum.sconce(4920, 4400, 1.85, 'y', 'E');       // wall sconce on west dining wall
 
         /* --- KITCHEN (9487..12420, 230..4027) --- */
         Lum.downlight(11000, 1400);                   // surface canister downlights over work aisle
         Lum.downlight(11000, 2800);
         Lum.task(11800, 12400, 240, 800, 1.38);      // under-cabinet east counter LED
         Lum.task(11800, 12400, 1400, 2050, 1.38);
-        Lum.task(9499, 9837, 240, 2230, 1.38);       // under-cabinet west counter LED
+        Lum.task(10400, 11800, 240, 600, 1.38);      // under-cabinet south counter LED
         Lum.raw(12110, 1100, fY + 1.34, 'task');     // hood lamp
 
         /* --- OFFICE (9487..12420, 4142..8640) --- */
@@ -6255,22 +6252,24 @@ window.HouseScene = (function () {
         Lum.wallBracket(9487, 7200, 1.85, 'y', 'E');  // reading bracket light near desk
 
         /* --- MASTER BEDROOM (230..4805, 230..3663) --- */
-        Lum.fan(2500, 1950);                          // ceiling fan centered over master bed
-        Lum.ac('y', 230, 1300, 2250, 'E');            // high-wall split AC on West EXTERIOR wall (compressor on west bracket)
-        Lum.downlight(2000, 2800);                    // surface ceiling downlight over wardrobe aisle
-        Lum.downlight(3800, 2800);                    // surface ceiling downlight over dressing zone
-        Lum.profile('x', 1400, 3600, 3663, null, 'S');// aluminium perimeter profile light on north wall
-        Lum.raw(1700, 480, fY + 0.86, 'bedside');    // side table lamp West
-        Lum.raw(4100, 480, fY + 0.86, 'bedside');    // side table lamp East
+        Lum.fan(2550, 2000);                          // ceiling fan centered over queen bed
+        Lum.ac('y', 230, 2650, 3550, 'E');            // high-wall split AC on West EXTERIOR wall
+        Lum.downlight(1200, 1400);                    // West wardrobe dressing downlight
+        Lum.downlight(1200, 3100);                    // West vanity desk task downlight
+        Lum.downlight(2550, 2900);                    // Central room circulation downlight
+        Lum.downlight(4300, 2000);                    // Door-to-window cross-ventilation corridor downlight
+        Lum.raw(1500, 480, fY + 0.86, 'bedside');     // West bedside table lamp
+        Lum.raw(3600, 480, fY + 0.86, 'bedside');     // East bedside table lamp
 
         /* --- CHILDREN BEDROOM (230..4805, 5460..8640) --- */
-        Lum.fan(2500, 7050);                          // ceiling fan centered over children bed
-        Lum.ac('y', 230, 6000, 6950, 'E');            // high-wall split AC on West EXTERIOR wall (compressor on west bracket)
-        Lum.downlight(2000, 6300);                    // surface ceiling downlight
-        Lum.downlight(3600, 6300);
-        Lum.downlight(3800, 7800);                    // study desk ceiling downlight
-        Lum.raw(1100, 5710, fY + 0.86, 'bedside');
-        Lum.raw(3500, 5710, fY + 0.86, 'bedside');
+        Lum.fan(2500, 7250);                          // ceiling fan centered in room
+        Lum.ac('x', 8640, 1400, 2350, 'S');           // high-wall split AC on North EXTERIOR wall
+        Lum.downlight(1200, 6200);                    // West wardrobe dressing downlight
+        Lum.downlight(3100, 6200);                    // East wardrobe dressing downlight
+        Lum.downlight(2500, 7250);                    // Central room downlight
+        Lum.downlight(4550, 8040);                    // NE corner study desk task downlight
+        Lum.downlight(4300, 6800);                    // East open foyer downlight
+        Lum.raw(430, 8545, fY + 0.86, 'bedside');     // NW corner floating nightstand lamp
 
         /* --- MASTER BATH (4920..6752, 230..2216) --- */
         Lum.downlight(5800, 1200);                    // ceiling downlight
@@ -6285,7 +6284,7 @@ window.HouseScene = (function () {
         Lum.vanity('x', 2420, 3080, 5333, 1.95, 'S'); // mirror vanity on north wall
 
         /* --- UTILITY (6870..9371, 230..2332) --- */
-        Lum.downlight(8100, 1200);
+        Lum.downlight(8120, 1280);                    // ceiling downlight centered in utility
       }
 
       if (fi === 1) {
@@ -6296,8 +6295,6 @@ window.HouseScene = (function () {
         Lum.downlight(8800, 7600);
         Lum.downlight(10200, 5800);
         Lum.downlight(10200, 7600);
-        Lum.sconce(5500, 8642, 1.85, 'x', 'S');       // solid north media wall (west wing)
-        Lum.sconce(9500, 8642, 1.85, 'x', 'S');       // solid north media wall (east wing)
         Lum.cluster(7125, 7325, VOID_TOP, [
           { dx: -430, dy: -360, drop: 3.95 },
           { dx: 470, dy: -140, drop: 3.30 },
@@ -6309,7 +6306,6 @@ window.HouseScene = (function () {
         Lum.fan(7150, 3000);                          // ceiling fan centered over dining zone
         Lum.downlight(6200, 3000);                    // pair of surface downlights flanking fan
         Lum.downlight(8100, 3000);
-        Lum.sconce(4921, 3600, 1.85, 'y', 'E');       // wall sconce on west dining wall
 
         /* --- KITCHEN & WET KITCHEN --- */
         Lum.downlight(11000, 3200);
@@ -6408,16 +6404,55 @@ window.HouseScene = (function () {
         // This storey only (0 → cut). Full multi-storey tower lives on exterior.
         liftTower(bag, cut, [L.porticoFl], 0);
         columnsEast(bag, cut, 0);
-        // master bed (head South, full-height almirah along West wall up to North window)
-        pb(bag, 'rug', 1400, 4400, 200, 2600, fY + 0.012, fY + 0.018); // master bedroom rug
-        Fur.bed(bag, 2000, 3800, 230, 2230, fY, 'S');
-        Fur.side(bag, 1500, 1900, 230, 730, fY); Fur.side(bag, 3900, 4300, 230, 730, fY);
-        Fur.fullHeightWardrobe(bag, 230, 830, 230, 2550, fY, fY + 3.203);
-        // bed02 (head South, full-height almirah along West wall up to North window)
-        pb(bag, 'rug', 900, 3700, 5400, 7800, fY + 0.012, fY + 0.018);
-        Fur.bed(bag, 1400, 3200, 5460, 7460, fY, 'S');
-        Fur.side(bag, 900, 1300, 5460, 5960, fY); Fur.side(bag, 3300, 3700, 5460, 5960, fY);
-        Fur.fullHeightWardrobe(bag, 230, 830, 5460, 7450, fY, fY + 3.203);
+        // master bed (SW Bedroom: West wall built-in wardrobe & vanity under window, South wall Queen bed)
+        // 1. West wall full-height built-in wardrobe (up to West window at y=2580, 5 doors + lofts facing East)
+        Fur.fullHeightWardrobe(bag, 230, 830, 230, 2580, fY, fY + 3.203, 'E');
+        pb(bag, 'woodD', 230, 830, 2565, 2580, fY, fY + 3.203); // finished north return panel
+
+        // 2. Integrated low vanity / dressing table under West window (sill = 1100mm, desk height = 750mm)
+        pb(bag, 'woodD', 230, 680, 2600, 3600, fY + 0.72, fY + 0.75);   // vanity desktop
+        pb(bag, 'woodF', 240, 670, 3250, 3590, fY, fY + 0.72);          // drawer pedestal
+        pb(bag, 'brass', 670, 680, 3380, 3460, fY + 0.35, fY + 0.37);   // drawer pull
+        Fur.chair(bag, 950, 2950, fY, 'W');                             // dressing chair facing West
+
+        // 3. South wall Queen bed & flanking nightstands (headboard on South wall, facing North)
+        pb(bag, 'rug', 1400, 3700, 200, 2500, fY + 0.012, fY + 0.018); // master bedroom designer rug
+        Fur.bed(bag, 1800, 3300, 230, 2230, fY, 'S');                  // queen bed on South wall
+        Fur.side(bag, 1300, 1700, 230, 680, fY);                       // West nightstand
+        Fur.side(bag, 3400, 3800, 230, 680, fY);                       // East nightstand (clear of South window at x=3850)
+        bag.cyl('brass', 1.50, fY + 0.50, -0.48, 0.028, 0.04);
+        bag.cyl('brass', 1.50, fY + 0.68, -0.48, 0.008, 0.32);
+        bag.cyl('curtain2', 1.50, fY + 0.92, -0.48, 0.095, 0.16);
+        bag.cyl('lamp', 1.50, fY + 0.88, -0.48, 0.055, 0.05);
+        bag.cyl('brass', 3.60, fY + 0.50, -0.48, 0.028, 0.04);
+        bag.cyl('brass', 3.60, fY + 0.68, -0.48, 0.008, 0.32);
+        bag.cyl('curtain2', 3.60, fY + 0.92, -0.48, 0.095, 0.16);
+        bag.cyl('lamp', 3.60, fY + 0.88, -0.48, 0.055, 0.05);
+        // bed02 (Children Bedroom: Full 3.52m South wall built-in wardrobe, West wall Queen bed [Vastu compliant], East study workstation)
+        // 1. South wall full-length built-in wardrobe (recessed into South masonry wall, 7 doors + lofts facing North)
+        Fur.fullHeightWardrobe(bag, 230, 3750, 5460, 6060, fY, fY + 3.203, 'N');
+        pb(bag, 'woodD', 3735, 3750, 5460, 6060, fY, fY + 3.203); // finished east end return panel
+
+        // 2. West wall Queen bed (headboard against West wall, sleeping head to West facing East — Vastu compliant)
+        pb(bag, 'rug', 800, 3000, 6800, 8600, fY + 0.012, fY + 0.018); // luxury designer bedroom rug
+        Fur.bed(bag, 230, 2180, 7000, 8500, fY, 'W');                  // queen bed on West wall (940mm open clearance to South wardrobe!)
+        // NW corner floating nightstand (wall-mounted, zero floor obstruction)
+        pb(bag, 'woodD', 230, 630, 8450, 8640, fY + 0.45, fY + 0.49);
+        pb(bag, 'woodF', 240, 620, 8440, 8455, fY + 0.25, fY + 0.45);
+        pb(bag, 'brass', 410, 450, 8430, 8440, fY + 0.33, fY + 0.35);
+        bag.cyl('brass', 0.430, fY + 0.50, -8.545, 0.028, 0.04);
+        bag.cyl('brass', 0.430, fY + 0.68, -8.545, 0.008, 0.32);
+        bag.cyl('curtain2', 0.430, fY + 0.92, -8.545, 0.095, 0.16);
+        bag.cyl('lamp', 0.430, fY + 0.88, -8.545, 0.055, 0.05);
+
+        // 3. North-East corner study workstation & floating library bookshelf
+        pb(bag, 'woodD', 4325, 4805, 7440, 8640, fY + 0.72, fY + 0.75); // walnut study desktop in NE corner
+        pb(bag, 'woodF', 4350, 4800, 7460, 7800, fY, fY + 0.72);        // drawer pedestal
+        pb(bag, 'woodD', 4555, 4805, 7440, 8640, fY + 1.55, fY + 1.58); // floating upper bookshelf
+        pb(bag, 'peetaRed', 4580, 4780, 7500, 7540, fY + 1.58, fY + 1.78);
+        pb(bag, 'accentWarm', 4580, 4780, 7545, 7580, fY + 1.58, fY + 1.75);
+        pb(bag, 'charDark', 4580, 4780, 7585, 7620, fY + 1.58, fY + 1.80);
+        Fur.chair(bag, 4000, 8040, fY, 'E');                             // ergonomic study chair facing East
         // Hall (Living room) furniture layout
         pb(bag, 'rug', 5400, 8800, 5800, 8400, fY + 0.012, fY + 0.018); // living rug under L-sofa set
         Fur.sofa(bag, 4920, 5620, 6200, 8640, fY, 'W', false, true);             // L-sofa long side on West wall
@@ -6431,22 +6466,10 @@ window.HouseScene = (function () {
         // Doormat + runner
         pb(bag, 'charDark', 8000, 9300, 8400, 8620, fY + 0.012, fY + 0.02);
         pb(bag, 'rug', 8050, 9250, 8420, 8600, fY + 0.018, fY + 0.024);
-        // Console east of door, against north wall
-        Fur.console(bag, 9200, 10400, 8200, 8550, fY);
-        // Mirror above console
-        Fur.mirror(bag, 9400, 10200, 8560, 8585, fY);
         // Shoe cabinet west of door
         pb(bag, 'woodD', 7200, 7900, 8250, 8580, fY, fY + 0.55);
         pb(bag, 'woodF', 7190, 7910, 8240, 8590, fY + 0.55, fY + 0.58);
         pb(bag, 'woodD', 7220, 7880, 8240, 8255, fY + 0.08, fY + 0.50);
-        pb(bag, 'brass', 7500, 7600, 8235, 8242, fY + 0.28, fY + 0.30);
-        // Entry wall sconce pair inside
-        pb(bag, 'charDark', 8100, 8200, 8620, 8640, fY + 1.65, fY + 2.00);
-        pb(bag, 'steel', 8110, 8190, 8610, 8625, fY + 1.70, fY + 1.95);
-        pb(bag, 'lamp', 8115, 8185, 8600, 8615, fY + 1.74, fY + 1.90);
-        pb(bag, 'charDark', 9100, 9200, 8620, 8640, fY + 1.65, fY + 2.00);
-        pb(bag, 'steel', 9110, 9190, 8610, 8625, fY + 1.70, fY + 1.95);
-        pb(bag, 'lamp', 9115, 9185, 8600, 8615, fY + 1.74, fY + 1.90);
         // Crockery Unit on the Dining West Wall (2350..3650)
         pb(bag, 'woodD', 4920, 5320, 2350, 3650, fY, fY + 0.85);
         pb(bag, 'woodF', 4910, 5330, 2340, 3660, fY + 0.85, fY + 0.89);
@@ -6474,26 +6497,35 @@ window.HouseScene = (function () {
         pb(bag, 'brass', 12340, 12350, 3780, 3810, fY + 1.15, fY + 1.45);
         pb(bag, 'brass', 11610, 11620, 3657, 3797, fY + 0.60, fY + 0.80);
         
+        // --- Ground Floor Utility Room Equipment & Fixtures (x: 6870..9371, y: 230..2332) ---
+        // 1. Washing Machine & Dryer stack in Northwest corner (x: 6880..7520, y: 1600..2240)
+        pb(bag, 'white', 6880, 7520, 1600, 2240, fY, fY + 0.88);
+        bag.cyl('glass', 7.53, fY + 0.44, -1.92, 0.22, 0.03, 0, 0, Math.PI / 2);
+        pb(bag, 'white', 6880, 7520, 1600, 2240, fY + 0.92, fY + 1.80);
+        bag.cyl('glass', 7.53, fY + 1.36, -1.92, 0.22, 0.03, 0, 0, Math.PI / 2);
+        pb(bag, 'chrome', 7480, 7525, 1640, 2200, fY + 0.82, fY + 0.86);
+
+        // --- Kitchen Counter & Cabinetry Layout ---
         // East counter (runs from South wall to Pooja unit with a small gap)
         Fur.counterX(bag, 11820, 12408, 230, 3327, fY);
         Fur.sink(bag, 12114, 2700, fY);
         Fur.hob(bag, 12114, 1100, fY);
+        Fur.rangeHood(bag, 12114, 1100, fY);
         
-        // West & South counters (L-shaped, joining with East counter at the South wall)
-        Fur.counterX(bag, 9499, 10087, 830, 2230, fY);
-        Fur.counterX(bag, 9499, 12408, 242, 830, fY);
+        // South counter connecting with East counter
+        Fur.counterX(bag, 9499, 11820, 242, 830, fY);
         
         // Refrigerator on West wall (facing East)
         Fur.fridge(bag, 9487, 10237, 2250, 3000, fY);
         pb(bag, 'chrome', 10237, 10252, 2600, 2630, fY + 0.50, fY + 1.20);
 
-        // West wall cupboards (extended southwards to the south wall)
-        Fur.wallCabinet(bag, 9487, 9837, 230, 2230, fY);                               // upper wall cabinets above west counter
-
         // Wall cabinets above east counter (avoiding range hood and sink window)
         Fur.wallCabinet(bag, 11820, 12408, 230, 800, fY);
         Fur.wallCabinet(bag, 11820, 12408, 1400, 2050, fY);
-        Fur.rangeHood(bag, 12114, 1100, fY);
+
+        // Wall cabinets above south counter
+        pb(bag, 'woodD', 10400, 11820, 230, 600, fY + 1.40, fY + 2.10);
+        pb(bag, 'woodF', 10390, 11830, 220, 610, fY + 2.10, fY + 2.13);
         // ================= GROUND FLOOR EXECUTIVE OFFICE SUITE =================
         // Room: x 9487–12420, y 4142–8640. Main entrance from East door (y 7400–8600).
         // East window (y 5400–6900), North window (x 10250–11750).
@@ -6596,14 +6628,6 @@ window.HouseScene = (function () {
           Fur.chair(bag, 11700, 6750, fY, 'S');
           // Low black wood side table between guest chairs
           Fur.table(bag, 11100, 11400, 6650, 6900, fY, 0.40, 'dark');
-
-          // 7) Architectural Indoor Plant in Brushed-Brass Pot (Northeast corner near door)
-          bag.cyl('brass', 12.05, fY + 0.20, -7.10, 0.16, 0.40);
-          bag.cyl('soil', 12.05, fY + 0.38, -7.10, 0.15, 0.04);
-          bag.cyl('bark', 12.05, fY + 0.65, -7.10, 0.022, 0.55);
-          bag.sph('green2', 12.05, fY + 0.85, -7.10, 0.24, 0.35);
-          bag.sph('leafLight', 12.08, fY + 1.05, -7.08, 0.18, 0.28);
-          bag.sph('green', 12.02, fY + 0.95, -7.14, 0.20, 0.30);
         })();
 
         Fur.basin(bag, 4920, 5820, 1716, 2216, fY); Fur.mirror(bag, 4920, 5820, 2204, 2216, fY); Fur.wc(bag, 5370, 515, fY, 'N');

@@ -1270,15 +1270,15 @@ window.HouseScene = (function () {
         { c: 8000, w: 1200, sill: 0, h: 2400, type: 'door' }                   // office door (near north)
       ],
       N: [
-        { c: 2400, w: 1500, sill: 900, h: 1400, type: 'win' },                   // bed02
+        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win' },                    // bed02
         { c: 6800, w: 1800, sill: 900, h: 1400, type: 'win' },                   // hall
         { c: 8650, w: 1200, sill: 0, h: 2400, type: 'door' },                    // main door
         { c: 11000, w: 1500, sill: 900, h: 1400, type: 'win' }                    // office
       ],
       S: [
-        { c: 2500, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true },
+        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win', chajja: true },
         { c: 5800, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
-        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'win', chajja: true }, // enlarged utility window replacing door
+        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'grill', chajja: true }, // utility south security grill
         { c: 11000, w: 1200, sill: 1100, h: 900, type: 'win', chajja: true }
       ],
       W: [
@@ -2868,7 +2868,7 @@ window.HouseScene = (function () {
       // North: GF main door (8650×1200) + each major north window, lamps outside frames
       (function northFacadeLamps() {
         // GF windows — bed02, hall, office
-        for (const o of [{ c: 2400, w: 1500 }, { c: 6800, w: 1800 }, { c: 11000, w: 1500 }]) {
+        for (const o of [{ c: 4300, w: 900 }, { c: 6800, w: 1800 }, { c: 11000, w: 1500 }]) {
           for (const cx of flankCenters(o.c, o.w, 160)) northWallLamp(cx, L.f0);
         }
         // FF / SF north windows (no door on upper north)
