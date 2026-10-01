@@ -1,12 +1,12 @@
 /* ============================================================
    elevations / version-forty-one — EXTERIOR ONLY (Version Forty-One)
    Based on Version Thirty-Eight.
-   East leg: Extended splayed L-box frame with warm brown vertical rods
+   East leg: Extended splayed L-box frame with satin warm-graphite vertical rods
    up to second-floor rail height.
    South leg: Solid plaster wall and 3-light vertical windows rising to SF rail cap.
    ============================================================ */
 window.HouseScene = (function () {
-  if (typeof window !== 'undefined') window.__HOUSE3D_STAIR_RAIL__ = 'V41_BROWN_RODS_20261001';
+  if (typeof window !== 'undefined') window.__HOUSE3D_STAIR_RAIL__ = 'V41_GRAPHITE_RODS_20261001_v5';
   'use strict';
 
   /* ---------------- levels (metres) ---------------- */
@@ -37,7 +37,7 @@ window.HouseScene = (function () {
     white:   0xece7db,  // BODY — inspiration off-white (Upparapalli house)
     white2:  0xf3efe6,  // BODY — same off-white, slightly lighter soffits / reveals
     fin:     0xd6c9ae,  // east verticals only — V6 lime, not chalk
-    fin2:    0x4a3525,  // east vertical rods inside box — deep architectural walnut/teak
+    fin2:    0x62635e,  // east vertical rods — warm graphite, coordinated with grey frames and stone
     sand:    0xd2cdc4,  // SOFT — cool greige east shell
     stone:   0xd0cbc3,  // SOFT — pale stone
     charcoal:0x9c9b98,  // SOFT — cool gray (not brown, not ink)
@@ -131,7 +131,7 @@ window.HouseScene = (function () {
     mk('lamp', C.lamp, { emissive: srgb(C.lamp), emissiveIntensity: 2.4, roughness: 0.55 });
     M.white.roughness = 0.94; M.white2.roughness = 0.92;
     if (M.fin) M.fin.roughness = 0.94;
-    if (M.fin2) { M.fin2.roughness = 0.44; M.fin2.metalness = 0.14; }
+    if (M.fin2) { M.fin2.roughness = 0.62; M.fin2.metalness = 0.08; }
     if (M.sand) M.sand.roughness = 0.93;
     // Quiet lime grain — same hue, faint sand-float. Whole plaster body.
     (function limeGrain() {
