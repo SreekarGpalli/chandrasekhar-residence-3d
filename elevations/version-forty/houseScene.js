@@ -15,7 +15,7 @@ window.HouseScene = (function () {
     roof: 10.809, parapetTop: 11.709,
     f2f: 3.353, slabT: 0.15, cut: 1.5,
     porticoFl: 0.15, pathFl: 0.05,
-    liftTop: 11.709
+    liftTop: 10.809
   };
 
   /* ---------------- palette ----------------
@@ -2821,8 +2821,6 @@ window.HouseScene = (function () {
       // *decks* live in separate outdoor0/1/2 groups so floor cutaways can show
       // them without revealing the whole multi-storey shell.
       liftTower(eBag, L.liftTop, [L.porticoFl, L.f1, L.f2]);
-      pb(eBag, 'white', liftOX[0] - 20, liftOX[1] + 20, liftOY[0] - 20, liftOY[1] + 20, L.liftTop, L.liftTop + 0.03);
-      pb(eBag, 'copingLight', liftOX[0] - 28, liftOX[1] + 28, liftOY[0] - 28, liftOY[1] + 28, L.liftTop + 0.03, L.liftTop + 0.06);
       externalStair(eBag, true);
       columnsEast(eBag, L.roof - L.slabT);
 
@@ -3181,7 +3179,7 @@ window.HouseScene = (function () {
       // East deck north of stair arrival → building NE
       outdoorDeck(o1, EX0, EX1, 3890, Y1n, f1);
       // North balcony (outside main north wall)
-      outdoorDeck(o1, 30, EX1, NBY0, NBY1 - 30, f1);
+      outdoorDeck(o1, 0, EX1, NBY0, NBY1 - 30, f1);
       // Service-band floors (south of main block, FF only)
       outdoorDeck(o1, 4965, 8085, -596, 1360, f1);
       outdoorDeck(o1, 8300, 9320, -596, 1360, f1);
@@ -3192,8 +3190,10 @@ window.HouseScene = (function () {
       pb(o1, 'white', EX1 - 90, EX1 + 10, EAST_RAFTER_YE, NBY1, f1 - 0.45, f1 + 0.012);
       pb(o1, 'charDark', EX1 - 96, EX1 + 14, EAST_RAFTER_YE, NBY1, f1 - 0.24, f1 - 0.18);
       pb(o1, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'white', -10, 90, Y1n, NBY1 + 10, f1 - 0.45, f1 + 0.012);
       pb(o1, 'white', 0, EX1 + 10, -762 - 90, -762 + 10, f1 - 0.45, f1 + 0.012);
       pb(o1, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
+      pb(o1, 'charDark', -10, 90, Y1n, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', 0, EX1 + 12, -762 - 96, -762 + 14, f1 - 0.24, f1 - 0.18);
       // Metal on east + NE/SE bays. Long north/south runs and west returns are walls.
       edgeWall(o1, 'x', -762, 0, 4805, f1, 1.08);
@@ -3210,9 +3210,7 @@ window.HouseScene = (function () {
         railPillarsAlong(o1, 'x', nY, bay0, nX1, f1, 1.08);
       })();
       edgeWall(o1, 'y', 80, Y1n, NBY1 - 80, f1, 1.08);
-      railPillar(o1, EX0, -762, f1, 1.08);
       railPillar(o1, 0, -762, f1, 1.08);
-      railPillar(o1, 4805, -762, f1, 1.08);
       const g1 = o1.build(THREE, materials); g1.name = 'outdoor1'; root.add(g1); outdoors.push(g1);
 
       // --- outdoor2: SF outdoor decks ONLY ---
@@ -3226,13 +3224,15 @@ window.HouseScene = (function () {
       outdoorDeck(o2, EX0, eastX[1] + 10 - 240, 1805, EAST_RAFTER_YE, f2);
       outdoorDeck(o2, EX0, EX1, EAST_RAFTER_YE, Y1n, f2);
       // North balcony
-      outdoorDeck(o2, 30, EX1, NBY0, NBY1 - 30, f2);
+      outdoorDeck(o2, 0, EX1, NBY0, NBY1 - 30, f2);
       // Edge fascia outdoor only
       pb(o2, 'white', EX1 - 90, EX1 + 10, EAST_RAFTER_YE, NBY1, f2 - 0.45, f2 + 0.012);
       pb(o2, 'charDark', EX1 - 96, EX1 + 14, EAST_RAFTER_YE, NBY1, f2 - 0.24, f2 - 0.18);
       pb(o2, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f2 - 0.45, f2 + 0.012);
+      pb(o2, 'white', -10, 90, Y1n, NBY1 + 10, f2 - 0.45, f2 + 0.012);
       pb(o2, 'white', 0, EX1 + 10, -762 - 90, -762 + 10, f2 - 0.45, f2 + 0.012);
       pb(o2, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f2 - 0.24, f2 - 0.18);
+      pb(o2, 'charDark', -10, 90, Y1n, NBY1 + 14, f2 - 0.24, f2 - 0.18);
       pb(o2, 'charDark', 0, EX1 + 12, -762 - 96, -762 + 14, f2 - 0.24, f2 - 0.18);
       // South: plaster wall 0..EX0, metal railing EX0..xBack connecting directly into the corner column
       (function sfSouthSERail() {

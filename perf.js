@@ -1,5 +1,6 @@
 /* ============================================================
    perf.js — adaptive quality + performance engine
+   For project overview see .agents/README.md
    ------------------------------------------------------------
    Goal: a smooth, correct experience on ANY hardware, from old
    integrated-GPU laptops and budget phones up to gaming rigs.

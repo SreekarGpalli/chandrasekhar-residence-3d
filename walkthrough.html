@@ -201,9 +201,25 @@ if(!window.THREE || !window.HouseScene){
 <script>
 /* ============================================================
    walkthrough.js — photoreal first-person layer.
+   For project overview see .agents/README.md
+
    Reuses the plan-faithful geometry from window.HouseScene and
    re-skins it with PBR materials + procedural textures + IBL,
    then adds a walk/fly camera with collision and stair climbing.
+
+   SECTION INDEX (approximate line numbers):
+   L1-170     CSS: intro overlay, HUD, level pills, controls, touch
+   L173-200   Script loading: Three.js, GLTFLoader, DRACOLoader, houseScene
+   L201       Main script begins
+   L210-450   PBR material re-skinning (procedural textures, IBL)
+   L450-700   Sun presets, sky dome, fog, HDR environment
+   L700-900   Camera setup, pointer lock, touch joystick
+   L900-1200  Player movement (WASD), gravity, stair climbing
+   L1200-1400 Collision detection (raycasting vs solid meshes)
+   L1400-1600 Floor detection, room identification, HUD updates
+   L1600-1800 Level teleportation, fly mode toggle
+   L1800-1950 Night mode / material remapping
+   L1950-2086 Render loop, frame timing, resize, cleanup
    ============================================================ */
 (function () {
   'use strict';

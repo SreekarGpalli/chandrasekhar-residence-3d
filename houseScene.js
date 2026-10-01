@@ -14,6 +14,49 @@
    Y=up (metres). Works in Node (module.exports) + browser
    (window.HouseScene). Pass THREE into build().
    ============================================================ */
+/* ============================================================
+   SECTION INDEX  (line numbers are approximate — search the
+   heading text if an edit has shifted them)
+
+   For full project documentation see .agents/README.md
+
+   L24-31    Level constants (L) — floor heights in metres
+   L33-129   Colour palette (C) — ~70 sRGB hex values
+   L132-294  buildMaterials(THREE) — PBR material creation, textures
+   L296-334  NO_SHADOW_CAST, NON_COLLIDE_MATERIALS, FOOTPRINT
+   L337-453  makeBag(THREE) — geometry merge pipeline (box/cyl/sph/blob)
+   L456-460  pb() — plan-mm box primitive (most-called function)
+   L462-489  wallRun() — wall with openings cut out
+   L493-709  glazing() — windows, doors, French doors, security grills
+   L713-909  railing(), railPillar(), edgeWall(), patternedRail(), glassRail()
+   L910-1048 flight(), plainFlight(), stairLanding(), plate(), rng()
+   L1050-1182 plantShrub(), plantTree() — procedural vegetation
+   L1182-1237 nbrHouse() — neighbour house generator (unused)
+   L1239-2953 Fur (furniture kit) — bed, sofa, table, chair, wardrobe,
+              sink, basin, wc, shower, hob, fridge, tv, car, gate, etc.
+   L2954-3224 Electrical/HVAC + Lighting fixtures — splitAC, fan, downlight,
+              surfacePanel, profileLight, wallBracket, sconce, vanityBar
+   L3226-3232 TYPE map — room-type → floor-tile material key
+   L3234-3286 ROOMS[] — room definitions per floor (name, dims, coords)
+   L3288-3358 OPEN{} — exterior opening schedules per floor per face
+   L3361-3417 IW[] — interior wall sets per floor (with door/window openings)
+   L3420-3572 build(THREE) — MAIN ENTRY: materials, placeCar, placeGarden
+   L3573-4180 placeGarden() — photo-sourced leaf cards, instanced vegetation
+   L4246-4380 makeLum() + curtains() — per-floor lighting factory, curtains
+   L4381-4501 Site geometry — compound walls, gate, driveway, piers
+   L4508-4564 Context — roads, footpaths, kerbs, median
+   L4567-4700 stairRailing(), stairWalls(), externalStairVoidRails()
+   L4709-5040 External U-staircase — flights, well screen, stair gate
+   L5041-5155 liftTower(), columnsEast() — lift shaft, east structural blades
+   L5249-5808 exterior() — building shell, facade lamps, east facade, SE rod box
+   L5816-6120 buildOutdoorAmenity() — per-floor balcony decks, pergola, guards
+   L6124-7086 Per-floor interiors — walls, tiles, glazing, interior walls,
+              furniture placement, lighting plans (GF/FF/SF)
+   L7088-7094 View presets — camera positions for exterior/floor0/1/2
+   L7105-7151 Warm fixture positions — walkthrough light-pool sources
+   L7153-7170 Return object — { root, site, exterior, floors, views, lights, ... }
+   L7173-7179 Module export — { build, LEVELS, COLORS, ... }
+   ============================================================ */
 window.HouseScene = (function () {
   // STAIR_RAIL_FIX_20260812f
   if (typeof window !== 'undefined') window.__HOUSE3D_STAIR_RAIL__ = 'STAIR_RAIL_FIX_20260812f';
@@ -27,7 +70,7 @@ window.HouseScene = (function () {
     roof: 10.809, parapetTop: 11.709,
     f2f: 3.353, slabT: 0.15, cut: 1.5,
     porticoFl: 0.15, pathFl: 0.05,
-    liftTop: 11.709
+    liftTop: 10.809
   };
 
   /* ---------------- palette ----------------
@@ -5503,8 +5546,6 @@ window.HouseScene = (function () {
       // *decks* live in separate outdoor0/1/2 groups so floor cutaways can show
       // them without revealing the whole multi-storey shell.
       liftTower(eBag, L.liftTop, [L.porticoFl, L.f1, L.f2]);
-      pb(eBag, 'white', liftOX[0] - 20, liftOX[1] + 20, liftOY[0] - 20, liftOY[1] + 20, L.liftTop, L.liftTop + 0.03);
-      pb(eBag, 'copingLight', liftOX[0] - 28, liftOX[1] + 28, liftOY[0] - 28, liftOY[1] + 28, L.liftTop + 0.03, L.liftTop + 0.06);
       externalStair(eBag, true);
       columnsEast(eBag, L.roof - L.slabT);
 
@@ -5892,7 +5933,7 @@ window.HouseScene = (function () {
       // East deck north of stair arrival → building NE
       outdoorDeck(o1, EX0, EX1, 3890, Y1n, f1);
       // North balcony (outside main north wall)
-      outdoorDeck(o1, 30, EX1, NBY0, NBY1 - 30, f1);
+      outdoorDeck(o1, 0, EX1, NBY0, NBY1 - 30, f1);
       // Service-band floors (south of main block, FF only)
       outdoorDeck(o1, 4965, 8085, -596, 1360, f1);
       outdoorDeck(o1, 8300, 9320, -596, 1360, f1);
@@ -5903,20 +5944,18 @@ window.HouseScene = (function () {
       // 275 mm frame round the corner. Running the lip through to 18052 was
       // the old bay's outer face and left a coplanar white-on-white seam.
       pb(o1, 'white', 0, BOX_X, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'white', -10, 90, Y1n, NBY1 + 10, f1 - 0.45, f1 + 0.012);
       // South fascia: 10 mm out / 90 mm in, matching the east lip. Stops at
       // the L-box so it does not stand in front of the south screen.
       pb(o1, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f1 - 0.45, f1 + 0.012);
       pb(o1, 'charDark', 0, BOX_X, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
-      // The south reveal band used the SAME -10/+90 offsets as the white lip
-      // in front of it, so two coplanar faces fought over y=-772 and the
-      // shadow line rendered as a dashed speckle. 6 mm proud, like the north.
+      pb(o1, 'charDark', -10, 90, Y1n, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f1 - 0.24, f1 - 0.18);
       // Metal on east + NE/SE bays. Long north/south runs and west returns are walls.
       // South bedroom balcony: plaster wall, same run as the SF wall above.
       edgeWall(o1, 'y', 80, SOUTH_FC, 0, f1, 1.08, { plain: true });
       edgeWall(o1, 'x', SOUTH_FC, 0, 4805, f1, 1.08, { plain: true });
       railPillar(o1, 80, SOUTH_FC, f1, 1.08);
-      railPillar(o1, 4805, SOUTH_FC, f1, 1.08);
       railing(o1, 'x', SOUTH_FC, EX0, EAST_SOUTH_RET_XW, f1, 1.0);
       externalStairVoidRails(o1, f1);
       (function ffNorthGuard() {
@@ -5928,7 +5967,6 @@ window.HouseScene = (function () {
         railPillar(o1, bay0, NORTH_PIL_Y, f1, 1.08);
       })();
       edgeWall(o1, 'y', 80, Y1n, NORTH_FC, f1, 1.08, { plain: true });
-      railPillar(o1, EX0, SOUTH_FC, f1, 1.08);
       (function ffEastBox() {
         // North bay of the first-floor east face: a projecting box with the
         // opening splayed on all four sides.
@@ -6031,13 +6069,15 @@ window.HouseScene = (function () {
       outdoorDeck(o2, EX0, BOX_X, 1805, EAST_RAFTER_YE, f2);
       // SF living deck — full east lip, under the terrace slab
       outdoorDeck(o2, EX0, EX1, EAST_RAFTER_YE, Y1n, f2);
-      outdoorDeck(o2, 30, EX1, NBY0, NBY1 - 30, f2);
+      outdoorDeck(o2, 0, EX1, NBY0, NBY1 - 30, f2);
       // No east slab fascia over the FF box bay: the box head IS the east
       // edge here, and a 450 mm fascia at 17272..17362 hung 40 mm below the
       // splayed soffit — a ledge across the top of the opening.
       pb(o2, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f2 - 0.45, f2 + 0.012);
+      pb(o2, 'white', -10, 90, Y1n, NBY1 + 10, f2 - 0.45, f2 + 0.012);
       pb(o2, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f2 - 0.45, f2 + 0.012);
       pb(o2, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f2 - 0.24, f2 - 0.18);
+      pb(o2, 'charDark', -10, 90, Y1n, NBY1 + 14, f2 - 0.24, f2 - 0.18);
       pb(o2, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f2 - 0.24, f2 - 0.18);
       // South — same runs as FF: plaster 0–4805, metal EX0–lift,
       // then plaster under the pergola. Same line, same height, same ends.
@@ -7021,6 +7061,7 @@ window.HouseScene = (function () {
         railing(bag, 'y', 6020, 6000, 8641, fY, 1.0);
         railing(bag, 'x', 6000, 6020, 8241, fY, 1.0);
         railing(bag, 'y', 8241, 6000, 8641, fY, 1.0);
+        Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, false);
 
         // Internal stair: flight B FF→SF (from mid landing) + full SF→roof U-stair
         const midFF = landI(L.f1);

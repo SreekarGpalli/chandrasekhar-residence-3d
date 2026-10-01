@@ -27,7 +27,7 @@ window.HouseScene = (function () {
     roof: 10.809, parapetTop: 11.709,
     f2f: 3.353, slabT: 0.15, cut: 1.5,
     porticoFl: 0.15, pathFl: 0.05,
-    liftTop: 11.709
+    liftTop: 10.809
   };
 
   /* ---------------- palette ----------------
@@ -2879,8 +2879,6 @@ window.HouseScene = (function () {
       // *decks* live in separate outdoor0/1/2 groups so floor cutaways can show
       // them without revealing the whole multi-storey shell.
       liftTower(eBag, L.liftTop, [L.porticoFl, L.f1, L.f2]);
-      pb(eBag, 'white', liftOX[0] - 20, liftOX[1] + 20, liftOY[0] - 20, liftOY[1] + 20, L.liftTop, L.liftTop + 0.03);
-      pb(eBag, 'copingLight', liftOX[0] - 28, liftOX[1] + 28, liftOY[0] - 28, liftOY[1] + 28, L.liftTop + 0.03, L.liftTop + 0.06);
       externalStair(eBag, true);
       columnsEast(eBag, L.roof - L.slabT);
 
@@ -3249,7 +3247,7 @@ window.HouseScene = (function () {
       // East deck north of stair arrival → building NE
       outdoorDeck(o1, EX0, EX1, 3890, Y1n, f1);
       // North balcony (outside main north wall)
-      outdoorDeck(o1, 30, EX1, NBY0, NBY1 - 30, f1);
+      outdoorDeck(o1, 0, EX1, NBY0, NBY1 - 30, f1);
       // Service-band floors (south of main block, FF only)
       outdoorDeck(o1, 4965, 8085, -596, 1360, f1);
       outdoorDeck(o1, 8300, 9320, -596, 1360, f1);
@@ -3260,20 +3258,18 @@ window.HouseScene = (function () {
       // 275 mm frame round the corner. Running the lip through to 18052 was
       // the old bay's outer face and left a coplanar white-on-white seam.
       pb(o1, 'white', 0, BOX_X, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'white', -10, 90, Y1n, NBY1 + 10, f1 - 0.45, f1 + 0.012);
       // South fascia: 10 mm out / 90 mm in, matching the east lip. Stops at
       // the L-box so it does not stand in front of the south screen.
       pb(o1, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f1 - 0.45, f1 + 0.012);
       pb(o1, 'charDark', 0, BOX_X, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
-      // The south reveal band used the SAME -10/+90 offsets as the white lip
-      // in front of it, so two coplanar faces fought over y=-772 and the
-      // shadow line rendered as a dashed speckle. 6 mm proud, like the north.
+      pb(o1, 'charDark', -10, 90, Y1n, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f1 - 0.24, f1 - 0.18);
       // Metal on east + NE/SE bays. Long north/south runs and west returns are walls.
       // South bedroom balcony: plaster wall, same run as the SF wall above.
       edgeWall(o1, 'y', 80, SOUTH_FC, 0, f1, 1.08, { plain: true });
       edgeWall(o1, 'x', SOUTH_FC, 0, 4805, f1, 1.08, { plain: true });
       railPillar(o1, 80, SOUTH_FC, f1, 1.08);
-      railPillar(o1, 4805, SOUTH_FC, f1, 1.08);
       railing(o1, 'x', SOUTH_FC, EX0, EAST_SOUTH_RET_XW, f1, 1.0);
       externalStairVoidRails(o1, f1);
       (function ffNorthGuard() {
@@ -3285,7 +3281,6 @@ window.HouseScene = (function () {
         railPillar(o1, bay0, NORTH_PIL_Y, f1, 1.08);
       })();
       edgeWall(o1, 'y', 80, Y1n, NORTH_FC, f1, 1.08, { plain: true });
-      railPillar(o1, EX0, SOUTH_FC, f1, 1.08);
       (function ffEastBox() {
         // North bay of the first-floor east face: a projecting box with the
         // opening splayed on all four sides.
@@ -3388,13 +3383,15 @@ window.HouseScene = (function () {
       outdoorDeck(o2, EX0, BOX_X, 1805, EAST_RAFTER_YE, f2);
       // SF living deck — full east lip, under the terrace slab
       outdoorDeck(o2, EX0, EX1, EAST_RAFTER_YE, Y1n, f2);
-      outdoorDeck(o2, 30, EX1, NBY0, NBY1 - 30, f2);
+      outdoorDeck(o2, 0, EX1, NBY0, NBY1 - 30, f2);
       // No east slab fascia over the FF box bay: the box head IS the east
       // edge here, and a 450 mm fascia at 17272..17362 hung 40 mm below the
       // splayed soffit — a ledge across the top of the opening.
       pb(o2, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f2 - 0.45, f2 + 0.012);
+      pb(o2, 'white', -10, 90, Y1n, NBY1 + 10, f2 - 0.45, f2 + 0.012);
       pb(o2, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f2 - 0.45, f2 + 0.012);
       pb(o2, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f2 - 0.24, f2 - 0.18);
+      pb(o2, 'charDark', -10, 90, Y1n, NBY1 + 14, f2 - 0.24, f2 - 0.18);
       pb(o2, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f2 - 0.24, f2 - 0.18);
       // South — same runs as FF: plaster 0–4805, metal EX0–lift,
       // then plaster under the pergola. Same line, same height, same ends.

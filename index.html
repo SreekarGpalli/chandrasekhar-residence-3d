@@ -112,7 +112,7 @@
     padding:8px 14px 7px;position:relative;transition:all .2s cubic-bezier(0.16,1,0.3,1);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
     white-space:nowrap;flex:none;text-decoration:none}
-  #design button + button, #design button + a, #design a + button{border-left:1px solid var(--panel-line)}
+  #design button + button, #design button + a, #design a + button, #design a + a{border-left:1px solid var(--panel-line)}
   #design button .d-code{font-family:Archivo,Inter,sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;line-height:1}
   #design button .d-name{font-size:8.5px;letter-spacing:.08em;color:rgba(255,255,255,.45);font-weight:500;line-height:1}
   #design button:hover{background:rgba(255,255,255,.05);color:var(--ink)}
@@ -236,6 +236,27 @@
   }
 </style>
 <script>
+/* ============================================================
+   index.html — Main Orbit/Dollhouse Viewer
+   For project overview see .agents/README.md
+
+   SECTION INDEX (approximate line numbers):
+   L1-237     CSS: layout, controls, panels, loading overlay, mobile
+   L238       <script> begins
+   L243-285   Design version system (DESIGNS map, version picker)
+   L286-350   Loading overlay and progress UI
+   L351-700   HTML body: canvas, controls, floor pills, room panel,
+              compass, info card, mobile drawer, bottom dock
+   L700-900   Three.js renderer bootstrap, perf tier, OrbitControls
+   L900-1400  Post-processing pipeline (SSGI, SSR, temporal accum)
+   L1400-1700 Shadow map setup (single bake), tone mapping, exposure
+   L1700-2100 Floor visibility toggling, dollhouse section cut
+   L2100-2500 Room labels (CSS2D), info cards, room click→fly
+   L2500-2800 Sun presets (morning/midday/golden), IBL rebuild
+   L2800-3000 View presets (camera positions), compass needle
+   L3000-3200 Mobile responsive handlers, drawer, touch
+   L3200-3439 Render loop, convergence counter, keyboard shortcuts
+   ============================================================ */
 /* Which scene this page builds. Default is the full V43 house, interiors and
    all; ?v=v38 … ?v=v43 load that elevation version's exterior-only shell.
    Declared in <head> so the DESIGN chooser can render before the 3D bootstrap

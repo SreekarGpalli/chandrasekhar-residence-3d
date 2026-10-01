@@ -14,3 +14,12 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# Python
+**/__pycache__/
+*.py[cod]
+
+# Blender suite (do not host on Vercel as of now)
+Blender/
+
+
