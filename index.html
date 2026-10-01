@@ -398,7 +398,7 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var ver = '20261001_v41_brown_v3';
+  var ver = '20261001_v41_walnut_v4';
   var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=' + ver
                   : 'houseScene.js?v=' + ver;
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
@@ -1298,7 +1298,7 @@ window.DESIGNS = {
         return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
       case 'fin2':
         if (C && C.fin2 && C.fin2 !== 0xded2b8) {
-          return { tex: 'wood', tile: 1.2, rough: 0.58, metal: 0.04, env: 0.70, grime: 0.1 };
+          return { rough: 0.44, metal: 0.14, env: 0.75, reflect: 0.15 };
         }
         return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
       // Handled by their own branches in the re-skin loop, but named here so

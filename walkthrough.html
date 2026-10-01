@@ -879,7 +879,7 @@ if(!window.THREE || !window.HouseScene){
         return { tex: 'plaster', tile: 2.2, rough: 0.90, metal: 0, env: 0.40 };
       case 'fin2':
         if (C && C.fin2 && C.fin2 !== 0xded2b8) {
-          return { tex: 'wood', tile: 1.2, rough: 0.58, metal: 0.04, env: 0.70 };
+          return { rough: 0.44, metal: 0.14, env: 0.75, reflect: 0.15 };
         }
         return { tex: 'plaster', tile: 2.2, rough: 0.90, metal: 0, env: 0.40 };
       case 'sand':

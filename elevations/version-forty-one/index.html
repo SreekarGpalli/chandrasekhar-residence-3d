@@ -147,7 +147,7 @@
     return;
   }
 
-  var STAMP = 'V41_BROWN_20261001_v3';
+  var STAMP = 'V41_WALNUT_20261001_v4';
 
   function say(msg) {
     var ls = document.querySelector('#loading .ls');
@@ -958,7 +958,7 @@ function boot() {
       case 'fin':
         return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
       case 'fin2':
-        return { tex: 'wood', tile: 1.2, rough: 0.58, metal: 0.04, env: 0.70, grime: 0.1 };
+        return { rough: 0.44, metal: 0.14, env: 0.75, reflect: 0.15 };
       // Handled by their own branches in the re-skin loop, but named here so
       // they do not register as unmapped and make the coverage report lie.
       case 'glass': case 'carGlass':  return { handledElsewhere: true };
@@ -996,7 +996,7 @@ function boot() {
     white:      0xf7f6f4,   // brighter — it should read as white, not cream
     white2:     0xfbfaf9,
     fin:        0xf1f0ee,
-    fin2:       (C && C.fin2 && C.fin2 !== 0xded2b8) ? C.fin2 : 0x6e472a,
+    fin2:       (C && C.fin2 && C.fin2 !== 0xded2b8) ? C.fin2 : 0x4a3525,
     // East face: a light NEUTRAL grey, half a step off the body, so the
     // sand-float has something to sit on and the plane reads as its own.
     eastPlaster:0xd9dad9,
