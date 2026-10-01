@@ -398,8 +398,9 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=design1'
-                  : 'houseScene.js?v=20260818_sf_lighting_cleaned_v5';
+  var ver = '20261001_v41_brown_v3';
+  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=' + ver
+                  : 'houseScene.js?v=' + ver;
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
 </script>
@@ -1293,7 +1294,12 @@ window.DESIGNS = {
          the map then lands on the screen as a metre-wide stain. Low grime too;
          a vertical fin sheds rather than collects. Colour is left exactly as
          the palette has it. */
-      case 'fin': case 'fin2':
+      case 'fin':
+        return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
+      case 'fin2':
+        if (C && C.fin2 && C.fin2 !== 0xded2b8) {
+          return { tex: 'wood', tile: 1.2, rough: 0.58, metal: 0.04, env: 0.70, grime: 0.1 };
+        }
         return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
       // Handled by their own branches in the re-skin loop, but named here so
       // they do not register as unmapped and make the coverage report lie.
@@ -1367,7 +1373,7 @@ window.DESIGNS = {
     white:      0xf7f6f4,   // brighter — it should read as white, not cream
     white2:     0xfbfaf9,
     fin:        0xf1f0ee,
-    fin2:       0xf7f6f5,
+    fin2:       (C && C.fin2 && C.fin2 !== 0xded2b8) ? C.fin2 : 0xf7f6f5,
     // East face: a light NEUTRAL grey, half a step off the body, so the
     // sand-float has something to sit on and the plane reads as its own.
     eastPlaster:0xd9dad9,
