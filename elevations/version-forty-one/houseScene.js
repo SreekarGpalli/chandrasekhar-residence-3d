@@ -1,13 +1,12 @@
 /* ============================================================
-   elevations / version-thirty-eight — EXTERIOR ONLY (Version Thirty-Eight)
-   Based on Version Thirty-Seven.
-   East leg: Extended L-box frame and vertical rods up to second-floor rail height.
-   South leg: Version Thirty-Three South elevation with solid plaster wall
-   and 3-light steel window on First Floor, rising continuously to SF rail cap.
-   Direct railing connections to box and wall (no intermediate half-pillars).
+   elevations / version-forty-one — EXTERIOR ONLY (Version Forty-One)
+   Based on Version Thirty-Eight.
+   East leg: Extended splayed L-box frame with warm brown vertical rods
+   up to second-floor rail height.
+   South leg: Solid plaster wall and 3-light vertical windows rising to SF rail cap.
    ============================================================ */
 window.HouseScene = (function () {
-  if (typeof window !== 'undefined') window.__HOUSE3D_STAIR_RAIL__ = 'V38_SE_V33SOUTH_20260818';
+  if (typeof window !== 'undefined') window.__HOUSE3D_STAIR_RAIL__ = 'V41_BROWN_RODS_20261001';
   'use strict';
 
   /* ---------------- levels (metres) ---------------- */
@@ -38,7 +37,7 @@ window.HouseScene = (function () {
     white:   0xece7db,  // BODY — inspiration off-white (Upparapalli house)
     white2:  0xf3efe6,  // BODY — same off-white, slightly lighter soffits / reveals
     fin:     0xd6c9ae,  // east verticals only — V6 lime, not chalk
-    fin2:    0xded2b8,  // east vertical mullions — V6 near-white
+    fin2:    0x6e472a,  // east vertical rods inside box — warm timber brown
     sand:    0xd2cdc4,  // SOFT — cool greige east shell
     stone:   0xd0cbc3,  // SOFT — pale stone
     charcoal:0x9c9b98,  // SOFT — cool gray (not brown, not ink)
@@ -132,7 +131,7 @@ window.HouseScene = (function () {
     mk('lamp', C.lamp, { emissive: srgb(C.lamp), emissiveIntensity: 2.4, roughness: 0.55 });
     M.white.roughness = 0.94; M.white2.roughness = 0.92;
     if (M.fin) M.fin.roughness = 0.94;
-    if (M.fin2) M.fin2.roughness = 0.92;
+    if (M.fin2) { M.fin2.roughness = 0.65; M.fin2.metalness = 0.04; }
     if (M.sand) M.sand.roughness = 0.93;
     // Quiet lime grain — same hue, faint sand-float. Whole plaster body.
     (function limeGrain() {
@@ -1858,10 +1857,10 @@ window.HouseScene = (function () {
       }
 
       const ASSETS = {
-        mango: ['assets/tree-mango.jpg', '/elevations/version-forty-one/assets/tree-mango.jpg'],
-        neem:  ['assets/tree-neem.jpg',  '/elevations/version-forty-one/assets/tree-neem.jpg'],
-        boug:  ['assets/shrub-boug.jpg', '/elevations/version-forty-one/assets/shrub-boug.jpg'],
-        hedge: ['assets/hedge.jpg',      '/elevations/version-forty-one/assets/hedge.jpg']
+        mango: ['assets/tree-mango.jpg', '/elevations/version-thirty-eight/assets/tree-mango.jpg'],
+        neem:  ['assets/tree-neem.jpg',  '/elevations/version-thirty-eight/assets/tree-neem.jpg'],
+        boug:  ['assets/shrub-boug.jpg', '/elevations/version-thirty-eight/assets/shrub-boug.jpg'],
+        hedge: ['assets/hedge.jpg',      '/elevations/version-thirty-eight/assets/hedge.jpg']
       };
 
       Promise.all([
@@ -3118,129 +3117,17 @@ window.HouseScene = (function () {
           xMid, zJambMid, -(yN0 + SR / 2) / 1000 - NF * PT / 2,
           HYP, zJambSpan, PT, 0, ANG, 0);
 
-        // --- East facade White Jali Breeze Block Screen (4-leaf heart clover breeze block) ---
-        (function buildJali() {
-          const S = 0.260; // 260 mm square block
-          const halfS = S / 2; // 0.130 m
-
-          const shape = new THREE.Shape();
-          shape.moveTo(-halfS, -halfS);
-          shape.lineTo( halfS, -halfS);
-          shape.lineTo( halfS,  halfS);
-          shape.lineTo(-halfS,  halfS);
-          shape.closePath();
-
-          // 1. Center circular hole
-          const centerHole = new THREE.Path();
-          centerHole.absarc(0, 0, 0.012, 0, Math.PI * 2, true);
-          shape.holes.push(centerHole);
-
-          // 2. Four Heart-shaped petal cutouts (at 0, 90, 180, 270 degrees)
-          function createHeartHole(angle) {
-            const p = new THREE.Path();
-            const pts = [
-              { x: 0, y: 0.020 },
-              { cp1x: -0.020, cp1y: 0.026, cp2x: -0.044, cp2y: 0.048, x: -0.044, y: 0.070 },
-              { cp1x: -0.044, cp1y: 0.092, cp2x: -0.026, cp2y: 0.108, x: -0.012, y: 0.108 },
-              { cp1x: -0.002, cp1y: 0.108, cp2x: 0, cp2y: 0.095, x: 0, y: 0.090 },
-              { cp1x: 0, cp1y: 0.095, cp2x: 0.002, cp2y: 0.108, x: 0.012, y: 0.108 },
-              { cp1x: 0.026, cp1y: 0.108, cp2x: 0.044, cp2y: 0.092, x: 0.044, y: 0.070 },
-              { cp1x: 0.044, cp1y: 0.048, cp2x: 0.020, cp2y: 0.026, x: 0, y: 0.020 }
-            ];
-            const cos = Math.cos(angle), sin = Math.sin(angle);
-            const rot = (x, y) => ({ x: x * cos - y * sin, y: x * sin + y * cos });
-            const start = rot(pts[0].x, pts[0].y);
-            p.moveTo(start.x, start.y);
-            for (let i = 1; i < pts.length; i++) {
-              const pt = pts[i];
-              const cp1 = rot(pt.cp1x, pt.cp1y);
-              const cp2 = rot(pt.cp2x, pt.cp2y);
-              const end = rot(pt.x, pt.y);
-              p.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-            }
-            return p;
-          }
-
-          shape.holes.push(createHeartHole(0));
-          shape.holes.push(createHeartHole(Math.PI / 2));
-          shape.holes.push(createHeartHole(Math.PI));
-          shape.holes.push(createHeartHole(3 * Math.PI / 2));
-
-          // 3. Four Corner voids (at 45, 135, 225, 315 degrees)
-          function createCornerHole(angle) {
-            const p = new THREE.Path();
-            const pts = [
-              { x: 0.038, y: 0.038 },
-              { cp1x: 0.048, cp1y: 0.048, cp2x: 0.068, cp2y: 0.052, x: 0.088, y: 0.052 },
-              { cp1x: 0.106, cp1y: 0.052, cp2x: 0.114, cp2y: 0.062, x: 0.114, y: 0.076 },
-              { cp1x: 0.114, cp1y: 0.100, cp2x: 0.100, cp2y: 0.114, x: 0.076, y: 0.114 },
-              { cp1x: 0.062, cp1y: 0.114, cp2x: 0.052, cp2y: 0.106, x: 0.052, y: 0.088 },
-              { cp1x: 0.052, cp1y: 0.068, cp2x: 0.048, cp2y: 0.048, x: 0.038, y: 0.038 }
-            ];
-            const cos = Math.cos(angle), sin = Math.sin(angle);
-            const rot = (x, y) => ({ x: x * cos - y * sin, y: x * sin + y * cos });
-            const start = rot(pts[0].x, pts[0].y);
-            p.moveTo(start.x, start.y);
-            for (let i = 1; i < pts.length; i++) {
-              const pt = pts[i];
-              const cp1 = rot(pt.cp1x, pt.cp1y);
-              const cp2 = rot(pt.cp2x, pt.cp2y);
-              const end = rot(pt.x, pt.y);
-              p.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-            }
-            return p;
-          }
-
-          shape.holes.push(createCornerHole(0));
-          shape.holes.push(createCornerHole(Math.PI / 2));
-          shape.holes.push(createCornerHole(Math.PI));
-          shape.holes.push(createCornerHole(3 * Math.PI / 2));
-
-          const JALI_THICK = 0.075; // 75 mm breeze block thickness
-          const jaliGeo = new THREE.ExtrudeGeometry(shape, {
-            depth: JALI_THICK,
-            bevelEnabled: true,
-            bevelThickness: 0.003,
-            bevelSize: 0.002,
-            bevelSegments: 2,
-            curveSegments: 8
-          });
-
-          // Layout 14 x 15 grid = 210 tiles
-          const NY = 14, NZ = 15;
-          const totalCount = NY * NZ;
-          const jaliMesh = new THREE.InstancedMesh(jaliGeo, materials.white, totalCount);
-          jaliMesh.name = 'jali_screen';
-          jaliMesh.castShadow = true;
-          jaliMesh.receiveShadow = true;
-
-          const yStart = yBack + 20.5 + S * 1000 / 2; // -497 + 20.5 + 130 = -346.5 mm
-          const zStart = zIn0 + 0.0295 + S / 2;       // 4.121 + 0.0295 + 0.130 = 4.2805 m
-          const xCenter = (xBack + xSl) / 2000;       // ~17.312 m
-          const dummy = new THREE.Object3D();
-
-          let count = 0;
-          for (let iz = 0; iz < NZ; iz++) {
-            const zWorld = zStart + iz * S;
-            for (let iy = 0; iy < NY; iy++) {
-              const yMM = yStart + iy * (S * 1000);
-              const zThree = -yMM / 1000;
-              dummy.position.set(xCenter - JALI_THICK / 2, zWorld, zThree);
-              dummy.rotation.set(0, -Math.PI / 2, 0);
-              dummy.updateMatrix();
-              jaliMesh.setMatrixAt(count++, dummy.matrix);
-            }
-          }
-          jaliMesh.instanceMatrix.needsUpdate = true;
-          root.add(jaliMesh);
-
-          // Perimeter mounting sub-frame in eBag (jambs, head, sill)
-          const xf0 = (xCenter * 1000) - 45, xf1 = (xCenter * 1000) + 45;
-          pb(eBag, 'white', xf0, xf1, yBack, yBack + 24, zIn0, zIn1);
-          pb(eBag, 'white', xf0, xf1, yN0 - 24, yN0, zIn0, zIn1);
-          pb(eBag, 'white', xf0, xf1, yBack, yN0, zIn0, zIn0 + 0.032);
-          pb(eBag, 'white', xf0, xf1, yBack, yN0, zIn1 - 0.032, zIn1);
-        })();
+        // --- east rod field: sill to head, identical rods, 24 mm slot off jamb ---
+        const FACE = 38, PITCH = 100, GAP = 24, o = 0.006;
+        const xFin0 = xBack + 20, xFin1 = xSl - 10;
+        function rods(a0, a1, place) {
+          const b0 = a0 + GAP + FACE / 2, b1 = a1 - GAP - FACE / 2;
+          const n = Math.max(2, Math.round((b1 - b0) / PITCH));
+          const p = (b1 - b0) / n;
+          for (let i = 0; i <= n; i++) place(b0 + i * p);
+        }
+        rods(yBack, yN0, (c) =>
+          pb(eBag, 'fin2', xFin0, xFin1, c - FACE / 2, c + FACE / 2, zIn0 - o, zIn1 + o));
 
         // --- slab-edge wall under the flushed L ---
         pb(eBag, 'white', xBack, xFace, yFace, yN1, L.f1 - 0.45, zOut0);
