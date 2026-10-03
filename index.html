@@ -258,15 +258,14 @@
    L3200-3439 Render loop, convergence counter, keyboard shortcuts
    ============================================================ */
 /* Which scene this page builds. Default is the full V43 house, interiors and
-   all; ?v=v40 … ?v=v44 load that elevation version's exterior-only shell.
+   all; ?v=v41 … ?v=v44 load that elevation version's exterior-only shell.
    Declared in <head> so the DESIGN chooser can render before the 3D bootstrap
    at the end of <body> has run. */
 window.DESIGNS = {
   full: { dir: null,                   code: 'FULL', title: 'FULL HOUSE',       sub: 'With Interiors · V43 Rods', interiors: true  },
   v44:  { dir: 'version-forty-four',   code: 'V44',  title: 'SF PULLBACK',      sub: 'Plain East Rails · Smaller SF', interiors: false },
   v43:  { dir: 'version-forty-three',  code: 'V43',  title: 'CONTINUOUS RODS',  sub: 'Unbroken Rods · Recessed Slabs', interiors: false },
-  v41:  { dir: 'version-forty-one',    code: 'V41',  title: 'GRAPHITE ROD BOX', sub: 'Splayed Frame · Satin Warm Graphite Rods', interiors: false },
-  v40:  { dir: 'version-forty',        code: 'V40',  title: 'ROD BOX TO ROOF',  sub: 'Continuous Rods to Roof', interiors: false }
+  v41:  { dir: 'version-forty-one',    code: 'V41',  title: 'GRAPHITE ROD BOX', sub: 'Splayed Frame · Satin Warm Graphite Rods', interiors: false }
 };
 (function () {
   var q = (location.search.match(/[?&]v=([A-Za-z0-9]+)/) || [])[1];

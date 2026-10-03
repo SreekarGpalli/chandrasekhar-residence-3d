@@ -3,14 +3,13 @@
 Exterior-only variants of the Chandrasekhar Residence (G+2, Anantapur).
 **No interiors** — partitions, furniture, and dollhouse floors removed.
 
-Nav is four active versions: **V44 (SF Pullback) · V43 (Continuous Rods) · V41 (Clover Jali) · V40 (Rods to Roof)**.
+Nav is three active versions: **V44 (SF Pullback) · V43 (Continuous Rods) · V41 (Clover Jali)**.
 
 | Code | Name | Folder | Key Facade Concept |
 |------|------|--------|---------------------|
 | **V44** | **SF Pullback** | `version-forty-four/` | East rod screen removed, plain MS railings; whole SF block and its roof slab cut back to the bedroom line (x 9830), bath between bedroom and lift, walkable slab over bath/lift joined to the roof terrace; tiled lean-to roofs hung off it (east arm falls east, north arm falls north), MS spiral service stair, no mumty |
 | **V43** | **Continuous Rods** | `version-forty-three/` | Continuous unbroken vertical rods (~4.87 m) from ground ceiling beam soffit to second-floor balustrade + recessed floor slabs |
 | **V41** | **Clover Jali** | `version-forty-one/` | Bespoke 4-leaf clover heart breeze block screen on East facade + South solid wall with 3 slit windows |
-| **V40** | **Rod Box to Roof** | `version-forty/` | Continuous East rod box extending all the way to the terrace roof + South solid wall + full open MS balustrade on SF South |
 
 Each version has one viewer — the photoreal pipeline.
 
@@ -26,19 +25,9 @@ The vertical rods on the East facade are extended down past the first-floor slab
 
 Built from Version 38. On the East facade, the vertical white rods running from the First Floor sill to Second Floor rail height are replaced by an intricate **4-leaf heart clover white architectural Jali breeze block screen** (210 cast modular blocks in a 14×15 grid) with center core piercings, heart petal apertures, and corner cutouts. On the South facade, the First Floor SE corner features the solid white plaster wall with 3 vertical slit windows. The terrace mumty features the laminated architectural safety glass skylight roof.
 
-## Version Thirty-Eight
-
-Built from Version 37. On the East facade, the full-height splayed white box frame and vertical rods continue up to the second-floor railing height. On the South facade, the SE corner features the continuous solid white plaster wall with 3 vertical slit windows on the First Floor, rising to the second-floor rail line. MS railings connect directly to the box and wall without intermediate half-pillars. Features the architectural laminated safety glass mumty roof.
-
 ## Version Thirty-Three
 
 South SE screen as a solid white plaster wall with 3 vertical slit windows; East vertical rods stay. Second-floor terrace pergola. Features the architectural laminated safety glass mumty roof.
-
-## Version Forty
-
-Built from Version 26. On the East facade, the full-height splayed white box frame and vertical rods run continuously from the First Floor sill all the way to the terrace roof (`zOut1 = L.roof = 10.809 m`). On the South facade, the First Floor SE corner features the solid white plaster wall with 3 vertical slit windows, while the Second Floor South elevation features a full continuous mild steel railing extending all the way to the corner box column (no parapet wall on SF South). MS railings connect directly to the box without intermediate half-pillars. Features the architectural laminated safety glass mumty roof.
-
-Built from V29. The second-floor SE corner parapet walls (which served as railings on both the east and south sides in V29) are removed. In their place, the below L-box frame and vertical rods on both east and south legs are extended continuously from the first-floor sill up to the second-floor railing/parapet height (`zOut1 = L.f2 + 0.012 + 1.08`), with symmetric top and bottom box frames. The extended rod box acts as the open, protective balustrade for the second floor SE pergola terrace.
 
 ## Version Twenty-Nine
 
