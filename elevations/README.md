@@ -3,16 +3,20 @@
 Exterior-only variants of the Chandrasekhar Residence (G+2, Anantapur).
 **No interiors** — partitions, furniture, and dollhouse floors removed.
 
-Nav is four active versions: **V43 (Continuous Rods) · V41 (Clover Jali) · V38 (Splayed Rods) · V40 (Rods to Roof)**.
+Nav is four active versions: **V44 (SF Pullback) · V43 (Continuous Rods) · V41 (Clover Jali) · V40 (Rods to Roof)**.
 
 | Code | Name | Folder | Key Facade Concept |
 |------|------|--------|---------------------|
+| **V44** | **SF Pullback** | `version-forty-four/` | East rod screen removed, plain MS railings; whole SF block and its roof slab cut back to the bedroom line (x 9830), bath between bedroom and lift, walkable slab over bath/lift joined to the roof terrace; tiled lean-to roofs hung off it (east arm falls east, north arm falls north), MS spiral service stair, no mumty |
 | **V43** | **Continuous Rods** | `version-forty-three/` | Continuous unbroken vertical rods (~4.87 m) from ground ceiling beam soffit to second-floor balustrade + recessed floor slabs |
 | **V41** | **Clover Jali** | `version-forty-one/` | Bespoke 4-leaf clover heart breeze block screen on East facade + South solid wall with 3 slit windows |
-| **V38** | **Splayed Rod Box** | `version-thirty-eight/` | East full-height splayed white box frame with vertical rods to second floor + South solid wall with 3 slit windows |
 | **V40** | **Rod Box to Roof** | `version-forty/` | Continuous East rod box extending all the way to the terrace roof + South solid wall + full open MS balustrade on SF South |
 
 Each version has one viewer — the photoreal pipeline.
+
+## Version Forty-Four
+
+Built from V43. Exterior only. The whole east feature is gone — SE rod box, south slit-window wall and the FF splayed east box — and the FF/SF east decks now run to the full east lip (x 17362) with plain MS railings on the east and SE-south edges. On the second floor the east bedroom moves west into the old bath/walk-in strip (x 4920–9600), and the whole SF block — bedroom and family room — now ends at that bedroom wall (x 9830) instead of x 12650. The roof slab (and roof terrace, solar array, parapet) is cut back to the same line. The bedroom's bathroom (2590 × 1575) sits between the bedroom and the lift (x 9830–12420, y 230–1805), its north wall in line with the lift's north face. Everything east of x 9830 on the SF is open terrace. The bedroom gets a window (no door) and the family room its glass wall on the new east face. The SE pergola is removed. A flat walkable slab now covers the bath + lift and joins the main roof terrace as one terrace, with one parapet running round the outside. Two tiled lean-to RCC slabs with Mangalore clay tiles (15°) hang off that terrace from the top of its parapet (coping level, L.roof + 1.11 m), with no posts: one off the main slab's east edge (x 9830), falling east to the old east-face line (x 12650); one off the bath/lift slab's north edge (y 2035), falling north the same 2.82 m. They meet in a valley from the terrace's inner corner to the roof's inner corner. The stair mumty is removed and the roof closed over the stairwell; an MS spiral service stair (1.5 m dia, 100 mm centre column, 15 risers of ~224 mm, 20° chequer-plate wedge treads with nosings, two balusters per tread and a continuous helical handrail) stands in the open SF terrace just east of the lift, clear of both tiled roofs. It is entered from the north-west, turns clockwise, and its quarter-circle top landing opens straight onto the bath/lift terrace through a gap in the east parapet, with a guard on the landing's open edge. The terrace loungers moved north, out of its way. The east tile slope runs the full length of the east parapet, to the NE corner of the roof terrace.
 
 ## Version Forty-Three
 

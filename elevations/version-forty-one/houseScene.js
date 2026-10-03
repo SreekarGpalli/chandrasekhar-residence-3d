@@ -1857,10 +1857,10 @@ window.HouseScene = (function () {
       }
 
       const ASSETS = {
-        mango: ['assets/tree-mango.jpg', '/elevations/version-thirty-eight/assets/tree-mango.jpg'],
-        neem:  ['assets/tree-neem.jpg',  '/elevations/version-thirty-eight/assets/tree-neem.jpg'],
-        boug:  ['assets/shrub-boug.jpg', '/elevations/version-thirty-eight/assets/shrub-boug.jpg'],
-        hedge: ['assets/hedge.jpg',      '/elevations/version-thirty-eight/assets/hedge.jpg']
+        mango: ['assets/tree-mango.jpg', '/elevations/version-forty-one/assets/tree-mango.jpg'],
+        neem:  ['assets/tree-neem.jpg',  '/elevations/version-forty-one/assets/tree-neem.jpg'],
+        boug:  ['assets/shrub-boug.jpg', '/elevations/version-forty-one/assets/shrub-boug.jpg'],
+        hedge: ['assets/hedge.jpg',      '/elevations/version-forty-one/assets/hedge.jpg']
       };
 
       Promise.all([

@@ -258,14 +258,14 @@
    L3200-3439 Render loop, convergence counter, keyboard shortcuts
    ============================================================ */
 /* Which scene this page builds. Default is the full V43 house, interiors and
-   all; ?v=v38 … ?v=v43 load that elevation version's exterior-only shell.
+   all; ?v=v40 … ?v=v44 load that elevation version's exterior-only shell.
    Declared in <head> so the DESIGN chooser can render before the 3D bootstrap
    at the end of <body> has run. */
 window.DESIGNS = {
   full: { dir: null,                   code: 'FULL', title: 'FULL HOUSE',       sub: 'With Interiors · V43 Rods', interiors: true  },
+  v44:  { dir: 'version-forty-four',   code: 'V44',  title: 'SF PULLBACK',      sub: 'Plain East Rails · Smaller SF', interiors: false },
   v43:  { dir: 'version-forty-three',  code: 'V43',  title: 'CONTINUOUS RODS',  sub: 'Unbroken Rods · Recessed Slabs', interiors: false },
   v41:  { dir: 'version-forty-one',    code: 'V41',  title: 'GRAPHITE ROD BOX', sub: 'Splayed Frame · Satin Warm Graphite Rods', interiors: false },
-  v38:  { dir: 'version-thirty-eight', code: 'V38',  title: 'SPLAYED ROD BOX',  sub: 'Full-Height Splayed Frame', interiors: false },
   v40:  { dir: 'version-forty',        code: 'V40',  title: 'ROD BOX TO ROOF',  sub: 'Continuous Rods to Roof', interiors: false }
 };
 (function () {
@@ -398,7 +398,7 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var ver = '20261001_v41_graphite_v5';
+  var ver = '20261003_v44_spiral2';
   var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=' + ver
                   : 'houseScene.js?v=' + ver;
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
