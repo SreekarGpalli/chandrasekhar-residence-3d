@@ -23,3 +23,6 @@ Thumbs.db
 Blender/
 
 
+
+# private archive (not committed, not deployed)
+archive/

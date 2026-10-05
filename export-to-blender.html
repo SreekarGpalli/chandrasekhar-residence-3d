@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Export house to Blender</title>
+<style>
+  :root { --bg:#101214; --ink:#eceae5; --dim:#9a9890; --brass:#c9a36a; --ok:#8fbf88; --bad:#e08b7a; }
+  html, body { margin:0; min-height:100%; background:var(--bg); color:var(--ink); font-family:Inter,Segoe UI,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:32px 24px 64px; }
+  h1 { font-size:18px; letter-spacing:.18em; font-weight:700; }
+  p { color:var(--dim); line-height:1.5; font-size:14px; }
+  ol { color:var(--dim); line-height:1.6; }
+  #status { margin-top:24px; padding:16px 18px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.03); font-family:ui-monospace,Consolas,monospace; font-size:12.5px; line-height:1.55; white-space:pre-wrap; }
+  #status.ok { border-color:rgba(143,191,136,.5); color:var(--ok); }
+  #status.err { border-color:rgba(224,139,122,.5); color:var(--bad); }
+  a { color:var(--brass); }
+</style>
+<script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="lib/DRACOLoader.js"></script>
+<script src="lib/GLTFExporter.js"></script>
+<script src="houseScene.js"></script>
+</head>
+<body>
+<main>
+  <h1>EXPORT TO BLENDER</h1>
+  <p>Builds the procedural house, waits for async assets, and writes a GLB into <code>Blender/chandrasekhar_residence_full.glb</code>.</p>
+  <ol>
+    <li>Start the site: <code>node serve.js</code></li>
+    <li>Start the saver: <code>node scripts/export-to-blender.js</code></li>
+    <li>This page posts the GLB to <code>http://127.0.0.1:8081/save-glb</code></li>
+  </ol>
+  <p>After import, run <code>scripts/setup_blender_scene.py</code> only on a fresh GLB — never on the finished realism master.</p>
+  <div id="status">Starting…</div>
+</main>
+<script>
+(async function () {
+  const status = document.getElementById('status');
+  const lines = [];
+  function log(msg) {
+    lines.push(msg);
+    status.textContent = lines.join('\n');
+    console.log(msg);
+  }
+  function fail(msg) {
+    log(msg);
+    status.className = 'err';
+    window.__EXPORT_ERROR__ = msg;
+  }
+
+  if (!window.THREE || !THREE.GLTFExporter || !window.HouseScene) {
+    fail('Missing Three.js, GLTFExporter, or houseScene.js. Serve this folder with node serve.js.');
+    return;
+  }
+
+  log('Building Three.js scene from houseScene.js…');
+  const data = window.HouseScene.build(THREE);
+  const root = data.root;
+
+  log('Waiting for async assets (car model)…');
+  await new Promise(function (resolve) {
+    let done = false;
+    const finish = function () { if (!done) { done = true; resolve(); } };
+    window.addEventListener('houseCarReady', finish, { once: true });
+    setTimeout(finish, 4000);
+  });
+
+  log('Preparing hierarchy and mesh names…');
+  root.visible = true;
+  if (data.exterior) data.exterior.visible = true;
+  if (data.site) data.site.visible = true;
+  if (data.outdoors) data.outdoors.forEach(function (o) { o.visible = true; });
+  if (data.floors) data.floors.forEach(function (f) { if (f.group) f.group.visible = true; });
+
+  let meshCount = 0;
+  root.traverse(function (o) {
+    o.visible = true;
+    if (!o.isMesh) return;
+    meshCount++;
+    const parentName = o.parent && o.parent.name ? o.parent.name : 'root';
+    const matKey = (o.userData && o.userData.matKey) || (o.material && o.material.name) || 'mat';
+    if (!o.name) o.name = parentName + '_' + matKey;
+  });
+  log('Meshes prepared: ' + meshCount);
+  log('Running GLTFExporter (binary GLB)…');
+
+  const exporter = new THREE.GLTFExporter();
+  const options = { binary: true, embedImages: true, truncateDrawRange: false };
+
+  function onDone(glb) {
+    const bytes = glb.byteLength || glb.size || 0;
+    log('GLB generated: ' + (bytes / 1048576).toFixed(2) + ' MB');
+    log('Posting to save server…');
+    fetch('http://127.0.0.1:8081/save-glb', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: glb
+    }).then(function (resp) {
+      return resp.text().then(function (text) {
+        if (!resp.ok) throw new Error(text || ('HTTP ' + resp.status));
+        log('Server: ' + text);
+        log('Export completed.');
+        status.className = 'ok';
+        window.__EXPORT_DONE__ = true;
+      });
+    }).catch(function (err) {
+      fail('Could not save the GLB. Is `node scripts/export-to-blender.js` running?\n' + err.message);
+    });
+  }
+
+  try {
+    if (exporter.parse.length >= 4) {
+      exporter.parse(root, onDone, function (err) { fail('GLTFExporter failed: ' + err); }, options);
+    } else {
+      exporter.parse(root, onDone, options);
+    }
+  } catch (err) {
+    fail('GLTFExporter threw: ' + err.message);
+  }
+})();
+</script>
+</body>
+</html>

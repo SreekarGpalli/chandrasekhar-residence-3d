@@ -1,0 +1,119 @@
+{
+  "_meta": {
+    "source": "MR Chandrasekhar Res - 01 GF.pdf (arch), 02 GF Beam.pdf (arch beam), Structures.pdf p5 (SLAB BEAM LAYOUT GROUND FLOOR)",
+    "extracted": "2026-08-21",
+    "units": "mm",
+    "origin": "X=0 at WEST outer face of building, Y=0 at NORTH outer face. +X = EAST, +Y = SOUTH.",
+    "north": "up on the architectural sheet; plan is 16600 (E-W) x 8870 (N-S)",
+    "scale_check": "19.405 mm/pt derived from the 8870 and 12650+3950 dimension strings; every room label reproduces to under 15 mm"
+  },
+  "levels": {
+    "gf_ffl_above_ground_mm": 750,
+    "floor_to_floor_mm": 3353,
+    "slab_thickness_mm": 140,
+    "comment_slab": "S1 = 5.5 in thick, 8mm@7in c/c + 10mm@6in c/c (Structures.pdf)",
+    "clear_soffit_above_gf_ffl_mm": 3213,
+    "beam_types": {
+      "B1": {"w": 230, "d": 457, "downstand_mm": 317, "clear_under_mm": 2896, "note": "9x18 in"},
+      "B2": {"w": 230, "d": 381, "downstand_mm": 241, "clear_under_mm": 2972, "note": "9x15 in"},
+      "B3": {"w": 230, "d": 381, "downstand_mm": 241, "clear_under_mm": 2972, "note": "9x15 in"},
+      "B4": {"w": 230, "d": 305, "downstand_mm": 165, "clear_under_mm": 3048, "note": "9x12 in"},
+      "CONCEALED": {"w": 230, "d": 140, "downstand_mm": 0, "clear_under_mm": 3213, "note": "flush with slab"}
+    }
+  },
+  "envelope": {"x0": 0, "y0": 0, "x1": 16600, "y1": 8870, "wall_thickness_ext": 230},
+  "rooms": [
+    {"id": "BED02",   "name": "Bedroom 02",                "x0": 231,   "y0": 231,  "x1": 4806,  "y1": 3416, "w": 4575, "d": 3185, "area_m2": 14.57, "type": "bedroom"},
+    {"id": "CBATH",   "name": "Common Bath",               "x0": 231,   "y0": 3526, "x1": 2037,  "y1": 5096, "w": 1806, "d": 1570, "area_m2": 2.84,  "type": "bath"},
+    {"id": "HWASH",   "name": "Handwash / Powder",         "x0": 2145,  "y0": 3526, "x1": 4913,  "y1": 5096, "w": 2768, "d": 1570, "area_m2": 4.35,  "type": "wet"},
+    {"id": "MBED",    "name": "Master Bedroom",            "x0": 231,   "y0": 5210, "x1": 4806,  "y1": 8639, "w": 4575, "d": 3429, "area_m2": 15.69, "type": "bedroom"},
+    {"id": "HALL",    "name": "Hall (Living)",             "x0": 4914,  "y0": 231,  "x1": 9372,  "y1": 3526, "w": 4458, "d": 3295, "area_m2": 14.69, "type": "living"},
+    {"id": "DINING",  "name": "Dining",                    "x0": 4914,  "y0": 3526, "x1": 9372,  "y1": 6539, "w": 4458, "d": 3013, "area_m2": 13.43, "type": "dining"},
+    {"id": "OFFICE",  "name": "Office / Study",            "x0": 9486,  "y0": 231,  "x1": 12424, "y1": 4732, "w": 2938, "d": 4501, "area_m2": 13.22, "type": "study"},
+    {"id": "KITCH",   "name": "Kitchen",                   "x0": 9521,  "y0": 4846, "x1": 12424, "y1": 8639, "w": 2903, "d": 3793, "area_m2": 11.01, "type": "kitchen"},
+    {"id": "UTIL",    "name": "Utility",                   "x0": 6873,  "y0": 6539, "x1": 9372,  "y1": 8639, "w": 2499, "d": 2100, "area_m2": 5.25,  "type": "utility"},
+    {"id": "MBATH",   "name": "Master Bath 01",            "x0": 4914,  "y0": 6668, "x1": 6759,  "y1": 8639, "w": 1845, "d": 1971, "area_m2": 3.64,  "type": "bath"},
+    {"id": "LOBBY",   "name": "Entry / Lift Lobby",        "x0": 12654, "y0": 5156, "x1": 14045, "y1": 6835, "w": 1391, "d": 1679, "area_m2": 2.34,  "type": "circulation"},
+    {"id": "LIFT",    "name": "Lift Shaft",                "x0": 12654, "y0": 7060, "x1": 14045, "y1": 8639, "w": 1391, "d": 1579, "area_m2": 2.20,  "type": "lift"},
+    {"id": "STAIR",   "name": "Staircase",                 "x0": 14275, "y0": 5156, "x1": 16375, "y1": 8639, "w": 2100, "d": 3483, "area_m2": 7.31,  "type": "stair", "flight_width": 975},
+    {"id": "PORTICO", "name": "Portico (covered car park)", "x0": 12654, "y0": 231,  "x1": 16375, "y1": 4925, "w": 3721, "d": 4694, "area_m2": 17.47, "type": "outdoor_covered"}
+  ],
+  "hall_dining_combined": {
+    "note": "HALL and DINING are one open volume: no wall between them, and the beam on that line is CONCEALED, so the ceiling is unbroken",
+    "x0": 4914, "y0": 231, "x1": 9372, "y1": 6539, "area_m2": 28.12
+  },
+  "beams_gf_ceiling": [
+    {"x0": 457,   "x1": 4467,  "y0": 0,    "y1": 231,  "o": "EW", "type": "B2"},
+    {"x0": 4921,  "x1": 9373,  "y0": 0,    "y1": 231,  "o": "EW", "type": "B2"},
+    {"x0": 9827,  "x1": 12198, "y0": 0,    "y1": 231,  "o": "EW", "type": "B2"},
+    {"x0": 12654, "x1": 16150, "y0": 0,    "y1": 231,  "o": "EW", "type": "B2"},
+    {"x0": 231,   "x1": 4693,  "y0": 2376, "y1": 2604, "o": "EW", "type": "B2", "note": "north edge of the FF sunken slab over Bedroom 02"},
+    {"x0": 4921,  "x1": 9373,  "y0": 3810, "y1": 4041, "o": "EW", "type": "CONCEALED", "note": "FLUSH - hall/dining ceiling is unbroken"},
+    {"x0": 9827,  "x1": 12424, "y0": 3810, "y1": 4041, "o": "EW", "type": "B2"},
+    {"x0": 16375, "x1": 16606, "y0": 3810, "y1": 4041, "o": "EW", "type": "B2"},
+    {"x0": 1,     "x1": 4921,  "y0": 4210, "y1": 4439, "o": "EW", "type": "B1?", "note": "depth to confirm on site"},
+    {"x0": 12654, "x1": 16375, "y0": 4925, "y1": 5156, "o": "EW", "type": "B3", "note": "portico / stair divider"},
+    {"x0": 4921,  "x1": 9604,  "y0": 6539, "y1": 6770, "o": "EW", "type": "B1?", "note": "dining / utility divider - depth to confirm"},
+    {"x0": 12654, "x1": 14045, "y0": 6835, "y1": 7063, "o": "EW", "type": "B4"},
+    {"x0": 231,   "x1": 4693,  "y0": 8639, "y1": 8870, "o": "EW", "type": "B2"},
+    {"x0": 4921,  "x1": 9373,  "y0": 8639, "y1": 8870, "o": "EW", "type": "B2"},
+    {"x0": 9827,  "x1": 12424, "y0": 8639, "y1": 8870, "o": "EW", "type": "B2"},
+    {"x0": 12654, "x1": 13819, "y0": 8639, "y1": 8870, "o": "EW", "type": "B4"},
+    {"x0": 14275, "x1": 16150, "y0": 8639, "y1": 8870, "o": "EW", "type": "B4"},
+    {"x0": 1,     "x1": 231,   "y0": 231,  "y1": 2376, "o": "NS", "type": "B4"},
+    {"x0": 1,     "x1": 231,   "y0": 2830, "y1": 4210, "o": "NS", "type": "B4?"},
+    {"x0": 1,     "x1": 231,   "y0": 4439, "y1": 8416, "o": "NS", "type": "B1"},
+    {"x0": 2593,  "x1": 2821,  "y0": 2604, "y1": 4210, "o": "NS", "type": "B4?", "note": "inside the FF sunken zone"},
+    {"x0": 4693,  "x1": 4921,  "y0": 231,  "y1": 2376, "o": "NS", "type": "B3"},
+    {"x0": 4693,  "x1": 4921,  "y0": 2830, "y1": 4210, "o": "NS", "type": "B3?"},
+    {"x0": 4693,  "x1": 4921,  "y0": 4439, "y1": 8416, "o": "NS", "type": "B1"},
+    {"x0": 6642,  "x1": 6872,  "y0": 6770, "y1": 8639, "o": "NS", "type": "B4?"},
+    {"x0": 9373,  "x1": 9604,  "y0": 231,  "y1": 3810, "o": "NS", "type": "B2"},
+    {"x0": 9373,  "x1": 9604,  "y0": 4041, "y1": 6539, "o": "NS", "type": "B2?"},
+    {"x0": 9373,  "x1": 9604,  "y0": 6539, "y1": 8639, "o": "NS", "type": "B1"},
+    {"x0": 12424, "x1": 12654, "y0": 231,  "y1": 3810, "o": "NS", "type": "B2"},
+    {"x0": 12424, "x1": 12654, "y0": 4264, "y1": 5156, "o": "NS", "type": "B3"},
+    {"x0": 12424, "x1": 12654, "y0": 5156, "y1": 6835, "o": "NS", "type": "B3"},
+    {"x0": 12424, "x1": 12654, "y0": 7065, "y1": 8416, "o": "NS", "type": "B4"},
+    {"x0": 14045, "x1": 14275, "y0": 5156, "y1": 6835, "o": "NS", "type": "B4"},
+    {"x0": 14045, "x1": 14275, "y0": 7289, "y1": 8639, "o": "NS", "type": "B4"},
+    {"x0": 16375, "x1": 16606, "y0": 231,  "y1": 3810, "o": "NS", "type": "B2"},
+    {"x0": 16375, "x1": 16606, "y0": 4041, "y1": 4925, "o": "NS", "type": "B2?"},
+    {"x0": 16375, "x1": 16606, "y0": 5382, "y1": 8639, "o": "NS", "type": "B2"}
+  ],
+  "ff_sunken_slab_zones": [
+    {"x0": 231, "x1": 4693, "y0": 2604, "y1": 4210, "note": "FF toilet block above; slab drops here, so the GF ceiling is LOWER over the north part of Common Bath / Handwash and the south strip of Bedroom 02"},
+    {"x0": 4914, "x1": 6759, "y0": 6668, "y1": 8639, "note": "FF toilet above Master Bath 01"}
+  ],
+  "openings": {
+    "_note": "read from the wall mid-plane glass line; widths are structural openings",
+    "north_wall_y0_231": [
+      {"x0": 3757, "x1": 4358,  "w": 601,  "kind": "window", "room": "BED02"},
+      {"x0": 7723, "x1": 8773,  "w": 1050, "kind": "door",   "room": "HALL", "note": "face line broken plus a swing arc, so a door out to the north setback"},
+      {"x0": 9823, "x1": 10424, "w": 601,  "kind": "window", "room": "OFFICE"}
+    ],
+    "south_wall_y8639_8870": [
+      {"x0": 3606,  "x1": 4358,  "w": 752,  "kind": "window", "room": "MBED"},
+      {"x0": 5115,  "x1": 5664,  "w": 549,  "kind": "window", "room": "MBATH"},
+      {"x0": 7875,  "x1": 8773,  "w": 898,  "kind": "window", "room": "UTIL"},
+      {"x0": 10450, "x1": 11504, "w": 1054, "kind": "window", "room": "KITCH"}
+    ],
+    "west_wall_x0_231": [
+      {"y0": 328,  "y1": 955,  "w": 627, "kind": "window", "room": "BED02"},
+      {"y0": 3675, "y1": 4275, "w": 600, "kind": "window", "room": "CBATH"},
+      {"y0": 5310, "y1": 6235, "w": 925, "kind": "window", "room": "MBED"}
+    ],
+    "east_wall_of_main_block_x12424_12654": [
+      {"y0": 681,  "y1": 1731, "w": 1050, "kind": "door",   "room": "OFFICE", "note": "door from PORTICO into OFFICE, swings into the office"},
+      {"y0": 2224, "y1": 3425, "w": 1201, "kind": "window", "room": "OFFICE"},
+      {"y0": 5445, "y1": 6045, "w": 600,  "kind": "window", "room": "KITCH", "note": "over the sink, faces the lift lobby"}
+    ]
+  },
+  "kitchen_fitout": {
+    "sink":          {"x0": 11895, "x1": 12398, "y0": 5514, "y1": 6519, "wall": "east"},
+    "hob":           {"x0": 11895, "x1": 12398, "y0": 6910, "y1": 7690, "wall": "east", "note": "chimney point required above"},
+    "fridge":        {"x0": 9421,  "x1": 10218, "y0": 4885, "y1": 5555},
+    "counter_north": {"x0": 10240, "x1": 12415, "y0": 4846, "y1": 5375}
+  },
+  "columns_note": "C1 to C17 as per plan, typically 230 x 450 at wall junctions"
+}

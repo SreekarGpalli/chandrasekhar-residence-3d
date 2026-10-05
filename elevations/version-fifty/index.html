@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover">
-<title>Elevation · Version Thirty-Eight · Chandrasekhar Residence</title>
-<meta name="description" content="Exterior elevation — Version Thirty-Eight. Extended East L-box rods to SF rail height; Version 33 South solid wall with 3-light window.">
+<title>Elevation · Version Fifty · Chandrasekhar Residence</title>
+<meta name="description" content="Exterior elevation — Version Fifty. Extended East L-box rods to SF rail height; Version 33 South solid wall with 3-light window.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -94,16 +94,16 @@
 
 <header id="titleblock">
   <h1>PHOTOREAL ELEVATION</h1>
-  <p>VERSION FORTY-ONE · GRAPHITE ROD BOX</p>
+  <p>VERSION FIFTY · SF PULLED IN (V41)</p>
   <div class="ver">SSGI · SSR · TEMPORAL · FILMIC</div>
   <i></i>
 </header>
 
 <nav id="nav" aria-label="Elevation versions">
-  <a href="../version-forty-one/" class="on" title="Splayed Box Frame with Satin Warm Graphite Rods">V41 · Graphite Rods</a>
+  <a href="../version-forty-one/" title="Splayed Box Frame with Satin Warm Graphite Rods">V41 · Graphite Rods</a>
   <a href="../version-forty-three/" title="Continuous Unbroken Rods · Recessed Slabs">V43 · Continuous Rods</a>
   <a href="../version-forty-nine/" title="V43 with the SF east wall 5 ft in, straight parapet">V49 · V43 SF In</a>
-  <a href="../version-fifty/" title="V41 with the SF east wall 5 ft in, straight parapet">V50 · V41 SF In</a>
+  <a href="../version-fifty/" class="on" title="V41 with the SF east wall 5 ft in, straight parapet">V50 · V41 SF In</a>
   <a href="../">All</a>
 </nav>
 
@@ -130,7 +130,7 @@
 <div id="conv"><span>RESOLVING</span><u><i></i></u></div>
 
 <div id="loading">
-  <div class="lt">VERSION FORTY-ONE</div>
+  <div class="lt">VERSION FIFTY</div>
   <div class="ls">BUILDING PBR MATERIALS</div>
   <div class="pb"><i></i></div>
 </div>
@@ -147,7 +147,7 @@
     return;
   }
 
-  var STAMP = 'V41_GRAPHITE_20261001_v5';
+  var STAMP = 'V50_SFPULL_20261005c';
 
   function say(msg) {
     var ls = document.querySelector('#loading .ls');
@@ -187,7 +187,7 @@
     .then(function () { return loadOne(['../../lib/DRACOLoader.js', '/lib/DRACOLoader.js'], true); })
     .then(function () { return loadOne(['../../perf.js', '/perf.js'], true); })
     .then(function () { return loadOne(['houseScene.js?v=' + STAMP,
-                                        '/elevations/version-forty-one/houseScene.js?v=' + STAMP], false); })
+                                        '/elevations/version-fifty/houseScene.js?v=' + STAMP], false); })
     .then(function () {
       if (!window.THREE) { bootFail('FAILED TO LOAD 3D ENGINE'); return; }
       if (!window.HouseScene) { bootFail('FAILED TO LOAD SCENE'); return; }

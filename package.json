@@ -1,0 +1,13 @@
+{
+  "name": "chandrasekhar-residence-3d",
+  "version": "1.0.0",
+  "description": "Interactive 3D visualization and Blender photoreal master of Chandrasekhar Residence",
+  "scripts": {
+    "start": "node serve.js",
+    "dev": "node serve.js",
+    "export:blender": "node scripts/export-blender-web.js"
+  },
+  "keywords": ["threejs", "blender", "gltf", "draco", "architecture"],
+  "author": "",
+  "license": "ISC"
+}

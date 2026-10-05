@@ -1,30 +1,23 @@
 /* ============================================================
-   elevations / version-forty-four — EXTERIOR ONLY (Version Forty-Four)
-   Built from V43.
+   elevations / version-forty-nine — EXTERIOR ONLY (V49 = V43 + SF east wall and roof edge pulled 1220 mm inside)
+   V31 with the SE rod screen turned into a solid plaster wall
+   from the first-floor slab to the second-floor rail height.
 
-     · East rod screen removed entirely (SE rod box, south slit wall,
-       FF splayed east box). FF and SF east decks run to the full
-       east lip with plain MS railings on east + south edges.
-     · Second floor pulled back: the east bedroom moves west into the
-       old bath / walk-in strip (x 4920..9600), so the SF building
-       face in the south half sits at x 9830 instead of 12650.
-     · Its bathroom moves into the gap between the bedroom and the
-       lift (x 9830..12420, y 230..1805), lined up with the lift's
-       north face.
-     · The whole SF block (bedroom + family room) and the roof slab
-       stop at the bedroom wall, x 9830. East of it the SF is open
-       terrace. No pergola.
-     · Flat walkable slab over bath + lift joins the roof terrace (one
-       terrace, one parapet). Tiled lean-to RCC roofs hang off it at its
-       parapet-top level, no posts: one falls east off the main slab's
-       parapet, one north off the bath/lift parapet; valley between them.
-     · MS spiral service stair east of the lift, from the SF terrace up
-       onto the bath/lift terrace.
-     · Stair mumty removed; an MS spiral service stair in front of the
-       bedroom window climbs from the SF terrace to the flat roof.
+     · SE screen — south leg is a solid plaster wall; east
+       leg keeps the vertical rods.
+     · FF east box — projecting sit-out to the north end, 265 mm
+       proud of the screen plane and 275 into the slab, with the
+       opening splayed on all four sides and an MS rail on the
+       same east line as the second-floor living bay.
+     · FF south balcony — plaster wall on the SW bay (same run
+       as the SF wall). No timber cladding.
+
+   Ground and second floor otherwise stay as V29. Terrace slab on
+   the east stops at the lift shaft. The pergola is only the
+   south-east half of that outer strip.
    ============================================================ */
 window.HouseScene = (function () {
-  if (typeof window !== 'undefined') window.__HOUSE3D_STAIR_RAIL__ = 'V44_SFPULLBACK_20261003';
+  if (typeof window !== 'undefined') window.__HOUSE3D_STAIR_RAIL__ = 'V33_OFFW_20260816b';
   'use strict';
 
   /* ---------------- levels (metres) ---------------- */
@@ -71,8 +64,6 @@ window.HouseScene = (function () {
     paver2:  0x777168,
     concrete:0x706d68,  // stair / yard — V6 warm concrete
     terraceF:0x706d68,  // terrace — V6 limestone
-    roofTile:0x8e4f3b,  // V44 Mangalore clay tile
-    roofRidge:0x6c3829, // V44 ridge / hip caps
     balcTile:0x706d68,  // FF/SF decks — V6 pale stone
     solar:   0x2a3038,  // recedes
     solarFrm:0x3a3530,
@@ -390,14 +381,6 @@ window.HouseScene = (function () {
       canopy: (mat, cx, cy, cz, rx, ry, rz, yaw) =>
         place(mat, canopyG, cx, cy, cz, rx, ry, rz, 0, yaw || 0, 0),
       cone: (mat, cx, cy, cz, r, h) => place(mat, coneG, cx, cy, cz, r, h, r),
-      // flat list of world-space triangle corners [x,y,z, x,y,z, ...]
-      tris: (mat, arr) => {
-        const g = new THREE.BufferGeometry();
-        g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
-        g.computeVertexNormals();
-        add(mat, g, new THREE.Matrix4());
-        g.dispose();
-      },
       build: (THREE2, materials) => {
         const g = new THREE2.Group();
         for (const key of Object.keys(buckets)) {
@@ -1369,9 +1352,8 @@ window.HouseScene = (function () {
     },
     f2: {
       E: [
-        // V44: on the pulled-back east wall (x 9600..9830), not on x 12650.
-        { c: 3240, w: 1500, sill: 900, h: 1400, type: 'win' },  // bedroom window (spiral stair in front)
-        { c: 6650, w: 3180, sill: 0, h: 2700, type: 'frenchdoor', panes: 3 } // family room glass wall
+        { c: 3200, w: 1200, sill: 1100, h: 900, type: 'win' },                   // bedroom window (south)
+        { c: 7060, w: 3180, sill: 0, h: 2700, type: 'frenchdoor', panes: 3 } // living: window+door as one glass wall
       ],
       N: [
         { c: 5500, w: 1000, sill: 900, h: 1400, type: 'win' },                   // left of void
@@ -1379,7 +1361,8 @@ window.HouseScene = (function () {
       ],
       S: [
         { c: 2500, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true },
-        { c: 7260, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true } // second bedroom (moved west) south window
+        { c: 6200, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
+        { c: 10000, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true } // east bedroom south window
       ],
       W: [
         { c: 3200, w: 1200, sill: 1100, h: 1200, type: 'win', chajja: true },
@@ -1915,10 +1898,10 @@ window.HouseScene = (function () {
       }
 
       const ASSETS = {
-        mango: ['assets/tree-mango.jpg', '/elevations/version-forty-three/assets/tree-mango.jpg'],
-        neem:  ['assets/tree-neem.jpg',  '/elevations/version-forty-three/assets/tree-neem.jpg'],
-        boug:  ['assets/shrub-boug.jpg', '/elevations/version-forty-three/assets/shrub-boug.jpg'],
-        hedge: ['assets/hedge.jpg',      '/elevations/version-forty-three/assets/hedge.jpg']
+        mango: ['assets/tree-mango.jpg', '/elevations/version-forty-nine/assets/tree-mango.jpg'],
+        neem:  ['assets/tree-neem.jpg',  '/elevations/version-forty-nine/assets/tree-neem.jpg'],
+        boug:  ['assets/shrub-boug.jpg', '/elevations/version-forty-nine/assets/shrub-boug.jpg'],
+        hedge: ['assets/hedge.jpg',      '/elevations/version-forty-nine/assets/hedge.jpg']
       };
 
       Promise.all([
@@ -2101,6 +2084,14 @@ window.HouseScene = (function () {
     const portY = [-762, 8870], eastX = [12650, 17362];
     // West edge of the SE pergola void — the lift's east face.
     const SHELTER_X = liftOX[1];
+    // SF east wall pulled 5 ft (1525 mm) inside. The lift keeps its own
+    // west wall on the old house line, and the roof terrace now ends on
+    // that line too: one straight east parapet sitting on the lift's west
+    // wall, lift roof outside it. Two columns carry the roof edge at SF.
+    const SF_PULL = 1525;
+    const SF_EB = [EB[0] - SF_PULL, EB[1] - SF_PULL];   // 10895 .. 11125
+    const ROOF_EX = EB[1];                               // 12650
+    const ROOF_COLS = [8720, 4290];                      // y centres, same grid as the portico columns
 
     // East rail run (FF/SF): y −762 → 9790. South 40% is a vertical fin screen.
     const EAST_RAIL_YS = -762;
@@ -2130,36 +2121,6 @@ window.HouseScene = (function () {
     // slab and anyone on those treads hit their head. East edge is the
     // outer face of the stair wall (16600).
     const VOID_WX = 14270, VOID_EX = 16600, LIFT_NY = 2035;
-    // V44 second floor: bedroom east wall band, bath north wall, family-room south wall.
-    const SF_BED_XE = [9600, 9830];
-    const SF_BATH_YN = 1805;
-    // Whole SF block (bedroom + family room) ends at the bedroom wall, and the
-    // roof slab stops there too. East of it the SF is open terrace.
-    const RX = SF_BED_XE[1];                 // 9830 roof / SF east face
-    // MS spiral service stair: SF terrace -> roof. Stands in the open SF
-    // terrace just east of the lift (clear of both tiled roofs), entered
-    // from the north, and lands west onto the bath/lift terrace through a
-    // gap in its east parapet.
-    // Centre set so the landing's outer edge meets the terrace edge (x 14270).
-    const SPIRAL = { x: 15050, y: 900, R: 750, gap: [350, 1450] };
-    // Roof terrace now includes a flat walkable slab over the bath + lift
-    // (x RX..14270, y -762..2035), joined to the main terrace with one
-    // parapet round the outside. Two tiled lean-to RCC slabs hang off the
-    // terrace at its own level (L.roof), no posts:
-    //   east arm  — off the main slab's east edge (x RX), falls EAST to the
-    //               old east-face line (x 12650);
-    //   north arm — off the bath/lift slab's north edge (y 2035), falls
-    //               NORTH the same 2820 mm.
-    // Equal widths, so their valley runs from the terrace's inner corner
-    // (RX, 2035) straight to the roof's inner corner (12650, 4855).
-    const LR = { x0: RX, xe: liftOX[0], xl: liftOX[1], ys: -762, yh: liftOY[1],
-                 pitch: 15 * Math.PI / 180 };
-    LR.yn = LR.yh + (LR.xe - LR.x0);           // 4855 north-arm eave
-    LR.yEnd = Y1n + 1000 + 10;                 // east arm covers the whole east parapet, to the NE corner
-    // High edges start at the TOP of the terrace parapet (coping), not at
-    // slab level: edgeWall top = base + 0.012 + 1.08 + 0.02.
-    LR.zTop = L.roof + 1.112;
-    const ROOF_WALL_TOP = L.roof;              // bath + lift walls carry the flat slab
     // Internal U-stair: 10 risers + mid landing + 10 risers → next floor (flush)
     const RISE_I = L.f2f / 20;
     const landI = (base) => base + 10 * RISE_I;
@@ -2719,38 +2680,22 @@ window.HouseScene = (function () {
         // FF only: south shell stops at the utility west wall (x>4805 is the
         // service band, walled at y -762..-646) and the east shell starts above
         // the wet-kitchen band (its SE corner wall y -762..1411 is drawn separately)
-        const ff = fl.sch === OPEN.f1, sf = fl.sch === OPEN.f2;
-        // SF (V44): the whole storey ends at the bedroom wall (x 9600..9830).
-        const sX1 = ff ? 4805 : sf ? SF_BED_XE[0] : X1 - 230,
-              nX1 = sf ? SF_BED_XE[0] : X1 - 230,
-              eY0 = ff ? 1411 : Y0n,
-              eBand = sf ? SF_BED_XE : EB;
-        wallRun(eBag, 'eastPlaster', 'y', eY0, Y1n, eBand[0], eBand[1], fl.fY, fl.h1, fl.fY, Eops);
+        const ff = fl.sch === OPEN.f1;
+        const sf = fl.sch === OPEN.f2;
+        const EBf = sf ? SF_EB : EB;
+        const nX1 = sf ? SF_EB[0] : X1 - 230;
+        const sX1 = ff ? 4805 : nX1, eY0 = ff ? 1411 : Y0n;
+        wallRun(eBag, 'eastPlaster', 'y', eY0, Y1n, EBf[0], EBf[1], fl.fY, fl.h1, fl.fY, Eops);
         wallRun(eBag, 'white', 'x', X0 + 230, nX1, NB[0], NB[1], fl.fY, fl.h1, fl.fY, Nops);
         wallRun(eBag, 'white', 'x', X0 + 230, sX1, SB[0], SB[1], fl.fY, fl.h1, fl.fY, Sops);
         wallRun(eBag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fl.fY, fl.h1, fl.fY, Wops);
-        for (const o of fl.sch.E) glazing(eBag, Object.assign({ face: 'E', band: eBand, floorY: fl.fY }, o));
+        for (const o of fl.sch.E) glazing(eBag, Object.assign({ face: 'E', band: EBf, floorY: fl.fY }, o));
         for (const o of fl.sch.N) glazing(eBag, Object.assign({ face: 'N', band: NB, floorY: fl.fY }, o));
         for (const o of fl.sch.S) glazing(eBag, Object.assign({ face: 'S', band: SB, floorY: fl.fY }, o));
         for (const o of fl.sch.W) glazing(eBag, Object.assign({ face: 'W', band: WB, floorY: fl.fY }, o));
       }
-      // ===== V44 SF pull-back =====
-      (function sfPullBack() {
-        const z0 = L.f2, z1 = L.roof;
-        const bx1 = RX;
-        // Bathroom between the bedroom and the lift (x 9830..12420,
-        // y 230..1805): south wall continues the shell, north wall lines up
-        // with the lift's north face, east side is the lift's west wall.
-        const vent = { c: 11125, w: 600, sill: 1700, h: 600 };
-        wallRun(eBag, 'white', 'x', bx1, EB[0], SB[0], SB[1], z0, ROOF_WALL_TOP, z0, [vent]);
-        glazing(eBag, Object.assign({ face: 'S', band: SB, floorY: z0, type: 'win', panes: 1, chajja: true }, vent));
-        const hi = { c: 11125, w: 1200, sill: 1800, h: 500 };
-        wallRun(eBag, 'white', 'x', bx1, EB[0], SF_BATH_YN, liftOY[1], z0, ROOF_WALL_TOP, z0, [hi]);
-        glazing(eBag, Object.assign({ face: 'N', band: [SF_BATH_YN, liftOY[1]], floorY: z0, type: 'fixed', panes: 2 }, hi));
-        pb(eBag, 'eastPlaster', EB[0], EB[1], Y0n, liftOY[1], z0, ROOF_WALL_TOP);   // lift west wall
-        // Bath + lift sit under the L-shaped tiled roof (slopedRoof below).
-      })();
-
+      // SF: the lift shaft's west wall stays on the old house line.
+      pb(eBag, 'eastPlaster', EB[0], EB[1], liftOY[0], liftOY[1], L.f2, L.roof);
       // FF south service bands (utility x 4920..8135 + common bath x 8250..9370
       // + wet kitchen x 9486..12420): dining slider back wall, west cheek,
       // cbath walls, divider, SE east wall with grill door, weather-secured
@@ -2784,16 +2729,14 @@ window.HouseScene = (function () {
         const xE = eastX[1] - 80;
         // Edge fascia. Every terrace lip stops at the lift east face.
         // East of SHELTER_X is pergola, not slab.
-        pb(eBag, 'white', 0, RX + 10, yN - 90, yN + 10, rt - 0.45, rt + 0.012);
-        pb(eBag, 'white', 0, LR.xl, yS - 10, yS + 90, rt - 0.45, rt + 0.012);
-        pb(eBag, 'white', LR.xl - 90, LR.xl + 10, yS - 10, LR.yh, rt - 0.45, rt + 0.012); // bath/lift east lip
-        pb(eBag, 'charDark', LR.xl - 96, LR.xl + 14, yS - 14, LR.yh, rt - 0.24, rt - 0.18);
+        pb(eBag, 'white', 0, ROOF_EX + 10, yN - 90, yN + 10, rt - 0.45, rt + 0.012);
+        pb(eBag, 'white', 0, ROOF_EX + 10, yS - 10, yS + 90, rt - 0.45, rt + 0.012);
         pb(eBag, 'white', 0, 100, yS, yN, rt - 0.45, rt + 0.012);
-        pb(eBag, 'white', RX - 90, RX + 10, LR.yh, yN, rt - 0.45, rt + 0.012);
-        pb(eBag, 'charDark', 0, RX + 12, yN - 96, yN + 14, rt - 0.24, rt - 0.18);
-        pb(eBag, 'charDark', 0, LR.xl, yS - 14, yS + 96, rt - 0.24, rt - 0.18);
+        pb(eBag, 'white', ROOF_EX - 90, ROOF_EX + 10, yS - 10, yN, rt - 0.45, rt + 0.012);
+        pb(eBag, 'charDark', 0, ROOF_EX + 12, yN - 96, yN + 14, rt - 0.24, rt - 0.18);
+        pb(eBag, 'charDark', 0, ROOF_EX + 12, yS - 14, yS + 96, rt - 0.24, rt - 0.18);
         pb(eBag, 'charDark', -6, 106, yS, yN, rt - 0.24, rt - 0.18);
-        pb(eBag, 'charDark', RX - 96, RX + 14, LR.yh, yN, rt - 0.24, rt - 0.18);
+        pb(eBag, 'charDark', ROOF_EX - 96, ROOF_EX + 14, yS - 14, yN, rt - 0.24, rt - 0.18);
         // Terrace parapet sits ON the deck — same L as V25.
         // Everything below the terrace was flushed to the fascia lip (east
         // 17372, south -772), but the parapet kept the old projecting lines:
@@ -2808,29 +2751,14 @@ window.HouseScene = (function () {
         const PARA_XIN = PARA_XOUT - 230;   // 17140
         const PARA_SFC = yS + 65;           // -697 → 150 wall face lands on -772
         const PARA_YS = yS - 10;            //  -772 flushed south plane
-        const CUT_X = RX;
-        edgeWall(eBag, 'x', PARA_SFC, 0, CUT_X - 80, rt, 1.08);       // south
-        // V44: bath + lift slab joins the terrace — parapet runs round it
-        // (south, east, north) and the old east parapet starts north of it.
-        const PXL = LR.xl - 80, PYN = LR.yh - 80;
-        edgeWall(eBag, 'x', PARA_SFC, CUT_X - 80, PXL + 75, rt, 1.08);   // south
-        edgeWall(eBag, 'y', PXL, PARA_YS, SPIRAL.gap[0], rt, 1.08);       // east, split for
-        edgeWall(eBag, 'y', PXL, SPIRAL.gap[1], PYN + 75, rt, 1.08);      // the spiral landing
-        railPillar(eBag, PXL, SPIRAL.gap[0] - 90, rt, 1.08);
-        railPillar(eBag, PXL, SPIRAL.gap[1] + 90, rt, 1.08);
-        edgeWall(eBag, 'x', PYN, CUT_X - 80 - 75, PXL, rt, 1.08);        // north (tiles hang off it)
-        railPillar(eBag, PXL, PARA_SFC, rt, 1.08);
-        railPillar(eBag, PXL, PYN, rt, 1.08);
-        railPillar(eBag, CUT_X - 80, PYN, rt, 1.08);
-        edgeWall(eBag, 'y', CUT_X - 80, PYN, yN - 80, rt, 1.08);        // east lip (tiles hang off it)
-        edgeWall(eBag, 'x', yN - 80, xW, CUT_X - 80, rt, 1.08);       // north, only on remaining slab
+        const CUT_X = SHELTER_X;
+        edgeWall(eBag, 'x', PARA_SFC, 0, ROOF_EX - 80, rt, 1.08);     // south
+        edgeWall(eBag, 'y', ROOF_EX - 80, PARA_YS, yN - 80, rt, 1.08); // east, straight, on the lift's west wall
+        edgeWall(eBag, 'x', yN - 80, xW, ROOF_EX - 80, rt, 1.08);       // north
         edgeWall(eBag, 'y', xW, PARA_YS, yN - 80, rt, 1.08);          // west
-        railPillarsAlong(eBag, 'y', CUT_X - 80, PARA_YS, yN - 80, rt, 1.08, { start: true, end: true });
         railPillar(eBag, xW, PARA_SFC, rt, 1.08);
         railPillar(eBag, xW, yN - 80, rt, 1.08);
-        railPillar(eBag, CUT_X - 80, PARA_SFC, rt, 1.08);
-        railPillar(eBag, CUT_X - 80, yN - 80, rt, 1.08);
-        railPillar(eBag, CUT_X - 80, (PARA_YS + yN) / 2, rt, 1.08);
+        // East parapet stays one flat run end to end — no pillars on it.
       })();
 
       // terrace floor with cutouts for stairwell and lift shaft
@@ -2839,15 +2767,79 @@ window.HouseScene = (function () {
          is decided by draw order, which flips as the camera orbits — the deck
          swapped between limestone and white plaster mid-turn. Matches the fix in
          the root houseScene.js; see the longer note there. */
-      pb(eBag, 'terraceF', 150, RX - 80, -612, 6496, L.roof - 0.055, L.roof + 0.005);
-      // V44 bath + lift terrace (inside its parapets)
-      pb(eBag, 'white', RX, LR.xl, LR.ys, LR.yh, L.roof - L.slabT, L.roof);
-      pb(eBag, 'charDark', RX + 60, LR.xl - 60, LR.ys + 60, LR.yh - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      pb(eBag, 'terraceF', RX - 80, LR.xl - 155, -612, LR.yh - 155, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 150, RX - 80, 6496, 8641, L.roof - 0.055, L.roof + 0.005); // V44: no mumty
-      pb(eBag, 'terraceF', 150, RX - 80, 8641, 9720, L.roof - 0.055, L.roof + 0.005);
-      // V44: stair mumty removed — the roof is reached by the MS spiral
-      // service stair from the SF terrace (see spiralStair).
+      pb(eBag, 'terraceF', 150, ROOF_EX, 150, 230, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, ROOF_EX, 230, 1805, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, ROOF_EX, 1805, EAST_RAFTER_YE, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, ROOF_EX, EAST_RAFTER_YE, 6496, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, 230, 6496, 8641, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 5600, ROOF_EX, 6496, 8641, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, ROOF_EX, 8641, Y1n, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, ROOF_EX, Y1n, 9720, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, ROOF_EX, -612, 150, L.roof - 0.055, L.roof + 0.005);
+      // mumty (stair head, expanded to x=5600 and aligned with walls below)
+      const mx = [230, 5600], my = [6496, 8641];
+      wallRun(eBag, 'white', 'x', mx[0] - 230, mx[1] + 115, my[0] - 115, my[0], L.roof, L.roof + 2.55, L.roof, []);
+      wallRun(eBag, 'white', 'x', mx[0] - 230, mx[1] + 115, my[1], my[1] + 229, L.roof, L.roof + 2.55, L.roof,
+              [{ c: 3500, w: 700, sill: 1300, h: 700 }]);
+      glazing(eBag, { face: 'N', band: [my[1], my[1] + 229], floorY: L.roof, c: 3500, w: 700, sill: 1300, h: 700, type: 'win', panes: 1 });
+      wallRun(eBag, 'white', 'y', my[0] - 115, my[1] + 229, mx[0] - 230, mx[0], L.roof, L.roof + 2.55, L.roof, []);
+      wallRun(eBag, 'eastPlaster', 'y', my[0] - 115, my[1] + 229, mx[1], mx[1] + 115, L.roof, L.roof + 2.55, L.roof,
+              [{ c: 7560, w: 900, sill: 0, h: 2150 }]);
+      glazing(eBag, { face: 'E', band: [mx[1], mx[1] + 115], floorY: L.roof, c: 7560, w: 900, sill: 0, h: 2150, type: 'door' });
+      // Mumty architectural glass roof system (industry standard laminated safety glass + structural steel grid):
+      const zMTop = L.roof + 2.55;
+      const mX0 = mx[0] - 230, mX1 = mx[1] + 115; // 0 .. 5715
+      const mY0 = my[0] - 115, mY1 = my[1] + 229; // 6381 .. 8870
+
+      // 1. Reinforced concrete parapet upstand curb (90 mm curb height above wall top)
+      pb(eBag, 'white', mX0, mX1, mY0, my[0], zMTop, zMTop + 0.09);
+      pb(eBag, 'white', mX0, mX1, my[1], mY1, zMTop, zMTop + 0.09);
+      pb(eBag, 'white', mX0, mx[0], my[0], my[1], zMTop, zMTop + 0.09);
+      pb(eBag, 'white', mx[1], mX1, my[0], my[1], zMTop, zMTop + 0.09);
+
+      // 2. Weatherproof dark metal coping & drip flashing on concrete curb
+      pb(eBag, 'charDark', mX0 - 24, mX1 + 24, mY0 - 24, my[0] + 12, zMTop + 0.088, zMTop + 0.118);
+      pb(eBag, 'charDark', mX0 - 24, mX1 + 24, my[1] - 12, mY1 + 24, zMTop + 0.088, zMTop + 0.118);
+      pb(eBag, 'charDark', mX0 - 24, mx[0] + 12, my[0], my[1], zMTop + 0.088, zMTop + 0.118);
+      pb(eBag, 'charDark', mx[1] - 12, mX1 + 24, my[0], my[1], zMTop + 0.088, zMTop + 0.118);
+
+      // 3. Structural steel sub-frame: 4 transverse I/box rafters + longitudinal center purlin
+      for (const rx of [1250, 2350, 3450, 4550]) {
+        pb(eBag, 'frame', rx - 35, rx + 35, mY0 + 10, mY1 - 10, zMTop + 0.06, zMTop + 0.155);
+        pb(eBag, 'steel', rx - 18, rx + 18, mY0 - 15, mY1 + 15, zMTop + 0.155, zMTop + 0.180); // top pressure plate
+      }
+      pb(eBag, 'frame', mX0 + 10, mX1 - 10, 7568 - 30, 7568 + 30, zMTop + 0.06, zMTop + 0.145);
+      pb(eBag, 'steel', mX0 - 15, mX1 + 15, 7568 - 16, 7568 + 16, zMTop + 0.155, zMTop + 0.180);
+
+      // 4. Laminated architectural safety glass panels (double glazed / UV tempered)
+      pb(eBag, 'glass', mX0 + 10, mX1 - 10, mY0 + 10, mY1 - 10, zMTop + 0.152, zMTop + 0.174);
+
+      // 5. Perimeter glazing clamp profile & weather seal trim
+      pb(eBag, 'steel', mX0 - 18, mX1 + 18, mY0 - 18, mY0 + 35, zMTop + 0.155, zMTop + 0.185);
+      pb(eBag, 'steel', mX0 - 18, mX1 + 18, mY1 - 35, mY1 + 28, zMTop + 0.155, zMTop + 0.185);
+      pb(eBag, 'steel', mX0 - 18, mX0 + 35, mY0, mY1, zMTop + 0.155, zMTop + 0.185);
+      pb(eBag, 'steel', mX1 - 35, mX1 + 18, mY0, mY1, zMTop + 0.155, zMTop + 0.185);
+      // Mumty interior: floor ONLY on arrival pad (stair void x < 4630 stays open)
+      pb(eBag, 'terraceF', 4630, mx[1] - 20, my[0] + 20, my[1] - 20, L.roof, L.roof + 0.02);
+      pb(eBag, 'skirt', 4630, mx[1] - 10, my[0] + 10, my[0] + 28, L.roof + 0.02, L.roof + 0.10);
+      pb(eBag, 'skirt', 4630, mx[1] - 10, my[1] - 28, my[1] - 10, L.roof + 0.02, L.roof + 0.10);
+      pb(eBag, 'skirt', mx[1] - 28, mx[1] - 10, my[0] + 10, my[1] - 10, L.roof + 0.02, L.roof + 0.10);
+      // Guard at arrival edge (x=4630) facing the void — does not cross the stair mouth
+      railing(eBag, 'y', 4630, 6550, 8600, L.roof, 0.95);
+      railing(eBag, 'x', 6550, 250, 4630, L.roof, 0.95);
+      railing(eBag, 'x', 8600, 250, 4630, L.roof, 0.95);
+      // Wall lamp + switchboard near east door
+      pb(eBag, 'charDark', 5480, 5560, 7400, 7520, L.roof + 1.55, L.roof + 1.95);
+      pb(eBag, 'steel', 5490, 5550, 7410, 7510, L.roof + 1.60, L.roof + 1.90);
+      pb(eBag, 'lamp', 5555, 5585, 7420, 7500, L.roof + 1.65, L.roof + 1.85);
+      pb(eBag, 'white2', 5400, 5480, 7600, 7900, L.roof + 1.20, L.roof + 1.55);
+      pb(eBag, 'charDark', 5410, 5470, 7620, 7880, L.roof + 1.25, L.roof + 1.50);
+      // Storage shelf on south mumty wall
+      pb(eBag, 'woodD', 800, 2800, 6550, 6620, L.roof + 1.40, L.roof + 1.48);
+      pb(eBag, 'woodF', 820, 2780, 6540, 6555, L.roof + 1.42, L.roof + 1.46);
+      // Ceiling downlight ring
+      eBag.cyl('steel', 2.9, L.roof + 2.48, -7.55, 0.06, 0.02);
+      eBag.cyl('downlight', 2.9, L.roof + 2.46, -7.55, 0.04, 0.03);
       // two water tanks on stands (SW)
       const tanks = [
         { x: 1850, y: 1700 },
@@ -2880,8 +2872,8 @@ window.HouseScene = (function () {
 
       // solar array, south-east half (Agni zone), 15° tilt facing south, 2 rows x 3 (6 panels)
       const tilt = 15 * Math.PI / 180;
-      for (let r = 0; r < 3; r++) for (let i = 0; i < 2; i++) {
-        const px = 7200 + i * 1520, py = 950 + r * 1750;  // V44: fits west of RX
+      for (let r = 0; r < 2; r++) for (let i = 0; i < 3; i++) {
+        const px = 8000 + i * 1520, py = 950 + r * 1750;
         eBag.box('solarFrm', px / 1000, L.roof + 0.34, -py / 1000, 1.42, 0.05, 1.02, tilt, 0, 0);
         eBag.box('solar', px / 1000, L.roof + 0.375, -py / 1000, 1.38, 0.022, 0.98, tilt, 0, 0);
         pb(eBag, 'charDark', px - 600, px - 520, py - 380, py + 420, L.roof, L.roof + 0.30);
@@ -2894,18 +2886,29 @@ window.HouseScene = (function () {
       // needed for Exterior view + walkthrough silhouette). Portico / balcony
       // *decks* live in separate outdoor0/1/2 groups so floor cutaways can show
       // them without revealing the whole multi-storey shell.
-      liftTower(eBag, ROOF_WALL_TOP, [L.porticoFl, L.f1, L.f2]);  // V44: capped by the sloped slab
+      liftTower(eBag, L.liftTop, [L.porticoFl, L.f1, L.f2]);
       externalStair(eBag, true);
       columnsEast(eBag, L.roof - L.slabT);
 
       // Terrace slab stops at the lift east face on every bay.
       // East of SHELTER_X is pergola only — no plate.
-      pb(eBag, 'white', 0, RX, -762, EAST_RAFTER_YE, L.roof - L.slabT, L.roof);
-      pb(eBag, 'charDark', 60, RX - 60, -702, EAST_RAFTER_YE - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      pb(eBag, 'white', 0, RX, EAST_RAFTER_YE, Y1n, L.roof - L.slabT, L.roof);
-      pb(eBag, 'charDark', 60, RX - 60, EAST_RAFTER_YE, Y1n - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      pb(eBag, 'white', 0, RX, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
-      pb(eBag, 'charDark', 60, RX - 60, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
+      pb(eBag, 'white', 0, ROOF_EX, -762, EAST_RAFTER_YE, L.roof - L.slabT, L.roof);
+      pb(eBag, 'charDark', 60, ROOF_EX - 60, -702, EAST_RAFTER_YE - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
+      // Lift roof — its own slab outside the terrace parapet, thin coping lip.
+      pb(eBag, 'white', ROOF_EX, liftOX[1], liftOY[0], liftOY[1], L.liftTop - L.slabT, L.liftTop);
+      pb(eBag, 'white', ROOF_EX + 230, liftOX[1] - 230, liftOY[0] + 230, liftOY[1] - 230, L.liftTop, L.liftTop + 0.03);
+      // SF rain cover for the lift door: the lift roof runs 1200 mm further
+      // north as a canopy over the landing, and the lift's east wall follows
+      // it down to the SF deck. Stops 44 mm short of the pergola's NW post.
+      const LIFT_CANOPY_YN = liftOY[1] + 1200;   // 3235
+      pb(eBag, 'white', ROOF_EX, liftOX[1], liftOY[1], LIFT_CANOPY_YN, L.liftTop - L.slabT, L.liftTop);
+      pb(eBag, 'charDark', ROOF_EX + 40, liftOX[0] + 1390, liftOY[1] + 20, LIFT_CANOPY_YN - 40, L.liftTop - L.slabT - 0.008, L.liftTop - L.slabT);
+      pb(eBag, 'eastPlaster', 14040, liftOX[1], liftOY[1], LIFT_CANOPY_YN, L.f2 + 0.012, L.liftTop - L.slabT);
+      pb(eBag, 'charDark', ROOF_EX, liftOX[1] + 14, liftOY[0] - 14, LIFT_CANOPY_YN + 14, L.liftTop - 0.24, L.liftTop - 0.18);
+      pb(eBag, 'white', 0, ROOF_EX, EAST_RAFTER_YE, Y1n, L.roof - L.slabT, L.roof);
+      pb(eBag, 'charDark', 60, ROOF_EX - 60, EAST_RAFTER_YE, Y1n - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
+      pb(eBag, 'white', 0, ROOF_EX, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
+      pb(eBag, 'charDark', 60, ROOF_EX - 60, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
       // Wall lamps — dark body + steel bezel + warm lens.
       // Flank centers sit OUTSIDE the opening leaf + accent surround (~130 mm),
       // never on the glass / door leaf itself.
@@ -2933,196 +2936,13 @@ window.HouseScene = (function () {
         }
       })();
 
-
-      // ===== V44 TILED LEAN-TO ROOF, HUNG OFF THE TERRACE =====
-      // Plan (mm), terrace to the south-west of H0:
-      //   H0(x0,yh) ───────────── H1(xl,yh)     high edge (bath/lift slab)
-      //    │  ╲  north arm, falls north │
-      //    │   ╲valley   N0(xe,yn) ── N1(xl,yn) eave
-      //    │ east arm│ falls east
-      //   E1(x0,yEnd) ─ E0(xe,yEnd)
-      //   high edge on x0 (main slab)
-      (function slopedRoof() {
-        const { x0, xe, xl, yh, yn, yEnd } = LR;
-        const t = Math.tan(LR.pitch);
-        const Z0 = LR.zTop;                              // high edge on the parapet coping
-        const TV = 0.12 / Math.cos(LR.pitch);
-        const TT = 0.03;
-        const W3 = (x, y, z) => [x / 1000, z, -y / 1000];
-        // fall from the nearer high edge (max height = valley)
-        const fall = (x, y) => Math.min(x <= xe + 1 ? x - x0 : 1e9, y <= yn + 1 ? y - yh : 1e9);
-        const rcc = (x, y) => Z0 - t * Math.max(0, Math.min(fall(x, y), xe - x0)) / 1000;
-        const tileZ = (x, y) => rcc(x, y) + TT;
-        const soffit = (x, y) => rcc(x, y) - TV;
-
-        const top = [], bot = [], tq = [];
-        function quad(arr, a, b, c, d, nh) {
-          const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
-          const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
-          const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];
-          if (n[0] * nh[0] + n[1] * nh[1] + n[2] * nh[2] >= 0) arr.push(...a, ...b, ...c, ...a, ...c, ...d);
-          else arr.push(...a, ...c, ...b, ...a, ...d, ...c);
-        }
-        const V = (p, f) => W3(p[0], p[1], f(p[0], p[1]));
-        const H0 = [x0, yh], H1 = [xl, yh], N1 = [xl, yn], N0 = [xe, yn], E0 = [xe, yEnd], E1 = [x0, yEnd];
-        // north arm H0 H1 N1 N0, east arm H0 N0 E0 E1 (valley H0-N0)
-        for (const f of [[H0, H1, N1, N0], [H0, N0, E0, E1]]) {
-          quad(top, V(f[0], tileZ), V(f[1], tileZ), V(f[2], tileZ), V(f[3], tileZ), [0, 1, 0]);
-          quad(bot, V(f[0], soffit), V(f[1], soffit), V(f[2], soffit), V(f[3], soffit), [0, -1, 0]);
-        }
-        // slab edges all round (high edges sit on the parapet tops)
-        for (const [a, b, nh] of [[H1, N1, [1, 0, 0]], [N1, N0, [0, 0, -1]],
-                                  [N0, E0, [1, 0, 0]], [E0, E1, [0, 0, -1]],
-                                  [H0, H1, [0, 0, 1]], [E1, H0, [-1, 0, 0]]]) {
-          quad(tq, V(a, soffit), V(b, soffit), V(b, tileZ), V(a, tileZ), nh);
-        }
-        eBag.tris('roofTile', top);
-        eBag.tris('white', bot);
-        eBag.tris('white', tq);
-
-        function along(mat, pa, pe, wid, thk) {
-          const a = V(pa, tileZ), b = V(pe, tileZ);
-          const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
-          const hz = Math.hypot(dx, dz), len = Math.hypot(hz, dy);
-          if (len < 0.02) return;
-          const ry = Math.atan2(-dz, dx), rz = Math.atan2(dy, hz);
-          const nx = -Math.sin(rz) * Math.cos(ry), ny = Math.cos(rz), nz = Math.sin(rz) * Math.sin(ry);
-          const o = thk / 2;
-          eBag.box(mat, (a[0] + b[0]) / 2 + nx * o, (a[1] + b[1]) / 2 + ny * o, (a[2] + b[2]) / 2 + nz * o,
-            len, thk, wid, 0, ry, rz);
-        }
-        // tile ribs down each slope (240 mm pitch), stopping on the valley
-        for (let x = x0 + 120; x < xl; x += 240) {           // north arm: run north
-          const y1 = Math.min(yn, yh + (x - x0));
-          if (y1 - yh > 60) along('roofTile', [x, yh], [x, y1], 0.075, 0.024);
-        }
-        for (let y = yEnd - 120; y > yh; y -= 240) {         // east arm: run east
-          const x1 = Math.min(xe, x0 + (y - yh));
-          if (x1 - x0 > 60) along('roofTile', [x0, y], [x1, y], 0.075, 0.024);
-        }
-        // tile courses (level lines), 330 mm in plan
-        for (let d = 330; d < xe - x0 - 60; d += 330) {
-          const z = Z0 - t * d / 1000 + TT;
-          pb(eBag, 'roofRidge', x0 + d, xl, yh + d - 15, yh + d + 15, z - 0.01, z + 0.02);
-          pb(eBag, 'roofRidge', x0 + d - 15, x0 + d + 15, yh + d, yEnd, z - 0.01, z + 0.02);
-        }
-        // valley gutter, high-edge flashing, eave starter course
-        along('roofRidge', H0, N0, 0.20, 0.03);
-        along('roofRidge', H0, H1, 0.12, 0.05);
-        along('roofRidge', H0, E1, 0.12, 0.05);
-        const ze = rcc(xe, yn);
-        pb(eBag, 'roofTile', xe, xl, yn - 60, yn, ze - 0.01, ze + 0.07);
-        pb(eBag, 'roofTile', xe - 60, xe, yn, yEnd, ze - 0.01, ze + 0.07);
-      })();
-
-      // ===== V44 MS SPIRAL SERVICE STAIR (SF terrace -> roof) =====
-      // Standard Indian MS spiral, 1.5 m dia: 100 mm centre column,
-      // 6 mm chequer-plate wedge treads with a turned-down nosing and an
-      // outer edge angle, two balusters per tread, one continuous helical
-      // handrail. 15 risers (~224 mm), 20° per tread, clockwise. Enter at
-      // the north-west; the last tread arrives at the SW and a quarter-
-      // circle landing (west quadrant) opens straight onto the bath/lift
-      // terrace through the gap in its east parapet.
-      (function spiralStair() {
-        const { x: cx, y: cy, R } = SPIRAL;
-        const N = 15, rise = (L.roof - L.f2) / N;
-        const DEG = Math.PI / 180, STEP = 20 * DEG;
-        const thL0 = 225 * DEG, thL1 = 135 * DEG;          // landing quadrant (CW from 225 to 135)
-        const th = (k) => thL0 + STEP / 2 + (N - 1 - k) * STEP; // tread k centre (k = 1..14)
-        const Rm = R / 1000, r0 = 0.055;
-        const zT = (k) => L.f2 + k * rise;                  // top of tread k
-        const zLand = L.roof + 0.02;
-        const P = (r, a, z) => [cx / 1000 + r * Math.cos(a), z, -(cy / 1000 + r * Math.sin(a))];
-        const tri = [];
-        // annular-sector prism (a0..a1 any order), faces oriented outward
-        function sector(a0, a1, ra, rb, z0, z1) {
-          const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / (5 * DEG)));
-          const am = (a0 + a1) / 2, rmid = (ra + rb) / 2;
-          const C = P(rmid, am, (z0 + z1) / 2);
-          const q = (A, B, Cc, D) => {
-            const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2];
-            const vx = Cc[0] - A[0], vy = Cc[1] - A[1], vz = Cc[2] - A[2];
-            const nn = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];
-            const m = [(A[0] + Cc[0]) / 2 - C[0], (A[1] + Cc[1]) / 2 - C[1], (A[2] + Cc[2]) / 2 - C[2]];
-            if (nn[0] * m[0] + nn[1] * m[1] + nn[2] * m[2] >= 0) tri.push(...A, ...B, ...Cc, ...A, ...Cc, ...D);
-            else tri.push(...A, ...Cc, ...B, ...A, ...D, ...Cc);
-          };
-          for (let i = 0; i < n; i++) {
-            const a = a0 + (a1 - a0) * i / n, b = a0 + (a1 - a0) * (i + 1) / n;
-            q(P(ra, a, z1), P(rb, a, z1), P(rb, b, z1), P(ra, b, z1));   // top
-            q(P(ra, a, z0), P(rb, a, z0), P(rb, b, z0), P(ra, b, z0));   // bottom
-            q(P(rb, a, z0), P(rb, b, z0), P(rb, b, z1), P(rb, a, z1));   // outer arc
-            q(P(ra, a, z0), P(ra, b, z0), P(ra, b, z1), P(ra, a, z1));   // inner arc
-          }
-          q(P(ra, a0, z0), P(rb, a0, z0), P(rb, a0, z1), P(ra, a0, z1));
-          q(P(ra, a1, z0), P(rb, a1, z0), P(rb, a1, z1), P(ra, a1, z1));
-        }
-        // straight bar between two world points
-        function bar(a, b, w) {
-          const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
-          const hz = Math.hypot(dx, dz);
-          eBag.box('ms', (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2,
-            Math.hypot(hz, dy) + w * 0.5, w, w, 0, Math.atan2(-dz, dx), Math.atan2(dy, hz));
-        }
-        const sit = L.f2 + 0.012;
-        // centre column + base plate + cap
-        eBag.cyl('ms', cx / 1000, (sit + zLand + 1.0) / 2, -cy / 1000, 0.05, zLand + 1.0 - sit);
-        eBag.cyl('ms', cx / 1000, sit + 0.008, -cy / 1000, 0.16, 0.016);
-        eBag.cyl('ms', cx / 1000, zLand + 1.0 + 0.01, -cy / 1000, 0.065, 0.02);
-        // treads: plate overlaps the next by 2° each side (plan nosing lap)
-        const half = STEP / 2 + 2 * DEG, RB = Rm - 0.035;
-        for (let k = 1; k <= N - 1; k++) {
-          const a = th(k), z = zT(k);
-          sector(a - half, a + half, r0, Rm, z - 0.006, z);                  // chequer plate
-          sector(a + STEP / 2 - 1.2 * DEG, a + STEP / 2 + 1.2 * DEG, r0, Rm, z - 0.05, z - 0.006); // nosing
-          sector(a - half, a + half, Rm - 0.03, Rm, z - 0.05, z - 0.006);    // outer edge angle
-          sector(a - half, a + half, r0, r0 + 0.04, z - 0.09, z);            // collar on the column
-          for (const da of [-STEP / 4, STEP / 4]) {                          // balusters
-            const pa = P(RB, a + da, z), pt = P(RB, a + da, z + 0.92);
-            eBag.box('ms', pa[0], (pa[1] + pt[1]) / 2, pa[2], 0.018, pt[1] - pa[1], 0.018);
-          }
-        }
-        // landing: quarter circle at terrace level + short plate to the slab
-        sector(thL1, thL0, r0, Rm, zLand - 0.006, zLand);
-        sector(thL1, thL0, Rm - 0.03, Rm, zLand - 0.06, zLand - 0.006);
-        sector(thL1 - 1.2 * DEG, thL1 + 1.2 * DEG, r0, Rm, zLand - 0.06, zLand - 0.006);
-        pb(eBag, 'ms', LR.xl - 30, cx - Rm * 1000 * Math.cos(45 * DEG) + 20,
-          cy - Rm * 1000 * Math.sin(45 * DEG), cy + Rm * 1000 * Math.sin(45 * DEG),
-          zLand - 0.006, zLand);
-        eBag.tris('ms', tri);
-
-        // helical handrail: centre of tread 1 → landing edge, every 2°
-        const hr = [];
-        const aStart = th(1) + STEP / 4, aEnd = thL0;          // CW: angles decrease
-        const zAt = (a) => {
-          const k = (thL0 + STEP / 2 + (N - 1) * STEP - a) / STEP; // fractional tread index
-          return L.f2 + Math.min(N, k) * rise + 0.92;
-        };
-        for (let a = aStart; a >= aEnd - 1e-6; a -= 2 * DEG) hr.push(P(RB, a, zAt(a)));
-        for (let i = 0; i < hr.length - 1; i++) bar(hr[i], hr[i + 1], 0.042);
-        // landing guard on the open north-west edge (radial line at 135°),
-        // tied into the column; post where the handrail ends
-        const gz = zLand + 1.0;
-        const g0 = P(r0 + 0.03, thL1, gz), g1 = P(RB, thL1, gz);
-        bar(g0, g1, 0.042);
-        bar(P(r0 + 0.03, thL1, zLand + 0.45), P(RB, thL1, zLand + 0.45), 0.03);
-        for (const r of [0.30, RB]) {
-          const b0 = P(r, thL1, zLand), b1 = P(r, thL1, gz);
-          eBag.box('ms', b0[0], (b0[1] + b1[1]) / 2, b0[2], 0.03, gz - zLand, 0.03);
-        }
-        const e0 = P(RB, aEnd, zLand), e1 = P(RB, aEnd, Math.max(gz, zAt(aEnd)));
-        eBag.box('ms', e0[0], (e0[1] + e1[1]) / 2, e0[2], 0.03, e1[1] - e0[1], 0.03);
-      })();
-
       // ===== EAST FACADE — quiet lime, more layers, no shout =====
       (function eastFacade() {
         const EF = 12650;
         const ey0 = 0, ey1 = 8870;
 
         // Thin storey datums — 70 mm proud, lime-capped, not 250 mm charcoal bars.
-        // V44: FF/SF datums sat flush with the deck tile (white line across the
-        // open terrace) and the roof one has no edge left on x 12650.
-        const datums = [L.f0];
+        const datums = [L.f0, L.f1, L.f2];
         for (const z of datums) {
           pb(eBag, 'charDark', EF - 6, EF + 72, ey0, ey1, z - 0.055, z - 0.008);
           pb(eBag, 'copingLight', EF - 8, EF + 78, ey0 - 8, ey1 + 8, z - 0.008, z + 0.012);
@@ -3156,13 +2976,17 @@ window.HouseScene = (function () {
         }
 
         // Flank lamps on the SF glass wall — centred on each jamb pier.
-        function eastWallLamp(cy, fl, EF) {
+        function eastWallLamp(cy, fl) {
           pb(eBag, 'charDark', EF, EF + 68, cy - 48, cy + 48, fl + 1.70, fl + 2.04);
           pb(eBag, 'steel', EF + 4, EF + 76, cy - 38, cy + 38, fl + 1.74, fl + 2.00);
           pb(eBag, 'lamp', EF + 72, EF + 98, cy - 32, cy + 32, fl + 1.78, fl + 1.96);
         }
-        eastWallLamp(4870, L.f2, RX);            // flank the family-room glass
-        eastWallLamp(8430, L.f2, RX);
+        // SF lamps sit on the pulled-in wall face.
+        for (const cy of [5360, 8760]) {
+          pb(eBag, 'charDark', SF_EB[1], SF_EB[1] + 68, cy - 48, cy + 48, L.f2 + 1.70, L.f2 + 2.04);
+          pb(eBag, 'steel', SF_EB[1] + 4, SF_EB[1] + 76, cy - 38, cy + 38, L.f2 + 1.74, L.f2 + 2.00);
+          pb(eBag, 'lamp', SF_EB[1] + 72, SF_EB[1] + 98, cy - 32, cy + 32, L.f2 + 1.78, L.f2 + 1.96);
+        }
       })();
 
       // ===== N / S / W facade datum bands (same language as east elevation) =====
@@ -3180,10 +3004,8 @@ window.HouseScene = (function () {
         const serviceWallTop = L.f2 + 0.05;
         for (const [bh0, bh1, ch0, ch1] of datums) {
           // North face (main block)
-          // V44: the roof band stops where the shortened SF ends.
-          const nE = bh0 > L.f2 + 1 ? RX - 10 : 12420;
-          pb(eBag, 'charDark', 200, nE, Y1n - 20, Y1n + 160, bh0, bh1);
-          pb(eBag, 'accentWarm', 190, nE + 10, Y1n - 25, Y1n + 170, ch0, ch1);
+          pb(eBag, 'charDark', 200, 12420, Y1n - 20, Y1n + 160, bh0, bh1);
+          pb(eBag, 'accentWarm', 190, 12430, Y1n - 25, Y1n + 170, ch0, ch1);
           // South face — bedroom stretch at y≈0 (wall exists all floors)
           pb(eBag, 'charDark', 200, 4800, -20, 160, bh0, bh1);
           pb(eBag, 'accentWarm', 190, 4810, -25, 170, ch0, ch1);
@@ -3229,7 +3051,138 @@ window.HouseScene = (function () {
         }
       })();
 
-      // ===== SE ROD BOX — removed in V44 (plain railings on the east decks) =====
+      // ===== SE ROD BOX — one frame wrapped round the corner =====
+      // V22's move is that the screen turns the SE corner and runs a short
+      // way west to mask the portico column. It used to be built as a grid
+      // of posts and rails with fins infilling each compartment, which read
+      // as eight separate panels rather than one wrapped box, and every
+      // fin died on a rail instead of running through.
+      //
+      // Now it is a single 275 mm-square section — 275 wide on the face,
+      // 275 deep — for every member of both legs. That makes the corner a
+      // plain 275 × 275 RCC column that both frames simply butt into, and
+      // every border on both elevations the same width. Each leg carries
+      // one field of identical rods running sill to head, unbroken.
+      //
+      // Border reads 120 mm flat off the arris, then 155 mm of splay
+      // falling 110 mm back into the opening (~55°). Because the splay
+      // runs INWARD, the frame is the union of the sloped half-spaces, so
+      // full-length planks mitre themselves at the free ends; at the corner
+      // they simply die on the column face. Nothing is coplanar with
+      // anything: outer faces clear the deck and terrace fascia bands by
+      // 6–17 mm, and every plank end is buried in the ring behind it.
+      (function seRodBox() {
+        const SEC = 275;                       // one section, both legs
+        const xFace = eastX[1] + 10;           // 17372 — flush with east fascia
+        const xBack = xFace - SEC;             // 17097 — body sits in the slab
+        const yFace = EAST_RAIL_YS - 10;       //  -772 — flush with south fascia
+        const yBack = yFace + SEC;             //  -497 — body sits in the slab
+        const yN1 = EAST_RAFTER_YE;            //  3459 east leg, north end
+        const xW0 = EAST_SOUTH_RET_XW;         // 16238 south leg, west end
+
+        const zIn0 = L.f1 + 0.018;             //  4.121 opening bottom (FF tile + 6)
+        const zOut0 = zIn0 - SEC / 1000;       //  3.846
+        const zOut1 = L.f2;                    // rods die on the SF slab
+        const zIn1 = zOut1 - SEC / 1000;       //  7.181
+
+        const zCap0 = L.f1 - 0.45;             // 3.653 m bottom sill (ground floor upper beam soffit)
+        const zRod0 = zCap0 + 0.012;           // 3.665 m rods extend down to bottom sill
+        const zCap1 = L.f2 + 0.012 + 1.08;     // 8.543 m top head (SF railing cap)
+        const zRod1 = zCap1 - 0.012;           // 8.531 m rods extend up to top head
+
+        // South leg: solid plaster wall, FF lower beam soffit to SF rail cap.
+        // East leg: continuous unbroken vertical rods from bottom beam soffit to SF rail cap.
+        const FL = 46, PIT = 70, STILE = 80;
+        const RB = 60;
+        const yNt0 = yN1 - STILE;
+
+        // South wall with three smaller vertical slit windows:
+        // Spanned evenly across the solid wall (xW0 to xBack, total width = 2827 mm).
+        // Each vertical window has its own perimeter charcoal frame, glass, and stone sill ledge.
+        const zWs = L.f1 + 0.90, zWh = L.f1 + 2.70;
+        const totalSpan = xBack - xW0; // 2827 mm
+        const NUM_WINS = 3;
+        const WIN_W = 460; // 460 mm wide vertical window
+        const totalWinW = NUM_WINS * WIN_W; // 1380 mm
+        const totalPierW = totalSpan - totalWinW; // 1447 mm
+        const pierW = totalPierW / (NUM_WINS + 1); // ~361.75 mm pier width between & flanking windows
+
+        // Base wall below windows and top wall above windows
+        pb(eBag, 'white', xW0, xBack, yFace, yBack, zCap0, zWs);
+        pb(eBag, 'white', xW0, xBack, yFace, yBack, zWh, zCap1);
+        pb(eBag, 'white', xW0, xBack, yFace, yBack, L.f2, L.f2 + 0.012);
+
+        // Compute the 3 window intervals and plaster piers
+        const wins = [];
+        let currX = xW0;
+        for (let i = 0; i < NUM_WINS; i++) {
+          const pierStart = currX;
+          const pierEnd = currX + pierW;
+          // Plaster pier before this window
+          pb(eBag, 'white', pierStart, pierEnd, yFace, yBack, zWs, zWh);
+          const winStart = pierEnd;
+          const winEnd = winStart + WIN_W;
+          wins.push({ x0: winStart, x1: winEnd });
+          currX = winEnd;
+        }
+        // Final plaster pier to the right (east end)
+        pb(eBag, 'white', currX, xBack, yFace, yBack, zWs, zWh);
+
+        // Frame and glazing for each of the three vertical windows
+        const WIN_J = 40; // 40 mm frame profile
+        const yFf = yFace - 18, yFb = yFace + 42;
+        const zHf0 = zWs - 0.040, zHf1 = zWh + 0.040;
+
+        for (let i = 0; i < wins.length; i++) {
+          const w = wins[i];
+          const xf0 = w.x0, xf1 = w.x1;
+          // Perimeter frame (left jamb, right jamb, sill, head)
+          pb(eBag, 'frame', xf0, xf0 + WIN_J, yFf, yFb, zHf0, zHf1);
+          pb(eBag, 'frame', xf1 - WIN_J, xf1, yFf, yFb, zHf0, zHf1);
+          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zHf0, zWs);
+          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zWh, zHf1);
+          // Glazing
+          pb(eBag, 'glass', xf0 + WIN_J, xf1 - WIN_J, yFace - 6, yFace + 24, zWs, zWh);
+          // Projecting stone sill ledge
+          pb(eBag, 'stone', xf0 - 8, xf1 + 8, yFace - 30, yFace + 52, zHf0 - 0.028, zHf0);
+        }
+
+        // Corner column: solid white column from ground ceiling soffit up to SF rail cap
+        pb(eBag, 'white', xBack, xFace, yFace, yBack, zCap0, zCap1);
+
+        // Second-floor north end terminal post (L.f2 to zCap1 at yN1)
+        pb(eBag, 'white', xFace - 6 - RB, xFace + 28, yN1 - 24, yN1, L.f2, zCap1);
+
+        // Ultra-thin micro mounting channels at top (8 mm) and bottom (6 mm)
+        const zBottomCap0 = zCap0;
+        const zBottomCap1 = zCap0 + 0.006;
+        const zTopCap0 = zCap1 - 0.008;
+        const zTopCap1 = zCap1;
+        
+        const zRodBottom = zBottomCap1;
+        const zRodTop = zTopCap0;
+
+        // Bottom micro-shoe running full span (yBack to yN1)
+        pb(eBag, 'white', xFace - 6 - RB, xFace + 28, yBack, yN1, zBottomCap0, zBottomCap1);
+        // Top micro-channel running full span (yBack to yN1)
+        pb(eBag, 'white', xFace - 6 - RB, xFace + 28, yBack, yN1, zTopCap0, zTopCap1);
+
+        // Mathematically uniform vertical rods (56 rods, exactly 28.14 mm gap across all 57 intervals)
+        const NUM_RODS = 56;
+        const ROD_W = 42;
+        const totalSpanY = yN1 - yBack; // 3956 mm
+        const gapY = (totalSpanY - NUM_RODS * ROD_W) / (NUM_RODS + 1); // 28.14 mm exact equal spacing
+
+        for (let i = 0; i < NUM_RODS; i++) {
+          const ry0 = yBack + (i + 1) * gapY + i * ROD_W;
+          const ry1 = ry0 + ROD_W;
+          pb(eBag, 'fin2', xFace - 6 - RB, xFace + 28, ry0, ry1, zRodBottom, zRodTop);
+        }
+
+        // Slabs recessed cleanly behind the continuous vertical rods
+        pb(eBag, 'white', xBack, xFace - 6 - RB - 10, yBack, yN1, L.f1 - 0.45, L.f1 + 0.012);
+        pb(eBag, 'white', xBack, xFace - 6 - RB - 10, yBack, yN1, L.f2, L.f2 + 0.012);
+      })();
 
     })();
     const exterior = eBag.build(THREE, materials); exterior.name = 'exterior'; root.add(exterior);
@@ -3252,6 +3205,8 @@ window.HouseScene = (function () {
       const EAST_PIL_X = EX1 - 110;
       const NORTH_FC = NBY1 - 80;
       const NORTH_PIL_Y = NBY1 - 100;
+      const DECK_SE = EAST_RAIL_YS - 10 + 275; // -497, inside the L-box
+      const BOX_X = eastX[1] + 10 - 275;       // 17097, inner face of the box
 
       /** Structural deck + tile + thin soffit for an outdoor rectangle */
       function outdoorDeck(bag, x0, x1, y0, y1, fY, tileMat) {
@@ -3301,12 +3256,13 @@ window.HouseScene = (function () {
       pb(o1, 'white', -10, 90, -762, 0, f1 - 0.45, f1 + 0.012);
       pb(o1, 'charDark', -10, 90, -762, 0, f1 - 0.24, f1 - 0.18);
       // Portico-top / south-east deck
-      outdoorDeck(o1, EX0, EX1, EAST_RAIL_YS, 230, f1);
+      outdoorDeck(o1, EX0, eastX[1] + 10 - 275, EAST_RAIL_YS - 10 + 275, 230, f1);
       // Lift roof only — not over the landing (headroom)
       outdoorDeck(o1, 14040, VOID_WX, 230, 1040, f1);
       // Outer east strip beside the full-width stair void
-      outdoorDeck(o1, VOID_EX, EX1, 230, 1040, f1);
-      outdoorDeck(o1, VOID_EX + 20, EX1, 1040, 3890, f1);
+      outdoorDeck(o1, VOID_EX, eastX[1] + 10 - 275, 230, 1040, f1);
+      outdoorDeck(o1, VOID_EX + 20, eastX[1] + 10 - 275, 1040, EAST_RAFTER_YE, f1);
+      outdoorDeck(o1, VOID_EX + 20, EX1, EAST_RAFTER_YE, 3890, f1);
       pb(o1, 'white', VOID_EX - 12, VOID_EX + 14, 230, 3890, f1 - 0.45, f1 + 0.012);
       pb(o1, 'charDark', VOID_EX - 16, VOID_EX + 18, 230, 3890, f1 - 0.24, f1 - 0.18);
       // East corridor (house face → void west), north of lift
@@ -3324,28 +3280,23 @@ window.HouseScene = (function () {
       // Edge fascia — north lip stops on the east box, which carries its own
       // 275 mm frame round the corner. Running the lip through to 18052 was
       // the old bay's outer face and left a coplanar white-on-white seam.
-      pb(o1, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'white', 0, BOX_X, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
       pb(o1, 'white', -10, 90, Y1n, NBY1 + 10, f1 - 0.45, f1 + 0.012);
-      pb(o1, 'white', EX1 - 90, EX1 + 10, -762 - 10, NBY1 - 90, f1 - 0.45, f1 + 0.012); // east lip
       // South fascia: 10 mm out / 90 mm in, matching the east lip. Stops at
       // the L-box so it does not stand in front of the south screen.
-      pb(o1, 'white', 0, EX1 - 90, -762 - 10, -762 + 90, f1 - 0.45, f1 + 0.012);
-      pb(o1, 'charDark', 0, EX1 + 14, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
+      pb(o1, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f1 - 0.45, f1 + 0.012);
+      pb(o1, 'charDark', 0, BOX_X, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', -10, 90, Y1n, NBY1 + 14, f1 - 0.24, f1 - 0.18);
-      pb(o1, 'charDark', 0, EX1 - 96, -762 - 16, -762 + 96, f1 - 0.24, f1 - 0.18);
-      pb(o1, 'charDark', EX1 - 96, EX1 + 14, -762 - 16, NBY1 - 96, f1 - 0.24, f1 - 0.18);
+      pb(o1, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f1 - 0.24, f1 - 0.18);
       // Metal on east + NE/SE bays. Long north/south runs and west returns are walls.
       // South bedroom balcony: plaster wall, same run as the SF wall above.
       edgeWall(o1, 'y', 80, SOUTH_FC, 0, f1, 1.08, { plain: true });
       edgeWall(o1, 'x', SOUTH_FC, 0, 4805, f1, 1.08, { plain: true });
       railPillar(o1, 80, SOUTH_FC, f1, 1.08);
-      // V44: plain MS rail on the whole east lip and the SE south return.
-      railing(o1, 'x', SOUTH_FC, EX0, EAST_RAIL_X, f1, 1.0);
-      railing(o1, 'y', EAST_RAIL_X, SOUTH_FC, NORTH_FC, f1, 1.0);
-      railPillar(o1, EAST_RAIL_X - 10, SOUTH_FC + 10, f1, 1.08);
+      railing(o1, 'x', SOUTH_FC, EX0, EAST_SOUTH_RET_XW, f1, 1.0);
       externalStairVoidRails(o1, f1);
       (function ffNorthGuard() {
-        const nX0 = 80, nX1 = EAST_RAIL_X;
+        const nX0 = 80, nX1 = BOX_X;
         const bay0 = lastBayStart(nX0, nX1);
         edgeWall(o1, 'x', NORTH_FC, nX0, bay0, f1, 1.08, { plain: true });
         railing(o1, 'x', NORTH_FC, bay0, nX1, f1, 1.0);
@@ -3353,6 +3304,91 @@ window.HouseScene = (function () {
         railPillar(o1, bay0, NORTH_PIL_Y, f1, 1.08);
       })();
       edgeWall(o1, 'y', 80, Y1n, NORTH_FC, f1, 1.08, { plain: true });
+      (function ffEastBox() {
+        // North bay of the first-floor east face: a projecting box with the
+        // opening splayed on all four sides.
+        //
+        // It still throws east, just less — 265 mm past the L-box plane
+        // instead of 680 — and it now reaches 275 mm back INTO the slab, so
+        // the frame is 540 mm deep and the reveal has something to happen in.
+        //
+        // The splay is built as four sloped planks, NOT as a stepped ring.
+        // Because the opening narrows going in, the four sloped half-spaces
+        // are a union, so the corners mitre themselves and the frame closes
+        // on the ring behind it — the trick the earlier attempt missed. Two
+        // rules make it hold, and both were broken before:
+        //   · thickness T ≥ SR·cos(ANG), or the plank stops short of the
+        //     ring and daylight shows through the head;
+        //   · each plank overruns into a SQUARE band at both ends (120 mm at
+        //     the face, 120 mm at the back), so the rotated end corners are
+        //     buried in solid instead of floating in the opening.
+        const xBack = BOX_X;                   // 17097 — 275 into the slab
+        const xIn = xBack + 120;               // 17217 — back band ends
+        const xSl = xIn + 300;                 // 17517 — splay ends
+        const xOut = xSl + 120;                // 17637 — box face, 265 proud
+        const y0 = EAST_RAFTER_YE;             //  3459 — butts the L-box
+        // 10 mm proud of the SF north lip at 9880 — same plane on both would
+        // put two north-facing white faces on top of each other and shimmer
+        const y1 = NBY1 + 20;                  //  9890 — north balcony end
+        const zOut0 = f1 - 0.45;               //  3.653 box soffit
+        const zOut1 = L.f2;                    //  7.456 box top
+
+        const SP = xSl - xIn, SR = 160;        // splay run / rise per side
+        // Face opening. The sill lands ON the deck at the back of the splay,
+        // so the balcony floor stays flat and the slope lives in the fascia.
+        const zF0 = f1 + 0.012 - SR / 1000;    //  3.955
+        const zF1 = zOut1 - 0.30;              //  7.156
+        const yF0 = y0 + 300, yF1 = y1 - 300;  //  3759 / 9580
+        const zB0 = zF0 + SR / 1000, zB1 = zF1 - SR / 1000;
+        const yB0 = yF0 + SR, yB1 = yF1 - SR;  //  3919 / 9420
+
+        // face band + splay zone — square ring on the FACE opening, so the
+        // planks only ever add material and never need anything subtracted
+        pb(o1, 'white', xIn, xOut, y0, y1, zOut0, zF0);
+        pb(o1, 'white', xIn, xOut, y0, y1, zF1, zOut1);
+        pb(o1, 'white', xIn, xOut, y0, yF0, zF0, zF1);
+        pb(o1, 'white', xIn, xOut, yF1, y1, zF0, zF1);
+        // back band — square ring on the BACK opening; also what the plank
+        // ends bury themselves in. white2 is the palette's reveal white:
+        // cooler and less grimy, so the reveal lifts away from the face
+        // instead of going tan under the ochre ground bounce.
+        pb(o1, 'white2', xBack, xIn, y0, y1, zOut0, zB0);
+        pb(o1, 'white2', xBack, xIn, y0, y1, zB1, zOut1);
+        pb(o1, 'white2', xBack, xIn, y0, yB0, zB0, zB1);
+        pb(o1, 'white2', xBack, xIn, yB1, y1, zB0, zB1);
+
+        const SPm = SP / 1000, SRm = SR / 1000;
+        const ANG = Math.atan2(SRm, SPm);
+        const HYP = Math.hypot(SPm, SRm);
+        const SA = Math.sin(ANG), CA = Math.cos(ANG);
+        const T = SRm * CA + 0.02;             // closes on the ring behind
+        // Overrun: zero at the back so the plank's low corner lands exactly
+        // on xIn and its sloped face runs continuously into the back band's
+        // soffit; 110 east so the high corner buries in the face band.
+        const EW = 0.0, EE = 0.11;
+        const PL = HYP + EW + EE;
+        const SH = (EE - EW) / 2;              // centre shift toward the face
+        const xMid = (xIn + xSl) / 2000 - SA * T / 2 + SH * CA;
+        const yMid = -(y0 + y1) / 2000, ySpan = (y1 - y0) / 1000;
+        const zMid = (zOut0 + zOut1) / 2, zSpan = zOut1 - zOut0;
+
+        // head — material above the slope
+        o1.box('white2', xMid, zF1 - SRm / 2 + CA * T / 2 + SH * SA, yMid,
+          PL, T, ySpan, 0, 0, ANG);
+        // sill — material below it
+        o1.box('white2', xMid, zF0 + SRm / 2 - CA * T / 2 - SH * SA, yMid,
+          PL, T, ySpan, 0, 0, -ANG);
+        // south jamb — material south of the slope
+        o1.box('white2', xMid, zMid, -(yF0 + SR / 2) / 1000 + CA * T / 2 + SH * SA,
+          PL, zSpan, T, 0, -ANG, 0);
+        // north jamb — material north of it
+        o1.box('white2', xMid, zMid, -(yF1 - SR / 2) / 1000 - CA * T / 2 - SH * SA,
+          PL, zSpan, T, 0, ANG, 0);
+
+        // MS rail on the same east line as the SF living bay, inside
+        // the splay so the frame still reads. Same 1.0 m height.
+        railing(o1, 'y', EAST_RAIL_X, yB0 + 20, yB1 - 20, f1, 1.0);
+      })();
       const g1 = o1.build(THREE, materials); g1.name = 'outdoor1'; root.add(g1); outdoors.push(g1);
 
       // --- outdoor2: SF outdoor decks ONLY ---
@@ -3361,15 +3397,36 @@ window.HouseScene = (function () {
       // South outdoor strip (portico-top + south balcony)
       // SW bedroom balcony — same south/west lips as FF, then the SE strip
       outdoorDeck(o2, 0, 4805, -762, 230, f2);
-      outdoorDeck(o2, 4805, EX1, EAST_RAIL_YS, 230, f2);
-      // V44 open terrace where the east half of the SF used to be
-      outdoorDeck(o2, RX, EX0, liftOY[1], Y1n, f2);
+      outdoorDeck(o2, 4805, BOX_X, DECK_SE, 230, f2);
       pb(o2, 'white', -10, 90, -762, 0, f2 - 0.45, f2 + 0.012);
       pb(o2, 'charDark', -10, 90, -762, 0, f2 - 0.24, f2 - 0.18);
       // East of lift shaft only (lift cutout 12650..14040 × 230..1805)
-      outdoorDeck(o2, 14040, EX1, 230, 1805, f2);
+      outdoorDeck(o2, 14040, BOX_X, 230, 1805, f2);
       // East sit-out north of lift — stops at the L-box, same as FF
-      outdoorDeck(o2, EX0, EX1, 1805, EAST_RAFTER_YE, f2);
+      outdoorDeck(o2, EX0, BOX_X, 1805, EAST_RAFTER_YE, f2);
+      // Strip freed by the SF wall pullback (new wall face -> old house line)
+      outdoorDeck(o2, SF_EB[1], EX0, 230, Y1n, f2);
+      // Exposed columns carrying the roof edge, on the portico column grid
+      // (y 8720 just short of the house's NE corner, y 4290). Same section
+      // and finish as columnsEast, outer face flush with the roof edge.
+      (function sfRoofColumns() {
+        const dx = (ROOF_EX - 150) - 16450;   // shift columnsEast's x centre to 12500
+        const X = (x) => x + dx;
+        const botH = f2 + 0.012, topH = L.roof - L.slabT;
+        const gap = 0.018, baseH = 0.42, capH = 0.18;
+        const shaftBot = botH + gap + baseH;
+        const shaftTop = topH - capH;
+        for (const cy of ROOF_COLS) {
+          pb(o2, 'charDark', X(16315), X(16585), cy - 135, cy + 135, botH, botH + gap);
+          pb(o2, 'charcoal', X(16300), X(16600), cy - 150, cy + 150, botH + gap, shaftBot - 0.018);
+          pb(o2, 'charDark', X(16288), X(16612), cy - 162, cy + 162, shaftBot - 0.018, shaftBot);
+          pb(o2, 'charcoal', X(16320), X(16580), cy - 44, cy + 44, shaftBot, shaftTop);
+          pb(o2, 'white2', X(16332), X(16568), cy - 168, cy + 168, shaftBot, shaftTop);
+          pb(o2, 'charDark', X(16288), X(16612), cy - 162, cy + 162, shaftTop, shaftTop + 0.018);
+          pb(o2, 'charcoal', X(16300), X(16600), cy - 150, cy + 150, shaftTop + 0.018, topH - 0.022);
+          pb(o2, 'copingLight', X(16278), X(16622), cy - 172, cy + 172, topH - 0.022, topH);
+        }
+      })();
       // SF living deck — full east lip, under the terrace slab
       outdoorDeck(o2, EX0, EX1, EAST_RAFTER_YE, Y1n, f2);
       outdoorDeck(o2, 0, EX1, NBY0, NBY1 - 30, f2);
@@ -3378,18 +3435,16 @@ window.HouseScene = (function () {
       // splayed soffit — a ledge across the top of the opening.
       pb(o2, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f2 - 0.45, f2 + 0.012);
       pb(o2, 'white', -10, 90, Y1n, NBY1 + 10, f2 - 0.45, f2 + 0.012);
-      pb(o2, 'white', 0, EX1 - 90, -762 - 10, -762 + 90, f2 - 0.45, f2 + 0.012);
-      pb(o2, 'white', EX1 - 90, EX1 + 10, -762 - 10, NBY1 - 90, f2 - 0.45, f2 + 0.012); // east lip
+      pb(o2, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f2 - 0.45, f2 + 0.012);
       pb(o2, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f2 - 0.24, f2 - 0.18);
       pb(o2, 'charDark', -10, 90, Y1n, NBY1 + 14, f2 - 0.24, f2 - 0.18);
-      pb(o2, 'charDark', 0, EX1 - 96, -762 - 16, -762 + 96, f2 - 0.24, f2 - 0.18);
-      pb(o2, 'charDark', EX1 - 96, EX1 + 14, -762 - 16, NBY1 - 96, f2 - 0.24, f2 - 0.18);
+      pb(o2, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f2 - 0.24, f2 - 0.18);
       // South — same runs as FF: plaster 0–4805, metal EX0–lift,
       // then plaster under the pergola. Same line, same height, same ends.
       (function sfSouthSERail() {
         edgeWall(o2, 'x', SOUTH_FC, 0, 4805, f2, 1.08, { plain: true });
         edgeWall(o2, 'x', SOUTH_FC, 4805, EX0, f2, 1.08, { plain: true });
-        railing(o2, 'x', SOUTH_FC, EX0, EAST_RAIL_X, f2, 1.0);
+        railing(o2, 'x', SOUTH_FC, EX0, EAST_SOUTH_RET_XW, f2, 1.0);
         // x 14270→17097 has no guard here: the L-box ribs run past the slab
         // and are the guard (see seRodBox). The plaster parapet that used to
         // sit on this run is what made the SE corner read as two objects.
@@ -3402,11 +3457,54 @@ window.HouseScene = (function () {
         // Pergola bay: no guard drawn here either — the L-box ribs carry up
         // past the slab and guard it, one screen from the FF sill to the cap.
         // Living bay: metal rail on the same run as FF, pillars inset.
-        // V44: one plain MS rail along the whole east lip.
-        railing(o2, 'y', EAST_RAIL_X, SOUTH_FC, NORTH_FC, f2, 1.0);
-        railPillar(o2, EAST_RAIL_X - 10, SOUTH_FC + 10, f2, 1.08);
+        railing(o2, 'y', EAST_RAIL_X, EAST_RAIL_RESUME, NORTH_FC, f2, 1.0);
       })();
-      // V44: SE pergola removed.
+      (function sfPortico() {
+        // Four-post steel pergola over the SE sit-out. West edge is a
+        // ledger on the terrace face so the white slab stripe is gone.
+        const y0 = EAST_RAIL_YS;
+        const y1 = EAST_RAFTER_YE;
+        const xW = SHELTER_X, xE = EX1;
+        const POST = 110, BEAM = 100;
+        const SLAT = 50, GAP = 130;
+        const OVER = 180;
+        const zB0 = L.roof - 0.05, zB1 = zB0 + 0.15;
+        const zS0 = zB1 - 0.018, zS1 = zS0 + 0.052;
+
+        function post(x, y) {
+          pb(o2, 'dark', x - 28, x + POST + 28, y - 28, y + POST + 28, f2, f2 + 0.018);
+          pb(o2, 'dark', x, x + POST, y, y + POST, f2 + 0.018, zB0);
+          pb(o2, 'dark', x - 16, x + POST + 16, y - 16, y + POST + 16, zB0 - 0.018, zB0);
+        }
+        const xPW = xW + 36;
+        const xPE = xE - POST - 90;
+        const yPS = y0 + 70;
+        const yPN = y1 - POST - 70;
+        post(xPW, yPS);
+        post(xPW, yPN);
+        post(xPE, yPS);
+        post(xPE, yPN);
+
+        pb(o2, 'dark', xW - 14, xW + 36, y0 - 8, y1 + 8, L.roof - 0.46, L.roof + 0.014);
+        pb(o2, 'dark', xW - 8, xW + BEAM, y0, y1, zB0, zB1);
+        pb(o2, 'dark', xW, xE + OVER, y0, y0 + BEAM, zB0, zB1);
+        pb(o2, 'dark', xW, xE + OVER, y1 - BEAM, y1, zB0, zB1);
+        pb(o2, 'dark', xE - 70, xE + 24, y0, y1, zB0, zB1);
+
+        const nRaf = 4;
+        for (let i = 1; i <= nRaf; i++) {
+          const y = y0 + BEAM + ((y1 - y0 - 2 * BEAM) * i) / (nRaf + 1);
+          pb(o2, 'dark', xW + 20, xE + 8, y - 36, y + 36, zB0, zB1);
+        }
+
+        const slatY0 = y0 + BEAM + 12;
+        const slatY1 = y1 - BEAM - 12;
+        const nSlat = Math.max(4, Math.round((slatY1 - slatY0 - SLAT) / (SLAT + GAP)));
+        for (let i = 0; i <= nSlat; i++) {
+          const y = slatY0 + ((slatY1 - slatY0 - SLAT) * i) / nSlat;
+          pb(o2, 'dark', xW + 28, xE + OVER, y, y + SLAT, zS0, zS1);
+        }
+      })();
       (function sfNorthNERail() {
         const nX0 = 80, nX1 = EX1 - 80;
         const bay0 = lastBayStart(nX0, nX1);
@@ -3416,9 +3514,9 @@ window.HouseScene = (function () {
         railPillar(o2, bay0, NORTH_PIL_Y, f2, 1.08);
       })();
       edgeWall(o2, 'y', 80, Y1n, NORTH_FC, f2, 1.08, { plain: true });
-      Fur.lounger(o2, 14800, 16200, 5200, 6000, f2);
-      Fur.lounger(o2, 14800, 16200, 6500, 7300, f2);
-      Fur.table(o2, 15050, 15850, 6080, 6420, f2, 0.40);
+      Fur.lounger(o2, 14800, 16200, 600, 1400, f2);
+      Fur.lounger(o2, 14800, 16200, 1900, 2700, f2);
+      Fur.table(o2, 15050, 15850, 1480, 1820, f2, 0.40);
       const g2 = o2.build(THREE, materials); g2.name = 'outdoor2'; root.add(g2); outdoors.push(g2);
     })();
 
@@ -3467,8 +3565,10 @@ window.HouseScene = (function () {
     warmFix(22160, 4422, 2.18, -1);
     warmFix(22160, 8422, 2.18, -1);
     // SF east French glass flanks
-    warmFix(RX + 70, 4870, L.f2 + 1.88, 2);
-    warmFix(RX + 70, 8430, L.f2 + 1.88, 2);
+    warmFix(SF_EB[1] + 70, 5360, L.f2 + 1.88, 2);
+    warmFix(SF_EB[1] + 70, 8760, L.f2 + 1.88, 2);
+    // Mumty
+    warmFix(5520, 7460, L.roof + 1.75, 2);
     // FF pooja mandir glow
     // GF office desk lamp
     // Bedroom nightstands (GF master + bed02, FF master)
