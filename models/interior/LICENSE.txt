@@ -1,0 +1,2 @@
+All models in this folder are from Poly Haven (https://polyhaven.com),
+released under CC0 1.0 (public domain). No attribution required.

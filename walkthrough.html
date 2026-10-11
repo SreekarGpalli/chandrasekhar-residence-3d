@@ -187,11 +187,12 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
+<script src="lib/interiorKit.js?v=20261005b"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20260818_sf_lighting_cleaned_v5"></script>
+<script src="houseScene.js?v=20261006_audit12"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -850,6 +851,21 @@ if(!window.THREE || !window.HouseScene){
     grass: kitGrass, concrete: kitConcrete, fabric: kitFabric, curtain: kitCurtain,
     asphalt: kitAsphalt, paver: kitPaver
   };
+  /* Interior finishes (lib/interiorKit.js) — shared generators, wrapped
+     with this viewer's own texture plumbing. */
+  if (window.InteriorKit) {
+    for (const n in InteriorKit.kits) {
+      TEX[n] = function () {
+        const ck = 'ik_' + n;
+        if (texCache[ck]) return texCache[ck];
+        const r = InteriorKit.kits[n](Math.min(TEX_S, 1024));
+        const kit = { map: asTex(r.map, true), ns: r.ns };
+        if (r.height) kit.normalMap = asTex(normalFromHeight(r.height, r.hs || 1), false);
+        if (r.rough) kit.roughnessMap = asTex(r.rough, false);
+        return texCache[ck] = kit;
+      };
+    }
+  }
 
   /* ============================================================
      material treatment table — keyed by palette name.
@@ -859,6 +875,8 @@ if(!window.THREE || !window.HouseScene){
   const FLOORTINT = new Set(['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tOut', 'tCirc', 'tOffice', 'tPooja', 'tWalk']);
 
   function treatment(name) {
+    const ik = window.InteriorKit && InteriorKit.treatment(name);
+    if (ik) return ik;
     if (name === 'glass' || name === 'carGlass') return { glass: true, dark: name !== 'glass' };
     if (name === 'nbrWin') return { rough: 0.1, metal: 0.4, env: 1.3 };
     if (name === 'coveLED') return { emissive: true, cove: true };
@@ -1490,6 +1508,19 @@ if(!window.THREE || !window.HouseScene){
   }
   window.addEventListener('houseCarReady', function () {
     registerCarCollider();
+    refreshShadows();
+  });
+  window.addEventListener('houseInteriorReady', function (e) {
+    const g = e.detail && e.detail.group;
+    if (g) g.traverse(function (o) {
+      if (!o.isMesh || !o.material) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach(function (m) {
+        if (ENV.interior) m.envMap = ENV.interior;
+        m.envMapIntensity = 0.55; m.needsUpdate = true;
+      });
+      o.castShadow = true; o.receiveShadow = true;
+    });
     refreshShadows();
   });
   // Re-bake shadows once after first frame of reskin settles
