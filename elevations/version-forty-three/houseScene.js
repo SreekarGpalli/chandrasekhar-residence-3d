@@ -2743,12 +2743,9 @@ window.HouseScene = (function () {
         edgeWall(eBag, 'y', CUT_X - 80, PARA_YS, yN - 80, rt, 1.08);  // east lip = lift face
         edgeWall(eBag, 'x', yN - 80, xW, CUT_X - 80, rt, 1.08);       // north, only on remaining slab
         edgeWall(eBag, 'y', xW, PARA_YS, yN - 80, rt, 1.08);          // west
-        railPillarsAlong(eBag, 'y', CUT_X - 80, PARA_YS, yN - 80, rt, 1.08, { start: true, end: true });
+        // East parapet stays one flat run end to end — no pillars on it (as V49).
         railPillar(eBag, xW, PARA_SFC, rt, 1.08);
         railPillar(eBag, xW, yN - 80, rt, 1.08);
-        railPillar(eBag, CUT_X - 80, PARA_SFC, rt, 1.08);
-        railPillar(eBag, CUT_X - 80, yN - 80, rt, 1.08);
-        railPillar(eBag, CUT_X - 80, (PARA_YS + yN) / 2, rt, 1.08);
       })();
 
       // terrace floor with cutouts for stairwell and lift shaft

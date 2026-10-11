@@ -3,10 +3,11 @@
 Exterior-only variants of the Chandrasekhar Residence (G+2, Anantapur).
 **No interiors** — partitions, furniture, and dollhouse floors removed.
 
-Nav is four active versions: **V41 · V43 · V49 (V43, SF pulled in) · V50 (V41, SF pulled in)**.
+Nav is five active versions: **V41 · V43 · V49 (V43, SF pulled in) · V50 (V41, SF pulled in) · V51 (V43, NE room)**.
 
 | Code | Name | Folder | Key Facade Concept |
 |------|------|--------|---------------------|
+| **V51** | **V43 NE Room** | `version-fifty-one/` | V43 with a closed room on the SF east deck NE corner, lift footprint (1620 × 2035, x 12650–14270, y 6835–8870) under the terrace slab; no exterior door (entered from the family room); SF French glass moved south and narrowed to 2100 (y 4600–6700) |
 | **V50** | **V41 SF Pulled In** | `version-fifty/` | V41 with the SF east wall moved 1525 mm (5 ft) in (band x 10895–11125); roof terrace ends in one straight east parapet on the lift west wall (x 12650); lift roof separate; flat pillar-free east parapet; two SF columns (portico design) at y 8720 / 4290; freed strip decked |
 | **V49** | **V43 SF Pulled In** | `version-forty-nine/` | Same change on V43 |
 | **V43** | **Continuous Rods** | `version-forty-three/` | Continuous unbroken vertical rods (~4.87 m) from ground ceiling beam soffit to second-floor balustrade + recessed floor slabs |
