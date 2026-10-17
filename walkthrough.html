@@ -187,12 +187,12 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261005b"></script>
+<script src="lib/interiorKit.js?v=20261017_navy4"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20261006_audit12"></script>
+<script src="houseScene.js?v=20261017_navywall10"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -1406,13 +1406,21 @@ if(!window.THREE || !window.HouseScene){
     } else {
       buckets.push(fixturesByFloor[0], fixturesByFloor[1], fixturesByFloor[2], fixturesByFloor.other);
     }
-    const px = player.pos.x, py = player.pos.y, pz = player.pos.z;
+    /* Measure from the EYE, not the feet. player.pos.y is the floor level, so
+       from the feet the ceiling fittings of the storey BELOW (0.3 m under the
+       slab) out-ranked this room's own ceiling (2.8 m up): standing in the FF
+       hall, 10 of 12 slots went to GF lights shining up through the floor.
+       Adjacent storeys stay in the running (voids, stair) but pay a slab
+       penalty — their light only reaches here through an opening. */
+    const px = player.pos.x, py = player.pos.y + 1.6, pz = player.pos.z;
+    const own = fi >= 0 && fi <= 2 ? fixturesByFloor[fi] : null;
     for (let b = 0; b < buckets.length; b++) {
       const list = buckets[b];
+      const slab = own && list !== own && list !== fixturesByFloor.other ? 6 : 1;
       for (let i = 0; i < list.length; i++) {
         const f = list[i];
         const dx = f.x - px, dy = f.y - py, dz = f.z - pz;
-        const d2 = dx * dx + dy * dy * 1.8 + dz * dz;
+        const d2 = (dx * dx + dy * dy * 1.8 + dz * dz) * slab;
         /* Rank by distance BIASED BY LAYER WEIGHT. On pure distance a bathroom
            vanity light two rooms over could take a slot from the cove defining
            the room you are standing in. The ambient/indirect layers earn their

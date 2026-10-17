@@ -198,6 +198,10 @@ window.HouseScene = (function () {
     leather:   0x8a5934,  // cognac leather
     blackM:    0x1e1e20,  // matte black metal
     brassI:    0xb38e56,  // satin brass (interior — exterior 'brass' is greyed)
+    lacqNavy:  0x22385a,  // navy PU satin on the media wall's panel mouldings + TV backing
+    lacqNavyDk:0x1a2c48,  // deeper navy PU satin — media wall pilasters, plinth, crown
+    paintNavy: 0x22385b,  // same navy, matte emulsion on the wall (hex kept unique)
+    walnutI:   0x7f5434,  // interior walnut veneer (media console)
     ceramic:   0xf1eee8,  // matte ceramic
     sheet:     0xf4f1ec,  // crisp white cotton
     duvet:     0xe1d8c9,  // oatmeal linen duvet
@@ -414,7 +418,7 @@ window.HouseScene = (function () {
     fluted: 1, quartz: 1, marbleV: 1, travertine: 1, stoneDk: 1, boucle: 1,
     linen: 1, linenDk: 1, velvet: 1, terra: 1, rugW: 1, rugD: 1, leather: 1,
     blackM: 1, brassI: 1, ceramic: 1, sheet: 1, duvet: 1, artA: 1, artB: 1,
-    artC: 1, artD: 1, mirrorI: 1, tileBath: 1
+    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
   };
 
   /* Building footprint in plan-mm (main block + upper-floor south service). */
@@ -1870,134 +1874,149 @@ window.HouseScene = (function () {
     },
 
     /* ================================================================
-       DOUBLE-HEIGHT TV FEATURE WALL
-       Wall span is only ~2.2 m (6020–8241). Niche must be wide enough
-       for the TV (previous bug: 1110 mm niche vs 1480 mm TV → invisible).
-       Layout: [fluted wing | open niche + TV | fluted wing]
+       DOUBLE-HEIGHT TV FEATURE WALL — navy panelled media wall, mid-range
+       Owner reference (Oct 2026): 7'-0" x 22'-0" schematic. Centrepiece of
+       the house, but built to a sensible budget. Money goes where it shows:
+         - field: plain plaster, matte navy emulsion (the cheap part), with
+           hollow 50 mm 3-step polyurethane panel mouldings (4 x 11 squares)
+         - 8" MDF pilasters, deeper navy PU satin, framed with 30 mm moulding
+         - 1" aluminium LED profiles (diffused) between pilaster and field
+         - stepped crown cornice + 150 mm MDF plinth
+         - flat MDF TV backing (hides the cables), framed, brass inlay above
+         - floating walnut console with a concealed under-glow
+       Wall 2221 x 6556 mm (FF floor -> SF soffit); the 11' datum IS the SF
+       floor level (f2f = 3.353), so the drawing maps almost 1:1.
+       Called once per storey: the FF call draws everything below the datum,
+       the SF call everything above, so each floor group owns its half.
        ================================================================ */
     tvFeatureWall(bag, x0, x1, y0, y1, fY, H, isLower) {
-      const wallW = x1 - x0;
-      const mid = (x0 + x1) * 0.5;
-      const backY = 8640;                 // structural interior of north shell
+      const W = x1 - x0;
+      const backY = 8640;                         // north shell interior face
+      const fY0 = isLower ? fY : fY - H;          // FF floor (base of the void)
+      const TOP = 2 * H - L.slabT;                // metres, FF floor -> SF soffit
+      const zLo = isLower ? 0 : H, zHi = isLower ? H : TOP;
+      // box in wall-local mm: u from x0, depth y in plan mm, z in mm AFF.
+      // Clipped to this storey's half so the two floor groups never overlap.
+      const box = (m, u0, u1, ya, yb, za, zb) => {
+        const a = Math.max(za / 1000, zLo), b = Math.min(zb / 1000, zHi);
+        if (b - a < 0.0005) return;
+        pb(bag, m, x0 + u0, x0 + u1, ya, yb, fY0 + a, fY0 + b);
+      };
+      /* Panel-moulding frame. prof = [[inset, width, proud], ...] steps from
+         the back face yB outward; each step starts where the last one ended
+         (no buried faces), and every step is narrower than the one below,
+         so no two side faces are coplanar. Bars butt at the corners. */
+      const P50 = [[0, 50, 8], [9, 32, 16], [20, 10, 23]];
+      const P30 = [[0, 30, 6], [6, 18, 12], [12, 6, 16]];
+      const frame = (m, u0, u1, za, zb, yB, prof) => {
+        let prev = 0;
+        for (const [i, w, pr] of prof) {
+          const ya = yB - pr, yb = yB - prev;
+          box(m, u0 + i, u1 - i, ya, yb, za + i, za + i + w);
+          box(m, u0 + i, u1 - i, ya, yb, zb - i - w, zb - i);
+          box(m, u0 + i, u0 + i + w, ya, yb, za + i + w, zb - i - w);
+          box(m, u1 - i - w, u1 - i, ya, yb, za + i + w, zb - i - w);
+          prev = pr;
+        }
+      };
 
-      // Depths into room (mm, south = smaller y)
-      const yWing = backY - 130;          // wing face
-      const yMouth = backY - 280;         // niche opening
-      const yBack = backY - 25;           // niche back face
+      const Hmm = TOP * 1000;
+      // painted face: 20 mm finish coat over the shell plaster. Thick enough
+      // to bury the FF wall's 6 mm cut-cap at the soffit line.
+      const yP = backY - 20;
+      const PIL = 233, REV = 25;                  // 8" pilaster (+ edge), 1" reveal
+      const fU0 = PIL + REV, fU1 = W - fU0;       // painted field
+      const PLINTH = 150, CROWN = 120;
 
-      // Niche ~62% of wall so wings still have room for flutes, TV fits inside
-      const nicheW = Math.round(Math.min(wallW - 520, Math.max(1500, wallW * 0.62)));
-      const n0 = Math.round(mid - nicheW * 0.5);
-      const n1 = Math.round(mid + nicheW * 0.5);
-      const RET = 30;                     // return thickness
-      const open0 = n0 + RET;             // clear opening left
-      const open1 = n1 - RET;             // clear opening right
-      const openW = open1 - open0;
+      // -- painted field + plinth + crown cornice ----------------------
+      box('paintNavy', 0, W, yP, backY, 0, Hmm);
+      box('lacqNavyDk', 0, W, yP - 18, yP, 0, PLINTH - 30);           // MDF plinth
+      box('lacqNavyDk', 0, W, yP - 24, yP, PLINTH - 30, PLINTH);      //   + top lip
+      for (const p0 of [0, W - PIL])                                   // plinth blocks
+        box('lacqNavyDk', p0, p0 + PIL, yP - 31, yP - 24, 0, PLINTH);  // under pilasters
+      box('lacqNavyDk', 0, W, yP - 20, yP, Hmm - CROWN, Hmm);         // crown, stepped
+      box('lacqNavyDk', 0, W, yP - 40, yP - 20, Hmm - 80, Hmm);       //   out toward
+      box('lacqNavyDk', 0, W, yP - 58, yP - 40, Hmm - 40, Hmm);       //   the soffit
+      box('brassI', 0, W, yP - 44, yP - 40, Hmm - 92, Hmm - 80);      // brass fillet
 
-      const z0 = fY + 0.015;
-      const z1 = fY + H - 0.015;
-
-      // ── WINGS ──────────────────────────────────────────────
-      pb(bag, 'oakDark', x0, n0, yWing, backY, z0, z1);
-      pb(bag, 'oakDark', n1, x1, yWing, backY, z0, z1);
-      pb(bag, 'oak', x0, n0, yWing - 5, yWing, z0, z1);
-      pb(bag, 'oak', n1, x1, yWing - 5, yWing, z0, z1);
-
-      const pitch = 52, rib = 24;
-      for (let x = x0 + 18; x + rib <= n0 - 12; x += pitch) {
-        prb(bag, 'oak', x, x + rib, yWing - 18, yWing - 5, z0 + 0.06, z1 - 0.06, 11);
+      // -- MDF pilasters, framed; LED reveal profiles ------------------
+      const pilPanels = [[260, 2000], [2150, 4250], [4400, Hmm - CROWN - 110]];
+      for (const s of [0, 1]) {
+        const p0 = s ? W - PIL : 0, p1 = p0 + PIL;
+        box('lacqNavyDk', p0, p1, yP - 25, yP, PLINTH, Hmm - CROWN);
+        for (const [za, zb] of pilPanels)
+          frame('lacqNavyDk', p0 + (s ? 22 : 38), p1 - (s ? 38 : 22), za, zb, yP - 25, P30);
+        // 25 mm aluminium channel: back, two lips, recessed opal diffuser
+        const r0 = s ? fU1 : p1, r1 = r0 + REV;
+        box('aluDark', r0, r1, yP - 6, yP, PLINTH, Hmm - CROWN);
+        box('aluDark', r0, r0 + 4, yP - 14, yP - 6, PLINTH, Hmm - CROWN);
+        box('aluDark', r1 - 4, r1, yP - 14, yP - 6, PLINTH, Hmm - CROWN);
+        box('coveLED', r0 + 6, r1 - 6, yP - 10, yP - 6, PLINTH + 40, Hmm - CROWN - 40);
       }
-      for (let x = n1 + 12; x + rib <= x1 - 18; x += pitch) {
-        prb(bag, 'oak', x, x + rib, yWing - 18, yWing - 5, z0 + 0.06, z1 - 0.06, 11);
+
+      // -- 4 x 11 square frames on the painted field ----------------------
+      // 298 mm frames, 75 mm gaps; rows set so a gap is centred on the datum
+      // (3 rows below, 8 above, as in the reference).
+      const MOD = 298, GAP = 75, P = MOD + GAP;
+      const gridW = 4 * MOD + 3 * GAP;
+      const g0 = (W - gridW) / 2;
+      const zRow0 = H * 1000 - GAP / 2 - 3 * MOD - 2 * GAP;
+      for (let r = 0; r < 11; r++) {
+        const za = zRow0 + r * P;
+        for (let c = 0; c < 4; c++) frame('lacqNavy', g0 + c * P, g0 + c * P + MOD, za, za + MOD, yP, P50);
       }
-      pb(bag, 'charDark', x0, n0, yWing - 4, backY, fY, z0 + 0.015);
-      pb(bag, 'charDark', n1, x1, yWing - 4, backY, fY, z0 + 0.015);
 
-      // ── NICHE BOX ──────────────────────────────────────────
-      pb(bag, 'marbleV', n0, n1, yBack, backY, z0, z1);
-      // side returns
-      pb(bag, 'oakDark', n0, open0, yMouth, yBack, z0, z1);
-      pb(bag, 'oakDark', open1, n1, yMouth, yBack, z0, z1);
-      // wood face on return fronts (room-facing)
-      pb(bag, 'oak', n0 + 2, open0 - 2, yMouth, yMouth + 8, z0, z1);
-      pb(bag, 'oak', open1 + 2, n1 - 2, yMouth, yMouth + 8, z0, z1);
-      // niche floor + soffit
-      pb(bag, 'oakDark', open0, open1, yMouth, yBack, fY, fY + 0.05);
-      pb(bag, 'oak', open0 + 10, open1 - 10, yMouth + 10, yBack - 10, fY + 0.048, fY + 0.055);
-      pb(bag, 'oakDark', open0, open1, yMouth, yBack, z1 - 0.055, z1);
-      // LED coves
-      pb(bag, 'lamp', open0 + 4, open0 + 12, yMouth + 16, yBack - 16, z0 + 0.18, z1 - 0.18);
-      pb(bag, 'lamp', open1 - 12, open1 - 4, yMouth + 16, yBack - 16, z0 + 0.18, z1 - 0.18);
-      pb(bag, 'lamp', open0 + 30, open1 - 30, yMouth + 40, yBack - 40, z1 - 0.085, z1 - 0.05);
-      // outer edge reveals
-      pb(bag, 'charDark', x0 - 8, x0, yWing - 2, backY, z0, z1);
-      pb(bag, 'charDark', x1, x1 + 8, yWing - 2, backY, z0, z1);
+      if (!isLower) return;
 
-      if (isLower) {
-        // ── TV fits INSIDE clear opening (16:9), centred ──
-        // leave ≥80 mm air each side of screen inside open0..open1
-        const tvW = Math.min(1320, openW - 160);
-        const tvH = tvW * (9 / 16) / 1000;   // metres, true 16:9
-        const tvX0 = mid - tvW * 0.5;
-        const tvX1 = mid + tvW * 0.5;
-        const tvBottom = fY + 1.08;
-        const tvTop = tvBottom + tvH;
+      // -- TV backing: flat 12 mm MDF face, framed, brass inlay above ----
+      const bk0 = W / 2 - 780, bk1 = W / 2 + 780, yBk = yP - 12;
+      box('lacqNavy', bk0, bk1, yBk, yP, 730, 1970);
+      frame('lacqNavy', bk0 + 14, bk1 - 14, 744, 1956, yBk, P30);
+      box('brassI', g0, g0 + gridW, yP - 4, yP, 2030, 2042);
 
-        // TV sits mid-depth in niche, screen facing south (into room)
-        const tvFront = yMouth + 90;         // clear of mouth plane
-        const tvThick = 22;
-        const tvRear = tvFront + tvThick;
+      // -- 65"-class TV, centre 50" AFF (1270 mm) ------------------
+      const tvW = 1440, tvH = 810, tvC = 1270;
+      const tz0 = tvC - tvH / 2, tz1 = tvC + tvH / 2;
+      const yTv = yBk;                             // flush bracket on the backing
+      box('blackM', W / 2 - 360, W / 2 + 360, yTv - 40, yTv, tz0 + 160, tz1 - 160); // bracket
+      box('blackM', W / 2 - tvW / 2 - 6, W / 2 + tvW / 2 + 6, yTv - 70, yTv - 40, tz0 - 6, tz1 + 6);
+      box('tv', W / 2 - tvW / 2, W / 2 + tvW / 2, yTv - 73, yTv - 70, tz0, tz1);   // screen: southernmost
+      box('lamp', W / 2 - 4, W / 2 + 4, yTv - 74, yTv - 70, tz0 - 5, tz0 - 1);    // power LED
 
-        // Mount plate (behind set, against back field — not covering screen)
-        pb(bag, 'oakDark',
-          tvX0 - 50, tvX1 + 50,
-          tvRear + 10, yBack - 4,
-          tvBottom - 0.10, tvTop + 0.10);
-
-        // Outer steel bezel (high-contrast frame)
-        const bz = 14;
-        pb(bag, 'steel',
-          tvX0 - bz, tvX1 + bz,
-          tvFront - 4, tvRear + 2,
-          tvBottom - bz / 1000, tvTop + bz / 1000);
-        // Inner charcoal bezel
-        pb(bag, 'charDark',
-          tvX0 - 5, tvX1 + 5,
-          tvFront - 1, tvRear,
-          tvBottom - 0.005, tvTop + 0.005);
-        // Screen — front face only (must be the southernmost TV layer)
-        pb(bag, 'tv',
-          tvX0, tvX1,
-          tvFront - 12, tvFront,
-          tvBottom, tvTop);
-        // Power LED under bezel centre
-        pb(bag, 'lamp',
-          mid - 28, mid + 28,
-          tvFront - 14, tvFront - 10,
-          tvBottom + 0.008, tvBottom + 0.016);
-
-        // Soundbar — narrower than TV, under it, same depth band
-        const barW = Math.min(tvW * 0.55, 720);
-        const barTop = tvBottom - 0.07;
-        const barBot = barTop - 0.05;
-        pb(bag, 'charDark', mid - barW * 0.5, mid + barW * 0.5, tvFront - 2, tvRear - 2, barBot, barTop);
-        pb(bag, 'steel', mid - barW * 0.5 - 6, mid - barW * 0.5, tvFront - 2, tvRear - 2, barBot, barTop);
-        pb(bag, 'steel', mid + barW * 0.5, mid + barW * 0.5 + 6, tvFront - 2, tvRear - 2, barBot, barTop);
-
-        // Media bench — width tracks niche, fully outside mouth
-        const bX0 = n0 + 40, bX1 = n1 - 40;
-        const bY0 = yMouth - 380;
-        const bY1 = yMouth - 70;
-        const bZ0 = fY + 0.30, bZ1 = fY + 0.42;
-        pb(bag, 'aluDark', bX0 + 60, bX1 - 60, bY0 + 40, bY1 - 25, fY + 0.03, fY + 0.07);
-        pb(bag, 'charDark', bX0 + 80, bX0 + 140, bY0 + 50, bY1 - 15, fY + 0.07, bZ0);
-        pb(bag, 'charDark', bX1 - 140, bX1 - 80, bY0 + 50, bY1 - 15, fY + 0.07, bZ0);
-        prb(bag, 'lacq', bX0, bX1, bY0, bY1, bZ0, bZ1, 10);
-        pb(bag, 'oak', bX0 + 6, bX1 - 6, bY0 + 6, bY1 - 6, bZ1 - 0.008, bZ1);
-        pb(bag, 'oak', bX0, bX1, bY0, bY0 + 6, bZ0, bZ1);
-        pb(bag, 'brassI', mid - 70, mid + 70, bY0 - 2, bY0 + 2, fY + 0.345, fY + 0.36);
+      // -- floating walnut console 1727 x 305 x 356, 305 clear -----
+      const cW = 1727, cD = 356, cz0 = 305, cz1 = 610;
+      const c0 = W / 2 - cW / 2, c1 = W / 2 + cW / 2;
+      const yC = yP - 2;                           // wall-hung on the field (plinth stops at 150)
+      const cy0 = yC - cD;                         // front plane
+      box('charDark', c0 + 6, c1 - 6, cy0 + 14, yC, cz0 + 4, cz1 - 4);   // carcass
+      // top + bottom plates run full width (doors sit between them)
+      prb(bag, 'walnutI', x0 + c0, x0 + c1, cy0, yC, fY0 + (cz1 - 22) / 1000, fY0 + cz1 / 1000, 6);
+      box('walnutI', c0, c1, cy0, yC, cz0, cz0 + 16);
+      box('walnutI', c0, c0 + 18, cy0, yC, cz0 + 16, cz1 - 22);           // end panels
+      box('walnutI', c1 - 18, c1, cy0, yC, cz0 + 16, cz1 - 22);
+      // doors 12 mm proud of the carcass, 4 mm shadow gaps; handle groove near the top
+      const side = 500, sg = 4;
+      const fz0 = cz0 + 16 + sg, fz1 = cz1 - 22 - sg;
+      for (const [ua, ub] of [[c0 + 18 + sg, c0 + side - sg / 2], [c1 - side + sg / 2, c1 - 18 - sg]]) {
+        box('walnutI', ua, ub, cy0 + 2, cy0 + 14, fz0, fz1 - 40);
+        box('walnutI', ua, ub, cy0 + 2, cy0 + 14, fz1 - 30, fz1);
       }
-      // Upper floor: empty continuous niche — no decor
+      // fluted centre: vertical ribs over a smoked backing
+      const f0 = c0 + side + sg / 2, f1 = c1 - side - sg / 2;
+      box('oakDark', f0, f1, cy0 + 10, cy0 + 14, fz0, fz1);
+      for (let u = f0 + 6; u + 14 <= f1 - 6; u += 22) {
+        prb(bag, 'walnutI', x0 + u, x0 + u + 14, cy0 + 1, cy0 + 12, fY0 + fz0 / 1000, fY0 + fz1 / 1000, 6);
+      }
+      box('brassI', c0, c1, cy0 - 2, cy0 + 8, cz0 - 8, cz0);             // brass under-edge
+      box('coveLED', c0 + 60, c1 - 60, cy0 + 40, yC - 40, cz0 - 4, cz0); // concealed under-glow
+      // soundbar on the console
+      box('charDark', W / 2 - 450, W / 2 + 450, yC - 130, yC - 50, cz1, cz1 + 62);
+      box('blackM', W / 2 - 446, W / 2 + 446, yC - 132, yC - 128, cz1 + 6, cz1 + 56);
+      // low styling only: the TV bottom is just 255 mm above the top, so
+      // anything taller cuts across the screen (tall vases did)
+      Fur.books(bag, x0 + c0 + 210, yC - 190, fY0 + cz1 / 1000, 3, true);
+      pb(bag, 'travertine', x0 + c1 - 250, x0 + c1 - 130, yC - 250, yC - 130, fY0 + cz1 / 1000, fY0 + cz1 / 1000 + 0.05);
+      bag.sph('brassI', (x0 + c1 - 190) / 1000, fY0 + cz1 / 1000 + 0.05 + 0.065, -(yC - 190) / 1000, 0.065);
     },
     counterX(bag, x0, x1, y0, y1, fY) {
       // Full base carcass + toe-kick recess + granite worktop + steel edge trim
@@ -4001,15 +4020,9 @@ window.HouseScene = (function () {
       drum(bag, 'linen', cx, cy, fY + h - 0.12, fY + h + 0.18, 0.2, 0.003);
       bag.cyl('lamp', cx / 1000, fY + h - 0.125, -cy / 1000, 0.17, 0.01);
     },
-    voidCluster(bag, x, y, ceilY, drops) {
-      drum(bag, 'blackM', x, y, ceilY - 0.03, ceilY, 0.18, 0.006);
-      for (const d of drops) {
-        const px = x + d.dx, py = y + d.dy, bY = ceilY - d.drop;
-        bag.cyl('blackM', px / 1000, ceilY - d.drop / 2, -py / 1000, 0.0025, d.drop);
-        bag.sph('lamp', px / 1000, bY, -py / 1000, 0.13);
-        drum(bag, 'brassI', px, py, bY + 0.12, bY + 0.15, 0.03, 0.004);
-      }
-    },
+    // voidCluster is deliberately NOT overridden here: the owner prefers the
+    // base kit's linen drums lit only through the bottom disc over the bare
+    // globes this pass once swapped in (restored 2026-10-17).
     pendant(bag, x, y, ceilY, drop = 0.9, r = 0.13, shade = 'blackM') {
       const bY = ceilY - drop;
       drum(bag, 'blackM', x, y, ceilY - 0.025, ceilY, 0.05, 0.004);
@@ -5245,7 +5258,11 @@ window.HouseScene = (function () {
          taller — the standard architect's move when there is no false
          ceiling to hide a pelmet in. Two stacked-back panels per window;
          each panel is a run of alternating rounded folds. */
-      const top = fY + L.f2f - L.slabT - 0.012;
+      /* opt.short: apron-length panels on a slim brass rod over the head,
+         hem 120 mm below the sill — for windows flanking a feature wall,
+         where slab-to-floor fabric crowds it. */
+      const head = fY + (sill + h) / 1000;
+      const top = opt.short ? head + 0.16 : fY + L.f2f - L.slabT - 0.012;
       const fab = mat === 'curtain2' ? 'duvet' : 'linen';
       const stack = Math.max(380, Math.min(700, w * 0.28));
       let base;
@@ -5260,13 +5277,24 @@ window.HouseScene = (function () {
       };
       const a0 = Math.max(opt.lo != null ? opt.lo : -1e9, c - w / 2 - 150);
       const a1 = Math.min(opt.hi != null ? opt.hi : 1e9, c + w / 2 + 150);
-      const bot = fY + (opt.bot != null ? opt.bot : 0.012);   // beds under windows: clear the headboard
-      rail(a0, a1, 70, 110, top - 0.03, top + 0.012, 'aluDark', 6);
+      const bot = opt.short ? fY + sill / 1000 - 0.12
+                : fY + (opt.bot != null ? opt.bot : 0.012);   // beds under windows: clear the headboard
+      if (opt.short) {
+        // Ø22 rod on two wall brackets, ball finials just past each end
+        const rd = 92, ry = top + 0.025;
+        const rodAt = (u0, u1, d0, d1, z0, z1, m) => rail(u0, u1, d0, d1, z0, z1, m, 4);
+        rodAt(a0 - 30, a1 + 30, rd - 11, rd + 11, ry - 0.011, ry + 0.011, 'brassI');
+        for (const u of [a0 + 40, a1 - 40]) rodAt(u - 9, u + 9, 0, rd, ry - 0.009, ry + 0.009, 'brassI');
+        for (const u of [a0 - 30, a1 + 30]) {
+          const px = face === 'E' || face === 'W' ? off(rd) : u, py = face === 'E' || face === 'W' ? u : off(rd);
+          bag.sph('brassI', px / 1000, ry, -py / 1000, 0.024);
+        }
+      } else rail(a0, a1, 70, 110, top - 0.03, top + 0.012, 'aluDark', 6);
       for (const [p0, p1] of [[a0 + 20, a0 + 20 + stack], [a1 - 20 - stack, a1 - 20]]) {
         const n = Math.max(3, Math.round((p1 - p0) / 95)), fw = (p1 - p0) / n;
         for (let i = 0; i < n; i++) {
           const d = i % 2 ? 66 : 104;
-          rail(p0 + i * fw - 8, p0 + (i + 1) * fw + 8, d - 26, d + 26, bot, top - 0.03, fab, 24);
+          rail(p0 + i * fw - 8, p0 + (i + 1) * fw + 8, d - 26, d + 26, bot, opt.short ? top : top - 0.03, fab, 24);
         }
       }
     }
@@ -5280,11 +5308,15 @@ window.HouseScene = (function () {
         { f: 'S', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', lo: 3830 },  // GF master S
         { f: 'W', c: 3100, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 2600, bot: 1.08 },  // GF master W (over the vanity desk)
         { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', bot: 1.08 } ],// GF bed02 W (behind the bed)
-      [ { f: 'N', c: 5500, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 4935, hi: 6005 },   // FF hall W of void
-        { f: 'N', c: 8760, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 8255 },             // FF hall E of void
+      // The four north windows flanking the double-height media wall (FF + SF)
+      // take apron-length panels; lo/hi keep them clear of the wall and of the
+      // outer flank sconces at x 4840 / 9420.
+      [ { f: 'N', c: 5500, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 4935, hi: 5955, short: true },   // FF hall W of void
+        { f: 'N', c: 8760, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 8305, hi: 9330, short: true },   // FF hall E of void
         { f: 'S', c: 2500, w: 1500, sill: 900, h: 1400, m: 'curtain2', bot: 0.88 },           // FF master S (behind bed)
         { f: 'W', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420 } ],// FF master W corner
-      [ { f: 'N', c: 8760, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 8255 },             // SF family room
+      [ { f: 'N', c: 5500, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 4935, hi: 5955, short: true },   // SF gallery W of void
+        { f: 'N', c: 8760, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 8305, hi: 9330, short: true },   // SF family room
         { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630 },               // SF family room glass wall
         { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420 },  // SF bed03 E corner
         { f: 'S', c: 2500, w: 1500, sill: 900, h: 1400, m: 'curtain2', bot: 0.88 },           // SF master02 S (behind bed)
@@ -6472,11 +6504,11 @@ window.HouseScene = (function () {
         for (const fl of [L.f1, L.f2]) {
           for (const o of [{ c: 5500, w: 1000 }, { c: 8760, w: 1000 }]) {
             for (const cx of flankCenters(o.c, o.w, 160)) {
-              // On the FIRST floor the north wall between these two windows is
-              // the TV feature wall (x 6020..8241). The inner flanks at 6160 and
-              // 8100 land inside its joinery — lamp body, lens and all — so they
-              // are skipped there. The media wall gets its own wash sconces.
-              if (fl === L.f1 && cx > 6020 && cx < 8241) continue;
+              // The north wall between these two windows is the double-height
+              // TV feature wall (x 6020..8241, FF floor to SF soffit). The inner
+              // flanks at 6160 and 8100 land on its pilasters — lamp body, lens
+              // and all — so they are skipped on both storeys.
+              if (cx > 6020 && cx < 8241) continue;
               northWallLamp(cx, fl);
             }
           }
@@ -7095,7 +7127,10 @@ window.HouseScene = (function () {
       wallRun(bag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fY, cut, fY, Wo, 'copingLight');
       // skirting boards on the room-side faces of the shell walls
       skirtRun(bag, 'y', eY0d, Y1n, EB[0], EB[1], fY, Eo, ['lo']);
-      skirtRun(bag, 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, No, ['lo']);
+      // SF: no floor over the double-height void (x 6020..8241), so no
+      // skirting there — it hung in mid-air across the media wall.
+      skirtRun(bag, 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY,
+               fi === 2 ? No.concat([{ c: 7130.5, w: 2221, sill: 0 }]) : No, ['lo']);
       skirtRun(bag, 'x', X0 + 230, sX1d, SB[0], SB[1], fY, So, ['hi']);
       skirtRun(bag, 'y', Y0n, Y1n, WB[0], WB[1], fY, Wo, ['hi']);
 
@@ -7211,11 +7246,16 @@ window.HouseScene = (function () {
         Lum.downlight(8800, 7600);
         Lum.downlight(10200, 5800);
         Lum.downlight(10200, 7600);
+        // Globes hang 3.6–4.4 m above the FF floor (VOID_TOP − drop, void is
+        // 6.56 m): above the TV + gold rule (2.05 m) and level with the SF
+        // gallery, yet still below the hall ceiling line (3.2 m) as seen from
+        // the sofa. The lowest used to dangle at 2.6 m into the TV sightline;
+        // above ~4.3 m the whole cluster hides behind the void edge from FF.
         Lum.cluster(7125, 7325, VOID_TOP, [
-          { dx: -430, dy: -360, drop: 3.95 },
-          { dx: 470, dy: -140, drop: 3.30 },
-          { dx: -150, dy: 430, drop: 2.85 },
-          { dx: 400, dy: 380, drop: 3.60 }
+          { dx: -430, dy: -360, drop: 2.95 },
+          { dx: 470, dy: -140, drop: 2.55 },
+          { dx: -150, dy: 430, drop: 2.15 },
+          { dx: 400, dy: 380, drop: 2.75 }
         ]);
 
         /* --- DINING (4921..9371, 1526..4506) --- */
@@ -8076,8 +8116,6 @@ window.HouseScene = (function () {
         { id: 'potted_plant_02', fi: 1, x: 9700, y: 8060, rot: 200 },
         { id: 'ceramic_vase_02', fi: 1, x: 7250, y: 6330, z: 0.39 },
         { id: 'wooden_bowl_01', fi: 1, x: 7380, y: 6770, z: 0.31 },
-        { id: 'ceramic_vase_03', fi: 1, x: 6550, y: 8140, z: 0.42 },
-        { id: 'brass_vase_02', fi: 1, x: 7700, y: 8140, z: 0.42, rot: 160 },
         // ---- FF dining / kitchen / foyer ----
         { id: 'ceramic_vase_01', fi: 1, x: 7150, y: 3100, z: 0.75 },
         { id: 'wooden_bowl_01', fi: 1, x: 7550, y: 3070, z: 0.75 },
