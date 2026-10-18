@@ -4211,6 +4211,36 @@ window.HouseScene = (function () {
       r = Y(0, 60); pb(bag, 'lamp', x0 + 30, x1 - 30, r[0], r[1], fY + 2.40, fY + 2.42);
     },
 
+    /* ---------------- SLIDING DOOR ----------------
+       Two-leaf bypass slider in a wall running along x (wall faces y0/y1),
+       shown closed. Champagne aluminium frames, fluted (obscured) glass so
+       nothing reads through, a mid rail, flush head + sill tracks inside
+       the wall thickness, slim pulls at the meeting stiles. */
+    slidingDoor(bag, x0, x1, y0, y1, fY, h) {
+      h = h || 2.40;
+      const zt = fY + h, T = y1 - y0;
+      pb(bag, 'alu', x0, x1, y0 + 8, y1 - 8, zt - 0.05, zt);                 // head track
+      pb(bag, 'aluDark', x0, x1, y0 + 8, y1 - 8, fY, fY + 0.012);           // sill track
+      pb(bag, 'alu', x0, x0 + 30, y0 + 8, y1 - 8, fY, zt);                  // jambs
+      pb(bag, 'alu', x1 - 30, x1, y0 + 8, y1 - 8, fY, zt);
+      const mid = (x0 + x1) / 2, lap = 30, fw = 45;
+      const tracks = [[y0 + 0.62 * T, y0 + 0.62 * T + 36], [y0 + 0.20 * T, y0 + 0.20 * T + 36]];   // dining-side leaf, utility-side leaf
+      const leaves = [[x0 + 30, mid + lap], [mid - lap, x1 - 30]];
+      leaves.forEach(([a0, a1], k) => {
+        const [t0, t1] = tracks[k], z0 = fY + 0.015, z1 = zt - 0.05;
+        pb(bag, 'alu', a0, a0 + fw, t0, t1, z0, z1);
+        pb(bag, 'alu', a1 - fw, a1, t0, t1, z0, z1);
+        pb(bag, 'alu', a0 + fw, a1 - fw, t0, t1, z0, z0 + 0.09);
+        pb(bag, 'alu', a0 + fw, a1 - fw, t0, t1, z1 - fw / 1000, z1);
+        pb(bag, 'alu', a0 + fw, a1 - fw, t0, t1, fY + 1.02, fY + 1.06);       // mid rail
+        pb(bag, 'fluted', a0 + fw, a1 - fw, t0 + 12, t1 - 12, z0 + 0.09, fY + 1.02);
+        pb(bag, 'fluted', a0 + fw, a1 - fw, t0 + 12, t1 - 12, fY + 1.06, z1 - fw / 1000);
+        // pull on the meeting stile, both faces
+        const px = k === 0 ? a1 - fw - 30 : a0 + fw + 16;
+        pb(bag, 'aluDark', px, px + 14, t0 - 18, t1 + 18, fY + 0.85, fY + 1.25);
+      });
+    },
+
     /* ---------------- STUDY ----------------
        Sit-stand desk (shown at seated height): oak top on twin graphite
        telescopic columns, monitor on a clamp arm. `back` = wall side. */
@@ -4433,7 +4463,7 @@ window.HouseScene = (function () {
       // One straight service line, y 950..1065, from the bedroom partition to
       // the east shell: utility | dining (slider), cbath | dining, wet kitchen |
       // kitchen (opening). The bands are only as deep as their fittings.
-      { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 7350, w: 1200, sill: 0, h: 2400 }, { c: 10750, w: 900, sill: 0, h: 2400 }] },
+      { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 6650, w: 1800, sill: 0, h: 2400 }, { c: 10750, w: 900, sill: 0, h: 2400 }] },
       { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2050, w: 1300, sill: 900, h: 1200 }, { c: 3523, w: 1446 }] },     // kitchen|dining: serving hatch + door
       { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000 }] },   // hall|pooja (open view to the mandir, centred on the room)
       { dir: 'y', b: [10780, 10893], a: [6815, 8642], ops: [{ c: 7730, w: 1500 }] },   // hall|entrance
@@ -6403,9 +6433,9 @@ window.HouseScene = (function () {
       // + wet kitchen x 9486..12420): dining slider back wall, west cheek,
       // cbath walls, divider, SE east wall with grill door, weather-secured
       // outer wall at y -762..-646 (utility grill, cbath vent, wet-kitchen grill)
-      wallRun(eBag, 'white', 'x', 6595, 9370, 950, 1065, L.f1, L.f2, L.f1,
-              [{ c: 7350, w: 1200, sill: 0, h: 2400 }]);
-      glazing(eBag, { face: 'S', band: [950, 1065], floorY: L.f1, c: 7350, w: 1200, sill: 0, h: 2400, type: 'slider', panes: 2 });
+      wallRun(eBag, 'white', 'x', 4920, 9370, 950, 1065, L.f1, L.f2, L.f1,
+              [{ c: 6650, w: 1800, sill: 0, h: 2400 }]);
+      Fur.slidingDoor(eBag, 5750, 7550, 950, 1065, L.f1, 2.40);
       wallRun(eBag, 'white', 'y', -646, 232, 4805, 4920, L.f1, L.f2, L.f1,
               [{ c: -207, w: 800, sill: 0, h: 2400 }]); // utility west wall + SW grill door to the balcony
       glazing(eBag, { face: 'W', band: [4805, 4920], floorY: L.f1, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
@@ -8132,17 +8162,21 @@ window.HouseScene = (function () {
         // --- Utility (band y -646..950): the W/D stack against the west wall
         // right beside the SW grill door (y -607..193), facing east. Nothing
         // else on that wall; the wash basin stays on the outer south wall. ---
-        Fur.washer(bag, 5220, 600, fY, 'E');                          // washer
+        Fur.washer(bag, 5205, 600, fY, 'E');                          // washer (portholes kept 25 mm off the closet doors)
         pb(bag, 'oak', 4920, 5540, 250, 950, fY + 0.88, fY + 0.92);    // shelf between
-        Fur.washer(bag, 5220, 600, fY + 0.92, 'E');                   // dryer on top
+        Fur.washer(bag, 5205, 600, fY + 0.92, 'E');                   // dryer on top
         pb(bag, 'lacq', 4920, 5540, 250, 275, fY, fY + 2.40);          // side panel on the door side
         pb(bag, 'oak', 4920, 5540, 250, 950, fY + 2.36, fY + 2.40);    // top panel
-        // detergent cupboard over the stack
+        // detergent shelf over the stack; the whole stack sits behind a pair
+        // of full-height closet doors, so no machine shows from the dining
         pb(bag, 'lacq', 4920, 5530, 275, 950, fY + 1.84, fY + 1.86);
-        pb(bag, 'lacq', 5530, 5540, 285, 607, fY + 1.86, fY + 2.34);
-        pb(bag, 'lacq', 5530, 5540, 617, 940, fY + 1.86, fY + 2.34);
-        bag.cyl('alu', 5545 / 1000, fY + 2.05, -582 / 1000, 0.006, 0.08);
-        bag.cyl('alu', 5545 / 1000, fY + 2.05, -642 / 1000, 0.006, 0.08);
+        pb(bag, 'lacq', 5540, 5560, 250, 275, fY, fY + 2.40);          // side panel carried to the door face
+        pb(bag, 'oak', 5540, 5560, 250, 950, fY + 2.36, fY + 2.40);
+        pb(bag, 'aluDark', 5530, 5545, 275, 950, fY, fY + 0.10);       // plinth
+        aluShutter(bag, 'y', 5560, 1, 277, 611, fY + 0.10, fY + 2.355, 'lacq', { pull: [fY + 0.95, fY + 1.55], pullSide: 'end' });
+        aluShutter(bag, 'y', 5560, 1, 615, 948, fY + 0.10, fY + 2.355, 'lacq', { pull: [fY + 0.95, fY + 1.55], pullSide: 'start' });
+        // dining | utility: 1.8 m two-leaf slider, fluted glass (obscured)
+        Fur.slidingDoor(bag, 5750, 7550, 950, 1065, fY, 2.40);
 
         // Wash basin on the outer South wall, under the grilled window (facing North)
         Fur.basin(bag, 7300, 8100, -646, -146, fY, 'S');
