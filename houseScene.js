@@ -484,6 +484,72 @@ window.HouseScene = (function () {
       const w = walls[key] || (walls[key] = { mat, lo, hi, dir, b0, b1, rects: [] });
       w.rects.push({ a0, a1, z0, z1, holes: holes || [] });
     }
+    /* ---- seamless floor plates ----
+       plate(mat, x0, x1, y0, y1, z0, z1): plan rects on the same level and
+       material are unioned on ONE conforming grid at build() and emitted as
+       one closed slab with shared vertices — so a floor laid room by room
+       (plus the strips through every doorway) comes out as a single
+       uninterrupted tiled surface, with the tile grid running on through
+       every door (world UVs). Interior floor finish goes through here. */
+    const plates = {};
+    function plate(mat, x0, x1, y0, y1, z0, z1) {
+      if (x1 - x0 < 0.5 || y1 - y0 < 0.5) return;
+      const key = [mat, z0.toFixed(4), z1.toFixed(4)].join('|');
+      (plates[key] || (plates[key] = { mat, z0, z1, rects: [] })).rects.push([x0, x1, y0, y1]);
+    }
+    function flushPlates() {
+      const uniq = (arr) => { arr.sort((p, q) => p - q); const o = []; for (const v of arr) if (!o.length || v - o[o.length - 1] > 0.05) o.push(v); return o; };
+      for (const key of Object.keys(plates)) {
+        const Pl = plates[key], xs0 = [], ys0 = [];
+        for (const r of Pl.rects) { xs0.push(r[0], r[1]); ys0.push(r[2], r[3]); }
+        const xs = uniq(xs0), ys = uniq(ys0), NX = xs.length - 1, NY = ys.length - 1;
+        if (NX < 1 || NY < 1) continue;
+        const on = new Uint8Array(NX * NY);
+        for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) {
+          const xc = (xs[i] + xs[i + 1]) / 2, yc = (ys[j] + ys[j + 1]) / 2;
+          for (const r of Pl.rects) if (xc > r[0] && xc < r[1] && yc > r[2] && yc < r[3]) { on[i * NY + j] = 1; break; }
+        }
+        const S = (i, j) => i >= 0 && j >= 0 && i < NX && j < NY && on[i * NY + j] === 1;
+        const P = (x, y, z) => [x / 1000, z, -y / 1000];
+        const q = { pos: [], nor: [], idx: [] };
+        const vert = (pt, n) => { q.pos.push(pt[0], pt[1], pt[2]); q.nor.push(n[0], n[1], n[2]); return q.pos.length / 3 - 1; };
+        const tri = (a, b, c, n) => {
+          const t = q.pos, ax = t[3 * a], ay = t[3 * a + 1], az = t[3 * a + 2];
+          const ux = t[3 * b] - ax, uy = t[3 * b + 1] - ay, uz = t[3 * b + 2] - az;
+          const vx = t[3 * c] - ax, vy = t[3 * c + 1] - ay, vz = t[3 * c + 2] - az;
+          const d = (uy * vz - uz * vy) * n[0] + (uz * vx - ux * vz) * n[1] + (ux * vy - uy * vx) * n[2];
+          if (d >= 0) q.idx.push(a, b, c); else q.idx.push(a, c, b);
+        };
+        for (const [z, n] of [[Pl.z1, [0, 1, 0]], [Pl.z0, [0, -1, 0]]]) {
+          const map = new Map();
+          const V = (i, j) => { const k = i * (NY + 1) + j; let v = map.get(k); if (v === undefined) { v = vert(P(xs[i], ys[j], z), n); map.set(k, v); } return v; };
+          for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) if (S(i, j)) {
+            const a = V(i, j), b = V(i + 1, j), c = V(i + 1, j + 1), d = V(i, j + 1);
+            tri(a, b, c, n); tri(a, c, d, n);
+          }
+        }
+        const side = (p0, p1, n) => {
+          const a = vert(P(p0[0], p0[1], Pl.z0), n), b = vert(P(p1[0], p1[1], Pl.z0), n);
+          const c = vert(P(p1[0], p1[1], Pl.z1), n), d = vert(P(p0[0], p0[1], Pl.z1), n);
+          tri(a, b, c, n); tri(a, c, d, n);
+        };
+        for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) if (S(i, j)) {
+          const x0 = xs[i], x1 = xs[i + 1], y0 = ys[j], y1 = ys[j + 1];
+          if (!S(i - 1, j)) side([x0, y0], [x0, y1], [-1, 0, 0]);
+          if (!S(i + 1, j)) side([x1, y0], [x1, y1], [1, 0, 0]);
+          if (!S(i, j - 1)) side([x0, y0], [x1, y0], [0, 0, 1]);
+          if (!S(i, j + 1)) side([x0, y1], [x1, y1], [0, 0, -1]);
+        }
+        if (!q.idx.length) continue;
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(q.pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(q.nor, 3));
+        geo.setIndex(q.idx);
+        add(Pl.mat, geo, IDENT);
+        geo.dispose();
+      }
+      for (const k in plates) delete plates[k];
+    }
     function flushWalls() {
       const uniq = (arr, eps) => {
         arr.sort((p, q) => p - q); const o = [];
@@ -694,9 +760,10 @@ window.HouseScene = (function () {
         m4.compose(ps, q, sc);
         add(mat, cylG, m4);
       },
-      wall,
+      wall, plate,
       build: (THREE2, materials) => {
         flushWalls();
+        flushPlates();
         const g = new THREE2.Group();
         for (const key of Object.keys(buckets)) {
           const b = buckets[key];
@@ -4422,6 +4489,9 @@ window.HouseScene = (function () {
     pooja: 'tPooja', walk: 'tWalk'
   };
   const R = (name, dims, x0, x1, y0, y1, type) => ({ name, dims, x0, x1, y0, y1, type });
+  // The one interior floor finish (large-format marble-look full-body
+  // porcelain). Every interior room gets it — see the floor plate in build().
+  const FLOOR_TILE = 'tLiving';
 
   const ROOMS = [
     [ // GF
@@ -7503,19 +7573,24 @@ window.HouseScene = (function () {
         }
       }
 
-      // room tints
+      // Interior floor: ONE full-body porcelain (FLOOR_TILE) through every
+      // room, laid as one plate — each room's rect wall face to wall face,
+      // plus the strip through every doorway — so the tile runs on
+      // unbroken from room to room. Outdoor decks keep their own finishes.
+      // Any room added to ROOMS / opening added to IW is picked up here.
+      const FZ0 = fY + 0.004, FZ1 = fY + 0.014;   // above the deck tile (+0.012), under the rugs (+0.016)
       for (const r of ROOMS[fi]) {
-        if (r.name === 'LIFT' || r.name === 'PORTICO' || r.name.includes('TERRACE') || r.name.includes('BALCONY')) continue;
-        const inset = 45;
-        if (fi === 2 && r.name === 'STAIRCASE') {
-          // Second floor only: there the stairwell IS a void from x 230 to 4630
-          // (the FF→SF flight rises through it), so just the walkway strip
-          // x 4630..4920 gets a tint. On the first floor the slab is solid — the
-          // stair starts there — so that room tints in full, as normal.
-          pb(bag, TYPE[r.type], 4630 + inset, r.x1 - inset, r.y0 + inset, r.y1 - inset, fY + 0.004, fY + 0.012);
-        } else {
-          pb(bag, TYPE[r.type], r.x0 + inset, r.x1 - inset, r.y0 + inset, r.y1 - inset, fY + 0.004, fY + 0.012);
-        }
+        if (r.type === 'out' || r.name === 'LIFT' || r.name === 'PORTICO' || r.name.includes('TERRACE') || r.name.includes('BALCONY')) continue;
+        // SF only: the stairwell is a void from x 230 to 4630 (the FF->SF
+        // flight rises through it); just the walkway strip is floor.
+        const x0 = fi === 2 && r.name === 'STAIRCASE' ? 4630 : r.x0;
+        bag.plate(FLOOR_TILE, x0, r.x1, r.y0, r.y1, FZ0, FZ1);
+      }
+      for (const w of IW[fi]) for (const o of w.ops) {
+        if ((o.sill || 0) > 0) continue;
+        const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2;
+        if (w.dir === 'x') bag.plate(FLOOR_TILE, a0, a1, w.b[0], w.b[1], FZ0, FZ1);
+        else bag.plate(FLOOR_TILE, w.b[0], w.b[1], a0, a1, FZ0, FZ1);
       }
 
       /* ================= ROOM-BY-ROOM ARCHITECTURAL LIGHTING PLAN =================
@@ -8106,8 +8181,7 @@ window.HouseScene = (function () {
           const my0 = 5410, my1 = 6350;
           const peetaTop = fY + 0.255;
 
-          // Sacred floor: warm pooja tile + deep red carpet aisle to mandir
-          pb(bag, 'tPooja', 10940, 12370, 5103, 6658, fY + 0.004, fY + 0.014);
+          // Deep red carpet aisle to the mandir (the floor itself is the house tile)
           pb(bag, 'peetaRed', 11020, 12040, 5730, 6030, fY + 0.014, fY + 0.022);
 
           // 1) Auspicious Brass-Clad Threshold (Telugu Gadapa / Padi) with Kumkum & Turmeric
