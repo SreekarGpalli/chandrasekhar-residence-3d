@@ -7482,7 +7482,7 @@ window.HouseScene = (function () {
 
         /* --- KITCHEN & WET KITCHEN --- */
         Lum.downlight(10900, 3000);
-        Lum.pendant(9580, 1950, 1.60, 0.12);         // pair over the breakfast counter
+        Lum.pendant(9580, 1950, 1.60, 0.12);         // pair over the SW counter
         Lum.pendant(9580, 2430, 1.60, 0.12);
         Lum.downlight(11000, 150);
         Lum.task(9500, 10290, 1075, 1380, 1.44);     // under the wall units (their soffit is at +1.45)
@@ -7905,7 +7905,7 @@ window.HouseScene = (function () {
 
         // Base counters
         Fur.counterX(bag, 9486, 10300, K.s, K.sF, fY);              // SW south leg (to the opening)
-        Fur.counterX(bag, 9486, 10086, K.sF, 2700, fY);             // SW west leg = breakfast peninsula
+        Fur.counterX(bag, 9385, 10086, K.sF, 2700, fY);             // SW west leg: worktop lip lands on the wall's dining face (9371)
         Fur.counterX(bag, 11200, 11800, K.s, K.sF, fY);             // SE south leg (from the opening)
         Fur.counterX(bag, 11800, 12408, K.s, 4933, fY, { cx: 12110, cy: K.sink, w: 420, d: 760 });   // east run, sink on the window
         Fur.counterX(bag, 10350, 11800, 4345, 4945, fY);            // north run (to fridge)
@@ -7940,17 +7940,13 @@ window.HouseScene = (function () {
         pb(bag, 'quartz', 10350, 11800, 4933, 4945, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 9486, 10300, 1065, 1077, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 11200, 11800, 1065, 1077, fY + 0.88, fY + 1.45);
-        // Breakfast counter. The hatch, the 100 mm pier beside it and the
-        // doorway are one opening now (y 1677..4246, 2.4 m), so the SW west leg
-        // stands free as a peninsula in the old wall line. Its quartz top runs
-        // on to the dining side as a 400 mm overhang on hidden steel brackets
-        // — no leg, no column — over two counter stools; an oak panel closes
-        // the cabinet back.
-        prb(bag, 'quartz', 9071, 9472, 1663, 2714, fY + 0.84, fY + 0.88, 4);
-        prb(bag, 'oak', 9466, 9486, 1677, 2700, fY + 0.10, fY + 0.84, 3);
-        pb(bag, 'aluDark', 9478, 9486, 1677, 2700, fY, fY + 0.10);
-        Fur.stool(bag, 9240, 1950, fY);
-        Fur.stool(bag, 9240, 2430, fY);
+        // The hatch, the 100 mm pier beside it and the doorway are one opening
+        // (y 1677..4246). The SW west leg stands in the old wall line and stops
+        // on it: no overhang, no stools — its back is plastered and skirted
+        // flush with the wall's dining face (x 9371), so from the dining it
+        // reads as the wall dropping to worktop height.
+        pb(bag, 'white2', 9371, 9385, 1677, 2700, fY, fY + 0.84);
+        pb(bag, 'skirt', 9359, 9373, 1677, 2700, fY - 0.005, fY + 0.07);
         // --- Entrance (north bay: duplex entry door c 8000 + sidelite c 7100) ---
         // Cleared for Vastu; the south wall is the pooja's, so nothing stands
         // against it. The hall opening (wall x 10780..10893, y 6980..8480,
