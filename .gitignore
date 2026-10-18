@@ -26,3 +26,6 @@ Blender/
 
 # private archive (not committed, not deployed)
 archive/
+
+# full-res source scan (simplified copy ganesha.glb is what the viewers load)
+models/interior/ganesha/lord-ganesha.glb

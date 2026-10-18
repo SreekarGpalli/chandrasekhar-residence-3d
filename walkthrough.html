@@ -192,7 +192,7 @@
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20261018_interiorfix8"></script>
+<script src="houseScene.js?v=20261018_breakfastcounter1"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -1786,6 +1786,7 @@ if(!window.THREE || !window.HouseScene){
       b.classList.toggle('on', +b.dataset.spawn === i));
     placeCamera();
   }
+  window.__walkthrough = { player, camera, spawnTo, toggleFly, placeCamera };
 
   /* ---------------- input ---------------- */
   const pressed = {};
@@ -2104,6 +2105,16 @@ if(!window.THREE || !window.HouseScene){
   // fallback: never leave ENTER stuck if the first rAF is delayed (e.g. tab opened in background)
   setTimeout(enableEntry, 3500);
   spawnTo(0);
+  if (location.hash && location.hash.startsWith('#cam=')) {
+    const p = location.hash.slice(5).split(',').map(Number);
+    if (p.length >= 3) {
+      introOpen = false; if (intro) intro.style.display = 'none';
+      player.pos.set(p[0], p[1], p[2]);
+      if (p.length > 3) player.yaw = p[3];
+      if (p.length > 4) player.pitch = p[4];
+      player.velY = 0;
+    }
+  }
   placeCamera();
   requestAnimationFrame(frame);
 

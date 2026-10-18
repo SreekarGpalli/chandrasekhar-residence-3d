@@ -4196,10 +4196,9 @@ window.HouseScene = (function () {
       pb(bag, 'brassI', faceX + 236, faceX + 242, cy - 220, cy + 220, lz - 0.045, lz - 0.005);
       bag.cyl('brassI', (faceX + 4) / 1000, lz + 0.30, -cy / 1000, 0.25, 0.008, 0, 0, Math.PI / 2);
       bag.cyl('peetaRed', (faceX + 9) / 1000, lz + 0.30, -cy / 1000, 0.215, 0.004, 0, 0, Math.PI / 2);
-      Fur.murtiGanesha(bag, faceX + 110, cy, lz, 1.45, 'E');
+      // the idol itself is a scanned model (placeInteriorModels: 'ganesha')
       bag.cyl('brassI', (faceX + 175) / 1000, lz + 0.012, -(cy - 165) / 1000, 0.03, 0.022);
       bag.cone('lamp', (faceX + 175) / 1000, lz + 0.04, -(cy - 165) / 1000, 0.009, 0.026);
-      for (let k = 0; k < 5; k++) bag.sph(k % 2 ? 'saffron' : 'vermilion', (faceX + 170 + (k % 2) * 25) / 1000, lz + 0.015, -(cy + 120 + k * 18) / 1000, 0.016);
     },
     /* Tall shoe cabinet on a wall, front at y0 facing south: fluted leaf +
        full-length mirror leaf, shadow plinth, oak cap. */
@@ -4478,7 +4477,7 @@ window.HouseScene = (function () {
       // the east shell: utility | dining (slider), cbath | dining, wet kitchen |
       // kitchen (opening). The bands are only as deep as their fittings.
       { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 6830, w: 2400, sill: 0, h: 2400 }, { c: 10750, w: 900, sill: 0, h: 2400 }] },
-      { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2050, w: 1300, sill: 900, h: 1200 }, { c: 3523, w: 1446 }] },     // kitchen|dining: serving hatch + door
+      { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2050, w: 1300, sill: 840, h: 1260 }, { c: 3523, w: 1446 }] },     // kitchen|dining: serving hatch + door
       { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000 }] },   // hall|pooja (open view to the mandir, centred on the room)
       { dir: 'y', b: [10780, 10893], a: [6815, 8642], ops: [{ c: 7730, w: 1500 }] },   // hall|entrance
       { dir: 'x', b: [6700, 6815], a: [10893, 12421], ops: [] },                        // pooja|entrance
@@ -7903,14 +7902,14 @@ window.HouseScene = (function () {
 
         // Base counters
         Fur.counterX(bag, 9486, 10300, K.s, K.sF, fY);              // SW south leg (to the opening)
-        Fur.counterX(bag, 9498, 10098, K.sF, 2700, fY);             // SW west leg, under the hatch
+        Fur.counterX(bag, 9486, 10086, K.sF, 2700, fY);             // SW west leg, under the hatch
         Fur.counterX(bag, 11200, 11800, K.s, K.sF, fY);             // SE south leg (from the opening)
         Fur.counterX(bag, 11800, 12408, K.s, 4933, fY, { cx: 12110, cy: K.sink, w: 420, d: 760 });   // east run, sink on the window
         Fur.counterX(bag, 10350, 11800, 4345, 4945, fY);            // north run (to fridge)
 
         // Base doors. Corner squares behind a crossing leg are blind.
         Fur.kitBaseDoors(bag, 'N', K.sF, 10110, 10290, fY, null);   // SW: spice pull-out east of the corner
-        Fur.kitBaseDoors(bag, 'E', 10098, 1690, 2690, fY, null);    // SW west leg
+        Fur.kitBaseDoors(bag, 'E', 10086, 1690, 2690, fY, null);    // SW west leg
         Fur.kitBaseDoors(bag, 'N', K.sF, 11210, 11790, fY, null);   // SE south leg
         Fur.kitBaseDrawers(bag, 'W', 11800, 1690, 2510, fY);        // under the hob
         Fur.kitBaseDoors(bag, 'W', 11800, 2530, 2810, fY, null);
@@ -7938,10 +7937,9 @@ window.HouseScene = (function () {
         pb(bag, 'quartz', 10350, 11800, 4933, 4945, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 9486, 10300, 1065, 1077, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 11200, 11800, 1065, 1077, fY + 0.88, fY + 1.45);
-        // Dining-side ledge through the serving hatch (y 1400..2700), meeting
-        // the kitchen worktop on the far side of the wall.
-        prb(bag, 'quartz', 9071, 9480, 1450, 2650, fY + 0.86, fY + 0.90, 4);
-        prb(bag, 'oak', 9250, 9371, 1870, 2230, fY, fY + 0.86, 6);
+        // Dining-side breakfast counter through the serving hatch (y 1400..2700),
+        // seamlessly continuous with the kitchen worktop across the wall sill.
+        prb(bag, 'quartz', 9071, 9472, 1400, 2700, fY + 0.84, fY + 0.88, 4);
         // --- Entrance (north bay: duplex entry door c 8000 + sidelite c 7100) ---
         // Cleared for Vastu; the south wall is the pooja's, so nothing stands
         // against it. The hall opening (wall x 10780..10893, y 6980..8480,
@@ -8299,6 +8297,11 @@ window.HouseScene = (function () {
         { id: 'potted_plant_04', fi: 1, x: 12150, y: 4650, z: 0.88 },
         // (foyer cleared; FF master + SF west bedroom: no lounge chair, the
         //  NW corner is the desk)
+        // Foyer Ganesha on the partition ledge, facing the main door (east).
+        // "Lord-ganesha" by Thunk3D scanner / Diana123456, CC-BY-4.0
+        // (sketchfab.com/3d-models/lord-ganesha-1399da994ce54420878133a81f2f8f1e),
+        // simplified 900k -> ~90k verts; untextured scan, cast in brass here.
+        { id: 'ganesha', file: 'ganesha.glb', fi: 1, x: 11006, y: 7225, z: 1.00, rot: 90, h: 0.42, brass: true },
         // ---- SF east bedroom ----
         { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
         { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
@@ -8316,12 +8319,18 @@ window.HouseScene = (function () {
         const obj = src.clone(true);
         obj.rotation.y = (pl.rot || 0) * Math.PI / 180;
         if (pl.s) obj.scale.setScalar(pl.s);
+        if (pl.h) {   // downloaded models come at arbitrary scale: fit to a height (m)
+          obj.updateMatrixWorld(true);
+          const b0 = new THREE.Box3().setFromObject(obj);
+          obj.scale.multiplyScalar(pl.h / Math.max(1e-6, b0.max.y - b0.min.y));
+        }
         obj.updateMatrixWorld(true);
         const bb = new THREE.Box3().setFromObject(obj);
         obj.position.set(pl.x / 1000 - (bb.min.x + bb.max.x) / 2,
                          FL[pl.fi] + (pl.z || 0) - bb.min.y + 0.002,
                          -pl.y / 1000 - (bb.min.z + bb.max.z) / 2);
-        obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.scan = pl.id; } });
+        const brass = pl.brass ? new THREE.MeshStandardMaterial({ color: 0xb08a3e, metalness: 0.85, roughness: 0.34 }) : null;
+        obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.scan = pl.id; if (brass) o.material = brass; } });
         byFloor[pl.fi].add(obj);
       }
       function done() {
@@ -8333,7 +8342,8 @@ window.HouseScene = (function () {
       const ids = Array.from(new Set(P.map(p => p.id)));
       pending = ids.length;
       ids.forEach(id => {
-        loader.load('models/interior/' + id + '/' + id + '.gltf', (gltf) => {
+        const file = (P.find(q => q.id === id) || {}).file || (id + '.gltf');   // Sketchfab zips ship scene.gltf
+        loader.load('models/interior/' + id + '/' + file, (gltf) => {
           for (const pl of P) if (pl.id === id) place(gltf.scene, pl);
           done();
         }, undefined, () => { done(); });
