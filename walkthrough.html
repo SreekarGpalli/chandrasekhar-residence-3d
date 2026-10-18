@@ -192,7 +192,7 @@
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20261018_slabedge3"></script>
+<script src="houseScene.js?v=20261018_slabedge8"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -1341,14 +1341,20 @@ if(!window.THREE || !window.HouseScene){
       // through, the storeys stack and a cap would read as a band at every
       // slab edge
       if (isFloor && o.userData.matKey === 'copingLight') { o.visible = false; return; }
-      if (isFloor && o.material && !o.material.userData.poff) {
+      // floor slabs ('white') have no exterior twin, so they get no offset —
+      // biased, a slab edge tucked 2 mm behind a wall pops through it at
+      // glancing angles as a line along every slab level
+      if (isFloor && o.material && !o.material.userData.poff && o.userData.matKey !== 'white') {
         const src = o.material;
         let cloned = matClone.get(src);
         if (!cloned) {
           cloned = src.clone();
+          // constant bias only: a slope-scaled factor pulls surfaces seen
+          // edge-on (floors, skirting) far enough forward to leak through a
+          // 115 mm wall — the dashed lines at every slab level
           cloned.polygonOffset = true;
-          cloned.polygonOffsetFactor = -1.2;
-          cloned.polygonOffsetUnits = -1.2;
+          cloned.polygonOffsetFactor = 0;
+          cloned.polygonOffsetUnits = -4;
           cloned.userData.poff = true;
           if (src.userData && src.userData.name) cloned.userData.name = src.userData.name;
           matClone.set(src, cloned);

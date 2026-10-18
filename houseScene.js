@@ -517,7 +517,8 @@ window.HouseScene = (function () {
       for (const key of Object.keys(plates)) {
         const Pl = plates[key], xs0 = [], ys0 = [];
         for (const r of Pl.rects) { xs0.push(r[0], r[1]); ys0.push(r[2], r[3]); }
-        const xs = uniq(xs0), ys = uniq(ys0), NX = xs.length - 1, NY = ys.length - 1;
+        const fine = (v, step) => { const o = [v[0]]; for (let k = 1; k < v.length; k++) { const n = Math.ceil((v[k] - v[k - 1]) / step); for (let m = 1; m < n; m++) o.push(v[k - 1] + (v[k] - v[k - 1]) * m / n); o.push(v[k]); } return o; };
+        const xs = fine(uniq(xs0), 1000), ys = fine(uniq(ys0), 1000), NX = xs.length - 1, NY = ys.length - 1;   // <= 1 m cells (see flushWalls)
         if (NX < 1 || NY < 1) continue;
         const on = new Uint8Array(NX * NY);
         for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) {
@@ -598,7 +599,11 @@ window.HouseScene = (function () {
           A.push(r.a0, r.a1); Z.push(r.z0, r.z1);
           for (const h of r.holes) { A.push(h.a0, h.a1); Z.push(h.z0, h.z1); }
         }
-        const as = uniq(A, 0.05), zs = uniq(Z, 0.00005);
+        // Cells no bigger than ~1 m: huge triangles beside the camera get
+        // split by the near-plane clipper and their shared edges crack open
+        // a pixel (a hairline showing whatever is behind the wall).
+        const fine = (v, step) => { const o = [v[0]]; for (let k = 1; k < v.length; k++) { const n = Math.ceil((v[k] - v[k - 1]) / step); for (let m = 1; m < n; m++) o.push(v[k - 1] + (v[k] - v[k - 1]) * m / n); o.push(v[k]); } return o; };
+        const as = fine(uniq(A, 0.05), 1000), zs = fine(uniq(Z, 0.00005), 1.0);
         const NA = as.length - 1, NZ = zs.length - 1;
         if (NA < 1 || NZ < 1) continue;
         const solid = new Uint8Array(NA * NZ);
@@ -7578,11 +7583,15 @@ window.HouseScene = (function () {
       } else {
         // Southern solid slab
         pb(bag, 'white', X0, X1, Y0n, 6000, fY - L.slabT, fY);
-        // Slab between y = 6000 and 6496 (split around double-height void)
-        pb(bag, 'white', X0, 6020, 6000, 6496, fY - L.slabT, fY);
+        // Slab between y = 6000 and 6496 (split around double-height void).
+        // Edges that face the stairwell stop 2 mm INSIDE the wall they meet
+        // (stair south wall face y 6496, west shell face x 230): flush, the
+        // slab edge and the wall face share a plane and flicker as a line.
+        pb(bag, 'white', X0, 6020, 6000, 6494, fY - L.slabT, fY);
+        pb(bag, 'white', 4630, 6020, 6494, 6496, fY - L.slabT, fY);   // walkway keeps its full edge
         pb(bag, 'white', 8241, X1, 6000, 6496, fY - L.slabT, fY);
         // Slab between y = 6496 and 8641 (split around stairwell and double-height void)
-        pb(bag, 'white', X0, 230, 6496, 8641, fY - L.slabT, fY);
+        pb(bag, 'white', X0, 228, 6496, 8641, fY - L.slabT, fY);
         pb(bag, 'white', 4630, 6020, 6496, 8641, fY - L.slabT, fY); // West gallery walkway
         pb(bag, 'white', 8241, X1, 6496, 8641, fY - L.slabT, fY);
         // Northern solid slab
@@ -7681,8 +7690,25 @@ window.HouseScene = (function () {
         // slab is cut (stairwell) the wall is continuous — no gap, and no
         // overlapping coplanar band to flicker — and no end face lies on a
         // soffit (hidden under the slab/tile/wall above everywhere else).
-        wallRun(bag, w.mat || 'white2', w.dir, ja0, ja1, w.b[0], w.b[1], fY,
-                fi < 2 ? cut + L.slabT : cut, fY, ops, 'copingLight', w.faces);
+        // Walk mode (all storeys at once): a wall that repeats on the floor
+        // above is drawn ONCE, here, through both storeys — the two runs land
+        // in the same bag and merge on one grid, so there is no storey joint
+        // to crack open where a slab is cut (stairwell). The upper floor then
+        // skips it. The dollhouse (index) keeps one wall per floor.
+        const opsOf = v => v.ops.map(o => ({ c: o.c, w: o.w, sill: o.sill !== undefined ? o.sill : 0, h: o.h !== undefined ? o.h : (o.glass ? 3000 : 2100) }));
+        const sameWall = v => v.dir === w.dir && v.a[0] === w.a[0] && v.a[1] === w.a[1] && v.b[0] === w.b[0] && v.b[1] === w.b[1] && (v.mat || '') === (w.mat || '');
+        const WALK = typeof window !== 'undefined' && window.__HOUSE_WALK;
+        const drawnBelow = WALK && fi > 0 && IW[fi - 1].some(sameWall);
+        if (!drawnBelow) {
+          wallRun(bag, w.mat || 'white2', w.dir, ja0, ja1, w.b[0], w.b[1], fY,
+                  fi < 2 ? cut + L.slabT : cut, fY, ops, 'copingLight', w.faces);
+          const up = WALK && fi < 2 ? IW[fi + 1].find(sameWall) : null;
+          if (up) {
+            const uY = FLOOR_DEFS[fi + 1].fY, uCut = uY + L.f2f - L.slabT;
+            wallRun(bag, w.mat || 'white2', w.dir, ja0, ja1, w.b[0], w.b[1], uY,
+                    fi + 1 < 2 ? uCut + L.slabT : uCut, uY, opsOf(up), 'copingLight', w.faces);
+          }
+        }
         skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onFloor);
         // walnut casing on every room opening — not windows/hatches (sill),
         // shell walls (mat), or openings with joinery of their own (noFrame)
