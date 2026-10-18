@@ -170,7 +170,7 @@ for m in bpy.data.materials:
     elif k == 'lamp':
         emissive(b, WARM, 30.0 if NIGHT else 18.0)
     elif k == 'coveLED':
-        emissive(b, (1.0, 0.86, 0.66), 5.0)
+        emissive(b, (1.0, 0.86, 0.66), 40.0 if NIGHT else 25.0)   # hidden side-wash + console glow
     elif k == 'downlight':
         emissive(b, WARM, 20.0)
     elif k in ('travertine', 'marbleV', 'quartz'):

@@ -1878,12 +1878,12 @@ window.HouseScene = (function () {
        Owner reference (Oct 2026): 7'-0" x 22'-0" schematic. Centrepiece of
        the house, but built to a sensible budget. Money goes where it shows:
          - field: plain plaster, matte navy emulsion (the cheap part), with
-           hollow 50 mm 3-step polyurethane panel mouldings (4 x 11 squares)
-         - 8" MDF pilasters, deeper navy PU satin, framed with 30 mm moulding
-         - 1" aluminium LED profiles (diffused) between pilaster and field
-         - stepped crown cornice + 150 mm MDF plinth
-         - flat MDF TV backing (hides the cables), framed, brass inlay above
-         - floating walnut console with a concealed under-glow
+           thin PU mouldings, square-in-square at the golden ratio (4 x 11)
+         - 8" MDF pilasters, deeper navy PU satin, single-line panels
+         - gold-anodised flat bar in the pilaster reveals instead of LED
+         - stepped crown cornice + 150 mm plinth
+         - 55" TV in a single frame the exact width of the grid, brass rule
+         - floating walnut console: the wall's only LED (under-glow + up-wash)
        Wall 2221 x 6556 mm (FF floor -> SF soffit); the 11' datum IS the SF
        floor level (f2f = 3.353), so the drawing maps almost 1:1.
        Called once per storey: the FF call draws everything below the datum,
@@ -1906,8 +1906,9 @@ window.HouseScene = (function () {
          the back face yB outward; each step starts where the last one ended
          (no buried faces), and every step is narrower than the one below,
          so no two side faces are coplanar. Bars butt at the corners. */
-      const P50 = [[0, 50, 8], [9, 32, 16], [20, 10, 23]];
-      const P30 = [[0, 30, 6], [6, 18, 12], [12, 6, 16]];
+      // Thin two-step PU mouldings (owner: thin lines, square-in-square).
+      const P20 = [[0, 20, 6], [5, 10, 12]];
+      const P14 = [[0, 14, 5], [4, 6, 9]];
       const frame = (m, u0, u1, za, zb, yB, prof) => {
         let prev = 0;
         for (const [i, w, pr] of prof) {
@@ -1919,72 +1920,90 @@ window.HouseScene = (function () {
           prev = pr;
         }
       };
+      // outer 20 mm line + inner 14 mm line `ins` inside it
+      const dbl = (m, u0, u1, za, zb, yB, ins) => {
+        frame(m, u0, u1, za, zb, yB, P20);
+        frame(m, u0 + ins, u1 - ins, za + ins, zb - ins, yB, P14);
+      };
 
       const Hmm = TOP * 1000;
       // painted face: 20 mm finish coat over the shell plaster. Thick enough
       // to bury the FF wall's 6 mm cut-cap at the soffit line.
       const yP = backY - 20;
-      const PIL = 233, REV = 25;                  // 8" pilaster (+ edge), 1" reveal
-      const fU0 = PIL + REV, fU1 = W - fU0;       // painted field
+      // 208 mm pilaster + 25 mm shadow reveal carrying a gold line = 233 zone.
+      const PIL = 233, PB = 208, PD = 25;
       const PLINTH = 150, CROWN = 120;
+
+      // -- grid + TV zone proportions --------------------------------------
+      // 4 x 11 squares, 298 mm, 75 mm gaps, a gap centred on the datum (3 rows
+      // below, 8 above, as in the reference). The TV frame takes the grid's
+      // exact width so every vertical line runs unbroken floor to soffit.
+      const MOD = 298, GAP = 75, P = MOD + GAP;
+      const gridW = 4 * MOD + 3 * GAP;            // 1417
+      const g0 = (W - gridW) / 2, g1 = g0 + gridW;
+      const zRow0 = H * 1000 - GAP / 2 - 3 * MOD - 2 * GAP;   // 2271.5
+      const TVF0 = 830, TVF1 = 1760;              // TV frame: ~100 side margin, 147 head
+      const RULE = (TVF1 + zRow0) / 2;            // brass rule midway frame -> grid
 
       // -- painted field + plinth + crown cornice ----------------------
       box('paintNavy', 0, W, yP, backY, 0, Hmm);
       box('lacqNavyDk', 0, W, yP - 18, yP, 0, PLINTH - 30);           // MDF plinth
       box('lacqNavyDk', 0, W, yP - 24, yP, PLINTH - 30, PLINTH);      //   + top lip
-      for (const p0 of [0, W - PIL])                                   // plinth blocks
-        box('lacqNavyDk', p0, p0 + PIL, yP - 31, yP - 24, 0, PLINTH);  // under pilasters
+      for (const p0 of [0, W - PB])                                    // plinth blocks
+        box('lacqNavyDk', p0, p0 + PB, yP - PD - 6, yP - 24, 0, PLINTH);   // under pilasters
       box('lacqNavyDk', 0, W, yP - 20, yP, Hmm - CROWN, Hmm);         // crown, stepped
       box('lacqNavyDk', 0, W, yP - 40, yP - 20, Hmm - 80, Hmm);       //   out toward
       box('lacqNavyDk', 0, W, yP - 58, yP - 40, Hmm - 40, Hmm);       //   the soffit
       box('brassI', 0, W, yP - 44, yP - 40, Hmm - 92, Hmm - 80);      // brass fillet
 
-      // -- MDF pilasters, framed; LED reveal profiles ------------------
-      const pilPanels = [[260, 2000], [2150, 4250], [4400, Hmm - CROWN - 110]];
+      // -- MDF pilasters, single-line panels, gold reveal lines ------------
+      // Panel breaks line up with the wall: brass rule, the datum gap and a
+      // grid row gap (rows 3-6 | 7-10).
+      const brk = (k) => zRow0 + k * P - GAP / 2;  // centre of the gap below row k
+      const pilPanels = [[260, RULE - 40], [RULE + 40, brk(3) - 38],
+                         [brk(3) + 38, brk(7) - 38], [brk(7) + 38, Hmm - CROWN - 110]];
       for (const s of [0, 1]) {
-        const p0 = s ? W - PIL : 0, p1 = p0 + PIL;
-        box('lacqNavyDk', p0, p1, yP - 25, yP, PLINTH, Hmm - CROWN);
-        for (const [za, zb] of pilPanels)
-          frame('lacqNavyDk', p0 + (s ? 22 : 38), p1 - (s ? 38 : 22), za, zb, yP - 25, P30);
-        // 25 mm aluminium channel: back, two lips, recessed opal diffuser
-        const r0 = s ? fU1 : p1, r1 = r0 + REV;
-        box('aluDark', r0, r1, yP - 6, yP, PLINTH, Hmm - CROWN);
-        box('aluDark', r0, r0 + 4, yP - 14, yP - 6, PLINTH, Hmm - CROWN);
-        box('aluDark', r1 - 4, r1, yP - 14, yP - 6, PLINTH, Hmm - CROWN);
-        box('coveLED', r0 + 6, r1 - 6, yP - 10, yP - 6, PLINTH + 40, Hmm - CROWN - 40);
+        const p0 = s ? W - PB : 0, p1 = p0 + PB;
+        box('lacqNavyDk', p0, p1, yP - PD, yP, PLINTH, Hmm - CROWN);
+        for (const [za, zb] of pilPanels) frame('lacqNavyDk', p0 + 34, p1 - 34, za, zb, yP - PD, P20);
+        // Gold instead of LED: 10 mm gold-anodised aluminium flat bar centred
+        // in the 25 mm reveal, 6 mm off the paint, 19 mm behind the pilaster
+        // face. One unbroken line plinth -> crown on each side; it catches the
+        // pendants and the windows the way a lit reveal would, with no wiring.
+        const r0 = s ? W - PIL : PB;
+        box('lacqNavyDk', r0, r0 + 25, yP - 2, yP, PLINTH, Hmm - CROWN);   // dark reveal back
+        box('brassI', r0 + 7.5, r0 + 17.5, yP - 8, yP - 2, PLINTH, Hmm - CROWN);
       }
 
-      // -- 4 x 11 square frames on the painted field ----------------------
-      // 298 mm frames, 75 mm gaps; rows set so a gap is centred on the datum
-      // (3 rows below, 8 above, as in the reference).
-      const MOD = 298, GAP = 75, P = MOD + GAP;
-      const gridW = 4 * MOD + 3 * GAP;
-      const g0 = (W - gridW) / 2;
-      const zRow0 = H * 1000 - GAP / 2 - 3 * MOD - 2 * GAP;
+      // -- square-in-square frames on the painted field ----------------------
       for (let r = 0; r < 11; r++) {
         const za = zRow0 + r * P;
-        for (let c = 0; c < 4; c++) frame('lacqNavy', g0 + c * P, g0 + c * P + MOD, za, za + MOD, yP, P50);
+        // inner square at the golden ratio of the outer (298 -> 184, inset 57):
+        // a 37 mm band between the lines, half the 75 mm gap between squares
+        for (let c = 0; c < 4; c++) dbl('lacqNavy', g0 + c * P, g0 + c * P + MOD, za, za + MOD, yP, 57);
       }
 
       if (!isLower) return;
 
-      // -- TV backing: flat 12 mm MDF face, framed, brass inlay above ----
-      const bk0 = W / 2 - 780, bk1 = W / 2 + 780, yBk = yP - 12;
-      box('lacqNavy', bk0, bk1, yBk, yP, 730, 1970);
-      frame('lacqNavy', bk0 + 14, bk1 - 14, 744, 1956, yBk, P30);
-      box('brassI', g0, g0 + gridW, yP - 4, yP, 2030, 2042);
+      // -- TV zone: single frame on the plaster, brass rule above ----------
+      // Single, not double: the TV is already a hard rectangle inside it.
+      // No MDF backing: TV power + HDMI run in a 25 mm conduit chased into
+      // the wall down to the console before plastering.
+      frame('lacqNavy', g0, g1, TVF0, TVF1, yP, P20);
+      box('brassI', g0, g1, yP - 4, yP, RULE - 6, RULE + 6);
 
-      // -- 65"-class TV, centre 50" AFF (1270 mm) ------------------
-      const tvW = 1440, tvH = 810, tvC = 1270;
+      // -- 55"-class TV (1220 x 686), centre 50" AFF (1270 mm) ------------
+      const tvW = 1220, tvH = 686, tvC = 1270;
       const tz0 = tvC - tvH / 2, tz1 = tvC + tvH / 2;
-      const yTv = yBk;                             // flush bracket on the backing
-      box('blackM', W / 2 - 360, W / 2 + 360, yTv - 40, yTv, tz0 + 160, tz1 - 160); // bracket
-      box('blackM', W / 2 - tvW / 2 - 6, W / 2 + tvW / 2 + 6, yTv - 70, yTv - 40, tz0 - 6, tz1 + 6);
-      box('tv', W / 2 - tvW / 2, W / 2 + tvW / 2, yTv - 73, yTv - 70, tz0, tz1);   // screen: southernmost
-      box('lamp', W / 2 - 4, W / 2 + 4, yTv - 74, yTv - 70, tz0 - 5, tz0 - 1);    // power LED
+      const yTv = yP;                              // slim flush bracket on the wall
+      box('blackM', W / 2 - 300, W / 2 + 300, yTv - 30, yTv, tz0 + 140, tz1 - 140); // bracket
+      box('blackM', W / 2 - tvW / 2 - 5, W / 2 + tvW / 2 + 5, yTv - 58, yTv - 30, tz0 - 5, tz1 + 5);
+      box('tv', W / 2 - tvW / 2, W / 2 + tvW / 2, yTv - 61, yTv - 58, tz0, tz1);   // screen: southernmost
+      box('lamp', W / 2 - 4, W / 2 + 4, yTv - 62, yTv - 58, tz0 - 5, tz0 - 1);    // power LED
 
-      // -- floating walnut console 1727 x 305 x 356, 305 clear -----
-      const cW = 1727, cD = 356, cz0 = 305, cz1 = 610;
+      // -- floating walnut console 1600 x 305 x 356, 305 clear -----
+      // 1600 wide: overhangs the 1417 TV frame by the reference's ratio (68" : 60")
+      const cW = 1600, cD = 356, cz0 = 305, cz1 = 610;
       const c0 = W / 2 - cW / 2, c1 = W / 2 + cW / 2;
       const yC = yP - 2;                           // wall-hung on the field (plinth stops at 150)
       const cy0 = yC - cD;                         // front plane
@@ -2008,7 +2027,10 @@ window.HouseScene = (function () {
         prb(bag, 'walnutI', x0 + u, x0 + u + 14, cy0 + 1, cy0 + 12, fY0 + fz0 / 1000, fY0 + fz1 / 1000, 6);
       }
       box('brassI', c0, c1, cy0 - 2, cy0 + 8, cz0 - 8, cz0);             // brass under-edge
-      box('coveLED', c0 + 60, c1 - 60, cy0 + 40, yC - 40, cz0 - 4, cz0); // concealed under-glow
+      // The wall's only LED: one 24 V circuit, driver inside the console.
+      box('coveLED', c0 + 60, c1 - 60, cy0 + 40, yC - 40, cz0 - 4, cz0); // under-glow: it floats
+      box('walnutI', c0 + 18, c1 - 18, yC - 34, yC - 22, cz1, cz1 + 30);  // 30 mm back upstand
+      box('coveLED', c0 + 40, c1 - 40, yC - 20, yC - 8, cz1 + 22, cz1 + 26); // up-wash on the TV zone
       // soundbar on the console
       box('charDark', W / 2 - 450, W / 2 + 450, yC - 130, yC - 50, cz1, cz1 + 62);
       box('blackM', W / 2 - 446, W / 2 + 446, yC - 132, yC - 128, cz1 + 6, cz1 + 56);
