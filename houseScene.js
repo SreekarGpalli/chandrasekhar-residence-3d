@@ -463,6 +463,106 @@ window.HouseScene = (function () {
     function bucket(mat) {
       return buckets[mat] || (buckets[mat] = { pos: [], nor: [], uv: [], idx: [], vc: 0 });
     }
+
+    /* ---- seamless walls ----
+       Walls are NOT boxes. Every wall piece registered with wall() lands in
+       a plane keyed by (material, face materials, direction, thickness);
+       at build() each plane is cut on ONE conforming grid (every rect and
+       hole edge in that plane becomes a grid line across the whole plane)
+       and emitted as a single closed shell with shared vertices. So pieces
+       on the same line — segments round a window, the same wall on three
+       storeys, two runs that overlap — come out as one uninterrupted
+       surface: no T-junction cracks, no coincident faces, no hairlines at
+       old segment edges. Anything that is a wall should go through
+       wallRun()/bag.wall(), never pb(). */
+    const walls = {};
+    const IDENT = new THREE.Matrix4();
+    function wall(mat, dir, b0, b1, a0, a1, z0, z1, holes, faces) {
+      if (a1 - a0 < 0.5 || b1 - b0 < 0.5 || z1 - z0 < 0.0005) return;
+      const lo = (faces && faces.lo) || mat, hi = (faces && faces.hi) || mat;
+      const key = [mat, lo, hi, dir, b0.toFixed(1), b1.toFixed(1)].join('|');
+      const w = walls[key] || (walls[key] = { mat, lo, hi, dir, b0, b1, rects: [] });
+      w.rects.push({ a0, a1, z0, z1, holes: holes || [] });
+    }
+    function flushWalls() {
+      const uniq = (arr, eps) => {
+        arr.sort((p, q) => p - q); const o = [];
+        for (const v of arr) if (!o.length || v - o[o.length - 1] > eps) o.push(v);
+        return o;
+      };
+      for (const key of Object.keys(walls)) {
+        const W = walls[key];
+        const A = [], Z = [];
+        for (const r of W.rects) {
+          A.push(r.a0, r.a1); Z.push(r.z0, r.z1);
+          for (const h of r.holes) { A.push(h.a0, h.a1); Z.push(h.z0, h.z1); }
+        }
+        const as = uniq(A, 0.05), zs = uniq(Z, 0.00005);
+        const NA = as.length - 1, NZ = zs.length - 1;
+        if (NA < 1 || NZ < 1) continue;
+        const solid = new Uint8Array(NA * NZ);
+        for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) {
+          const ac = (as[i] + as[i + 1]) / 2, zc = (zs[j] + zs[j + 1]) / 2;
+          for (const r of W.rects) {
+            if (ac < r.a0 || ac > r.a1 || zc < r.z0 || zc > r.z1) continue;
+            let inHole = false;
+            for (const h of r.holes) if (ac > h.a0 && ac < h.a1 && zc > h.z0 && zc < h.z1) { inHole = true; break; }
+            if (!inHole) { solid[i * NZ + j] = 1; break; }
+          }
+        }
+        const S = (i, j) => i >= 0 && j >= 0 && i < NA && j < NZ && solid[i * NZ + j] === 1;
+        const P = (a, b, z) => W.dir === 'x' ? [a / 1000, z, -b / 1000] : [b / 1000, z, -a / 1000];
+        const nA = W.dir === 'x' ? [1, 0, 0] : [0, 0, -1];      // world normal of +a
+        const nB = W.dir === 'x' ? [0, 0, -1] : [1, 0, 0];      // world normal of +b
+        const neg = v => [-v[0], -v[1], -v[2]];
+        const geos = {};
+        const G = m => geos[m] || (geos[m] = { pos: [], nor: [], idx: [] });
+        const vert = (g, q, n) => { g.pos.push(q[0], q[1], q[2]); g.nor.push(n[0], n[1], n[2]); return g.pos.length / 3 - 1; };
+        const tri = (g, a, b, c, n) => {           // wound counter-clockwise about n
+          const q = g.pos, ax = q[3 * a], ay = q[3 * a + 1], az = q[3 * a + 2];
+          const ux = q[3 * b] - ax, uy = q[3 * b + 1] - ay, uz = q[3 * b + 2] - az;
+          const vx = q[3 * c] - ax, vy = q[3 * c + 1] - ay, vz = q[3 * c + 2] - az;
+          const d = (uy * vz - uz * vy) * n[0] + (uz * vx - ux * vz) * n[1] + (ux * vy - uy * vx) * n[2];
+          if (d >= 0) g.idx.push(a, b, c); else g.idx.push(a, c, b);
+        };
+        const quad = (g, p0, p1, p2, p3, n) => {
+          const a = vert(g, p0, n), b = vert(g, p1, n), c = vert(g, p2, n), d = vert(g, p3, n);
+          tri(g, a, b, c, n); tri(g, a, c, d, n);
+        };
+        // the two big faces, on shared grid vertices
+        for (const [bb, m, n] of [[W.b0, W.lo, neg(nB)], [W.b1, W.hi, nB]]) {
+          const g = G(m), map = new Map();
+          const V = (i, j) => {
+            const k = i * (NZ + 1) + j; let v = map.get(k);
+            if (v === undefined) { v = vert(g, P(as[i], bb, zs[j]), n); map.set(k, v); }
+            return v;
+          };
+          for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) if (S(i, j)) {
+            const a = V(i, j), b = V(i + 1, j), c = V(i + 1, j + 1), d = V(i, j + 1);
+            tri(g, a, b, c, n); tri(g, a, c, d, n);
+          }
+        }
+        // thickness faces only where solid meets void (ends, reveals, top, bottom)
+        const g = G(W.mat);
+        for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) if (S(i, j)) {
+          const a0 = as[i], a1 = as[i + 1], z0 = zs[j], z1 = zs[j + 1], b0 = W.b0, b1 = W.b1;
+          if (!S(i - 1, j)) quad(g, P(a0, b0, z0), P(a0, b1, z0), P(a0, b1, z1), P(a0, b0, z1), neg(nA));
+          if (!S(i + 1, j)) quad(g, P(a1, b0, z0), P(a1, b1, z0), P(a1, b1, z1), P(a1, b0, z1), nA);
+          if (!S(i, j - 1)) quad(g, P(a0, b0, z0), P(a1, b0, z0), P(a1, b1, z0), P(a0, b1, z0), [0, -1, 0]);
+          if (!S(i, j + 1)) quad(g, P(a0, b0, z1), P(a1, b0, z1), P(a1, b1, z1), P(a0, b1, z1), [0, 1, 0]);
+        }
+        for (const m of Object.keys(geos)) {
+          const q = geos[m]; if (!q.idx.length) continue;
+          const geo = new THREE.BufferGeometry();
+          geo.setAttribute('position', new THREE.Float32BufferAttribute(q.pos, 3));
+          geo.setAttribute('normal', new THREE.Float32BufferAttribute(q.nor, 3));
+          geo.setIndex(q.idx);
+          add(m, geo, IDENT);
+          geo.dispose();
+        }
+      }
+      for (const k in walls) delete walls[k];
+    }
     function add(mat, geom, matrix) {
       const b = bucket(mat);
       const p = geom.attributes.position, n = geom.attributes.normal;
@@ -594,7 +694,9 @@ window.HouseScene = (function () {
         m4.compose(ps, q, sc);
         add(mat, cylG, m4);
       },
+      wall,
       build: (THREE2, materials) => {
+        flushWalls();
         const g = new THREE2.Group();
         for (const key of Object.keys(buckets)) {
           const b = buckets[key];
@@ -647,28 +749,33 @@ window.HouseScene = (function () {
      dir 'x': runs along x, b0..b1 = y thickness band
      dir 'y': runs along y, b0..b1 = x thickness band
      openings: [{c,w,sill,h}] in mm; sill/h measured above floorY (m). */
-  function wallRun(bag, mat, dir, a0, a1, b0, b1, h0, h1, floorY, openings, capMat) {
-    const ops = (openings || []).slice().sort((p, q) => p.c - q.c);
-    const segs = []; let cur = a0;
-    for (const o of ops) {
+  /* A wall along `dir` ('x' or 'y'), a0..a1 along it, b0..b1 thick, h0..h1
+     high, with openings {c, w, sill, h} (mm, sill from floorY) cut as real
+     holes. Goes through bag.wall(), so it merges seamlessly with any other
+     wall on the same line (see makeBag). `faces` {lo, hi} gives the two
+     big faces their own finish — shell walls are exterior plaster outside
+     and interior paint inside. `capMat`: the dollhouse coping on the cut. */
+  function wallRun(bag, mat, dir, a0, a1, b0, b1, h0, h1, floorY, openings, capMat, faces) {
+    const holes = [], capGaps = [];
+    for (const o of (openings || [])) {
       const w0 = Math.max(a0, o.c - o.w / 2), w1 = Math.min(a1, o.c + o.w / 2);
-      if (w1 <= cur + 1) continue;
-      if (w0 > cur + 1) segs.push([cur, w0, h0, h1, true]);
+      if (w1 <= w0 + 1) continue;
       const bot = floorY + (o.sill || 0) / 1000;
       const top = Math.min(h1, bot + o.h / 1000);
-      if (bot > h0 + 0.004) segs.push([Math.max(cur, w0), w1, h0, bot, false]);
-      if (top < h1 - 0.004) segs.push([Math.max(cur, w0), w1, top, h1, true]);
-      cur = Math.max(cur, w1);
+      if (top <= Math.max(h0, bot) + 0.004) continue;
+      holes.push({ a0: w0, a1: w1, z0: bot <= h0 + 0.004 ? h0 - 0.001 : bot, z1: top >= h1 - 0.004 ? h1 + 0.001 : top });
+      if (top >= h1 - 0.003) capGaps.push([w0, w1]);
     }
-    if (cur < a1 - 1) segs.push([cur, a1, h0, h1, true]);
-    for (const s of segs) {
-      const [s0, s1, hh0, hh1, reach] = s;
-      if (dir === 'x') pb(bag, mat, s0, s1, b0, b1, hh0, hh1);
-      else pb(bag, mat, b0, b1, s0, s1, hh0, hh1);
-      if (capMat && reach && Math.abs(hh1 - h1) < 0.003) {
-        if (dir === 'x') pb(bag, capMat, s0 - 6, s1 + 6, b0 - 6, b1 + 6, h1, h1 + 0.024);
-        else pb(bag, capMat, b0 - 6, b1 + 6, s0 - 6, s1 + 6, h1, h1 + 0.024);
-      }
+    bag.wall(mat, dir, b0, b1, a0, a1, h0, h1, holes, faces);
+    if (capMat) {
+      // one cap per uninterrupted top edge — caps never overlap each other,
+      // and crossing walls' caps sit 0.6 mm apart so they cannot z-fight
+      capGaps.sort((p, q) => p[0] - q[0]);
+      let cur = a0;
+      const dz = dir === 'y' ? 0.0006 : 0;
+      const cap = (s0, s1) => { if (s1 - s0 > 1) bag.wall(capMat, dir, b0 - 6, b1 + 6, s0 - 6, s1 + 6, h1, h1 + 0.024 + dz); };
+      for (const [g0, g1] of capGaps) { if (g0 > cur) cap(cur, g0); cur = Math.max(cur, g1); }
+      if (cur < a1) cap(cur, a1);
     }
   }
 
@@ -4473,9 +4580,9 @@ window.HouseScene = (function () {
       // service band, and the exterior draws the same run in eastPlaster. It
       // needs `mat` so both representations agree; as white2 it z-fought the
       // exterior over the whole SE corner (120 hits on a four-face sweep).
-      { dir: 'y', b: [12420, 12650], a: [-762, 1411], mat: 'eastPlaster', ops: [{ c: -300, w: 600, sill: 0, h: 2400 }] }, // southeast east wall with secure grill door
-      { dir: 'x', b: [-762, -646], a: [4805, 12420], ops: [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }] }, // weather-secured south wall: utility grill, cbath ventilator, wet-kitchen grill
-      { dir: 'y', b: [4805, 4920], a: [-646, 232], ops: [{ c: -207, w: 800, sill: 0, h: 2400, noFrame: true }] }, // utility west wall + SW grill door onto the bedroom south balcony
+      { dir: 'y', b: [12420, 12650], a: [-762, 1411], mat: 'eastPlaster', faces: { lo: 'white2' }, ops: [{ c: -300, w: 600, sill: 0, h: 2400 }] }, // southeast east wall with secure grill door
+      { dir: 'x', b: [-762, -646], a: [4805, 12420], faces: { lo: 'white' }, ops: [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }] }, // weather-secured south wall: utility grill, cbath ventilator, wet-kitchen grill
+      { dir: 'y', b: [4805, 4920], a: [-646, 232], faces: { lo: 'white' }, ops: [{ c: -207, w: 800, sill: 0, h: 2400, noFrame: true }] }, // utility west wall + SW grill door onto the bedroom south balcony
       { dir: 'y', b: [8135, 8250], a: [-646, 950], ops: [{ c: 520, w: 700 }] },        // utility | common bath wall + door
       // One straight service line, y 950..1065, from the bedroom partition to
       // the east shell: utility | dining (slider), cbath | dining, wet kitchen |
@@ -6437,10 +6544,11 @@ window.HouseScene = (function () {
         // the wet-kitchen band (its SE corner wall y -762..1411 is drawn separately)
         const ff = fl.sch === OPEN.f1;
         const sX1 = ff ? 4805 : X1 - 230, eY0 = ff ? 1411 : Y0n;
-        wallRun(eBag, 'eastPlaster', 'y', eY0, Y1n, EB[0], EB[1], fl.fY, fl.h1, fl.fY, Eops);
-        wallRun(eBag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fl.fY, fl.h1, fl.fY, Nops);
-        wallRun(eBag, 'white', 'x', X0 + 230, sX1, SB[0], SB[1], fl.fY, fl.h1, fl.fY, Sops);
-        wallRun(eBag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fl.fY, fl.h1, fl.fY, Wops);
+        // outside: exterior plaster; inside: the same paint as every room
+        wallRun(eBag, 'eastPlaster', 'y', eY0, Y1n, EB[0], EB[1], fl.fY, fl.h1, fl.fY, Eops, null, { lo: 'white2' });
+        wallRun(eBag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fl.fY, fl.h1, fl.fY, Nops, null, { lo: 'white2' });
+        wallRun(eBag, 'white', 'x', X0 + 230, sX1, SB[0], SB[1], fl.fY, fl.h1, fl.fY, Sops, null, { hi: 'white2' });
+        wallRun(eBag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fl.fY, fl.h1, fl.fY, Wops, null, { hi: 'white2' });
         for (const o of fl.sch.E) glazing(eBag, Object.assign({ face: 'E', band: EB, floorY: fl.fY }, o));
         for (const o of fl.sch.N) glazing(eBag, Object.assign({ face: 'N', band: NB, floorY: fl.fY }, o));
         for (const o of fl.sch.S) glazing(eBag, Object.assign({ face: 'S', band: SB, floorY: fl.fY }, o));
@@ -6450,19 +6558,19 @@ window.HouseScene = (function () {
       // + wet kitchen x 9486..12420): dining slider back wall, west cheek,
       // cbath walls, divider, SE east wall with grill door, weather-secured
       // outer wall at y -762..-646 (utility grill, cbath vent, wet-kitchen grill)
-      wallRun(eBag, 'white', 'x', 4920, 9370, 950, 1065, L.f1, L.f2, L.f1,
+      wallRun(eBag, 'white2', 'x', 4920, 9370, 950, 1065, L.f1, L.f2, L.f1,
               [{ c: 6830, w: 2400, sill: 0, h: 2400 }]);
       Fur.slidingDoor(eBag, 5630, 8030, 950, 1065, L.f1, 2.40);
-      wallRun(eBag, 'white', 'y', -646, 232, 4805, 4920, L.f1, L.f2, L.f1,
-              [{ c: -207, w: 800, sill: 0, h: 2400 }]); // utility west wall + SW grill door to the balcony
+      wallRun(eBag, 'white2', 'y', -646, 232, 4805, 4920, L.f1, L.f2, L.f1,
+              [{ c: -207, w: 800, sill: 0, h: 2400 }], null, { lo: 'white' }); // utility west wall + SW grill door to the balcony
       glazing(eBag, { face: 'W', band: [4805, 4920], floorY: L.f1, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
-      wallRun(eBag, 'white', 'y', -646, 950, 8135, 8250, L.f1, L.f2, L.f1,
+      wallRun(eBag, 'white2', 'y', -646, 950, 8135, 8250, L.f1, L.f2, L.f1,
               [{ c: 520, w: 700, sill: 0, h: 2100 }]); // utility | cbath wall + door
-      pb(eBag, 'white', 9370, 9486, -646, 950, L.f1, L.f2); // cbath | wet kitchen divider
+      wallRun(eBag, 'white2', 'y', -646, 950, 9370, 9486, L.f1, L.f2, L.f1, []); // cbath | wet kitchen divider
       wallRun(eBag, 'eastPlaster', 'y', -762, 1411, EB[0], EB[1], L.f1, L.f2, L.f1,
-              [{ c: -300, w: 600, sill: 0, h: 2400 }]); // SE corner east wall (grill door leaf from OPEN.f1.E)
-      wallRun(eBag, 'white', 'x', 4805, 12420, -762, -646, L.f1, L.f2, L.f1,
-              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }]);
+              [{ c: -300, w: 600, sill: 0, h: 2400 }], null, { lo: 'white2' }); // SE corner east wall (grill door leaf from OPEN.f1.E)
+      wallRun(eBag, 'white2', 'x', 4805, 12420, -762, -646, L.f1, L.f2, L.f1,
+              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }], null, { lo: 'white' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
@@ -7340,10 +7448,10 @@ window.HouseScene = (function () {
       // (polygonOffset separates them). Leaving this one `white` put two
       // different materials on one plane and the whole east facade z-fought:
       // 1386 coincident hits on a four-face sweep, against 0 before the port.
-      wallRun(bag, 'eastPlaster', 'y', eY0d, Y1n, EB[0], EB[1], fY, cut, fY, Eo, 'copingLight');
-      wallRun(bag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, cut, fY, No, 'copingLight');
-      wallRun(bag, 'white', 'x', X0 + 230, sX1d, SB[0], SB[1], fY, cut, fY, So, 'copingLight');
-      wallRun(bag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fY, cut, fY, Wo, 'copingLight');
+      wallRun(bag, 'eastPlaster', 'y', eY0d, Y1n, EB[0], EB[1], fY, cut, fY, Eo, 'copingLight', { lo: 'white2' });
+      wallRun(bag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, cut, fY, No, 'copingLight', { lo: 'white2' });
+      wallRun(bag, 'white', 'x', X0 + 230, sX1d, SB[0], SB[1], fY, cut, fY, So, 'copingLight', { hi: 'white2' });
+      wallRun(bag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fY, cut, fY, Wo, 'copingLight', { hi: 'white2' });
       // skirting boards on the room-side faces of the shell walls
       skirtRun(bag, 'y', eY0d, Y1n, EB[0], EB[1], fY, Eo, ['lo']);
       // SF: no floor over the double-height void (x 6020..8241), so no
@@ -7364,9 +7472,28 @@ window.HouseScene = (function () {
       }
 
       // interior walls (+ skirting on both faces, broken at door openings)
+      // Auto-join: a wall whose end stops on another wall (an interior wall
+      // or the shell) is run on to that wall's centre line, so the end is
+      // buried inside it. Then no end face ever sits flush in another
+      // wall's face (a visible seam), and two walls on the same line that
+      // stop at either side of a partition meet inside it and merge into one
+      // surface (bag.wall). Works for any wall added to IW later.
+      const joinTargets = IW[fi].concat([
+        { dir: 'y', b: EB, a: [eY0d, Y1n] }, { dir: 'x', b: NB, a: [X0 + 230, X1 - 230] },
+        { dir: 'x', b: SB, a: [X0 + 230, sX1d] }, { dir: 'y', b: WB, a: [Y0n, Y1n] }
+      ]);
+      const joinEnd = (w, v) => {
+        for (const t of joinTargets) {
+          if (t === w || t.dir === w.dir) continue;
+          if (w.b[0] < t.a[0] - 2 || w.b[1] > t.a[1] + 2) continue;   // t must span w's thickness
+          if (v >= t.b[0] - 3 && v <= t.b[1] + 3) return (t.b[0] + t.b[1]) / 2;
+        }
+        return v;
+      };
       for (const w of IW[fi]) {
         const ops = w.ops.map(o => ({ c: o.c, w: o.w, sill: o.sill !== undefined ? o.sill : 0, h: o.h !== undefined ? o.h : (o.glass ? 3000 : 2100) }));
-        wallRun(bag, w.mat || 'white2', w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, cut, fY, ops, 'copingLight');
+        const ja0 = Math.min(w.a[0], joinEnd(w, w.a[0])), ja1 = Math.max(w.a[1], joinEnd(w, w.a[1]));
+        wallRun(bag, w.mat || 'white2', w.dir, ja0, ja1, w.b[0], w.b[1], fY, cut, fY, ops, 'copingLight', w.faces);
         skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi']);
         // walnut casing on every room opening — not windows/hatches (sill),
         // shell walls (mat), or openings with joinery of their own (noFrame)
