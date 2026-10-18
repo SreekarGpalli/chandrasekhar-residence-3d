@@ -4173,19 +4173,22 @@ window.HouseScene = (function () {
         prb(bag, 'oak', c1 - 2, x1, y, y + 30, fY + 0.06, fY + h - 0.06, 9);
       }
     },
-    /* Rectangular timber casing for a wall opening in a wall running along
-       y (wall x0..x1, opening y0..y1, height h): walnut linings through
+    /* Rectangular timber casing for a room opening: walnut linings through
        both reveals and the soffit, slim 50 mm architraves 15 proud on both
-       faces, mitred square. */
-    openingFrame(bag, x0, x1, y0, y1, fY, h) {
+       faces, mitred square. `dir` is the way the wall runs ('x' or 'y'),
+       w0..w1 its thickness, a0..a1 the opening along it, h its height (m).
+       The build loop puts one on every interior door/opening. */
+    openingFrame(bag, dir, w0, w1, a0, a1, fY, h) {
       const zt = fY + h, L = 18, A = 50, P = 15, M = 'walnutI';
-      pb(bag, M, x0, x1, y0, y0 + L, fY, zt);                         // jamb linings
-      pb(bag, M, x0, x1, y1 - L, y1, fY, zt);
-      pb(bag, M, x0, x1, y0, y1, zt - L / 1000, zt);                   // soffit lining
-      for (const [f0, f1] of [[x0 - P, x0], [x1, x1 + P]]) {           // architraves, both faces
-        pb(bag, M, f0, f1, y0 - A, y0 + L, fY, zt + A / 1000);
-        pb(bag, M, f0, f1, y1 - L, y1 + A, fY, zt + A / 1000);
-        pb(bag, M, f0, f1, y0 - A, y1 + A, zt - L / 1000, zt + A / 1000);
+      const put = (s0, s1, d0, d1, z0, z1) =>
+        dir === 'y' ? pb(bag, M, d0, d1, s0, s1, z0, z1) : pb(bag, M, s0, s1, d0, d1, z0, z1);
+      put(a0, a0 + L, w0, w1, fY, zt);                                // jamb linings
+      put(a1 - L, a1, w0, w1, fY, zt);
+      put(a0, a1, w0, w1, zt - L / 1000, zt);                         // soffit lining
+      for (const [f0, f1] of [[w0 - P, w0], [w1, w1 + P]]) {          // architraves, both faces
+        put(a0 - A, a0 + L, f0, f1, fY, zt + A / 1000);
+        put(a1 - L, a1 + A, f0, f1, fY, zt + A / 1000);
+        put(a0 - A, a1 + A, f0, f1, zt - L / 1000, zt + A / 1000);
       }
     },
     /* Ganesha on a floating ledge against a partition's east face (faceX),
@@ -4471,14 +4474,14 @@ window.HouseScene = (function () {
       // exterior over the whole SE corner (120 hits on a four-face sweep).
       { dir: 'y', b: [12420, 12650], a: [-762, 1411], mat: 'eastPlaster', ops: [{ c: -300, w: 600, sill: 0, h: 2400 }] }, // southeast east wall with secure grill door
       { dir: 'x', b: [-762, -646], a: [4805, 12420], ops: [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }] }, // weather-secured south wall: utility grill, cbath ventilator, wet-kitchen grill
-      { dir: 'y', b: [4805, 4920], a: [-646, 232], ops: [{ c: -207, w: 800, sill: 0, h: 2400 }] }, // utility west wall + SW grill door onto the bedroom south balcony
+      { dir: 'y', b: [4805, 4920], a: [-646, 232], ops: [{ c: -207, w: 800, sill: 0, h: 2400, noFrame: true }] }, // utility west wall + SW grill door onto the bedroom south balcony
       { dir: 'y', b: [8135, 8250], a: [-646, 950], ops: [{ c: 520, w: 700 }] },        // utility | common bath wall + door
       // One straight service line, y 950..1065, from the bedroom partition to
       // the east shell: utility | dining (slider), cbath | dining, wet kitchen |
       // kitchen (opening). The bands are only as deep as their fittings.
-      { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 6830, w: 2400, sill: 0, h: 2400 }, { c: 10750, w: 900, sill: 0, h: 2400 }] },
+      { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 6830, w: 2400, sill: 0, h: 2400, noFrame: true }, { c: 10750, w: 900, sill: 0, h: 2400 }] },   // aluminium slider has its own frame
       { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2961.5, w: 2569, sill: 0, h: 2400 }] },     // kitchen|dining: one opening over the breakfast counter + the way in (no pier)
-      { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000 }] },   // hall|pooja (open view to the mandir, centred on the room)
+      { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000, noFrame: true }] },   // hall|pooja (teak doorway of its own) (open view to the mandir, centred on the room)
       { dir: 'y', b: [10780, 10893], a: [6815, 8642], ops: [{ c: 7730, w: 1500 }] },   // hall|entrance
       { dir: 'x', b: [6700, 6815], a: [10893, 12421], ops: [] },                        // pooja|entrance
       { dir: 'x', b: [4945, 5060], a: [9370, 12421], ops: [] }                         // kitchen | pooja (the common wall the pooja now sits against)
@@ -7364,6 +7367,12 @@ window.HouseScene = (function () {
         const ops = w.ops.map(o => ({ c: o.c, w: o.w, sill: o.sill !== undefined ? o.sill : 0, h: o.h !== undefined ? o.h : (o.glass ? 3000 : 2100) }));
         wallRun(bag, w.mat || 'white2', w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, cut, fY, ops, 'copingLight');
         skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi']);
+        // walnut casing on every room opening — not windows/hatches (sill),
+        // shell walls (mat), or openings with joinery of their own (noFrame)
+        if (!w.mat) for (const o of w.ops) {
+          if ((o.sill || 0) > 0 || o.noFrame) continue;
+          Fur.openingFrame(bag, w.dir, w.b[0], w.b[1], o.c - o.w / 2, o.c + o.w / 2, fY, (o.h || 2100) / 1000);
+        }
       }
 
       // room tints
@@ -7954,7 +7963,6 @@ window.HouseScene = (function () {
         // reveal, architraves both faces. A fluted partition fills its south
         // end inside the wall line, exactly opening height, and carries
         // Ganesha facing east to the main door; y 7450..8460 stays clear.
-        Fur.openingFrame(bag, 10780, 10893, 6980, 8480, fY, 2.10);
         Fur.foyerPartition(bag, 10792, 10881, 7000, 7450, fY, 2.08);
         Fur.ganeshaShrine(bag, 10881, 7225, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
@@ -8152,9 +8160,7 @@ window.HouseScene = (function () {
         const dbX0 = 8135, dbX1 = 8250;
         const dbMidX = (dbX0 + dbX1) / 2;
         // Frame
-        pb(bag, 'frame', dbX0 - 5, dbX1 + 5, dbY0, dbY0 + 40, fY, fY + 2.10); // South frame
-        pb(bag, 'frame', dbX0 - 5, dbX1 + 5, dbY1 - 40, dbY1, fY, fY + 2.10); // North frame
-        pb(bag, 'frame', dbX0 - 5, dbX1 + 5, dbY0, dbY1, fY + 2.06, fY + 2.10); // Top frame
+        // (frame: the walnut casing every room opening gets in the build loop)
         // Door panel (wood)
         pb(bag, 'walnut', dbMidX - 20, dbMidX + 20, dbY0 + 40, dbY1 - 40, fY + 0.01, fY + 2.06);
         // recessed-look panel reveals on both faces: darker strips ~10mm
