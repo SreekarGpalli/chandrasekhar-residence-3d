@@ -5488,7 +5488,7 @@ window.HouseScene = (function () {
       [ { f: 'N', c: 5500, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 4935, hi: 6005, short: true },   // SF gallery W of void
         { f: 'N', c: 8760, w: 1000, sill: 900, h: 1400, m: 'curtain', lo: 8255, hi: 9325, short: true },   // SF family room
         { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
-        { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420 },  // SF bed03 E corner
+        { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420, short: true },  // SF bed03 E corner (apron, like the rest of the floor)
         { f: 'S', c: 3950, w: 1500, sill: 900, h: 1400, m: 'curtain2', hi: 4790, bot: 0.88 }, // SF master02 S (SE corner, over the side table)
         { f: 'S', c: 10000, w: 1500, sill: 900, h: 1400, m: 'curtain', bot: 1.02 },           // SF bed03 S (behind bed: hem clears the headboard)
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', lo: 2480, hi: 4420, bot: 0.88 } ]// SF master02 W (over the desk)
