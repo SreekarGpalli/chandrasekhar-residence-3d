@@ -373,6 +373,17 @@ window.HouseScene = (function () {
     M.tharRed.roughness = 0.2; M.tharRed.metalness = 0.2;
     M.downlight.roughness = 0.3;
     M.nbrWin.roughness = 0.35; M.nbrWin.metalness = 0.25;
+    // Luxury architectural plumbing, fixture, and mirror finishes (eliminates 1990s flat CG shading)
+    if (M.mirrorI) { M.mirrorI.roughness = 0.03; M.mirrorI.metalness = 0.98; }
+    if (M.blackM) { M.blackM.roughness = 0.32; M.blackM.metalness = 0.78; }
+    if (M.brassI) { M.brassI.roughness = 0.26; M.brassI.metalness = 0.82; }
+    if (M.ceramic) { M.ceramic.roughness = 0.14; M.ceramic.metalness = 0.02; }
+    if (M.quartz) { M.quartz.roughness = 0.20; M.quartz.metalness = 0.02; }
+    if (M.stoneDk) { M.stoneDk.roughness = 0.38; M.stoneDk.metalness = 0.12; }
+    if (M.alu) { M.alu.roughness = 0.30; M.alu.metalness = 0.80; }
+    if (M.aluDark) { M.aluDark.roughness = 0.35; M.aluDark.metalness = 0.70; }
+    if (M.oak) { M.oak.roughness = 0.46; M.oak.metalness = 0.02; }
+    if (M.woodD) { M.woodD.roughness = 0.48; M.woodD.metalness = 0.02; }
     // warm vitrified floors — slightly polished
     for (const k of ['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tCirc', 'tOffice', 'tPooja', 'tWalk', 'tOut']) {
       if (M[k]) { M[k].roughness = 0.35; M[k].metalness = 0.02; }
@@ -2443,269 +2454,14 @@ window.HouseScene = (function () {
       else if (back === 'N') pb(bag, 'steel', cx - 320, cx + 320, cy + 230, cy + 250, top, top + 0.09);
       else pb(bag, 'steel', cx - 320, cx + 320, cy - 250, cy - 230, top, top + 0.09);
     },
-    /* Modern stainless drop-in kitchen sink + chrome gooseneck mixer.
-       Built entirely on/above the counter so the bowl is visible without CSG
-       cutouts in the solid countertop slab.
-       back = wall the faucet sits against ('E'|'W'|'N'|'S'). */
     sink(bag, cx, cy, fY, back) {
-      back = back || 'E';
-      const ct = fY + 0.86;                 // counter top
-      // Overall flange half-size (mm) ≈ 560 × 440 drop-in
-      const ox = 275, oy = 210;
-      const tw = 16;                        // trough wall thickness (mm)
-      const floorY = ct + 0.012;            // bowl floor just above counter
-      const rimY = ct + 0.155;              // rim height (~14 cm deep bowl)
-      const lip = 0.010;                    // flange thickness
-
-      // ---- 1. Stainless flange (hollow frame only — open centre) ----
-      // Outer skirt sitting on the counter
-      pb(bag, 'steel', cx - ox - 18, cx + ox + 18, cy - oy - 18, cy - oy, ct, ct + lip); // S
-      pb(bag, 'steel', cx - ox - 18, cx + ox + 18, cy + oy, cy + oy + 18, ct, ct + lip); // N
-      pb(bag, 'steel', cx - ox - 18, cx - ox, cy - oy, cy + oy, ct, ct + lip);             // W
-      pb(bag, 'steel', cx + ox, cx + ox + 18, cy - oy, cy + oy, ct, ct + lip);             // E
-      // Raised inner rim bead (around the trough opening)
-      pb(bag, 'chrome', cx - ox - 2, cx + ox + 2, cy - oy - 2, cy - oy + 5, ct + lip, ct + lip + 0.006);
-      pb(bag, 'chrome', cx - ox - 2, cx + ox + 2, cy + oy - 5, cy + oy + 2, ct + lip, ct + lip + 0.006);
-      pb(bag, 'chrome', cx - ox - 2, cx - ox + 5, cy - oy, cy + oy, ct + lip, ct + lip + 0.006);
-      pb(bag, 'chrome', cx + ox - 5, cx + ox + 2, cy - oy, cy + oy, ct + lip, ct + lip + 0.006);
-
-      // ---- 2. Deep trough walls (outer steel + inner brushed) ----
-      // Outer shell
-      pb(bag, 'steel', cx - ox, cx + ox, cy + oy - tw, cy + oy, floorY, rimY); // N
-      pb(bag, 'steel', cx - ox, cx + ox, cy - oy, cy - oy + tw, floorY, rimY); // S
-      pb(bag, 'steel', cx + ox - tw, cx + ox, cy - oy, cy + oy, floorY, rimY); // E
-      pb(bag, 'steel', cx - ox, cx - ox + tw, cy - oy, cy + oy, floorY, rimY); // W
-      // Inner face (darker so the cavity reads as a real bowl)
-      const iw = tw + 4;
-      pb(bag, 'ms', cx - ox + tw, cx + ox - tw, cy + oy - iw, cy + oy - tw, floorY + 0.004, rimY - 0.004);
-      pb(bag, 'ms', cx - ox + tw, cx + ox - tw, cy - oy + tw, cy - oy + iw, floorY + 0.004, rimY - 0.004);
-      pb(bag, 'ms', cx + ox - iw, cx + ox - tw, cy - oy + tw, cy + oy - tw, floorY + 0.004, rimY - 0.004);
-      pb(bag, 'ms', cx - ox + tw, cx - ox + iw, cy - oy + tw, cy + oy - tw, floorY + 0.004, rimY - 0.004);
-      // Top rim of the trough walls (frame only — centre stays open)
-      pb(bag, 'steel', cx - ox - 4, cx + ox + 4, cy - oy - 4, cy - oy + tw + 2, rimY, rimY + 0.008); // S
-      pb(bag, 'steel', cx - ox - 4, cx + ox + 4, cy + oy - tw - 2, cy + oy + 4, rimY, rimY + 0.008); // N
-      pb(bag, 'steel', cx - ox - 4, cx - ox + tw + 2, cy - oy + tw, cy + oy - tw, rimY, rimY + 0.008); // W
-      pb(bag, 'steel', cx + ox - tw - 2, cx + ox + 4, cy - oy + tw, cy + oy - tw, rimY, rimY + 0.008); // E
-      // Soft inner ledge on the rim (reads as rolled steel edge)
-      pb(bag, 'ms', cx - ox + 2, cx + ox - 2, cy - oy + 2, cy - oy + tw + 4, rimY + 0.002, rimY + 0.007);
-      pb(bag, 'ms', cx - ox + 2, cx + ox - 2, cy + oy - tw - 4, cy + oy - 2, rimY + 0.002, rimY + 0.007);
-      pb(bag, 'ms', cx - ox + 2, cx - ox + tw + 4, cy - oy + tw, cy + oy - tw, rimY + 0.002, rimY + 0.007);
-      pb(bag, 'ms', cx + ox - tw - 4, cx + ox - 2, cy - oy + tw, cy + oy - tw, rimY + 0.002, rimY + 0.007);
-
-      // ---- 3. Bowl floor (wet steel + dark centre well) ----
-      pb(bag, 'steel',
-        cx - ox + tw, cx + ox - tw,
-        cy - oy + tw, cy + oy - tw,
-        floorY, floorY + 0.010);
-      pb(bag, 'dark',
-        cx - ox + tw + 8, cx + ox - tw - 8,
-        cy - oy + tw + 8, cy + oy - tw - 8,
-        floorY + 0.008, floorY + 0.013);
-      // Slight centre depression toward the drain
-      pb(bag, 'steel', cx - 60, cx + 60, cy - 60, cy + 60, floorY + 0.003, floorY + 0.010);
-
-      // Drain grooves (4 slots toward centre)
-      for (const a of [0, 45, 90, 135]) {
-        const rad = a * Math.PI / 180;
-        const dx = Math.cos(rad), dy = Math.sin(rad);
-        const x0 = cx + dx * 85, y0 = cy + dy * 85;
-        const x1 = cx + dx * 28, y1 = cy + dy * 28;
-        const t = 3.2;
-        pb(bag, 'ms',
-          Math.min(x0, x1) - t, Math.max(x0, x1) + t,
-          Math.min(y0, y1) - t, Math.max(y0, y1) + t,
-          floorY + 0.012, floorY + 0.0145);
-      }
-
-      // ---- 4. Basket strainer ----
-      bag.cyl('chrome', cx / 1000, floorY + 0.016, -cy / 1000, 0.050, 0.008);
-      bag.cyl('steel',  cx / 1000, floorY + 0.020, -cy / 1000, 0.042, 0.010);
-      bag.cyl('dark',   cx / 1000, floorY + 0.022, -cy / 1000, 0.033, 0.014);
-      pb(bag, 'chrome', cx - 30, cx + 30, cy - 2.2, cy + 2.2, floorY + 0.027, floorY + 0.030);
-      pb(bag, 'chrome', cx - 2.2, cx + 2.2, cy - 30, cy + 30, floorY + 0.027, floorY + 0.030);
-      bag.cyl('chrome', cx / 1000, floorY + 0.033, -cy / 1000, 0.007, 0.014);
-
-      // ---- 5. Slim drain-board ribs on the flange (side opposite faucet) ----
-      if (back === 'E' || back === 'W') {
-        const toward = (back === 'E') ? -1 : 1; // ribs toward room side of bowl
-        const bx0 = cx + toward * 50;
-        const bx1 = cx + toward * 200;
-        for (let i = 0; i < 6; i++) {
-          const yy = cy - 165 + i * 66;
-          pb(bag, 'steel', Math.min(bx0, bx1), Math.max(bx0, bx1), yy - 7, yy + 7, ct + lip, ct + lip + 0.005);
-        }
-      } else {
-        const toward = (back === 'N') ? -1 : 1;
-        const by0 = cy + toward * 50;
-        const by1 = cy + toward * 200;
-        for (let i = 0; i < 6; i++) {
-          const xx = cx - 165 + i * 66;
-          pb(bag, 'steel', xx - 7, xx + 7, Math.min(by0, by1), Math.max(by0, by1), ct + lip, ct + lip + 0.005);
-        }
-      }
-
-      // ---- 6. Chrome gooseneck single-lever mixer ----
-      let fx = cx, fz = cy;
-      if (back === 'E') fx = cx + ox + 32;
-      else if (back === 'W') fx = cx - ox - 32;
-      else if (back === 'N') fz = cy + oy + 32;
-      else fz = cy - oy - 32;
-
-      const fwx = fx / 1000, fwz = -fz / 1000;
-      // Deck plate + body
-      bag.cyl('chrome', fwx, ct + 0.007, fwz, 0.034, 0.014);
-      bag.cyl('ms',     fwx, ct + 0.014, fwz, 0.025, 0.006);
-      bag.cyl('chrome', fwx, ct + 0.058, fwz, 0.018, 0.090);
-      // Riser + elbow
-      bag.cyl('chrome', fwx, ct + 0.185, fwz, 0.0105, 0.230);
-      bag.sph('chrome', fwx, ct + 0.308, fwz, 0.015);
-
-      // Spout toward bowl centre + aerator
-      if (back === 'E' || back === 'W') {
-        const s = (fx > cx) ? -1 : 1;
-        bag.cyl('chrome', (fx + s * 90) / 1000, ct + 0.305, -cy / 1000, 0.0095, 0.18, 0, 0, Math.PI / 2);
-        bag.cyl('chrome',   (fx + s * 175) / 1000, ct + 0.288, -cy / 1000, 0.016, 0.040);
-        bag.cyl('charcoal', (fx + s * 175) / 1000, ct + 0.264, -cy / 1000, 0.018, 0.010);
-      } else {
-        const s = (fz > cy) ? -1 : 1;
-        bag.cyl('chrome', cx / 1000, ct + 0.305, -(fz + s * 90) / 1000, 0.0095, 0.18, Math.PI / 2, 0, 0);
-        bag.cyl('chrome',   cx / 1000, ct + 0.288, -(fz + s * 175) / 1000, 0.016, 0.040);
-        bag.cyl('charcoal', cx / 1000, ct + 0.264, -(fz + s * 175) / 1000, 0.018, 0.010);
-      }
-
-      // Side lever
-      if (back === 'E' || back === 'W') {
-        const hy = fz - 30;
-        bag.cyl('chrome', fwx, ct + 0.075, -hy / 1000, 0.0075, 0.030, Math.PI / 2, 0, 0);
-        bag.cyl('chrome', fwx, ct + 0.100, -hy / 1000, 0.0055, 0.058, 0.55, 0, 0);
-        bag.sph('chrome', fwx, ct + 0.128, -hy / 1000, 0.009);
-      } else {
-        const hx = fx - 30;
-        bag.cyl('chrome', hx / 1000, ct + 0.075, fwz, 0.0075, 0.030, 0, 0, Math.PI / 2);
-        bag.cyl('chrome', hx / 1000, ct + 0.100, fwz, 0.0055, 0.058, 0, 0, 0.55);
-        bag.sph('chrome', hx / 1000, ct + 0.128, fwz, 0.009);
-      }
-
-      // Matching soap dispenser
-      let sx = fx, sz = fz;
-      if (back === 'E' || back === 'W') sz = fz + 75;
-      else sx = fx + 75;
-      bag.cyl('chrome', sx / 1000, ct + 0.006, -sz / 1000, 0.019, 0.010);
-      bag.cyl('chrome', sx / 1000, ct + 0.055, -sz / 1000, 0.0115, 0.095);
-      bag.cyl('chrome', sx / 1000, ct + 0.110, -sz / 1000, 0.015, 0.022);
-      if (back === 'E' || back === 'W') {
-        const s = (fx > cx) ? -1 : 1;
-        bag.cyl('chrome', (sx + s * 24) / 1000, ct + 0.118, -sz / 1000, 0.005, 0.042, 0, 0, Math.PI / 2);
-      } else {
-        const s = (fz > cy) ? -1 : 1;
-        bag.cyl('chrome', sx / 1000, ct + 0.118, -(sz + s * 24) / 1000, 0.005, 0.042, Math.PI / 2, 0, 0);
-      }
+      return Fur.sink(bag, cx, cy, fY, back);
     },
     wc(bag, cx, cy, fY, facing) {
-      facing = facing || 'S';
-      pb(bag, 'whiteG', cx - 130, cx + 130, cy - 140, cy + 140, fY + 0.02, fY + 0.30); // pedestal
-      bag.cyl('whiteG', cx / 1000, fY + 0.36, -cy / 1000, 0.205, 0.17);                // bowl body
-      bag.cyl('whiteG', cx / 1000, fY + 0.44, -cy / 1000, 0.215, 0.035);               // seat ring
-      bag.cyl('dark', cx / 1000, fY + 0.448, -cy / 1000, 0.15, 0.014);                 // bowl opening
-      // cistern + chrome dual-flush plate + seat hinge bar
-      pb(bag, 'chrome', cx - 70, cx + 70, cy - 8, cy + 8, fY + 0.455, fY + 0.465);
-      if (facing === 'S') {
-        pb(bag, 'whiteG', cx - 200, cx + 200, cy + 170, cy + 285, fY + 0.42, fY + 0.84);
-        pb(bag, 'chrome', cx - 55, cx + 55, cy + 286, cy + 298, fY + 0.70, fY + 0.78);
-        pb(bag, 'steel', cx - 35, cx - 8, cy + 298, cy + 304, fY + 0.72, fY + 0.76);
-        pb(bag, 'steel', cx + 8, cx + 35, cy + 298, cy + 304, fY + 0.72, fY + 0.76);
-      }
-      if (facing === 'N') {
-        pb(bag, 'whiteG', cx - 200, cx + 200, cy - 285, cy - 170, fY + 0.42, fY + 0.84);
-        pb(bag, 'chrome', cx - 55, cx + 55, cy - 298, cy - 286, fY + 0.70, fY + 0.78);
-        pb(bag, 'steel', cx - 35, cx - 8, cy - 304, cy - 298, fY + 0.72, fY + 0.76);
-        pb(bag, 'steel', cx + 8, cx + 35, cy - 304, cy - 298, fY + 0.72, fY + 0.76);
-      }
-      if (facing === 'E') {
-        pb(bag, 'whiteG', cx - 285, cx - 170, cy - 200, cy + 200, fY + 0.42, fY + 0.84);
-        pb(bag, 'chrome', cx - 298, cx - 286, cy - 55, cy + 55, fY + 0.70, fY + 0.78);
-      }
-      if (facing === 'W') {
-        pb(bag, 'whiteG', cx + 170, cx + 285, cy - 200, cy + 200, fY + 0.42, fY + 0.84);
-        pb(bag, 'chrome', cx + 286, cx + 298, cy - 55, cy + 55, fY + 0.70, fY + 0.78);
-      }
+      return Fur.wc(bag, cx, cy, fY, facing);
     },
     basin(bag, x0, x1, y0, y1, fY, back) {
-      back = back || 'N';
-      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-      const cabTop = fY + 0.72, counterTop = fY + 0.76;
-
-      // 1. Premium Wood Vanity Cabinet Body
-      pb(bag, 'woodF', x0 + 12, x1 - 12, y0 + 12, y1 - 12, fY + 0.04, cabTop);
-
-      // 2. Open lower storage shelf with towels (visual texture)
-      // Bottom panel
-      pb(bag, 'woodD', x0 + 24, x1 - 24, y0 + 24, y1 - 24, fY + 0.06, fY + 0.10);
-      // Pastel colored rolled towels lying flat
-      const tH = fY + 0.15;
-      bag.cyl('fabric', (cx - 120) / 1000, tH, -cy / 1000, 0.045, 0.18, 0, 0, Math.PI / 2);
-      bag.cyl('whiteG', cx / 1000, tH, -cy / 1000, 0.045, 0.18, 0, 0, Math.PI / 2);
-      bag.cyl('accentWarm', (cx + 120) / 1000, tH, -cy / 1000, 0.045, 0.18, 0, 0, Math.PI / 2);
-
-      // 3. Drawer Fronts with Brass Handles (facing front, i.e. opposite to wall)
-      const dh = cabTop - 0.28; // drawer height start
-      if (back === 'N') { // Front is South (y0)
-        pb(bag, 'woodD', x0 + 16, cx - 8, y0 + 8, y0 + 14, dh, cabTop - 0.02);
-        pb(bag, 'woodD', cx + 8, x1 - 16, y0 + 8, y0 + 14, dh, cabTop - 0.02);
-        pb(bag, 'brass', (x0 + cx)/2 - 50, (x0 + cx)/2 + 50, y0 + 4, y0 + 8, fY + 0.56, fY + 0.58);
-        pb(bag, 'brass', (cx + x1)/2 - 50, (cx + x1)/2 + 50, y0 + 4, y0 + 8, fY + 0.56, fY + 0.58);
-      } else if (back === 'S') { // Front is North (y1)
-        pb(bag, 'woodD', x0 + 16, cx - 8, y1 - 14, y1 - 8, dh, cabTop - 0.02);
-        pb(bag, 'woodD', cx + 8, x1 - 16, y1 - 14, y1 - 8, dh, cabTop - 0.02);
-        pb(bag, 'brass', (x0 + cx)/2 - 50, (x0 + cx)/2 + 50, y1 - 8, y1 - 4, fY + 0.56, fY + 0.58);
-        pb(bag, 'brass', (cx + x1)/2 - 50, (cx + x1)/2 + 50, y1 - 8, y1 - 4, fY + 0.56, fY + 0.58);
-      } else if (back === 'E') { // Front is West (x0)
-        pb(bag, 'woodD', x0 + 8, x0 + 14, y0 + 16, cy - 8, dh, cabTop - 0.02);
-        pb(bag, 'woodD', x0 + 8, x0 + 14, cy + 8, y1 - 16, dh, cabTop - 0.02);
-        pb(bag, 'brass', x0 + 4, x0 + 8, (y0 + cy)/2 - 50, (y0 + cy)/2 + 50, fY + 0.56, fY + 0.58);
-        pb(bag, 'brass', x0 + 4, x0 + 8, (cy + y1)/2 - 50, (cy + y1)/2 + 50, fY + 0.56, fY + 0.58);
-      } else { // Front is East (x1)
-        pb(bag, 'woodD', x1 - 14, x1 - 8, y0 + 16, cy - 8, dh, cabTop - 0.02);
-        pb(bag, 'woodD', x1 - 14, x1 - 8, cy + 8, y1 - 16, dh, cabTop - 0.02);
-        pb(bag, 'brass', x1 - 8, x1 - 4, (y0 + cy)/2 - 50, (y0 + cy)/2 + 50, fY + 0.56, fY + 0.58);
-        pb(bag, 'brass', x1 - 8, x1 - 4, (cy + y1)/2 - 50, (cy + y1)/2 + 50, fY + 0.56, fY + 0.58);
-      }
-
-      // 4. Premium Solid Stone Countertop Slab
-      pb(bag, 'counterTop', x0, x1, y0, y1, cabTop, counterTop);
-
-      // 5. Above-Counter Designer Vessel Basin (White Ceramic + Dark Interior + Chrome Pop-up)
-      const vH = 0.11; // Vessel bowl height
-      bag.cyl('whiteG', cx / 1000, counterTop + vH/2, -cy / 1000, 0.18, vH); // white ceramic bowl body
-      bag.cyl('dark', cx / 1000, counterTop + vH/2 + 0.005, -cy / 1000, 0.165, vH - 0.01); // bowl inner void
-      bag.cyl('chrome', cx / 1000, counterTop + 0.012, -cy / 1000, 0.038, 0.024); // pop-up drain stopper
-
-      // 6. Premium Tall Single-Lever Vessel Faucet (Chrome & Matte Black)
-      const ho = Math.min(190, (x1 - x0) / 2 - 45), hoy = Math.min(150, (y1 - y0) / 2 - 45);
-      const hx0 = cx - ho, hx1 = cx + ho, hy0 = cy - hoy, hy1 = cy + hoy;
-      let fx = cx, fz = cy;
-      if (back === 'N') fz = hy1 + 30; 
-      else if (back === 'S') fz = hy0 - 30;
-      else if (back === 'E') fx = hx1 + 30; 
-      else fx = hx0 - 30;
-
-      const fBase = counterTop;
-      bag.cyl('chrome', fx / 1000, fBase + 0.01, -fz / 1000, 0.016, 0.02);  // chrome collar
-      bag.cyl('charcoal', fx / 1000, fBase + 0.09, -fz / 1000, 0.011, 0.18); // tall black stem
-      
-      // Spout reaching out over the vessel bowl
-      if (back === 'N' || back === 'S') {
-        const sign = (fz > cy) ? -1 : 1;
-        bag.cyl('chrome', fx / 1000, fBase + 0.18, -(fz + sign * 60) / 1000, 0.008, 0.12, Math.PI / 2, 0, 0); // horizontal arm
-        bag.cyl('chrome', fx / 1000, fBase + 0.165, -(fz + sign * 120) / 1000, 0.008, 0.03); // down tip
-      } else {
-        const sign = (fx > cx) ? -1 : 1;
-        bag.cyl('chrome', (fx + sign * 60) / 1000, fBase + 0.18, -fz / 1000, 0.008, 0.12, 0, 0, Math.PI / 2); // horizontal arm
-        bag.cyl('chrome', (fx + sign * 120) / 1000, fBase + 0.165, -fz / 1000, 0.008, 0.03); // down tip
-      }
-
-      // Single lever control handle on top
-      bag.cyl('chrome', fx / 1000, fBase + 0.185, -fz / 1000, 0.004, 0.035, 0.3, 0.2, 0.5);
+      return Fur.basin(bag, x0, x1, y0, y1, fY, back);
     },
     shower(bag, x0, x1, y0, y1, fY) {
       // Frameless glass screen with slim stainless channel + chrome pull
@@ -3408,14 +3164,8 @@ window.HouseScene = (function () {
       pb(bag, 'steel', cx - 140, cx + 140, cy - 120, cy + 120, fY + 1.52, fY + 2.55);
       pb(bag, 'chrome', cx - 150, cx + 150, cy - 130, cy + 130, fY + 2.55, fY + 2.58); // chimney cap
     },
-    mirror(bag, x0, x1, y0, y1, fY) {
-      // Framed vanity mirror + soft LED side glows
-      pb(bag, 'steel', x0 - 12, x1 + 12, y0 - 12, y1 + 12, fY + 0.88, fY + 1.78);
-      pb(bag, 'chrome', x0 - 6, x1 + 6, y0 - 6, y1 + 6, fY + 0.89, fY + 0.90);
-      pb(bag, 'chrome', x0 - 6, x1 + 6, y0 - 6, y1 + 6, fY + 1.76, fY + 1.77);
-      pb(bag, 'glass', x0, x1, y0, y1, fY + 0.90, fY + 1.76);
-      pb(bag, 'lamp', x0 - 10, x0 - 4, y0 + 20, y1 - 20, fY + 0.95, fY + 1.70);
-      pb(bag, 'lamp', x1 + 4, x1 + 10, y0 + 20, y1 - 20, fY + 0.95, fY + 1.70);
+    mirror(bag, x0, x1, y0, y1, fY, face) {
+      return Fur.mirror(bag, x0, x1, y0, y1, fY, face);
     },
     // ================= INDIAN RESIDENTIAL ELECTRICAL & HVAC KIT =================
     // 1. High-Wall Indoor Split AC Unit (Daikin / Voltas / Blue Star 1.5-2 Ton style)
@@ -4108,29 +3858,141 @@ window.HouseScene = (function () {
         }
       }
     },
-    /* Undermount granite bowl (counterX supplies the cut) + black mixer */
+    /* Contemporary luxury undermount kitchen/utility sink with deep bowl,
+       basket strainer waste kit, commercial high-arc gooseneck mixer, and soap dispenser. */
     sink(bag, cx, cy, fY, back) {
       back = back || 'E';
       const top = fY + 0.84, bot = top - 0.20;
       const alongY = back === 'E' || back === 'W';
       const w = alongY ? 420 : 760, d = alongY ? 760 : 420;
-      const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - d / 2, y1 = cy + d / 2, t = 14;
-      pb(bag, 'stoneDk', x0, x1, y0, y1, bot - 0.012, bot);
+      const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - d / 2, y1 = cy + d / 2;
+      const t = 16;
+
+      // 1. Undermount composite/steel bowl body
+      // Base floor sloping slightly toward the central waste
+      pb(bag, 'stoneDk', x0 + t, x1 - t, y0 + t, y1 - t, bot - 0.012, bot);
+      // Walls with a positive reveal under the quartz worktop
       pb(bag, 'stoneDk', x0, x1, y0, y0 + t, bot, top);
       pb(bag, 'stoneDk', x0, x1, y1 - t, y1, bot, top);
-      pb(bag, 'stoneDk', x0, x0 + t, y0, y1, bot, top);
-      pb(bag, 'stoneDk', x1 - t, x1, y0, y1, bot, top);
-      drum(bag, 'blackM', cx, cy, bot, bot + 0.004, 0.04, 0.001);
-      // gooseneck mixer behind the bowl
-      const off = alongY ? w / 2 + 70 : d / 2 + 70;
+      pb(bag, 'stoneDk', x0, x0 + t, y0 + t, y1 - t, bot, top);
+      pb(bag, 'stoneDk', x1 - t, x1, y0 + t, y1 - t, bot, top);
+
+      // Soft rolled inner stainless ledge lining the bowl top
+      pb(bag, 'steel', x0 + t - 2, x1 - t + 2, y0 + t - 2, y0 + t + 2, top - 0.006, top);
+      pb(bag, 'steel', x0 + t - 2, x1 - t + 2, y1 - t - 2, y1 - t + 2, top - 0.006, top);
+      pb(bag, 'steel', x0 + t - 2, x0 + t + 2, y0 + t + 2, y1 - t - 2, top - 0.006, top);
+      pb(bag, 'steel', x1 - t - 2, x1 - t + 2, y0 + t + 2, y1 - t - 2, top - 0.006, top);
+
+      // Subtle diagonal drainage grooves in the basin floor toward the strainer
+      for (const [gx0, gy0, gx1, gy1] of [
+        [x0 + t + 40, y0 + t + 40, cx - 45, cy - 45],
+        [x1 - t - 40, y0 + t + 40, cx + 45, cy - 45],
+        [x0 + t + 40, y1 - t - 40, cx - 45, cy + 45],
+        [x1 - t - 40, y1 - t - 40, cx + 45, cy + 45]
+      ]) {
+        const midX = (gx0 + gx1) / 2, midY = (gy0 + gy1) / 2;
+        pb(bag, 'dark', Math.min(gx0, gx1) - 2, Math.max(gx0, gx1) + 2,
+          Math.min(gy0, gy1) - 2, Math.max(gy0, gy1) + 2, bot, bot + 0.002);
+      }
+
+      // 2. Luxury Chrome Basket Strainer Waste Kit
+      const cxM = cx / 1000, czM = -cy / 1000;
+      bag.cyl('chrome', cxM, bot + 0.003, czM, 0.054, 0.006);    // outer polished chrome bezel
+      bag.cyl('steel',  cxM, bot + 0.005, czM, 0.042, 0.006);    // perforated stainless strainer cup
+      bag.cyl('dark',   cxM, bot + 0.007, czM, 0.032, 0.010);    // waste hole trap
+      pb(bag, 'chrome', cx - 22, cx + 22, cy - 2, cy + 2, bot + 0.012, bot + 0.015); // crossbar
+      pb(bag, 'chrome', cx - 2, cx + 2, cy - 22, cy + 22, bot + 0.012, bot + 0.015);
+      bag.cyl('chrome', cxM, bot + 0.022, czM, 0.007, 0.018);    // central stopper pull post
+
+      // 3. Overflow Slot with chrome grid on the rear bowl wall
+      const ofY = top - 0.035;
+      if (back === 'E') {
+        pb(bag, 'dark', x1 - t - 2, x1 - t, cy - 26, cy + 26, ofY - 0.006, ofY + 0.006);
+        pb(bag, 'chrome', x1 - t - 3, x1 - t - 1, cy - 24, cy + 24, ofY - 0.004, ofY + 0.004);
+      } else if (back === 'W') {
+        pb(bag, 'dark', x0 + t, x0 + t + 2, cy - 26, cy + 26, ofY - 0.006, ofY + 0.006);
+        pb(bag, 'chrome', x0 + t + 1, x0 + t + 3, cy - 24, cy + 24, ofY - 0.004, ofY + 0.004);
+      } else if (back === 'N') {
+        pb(bag, 'dark', cx - 26, cx + 26, y1 - t - 2, y1 - t, ofY - 0.006, ofY + 0.006);
+        pb(bag, 'chrome', cx - 24, cx + 24, y1 - t - 3, y1 - t - 1, ofY - 0.004, ofY + 0.004);
+      } else {
+        pb(bag, 'dark', cx - 26, cx + 26, y0 + t, y0 + t + 2, ofY - 0.006, ofY + 0.006);
+        pb(bag, 'chrome', cx - 24, cx + 24, y0 + t + 1, y0 + t + 3, ofY - 0.004, ofY + 0.004);
+      }
+
+      // 4. Commercial High-Arc Gooseneck Mixer Tap (Matte Black with Chrome Highlights)
+      const off = alongY ? w / 2 + 65 : d / 2 + 65;
       const sx = back === 'E' ? cx + off : back === 'W' ? cx - off : cx;
       const sy = back === 'N' ? cy + off : back === 'S' ? cy - off : cy;
-      const tx = (cx - sx) * 0.8, ty = (cy - sy) * 0.8;
-      drum(bag, 'blackM', sx, sy, fY + 0.88, fY + 0.90, 0.028, 0.004);
-      bag.branch('blackM', sx / 1000, fY + 0.90, -sy / 1000, sx / 1000, fY + 1.22, -sy / 1000, 0.013, 0.013);
-      bag.branch('blackM', sx / 1000, fY + 1.22, -sy / 1000, (sx + tx * 0.5) / 1000, fY + 1.30, -(sy + ty * 0.5) / 1000, 0.012, 0.012);
-      bag.branch('blackM', (sx + tx * 0.5) / 1000, fY + 1.30, -(sy + ty * 0.5) / 1000, (sx + tx) / 1000, fY + 1.20, -(sy + ty) / 1000, 0.011, 0.011);
-      bag.branch('blackM', sx / 1000, fY + 1.0, -sy / 1000, (sx + (alongY ? 0 : 70)) / 1000, fY + 1.0, -(sy + (alongY ? 70 : 0)) / 1000, 0.007, 0.007);
+      const sxM = sx / 1000, szM = -sy / 1000;
+      const ctTop = fY + 0.88; // top of quartz worktop
+
+      // Deck escutcheon flange + swivel base collar
+      bag.cyl('blackM', sxM, ctTop + 0.005, szM, 0.026, 0.010);
+      bag.cyl('chrome', sxM, ctTop + 0.011, szM, 0.024, 0.003); // chrome trim accent ring
+      bag.cyl('blackM', sxM, ctTop + 0.055, szM, 0.018, 0.086); // cylindrical valve body
+
+      // Smooth high-arc gooseneck spout curving up, over, and down
+      const reach = 0.22;
+      const len = Math.hypot(cx - sx, cy - sy);
+      const ux = (cx - sx) / len, uy = (cy - sy) / len;
+      const curveSteps = 8;
+      let prevPt = { x: sxM, y: ctTop + 0.098, z: szM };
+
+      for (let i = 1; i <= curveSteps; i++) {
+        const u = i / curveSteps;
+        let h, r;
+        if (u < 0.25) {
+          const s = u / 0.25;
+          h = ctTop + 0.098 + s * 0.16; // rises 0.098 -> 0.258 (fY + 1.138)
+          r = s * 0.02;
+        } else if (u < 0.75) {
+          const s = (u - 0.25) / 0.50;
+          h = ctTop + 0.258 + Math.sin(s * Math.PI * 0.85) * 0.14; // reaches peak at fY + 1.278
+          r = 0.02 + s * (reach - 0.04);
+        } else {
+          const s = (u - 0.75) / 0.25;
+          h = ctTop + 0.38 - s * 0.12; // curves downward to fY + 1.14
+          r = reach - (1 - s) * 0.01;
+        }
+        const currPt = {
+          x: (sx + ux * r * 1000) / 1000,
+          y: h,
+          z: -(sy + uy * r * 1000) / 1000
+        };
+        bag.branch('blackM', prevPt.x, prevPt.y, prevPt.z, currPt.x, currPt.y, currPt.z, 0.011, 0.010);
+        prevPt = currPt;
+      }
+
+      // Pull-down flared spray head at the gooseneck tip
+      bag.cyl('blackM', prevPt.x, prevPt.y - 0.018, prevPt.z, 0.015, 0.036);
+      bag.cyl('chrome', prevPt.x, prevPt.y - 0.038, prevPt.z, 0.016, 0.005); // knurled aerator ring
+      bag.cyl('dark',   prevPt.x, prevPt.y - 0.042, prevPt.z, 0.013, 0.004); // aerator nozzle face
+
+      // Single-lever mixer control (side mounted on valve body)
+      const perpX = -uy, perpY = ux; // 90 degrees to spout reach
+      const handleBaseX = (sx + perpX * 24) / 1000;
+      const handleBaseZ = -(sy + perpY * 24) / 1000;
+      const handleBaseY = ctTop + 0.062;
+      bag.cyl('blackM', handleBaseX, handleBaseY, handleBaseZ, 0.008, 0.024,
+        perpY * Math.PI / 2, 0, perpX * Math.PI / 2);
+      // Slender pin lever angled 30 degrees upward
+      const tipX = (sx + perpX * 38) / 1000;
+      const tipZ = -(sy + perpY * 38) / 1000;
+      const tipY = handleBaseY + 0.055;
+      bag.branch('blackM', handleBaseX, handleBaseY, handleBaseZ, tipX, tipY, tipZ, 0.005, 0.004);
+      bag.sph('chrome', tipX, tipY, tipZ, 0.006); // chrome pin cap
+
+      // 5. Matching Deck-Mounted Push-Pump Soap Dispenser
+      const soapDist = 80;
+      const soapX = sx - perpX * soapDist, soapY = sy - perpY * soapDist;
+      const spxM = soapX / 1000, spzM = -soapY / 1000;
+      bag.cyl('blackM', spxM, ctTop + 0.004, spzM, 0.018, 0.008); // deck collar
+      bag.cyl('blackM', spxM, ctTop + 0.038, spzM, 0.012, 0.060); // pump cylinder
+      bag.cyl('chrome', spxM, ctTop + 0.070, spzM, 0.014, 0.012); // pump head
+      // Spout reaching 45mm forward over sink rim
+      const spTipX = (soapX + ux * 45) / 1000, spTipZ = -(soapY + uy * 45) / 1000;
+      bag.branch('chrome', spxM, ctTop + 0.072, spzM, spTipX, ctTop + 0.068, spTipZ, 0.004, 0.003);
     },
     rangeHood(bag, cx, cy, fY, along) {
       // canopy runs along the wall it hangs on: 900 along it, 500 deep
@@ -4193,39 +4055,213 @@ window.HouseScene = (function () {
         [[0.12, 0], [0.186, 0], [0.19, 0.012], [0.185, 0.022], [0.12, 0.022], [0.115, 0.01]], 40,
         alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
     },
-    /* Floating oak vanity, quartz top, round ceramic vessel, wall mixer */
+    /* Contemporary luxury floating architectural vanity unit:
+       - Floating wall-hung joinery with dual drawer tiers and recessed Gola finger-pull channel
+       - Polished solid quartz countertop slab (properly wall-constrained, zero masonry clipping)
+       - Matching 50mm quartz upstand / splashback
+       - Soft under-vanity ambient warm LED floor wash
+       - Vitreous glazed ceramic designer vessel basin with polished chrome pop-up clicker stopper
+       - Sleek architectural mixer (deck-mounted for window walls, wall-mounted for solid walls)
+       - Hotel-suite styling accessories: ceramic soap pump & folded guest towel */
     basin(bag, x0, x1, y0, y1, fY, back) {
       back = back || 'N';
       const F = frameOf(x0, x1, y0, y1, back);
       const W = F.W, D = F.D;
-      F.rb(bag, 'oak', 0, W, 0, D - 10, fY + 0.36, fY + 0.80, 8);
-      F.box(bag, 'aluDark', 12, W - 12, D - 12, D - 4, fY + 0.58, fY + 0.585);
-      F.rb(bag, 'quartz', -5, W + 5, -5, D + 5, fY + 0.80, fY + 0.83, 4);
-      pb(bag, 'lamp', ...(() => { const a = F.pt(30, 30), b = F.pt(W - 30, D - 40); return [Math.min(a[0], b[0]), Math.max(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[1], b[1])]; })(), fY + 0.355, fY + 0.36);
-      const c = F.pt(W / 2, D * 0.55);
-      bag.lathe('ceramic', c[0] / 1000, fY + 0.83, -c[1] / 1000,
-        [[0, 0], [0.16, 0], [0.2, 0.03], [0.21, 0.12], [0.2, 0.13], [0.19, 0.125], [0.18, 0.04], [0.14, 0.02], [0, 0.02]], 40);
-      // wall-mounted spout + lever
-      const s = F.pt(W / 2, 15), t = F.pt(W / 2, 170);
-      bag.branch('blackM', s[0] / 1000, fY + 1.05, -s[1] / 1000, t[0] / 1000, fY + 1.05, -t[1] / 1000, 0.011, 0.011);
-      const l = F.pt(W / 2 + 140, 15), l2 = F.pt(W / 2 + 140, 70);
-      bag.branch('blackM', l[0] / 1000, fY + 1.12, -l[1] / 1000, l2[0] / 1000, fY + 1.12, -l2[1] / 1000, 0.018, 0.018);
-      // rolled towels on the counter
-      const tw = F.pt(W - 110, D * 0.5);
-      if (back === 'N' || back === 'S') bag.cyl('sheet', tw[0] / 1000, fY + 0.87, -tw[1] / 1000, 0.04, 0.2, Math.PI / 2, 0, 0);
-      else bag.cyl('sheet', tw[0] / 1000, fY + 0.87, -tw[1] / 1000, 0.04, 0.2, 0, 0, Math.PI / 2);
-    },
-    /* Backlit frameless mirror */
-    mirror(bag, x0, x1, y0, y1, fY) {
-      const isX = x1 - x0 >= y1 - y0;
-      // glow strip slightly larger than the glass, standing off the wall
-      // (and off any tile cladding) so the halo reads on the wall face
-      if (isX) {
-        pb(bag, 'lamp', x0 - 8, x1 + 8, y0 - 16, y1 + 16, fY + 1.20, fY + 2.00);
-        prb(bag, 'mirrorI', x0 + 10, x1 - 10, y0 - 26, y1 + 26, fY + 1.22, fY + 1.98, 6);
+
+      // 1. Determine Wall Adjacencies (prevent clipping into side walls)
+      const leftIsWall = (back === 'N' && x0 <= 4920) || (back === 'S' && x0 <= 4920);
+      const rightIsWall = (x1 >= 3105 && x1 <= 3216) || (x1 >= 7620);
+      const u0 = leftIsWall ? 0 : -6;
+      const u1 = rightIsWall ? W : W + 6;
+
+      // 2. Floating Cabinet Joinery
+      // Recessed wall cleat (shadow reveal at wall mounting)
+      F.box(bag, 'aluDark', 25, W - 25, 0, 24, fY + 0.38, fY + 0.81);
+
+      // Main floating cabinet carcass in warm architectural oak
+      const cabU0 = leftIsWall ? 0 : 8, cabU1 = rightIsWall ? W : W - 8;
+      F.rb(bag, 'oak', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+
+      // Dual-tier floating drawer system with recessed Gola finger-pull channel
+      const isWide = W >= 760;
+      const bays = isWide ? [
+        [cabU0 + 4, W / 2 - 2],
+        [W / 2 + 2, cabU1 - 4]
+      ] : [[cabU0 + 4, cabU1 - 4]];
+
+      for (const [bu0, bu1] of bays) {
+        // Lower drawer front panel
+        F.rb(bag, 'oak', bu0, bu1, D - 18, D - 4, fY + 0.40, fY + 0.57, 3);
+        // Minimalist metallic edge trim on lower drawer
+        F.box(bag, 'brassI', (bu0 + bu1) / 2 - 60, (bu0 + bu1) / 2 + 60, D - 5, D - 2, fY + 0.565, fY + 0.57);
+
+        // Upper drawer front panel
+        F.rb(bag, 'oak', bu0, bu1, D - 18, D - 4, fY + 0.61, fY + 0.795, 3);
+        // Minimalist metallic edge trim on upper drawer
+        F.box(bag, 'brassI', (bu0 + bu1) / 2 - 60, (bu0 + bu1) / 2 + 60, D - 5, D - 2, fY + 0.79, fY + 0.795);
+      }
+
+      // Horizontal recessed Gola channels (graphite anodised shadow lines)
+      F.box(bag, 'aluDark', cabU0 + 2, cabU1 - 2, D - 26, D - 10, fY + 0.57, fY + 0.61);
+      F.box(bag, 'aluDark', cabU0 + 2, cabU1 - 2, D - 26, D - 10, fY + 0.795, fY + 0.81);
+
+      // Under-vanity warm ambient LED floor wash (2700K indirect illumination)
+      F.box(bag, 'coveLED', cabU0 + 40, cabU1 - 40, 60, D - 60, fY + 0.375, fY + 0.38);
+
+      // 3. Polished Quartz Countertop & Sealed Splashback
+      // Countertop slab (strictly v=0 at back wall, zero penetration)
+      F.rb(bag, 'quartz', u0, u1, 0, D + 8, fY + 0.81, fY + 0.84, 4);
+
+      // Matching 50mm quartz upstand / splashback against the back wall
+      F.box(bag, 'quartz', u0, u1, 0, 12, fY + 0.84, fY + 0.89);
+      if (leftIsWall) F.box(bag, 'quartz', 0, 12, 12, D + 6, fY + 0.84, fY + 0.89);
+      if (rightIsWall) F.box(bag, 'quartz', W - 12, W, 12, D + 6, fY + 0.84, fY + 0.89);
+
+      // 4. Designer Vitreous Ceramic Vessel Basin
+      const bRad = Math.min(185, Math.min(W * 0.24, (D - 70) / 2));
+      const bCenterV = Math.min(D * 0.55, D - bRad - 20);
+      const c = F.pt(W / 2, bCenterV);
+      const cX = c[0] / 1000, cZ = -c[1] / 1000;
+      const vBase = fY + 0.84, vH = 0.11; // 110mm height vessel
+
+      // Lathe profile for gently curved ceramic vessel with thin rolled rim and deep bowl cavity
+      const rM = bRad / 1000;
+      bag.lathe('ceramic', cX, vBase, cZ, [
+        [0, 0],
+        [rM * 0.65, 0],
+        [rM * 0.88, vH * 0.25],
+        [rM, vH * 0.75],
+        [rM, vH],
+        [rM - 0.007, vH],
+        [rM - 0.010, vH * 0.90],
+        [rM * 0.82, vH * 0.40],
+        [rM * 0.55, 0.015],
+        [0, 0.015]
+      ], 40);
+
+      // Polished Chrome Pop-Up Clicker Drain Stopper
+      bag.cyl('chrome', cX, vBase + 0.016, cZ, 0.035, 0.003); // outer chrome bezel
+      bag.cyl('dark',   cX, vBase + 0.018, cZ, 0.030, 0.004); // silicone seal groove
+      bag.cyl('chrome', cX, vBase + 0.024, cZ, 0.024, 0.006); // domed pop-up stopper cap
+
+      // 5. Architectural Luxury Mixer
+      // If vanity is on South wall in Utility (under grilled window, y0 < 0), use deck-mounted mixer!
+      const isUnderWindow = (back === 'S' && y0 < 0);
+      if (isUnderWindow) {
+        // Deck-mounted high-arc single-lever vessel mixer
+        const fv = bCenterV - bRad - 38;
+        const fp = F.pt(W / 2, fv);
+        const fpX = fp[0] / 1000, fpZ = -fp[1] / 1000;
+        // Escutcheon collar on quartz
+        bag.cyl('blackM', fpX, fY + 0.845, fpZ, 0.022, 0.010);
+        bag.cyl('brassI', fpX, fY + 0.851, fpZ, 0.020, 0.003); // brass accent collar
+        // Mixer vertical body
+        bag.cyl('blackM', fpX, fY + 0.94, fpZ, 0.014, 0.18);
+        // Arched spout curving over the basin
+        const spTip = F.pt(W / 2, bCenterV - bRad * 0.35);
+        bag.branch('blackM', fpX, fY + 1.03, fpZ, spTip[0] / 1000, fY + 1.01, -spTip[1] / 1000, 0.010, 0.009);
+        // Aerator nozzle pointing downward
+        bag.cyl('brassI', spTip[0] / 1000, fY + 0.995, -spTip[1] / 1000, 0.011, 0.018);
+        bag.cyl('dark',   spTip[0] / 1000, fY + 0.985, -spTip[1] / 1000, 0.009, 0.004);
+        // Side lever control handle
+        const lvrPt = F.pt(W / 2 + 28, fv);
+        bag.cyl('blackM', lvrPt[0] / 1000, fY + 0.95, -lvrPt[1] / 1000, 0.006, 0.022, 0, 0, Math.PI / 2);
+        bag.branch('blackM', lvrPt[0] / 1000, fY + 0.95, -lvrPt[1] / 1000,
+          (lvrPt[0] + 16) / 1000, fY + 1.00, -lvrPt[1] / 1000, 0.004, 0.003);
       } else {
-        pb(bag, 'lamp', x0 - 16, x1 + 16, y0 - 8, y1 + 8, fY + 1.20, fY + 2.00);
-        prb(bag, 'mirrorI', x0 - 26, x1 + 26, y0 + 10, y1 - 10, fY + 1.22, fY + 1.98, 6);
+        // Wall-mounted designer mixer set with backplate
+        F.rb(bag, 'blackM', W / 2 - 40, W / 2 + 150, 0, 6, fY + 1.00, fY + 1.12, 3);
+
+        // Spout extending forward with 90° downward tip and aerator
+        const sp0 = F.pt(W / 2, 6), sp1 = F.pt(W / 2, Math.min(180, bCenterV - 20));
+        bag.branch('blackM', sp0[0] / 1000, fY + 1.06, -sp0[1] / 1000,
+          sp1[0] / 1000, fY + 1.06, -sp1[1] / 1000, 0.011, 0.010);
+        // Downward aerator elbow
+        bag.cyl('blackM', sp1[0] / 1000, fY + 1.035, -sp1[1] / 1000, 0.010, 0.035);
+        bag.cyl('brassI', sp1[0] / 1000, fY + 1.015, -sp1[1] / 1000, 0.011, 0.006); // brass aerator ring
+        bag.cyl('dark',   sp1[0] / 1000, fY + 1.011, -sp1[1] / 1000, 0.009, 0.003); // water aperture
+
+        // Single-lever mixer valve control on the wall plate
+        const lv0 = F.pt(W / 2 + 105, 6), lv1 = F.pt(W / 2 + 105, 42);
+        bag.cyl('blackM', lv0[0] / 1000, fY + 1.06, -lv0[1] / 1000, 0.018, 0.012, Math.PI / 2, 0, 0); // valve collar
+        bag.branch('blackM', lv0[0] / 1000, fY + 1.06, -lv0[1] / 1000,
+          lv1[0] / 1000, fY + 1.06, -lv1[1] / 1000, 0.009, 0.008);
+        // Pin lever handle
+        const pinTop = F.pt(W / 2 + 105, 52);
+        bag.branch('blackM', lv1[0] / 1000, fY + 1.06, -lv1[1] / 1000,
+          pinTop[0] / 1000, fY + 1.11, -pinTop[1] / 1000, 0.004, 0.003);
+      }
+
+      // 6. Hotel-Suite Styling Accessories
+      // Ceramic liquid soap dispenser on left side
+      const sPos = F.pt(Math.max(u0 + 60, W / 2 - bRad - 65), D * 0.42);
+      const sX = sPos[0] / 1000, sZ = -sPos[1] / 1000;
+      bag.cyl('ceramic', sX, fY + 0.88, sZ, 0.026, 0.080); // ceramic bottle
+      bag.cyl('brassI',  sX, fY + 0.925, sZ, 0.010, 0.012); // brass pump collar
+      bag.cyl('brassI',  sX, fY + 0.938, sZ, 0.014, 0.012); // pump head
+      const sSp = F.pt(Math.max(u0 + 60, W / 2 - bRad - 65), D * 0.42 + 25);
+      bag.branch('brassI', sX, fY + 0.940, sZ, sSp[0] / 1000, fY + 0.935, -sSp[1] / 1000, 0.003, 0.002);
+
+      // Folded luxury Egyptian cotton guest hand-towel on right side
+      const tPosU = Math.min(u1 - 80, W / 2 + bRad + 65);
+      F.rb(bag, 'sheet', tPosU - 50, tPosU + 50, D * 0.30, D * 0.70, fY + 0.84, fY + 0.87, 8);
+      F.rb(bag, 'sheet', tPosU - 45, tPosU + 45, D * 0.32, D * 0.68, fY + 0.87, fY + 0.895, 6);
+    },
+    /* Contemporary backlit architectural vanity mirror:
+       - Mounts strictly on the room-facing surface of the wall (zero masonry penetration)
+       - Soft ambient warm 2700K perimeter LED halo backlight washing the wall
+       - Slim champagne / graphite aluminium shadow frame with refined corner radius
+       - High-definition silvered mirror pane (mirrorI) */
+    mirror(bag, x0, x1, y0, y1, fY, face) {
+      const isX = Math.abs(x1 - x0) >= Math.abs(y1 - y0);
+      const mBot = fY + 1.16, mTop = fY + 2.05; // 890mm high architectural mirror
+
+      if (isX) {
+        // Runs along X (hung on North or South wall)
+        const wallY = (face === 'N' || y0 < 1000) ? Math.min(y0, y1) : Math.max(y0, y1);
+        const out = (face === 'N' || y0 < 1000) ? 1 : -1; // 1 = room is North (+y), -1 = room is South (-y)
+
+        const Y = (d0, d1) => [
+          Math.min(wallY + out * d0, wallY + out * d1),
+          Math.max(wallY + out * d0, wallY + out * d1)
+        ];
+
+        // 1. Ambient warm LED halo (embedded behind frame, washing the wall face)
+        const yHalo = Y(1, 5);
+        pb(bag, 'lamp', x0 + 16, x1 - 16, yHalo[0], yHalo[1], mBot + 0.015, mTop - 0.015);
+
+        // 2. Slim chassis / shadow reveal
+        const yChassis = Y(4, 10);
+        pb(bag, 'aluDark', x0 + 8, x1 - 8, yChassis[0], yChassis[1], mBot + 0.008, mTop - 0.008);
+
+        // 3. Slim champagne aluminium frame
+        const yFrame = Y(8, 18);
+        prb(bag, 'alu', x0, x1, yFrame[0], yFrame[1], mBot, mTop, 10);
+
+        // 4. High-definition silvered mirror pane
+        const yGlass = Y(12, 17);
+        prb(bag, 'mirrorI', x0 + 8, x1 - 8, yGlass[0], yGlass[1], mBot + 0.008, mTop - 0.008, 6);
+      } else {
+        // Runs along Y (hung on East or West wall)
+        const wallX = (face === 'E' || x0 < 4000) ? Math.min(x0, x1) : Math.max(x0, x1);
+        const out = (face === 'E' || x0 < 4000) ? 1 : -1; // 1 = room is East (+x), -1 = room is West (-x)
+
+        const X = (d0, d1) => [
+          Math.min(wallX + out * d0, wallX + out * d1),
+          Math.max(wallX + out * d0, wallX + out * d1)
+        ];
+
+        const xHalo = X(1, 5);
+        pb(bag, 'lamp', xHalo[0], xHalo[1], y0 + 16, y1 - 16, mBot + 0.015, mTop - 0.015);
+
+        const xChassis = X(4, 10);
+        pb(bag, 'aluDark', xChassis[0], xChassis[1], y0 + 8, y1 - 8, mBot + 0.008, mTop - 0.008);
+
+        const xFrame = X(8, 18);
+        prb(bag, 'alu', xFrame[0], xFrame[1], y0, y1, mBot, mTop, 10);
+
+        const xGlass = X(12, 17);
+        prb(bag, 'mirrorI', xGlass[0], xGlass[1], y0 + 8, y1 - 8, mBot + 0.008, mTop - 0.008, 6);
       }
     },
     /* Fixed glass screen in a slim matte-black profile */
@@ -7714,7 +7750,7 @@ window.HouseScene = (function () {
 
         /* --- MASTER BATH (4920..6752, 230..2216) --- */
         Lum.downlight(5800, 1200);                    // ceiling downlight
-        Lum.vanity('x', 4960, 5790, 2204, 2.08, 'S'); // mirror vanity on north wall
+        Lum.vanity('x', 4970, 5770, 2216, 2.08, 'S'); // mirror vanity on north wall (centered at x = 5370)
 
         /* --- COMMON BATH (230..2030, 3776..5345) --- */
         Lum.downlight(1200, 4500);
@@ -7722,7 +7758,7 @@ window.HouseScene = (function () {
 
         /* --- HANDWASH (2145..4920, 3776..5345) --- */
         Lum.downlight(3500, 4500);
-        Lum.vanity('x', 2420, 3080, 5333, 2.08, 'S'); // mirror vanity on north wall
+        Lum.vanity('x', 2430, 3070, 5345, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2750)
 
         /* --- UTILITY (6870..9371, 230..2332) --- */
         Lum.downlight(8120, 1280);                    // ceiling downlight centered in utility
@@ -7806,7 +7842,7 @@ window.HouseScene = (function () {
 
         /* --- EAST BATH (4920..7620, 233..1758) --- */
         Lum.downlight(5800, 1000);
-        Lum.vanity('x', 6800, 7590, 242, 2.08, 'N');  // mirror vanity on south wall
+        Lum.vanity('x', 6800, 7590, 230, 2.08, 'N');  // mirror vanity on south wall (centered at x = 7195)
 
         /* --- FAMILY ROOM (8241..12421, 4546..8641) --- */
         Lum.fan(10300, 6600);                         // ceiling fan centered in family room
@@ -8059,10 +8095,10 @@ window.HouseScene = (function () {
           Fur.table(bag, 11100, 11400, 6650, 6900, fY, 0.40, 'dark');
         })();
 
-        Fur.basin(bag, 4920, 5820, 1716, 2216, fY); Fur.mirror(bag, 4920, 5820, 2204, 2216, fY); Fur.wc(bag, 5370, 515, fY, 'N');
+        Fur.basin(bag, 4920, 5820, 1716, 2216, fY, 'N'); Fur.mirror(bag, 4950, 5790, 2204, 2216, fY, 'S'); Fur.wc(bag, 5370, 515, fY, 'N');
         Fur.shower(bag, 5820, 5850, 230, 1130, fY); Fur.showerHead(bag, 6301, 230, fY, 'N');
         Fur.wc(bag, 1600, 5060, fY, 'S'); Fur.shower(bag, 1130, 1160, 4445, 5345, fY); Fur.showerHead(bag, 680, 5345, fY, 'S');
-        Fur.basin(bag, 2400, 3100, 4945, 5345, fY, 'N'); Fur.mirror(bag, 2400, 3100, 5333, 5345, fY);                 // handwash counter
+        Fur.basin(bag, 2400, 3100, 4945, 5345, fY, 'N'); Fur.mirror(bag, 2430, 3070, 5333, 5345, fY, 'S');                 // handwash counter
       }
 
       /* West bedroom suite — the FF master and the SF bedroom above it share
@@ -8088,7 +8124,7 @@ window.HouseScene = (function () {
         // bath (x 230..3105, y 4547..6381)
         Fur.shower(bag, 1130, 1160, 5127, 6381, fY); Fur.showerHead(bag, 680, 6381, fY, 'S');
         Fur.wc(bag, 1700, 6096, fY, 'S');
-        Fur.basin(bag, 2300, 3105, 5881, 6381, fY); Fur.mirror(bag, 2300, 3105, 6369, 6381, fY);
+        Fur.basin(bag, 2300, 3105, 5881, 6381, fY, 'N'); Fur.mirror(bag, 2330, 3075, 6369, 6381, fY, 'S');
         Fur.clad(bag, 'x', 6381, 'S', 230, 3105, fY, 2.40);
         Fur.clad(bag, 'x', 4547, 'N', 230, 3105, fY, 2.40);
         Fur.clad(bag, 'y', 230, 'E', 4547, 6381, fY, 1.65);           // west (vent above)
@@ -8107,7 +8143,7 @@ window.HouseScene = (function () {
         Lum.task(3260, 4160, 6300, 6370, 2.38);       // wash over the dressing mirror
         // bath
         Lum.downlight(1700, 5300);
-        Lum.vanity('x', 2330, 3080, 6369, 2.08, 'S'); // mirror vanity on north wall
+        Lum.vanity('x', 2330, 3075, 6381, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2702.5)
       }
 
       if (fi === 1) {
@@ -8516,7 +8552,7 @@ window.HouseScene = (function () {
         Fur.fullHeightWardrobe(bag, 4920, 5470, 1871, 2601, fY, fY + 3.203, 'E', { mirror: true });
         Fur.shower(bag, 5820, 5850, 230, 1130, fY); Fur.showerHead(bag, 5370, 230, fY, 'N');                  // West: shower partition
         Fur.wc(bag, 6295, 515, fY, 'N');                              // Middle: WC facing North
-        Fur.basin(bag, 6770, 7620, 230, 780, fY, 'S'); Fur.mirror(bag, 6770, 7620, 230, 242, fY);                    // East: vanity counter
+        Fur.basin(bag, 6770, 7620, 230, 780, fY, 'S'); Fur.mirror(bag, 6800, 7590, 230, 242, fY, 'N');                    // East: vanity counter
         // --- Second Floor Family Room & Entertainment Lounge ---
         Fur.rug(bag, 9400, 11950, 5350, 7850, fY);
         // The east wall is a 3.16 m glass door (y 5470-8630): sofas stop at
