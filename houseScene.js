@@ -4173,6 +4173,21 @@ window.HouseScene = (function () {
         prb(bag, 'oak', c1 - 2, x1, y, y + 30, fY + 0.06, fY + h - 0.06, 9);
       }
     },
+    /* Rectangular timber casing for a wall opening in a wall running along
+       y (wall x0..x1, opening y0..y1, height h): walnut linings through
+       both reveals and the soffit, 90 mm architraves 22 proud on both
+       faces, mitred square. */
+    openingFrame(bag, x0, x1, y0, y1, fY, h) {
+      const zt = fY + h, L = 20, A = 90, P = 22, M = 'walnutI';
+      pb(bag, M, x0, x1, y0, y0 + L, fY, zt);                         // jamb linings
+      pb(bag, M, x0, x1, y1 - L, y1, fY, zt);
+      pb(bag, M, x0, x1, y0, y1, zt - L / 1000, zt);                   // soffit lining
+      for (const [f0, f1] of [[x0 - P, x0], [x1, x1 + P]]) {           // architraves, both faces
+        pb(bag, M, f0, f1, y0 - A, y0 + L, fY, zt + A / 1000);
+        pb(bag, M, f0, f1, y1 - L, y1 + A, fY, zt + A / 1000);
+        pb(bag, M, f0, f1, y0 - A, y1 + A, zt - L / 1000, zt + A / 1000);
+      }
+    },
     /* Ganesha on a floating ledge against a partition's east face (faceX),
        facing east to the main door: brass prabhavali behind, diya, flowers. */
     ganeshaShrine(bag, faceX, cy, fY) {
@@ -7476,7 +7491,7 @@ window.HouseScene = (function () {
 
         /* --- FOYER (10893..12421, 6815..8642) --- */
         Lum.downlight(11700, 7800);
-        Lum.raw(11148, 6920, fY + 1.04, 'flame');     // diya at the Ganesha
+        Lum.raw(11056, 7060, fY + 1.04, 'flame');     // diya at the Ganesha
 
         /* --- POOJA (10893..12418, 5060..6700) --- */
         Lum.raw(11650, 5560, fY + 0.52, 'flame');     // south kuthu-vilakku
@@ -7928,22 +7943,18 @@ window.HouseScene = (function () {
         prb(bag, 'quartz', 9071, 9480, 1450, 2650, fY + 0.86, fY + 0.90, 4);
         prb(bag, 'oak', 9250, 9371, 1870, 2230, fY, fY + 0.86, 6);
         // --- Entrance (north bay: duplex entry door c 8000 + sidelite c 7100) ---
-        // The east wall here is door and glass end to end, and the west wall
-        // carries the 1500 opening to the hall, so the north wall is the only
-        // free face — console and mirror go there rather than under the
-        // sidelite.
-        // The entry door (east wall, y 7400-8600) and the hall opening (west
-        // wall, y 6980-8480) both open onto the north part of the foyer, so
-        // the console lives on the solid south wall, facing north.
-        // Cleared for Vastu. The south wall is the pooja's wall, so nothing
-        // stands against it. A fluted partition closes the SW corner (the
-        // south end of the hall opening, which keeps y 7350..8480 clear) and
-        // carries Ganesha facing east to the main door. Shoes go in a tall
-        // cabinet in the NW corner (never the NE), its mirror leaf facing
-        // south — not at the door.
-        Fur.foyerPartition(bag, 10893, 10973, 6815, 7350, fY);
-        Fur.ganeshaShrine(bag, 10973, 7085, fY);
-        Fur.shoeCabinet(bag, 10900, 11500, 8322, 8642, fY);
+        // Cleared for Vastu; the south wall is the pooja's, so nothing stands
+        // against it. The hall opening (wall x 10780..10893, y 6980..8480,
+        // 2.1 m) is cased in walnut — a plain rectangle, lined through the
+        // reveal, architraves both faces. A fluted partition fills its south
+        // end inside the wall line, exactly opening height, and carries
+        // Ganesha facing east to the main door; y 7450..8460 stays clear.
+        // Shoes go in a tall cabinet in the NW corner (never the NE), its
+        // mirror leaf facing south — not at the door.
+        Fur.openingFrame(bag, 10780, 10893, 6980, 8480, fY, 2.10);
+        Fur.foyerPartition(bag, 10792, 10881, 7000, 7450, fY, 2.08);
+        Fur.ganeshaShrine(bag, 10881, 7225, fY);
+        Fur.shoeCabinet(bag, 10940, 11540, 8322, 8642, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
         // Room x 10893–12418, y 5060–6700. Mandir on EAST wall facing WEST.
