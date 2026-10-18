@@ -4417,7 +4417,7 @@ window.HouseScene = (function () {
       W: [
         { c: 3450, w: 1800, sill: 900, h: 1500, type: 'win', chajja: true },     // master bedroom west window (enlarged, lights the NW desk)
         { c: 5000, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },      // master bath vent
-        { c: 7200, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }     // staircase landing
+        { c: 7568.5, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }   // staircase landing, centred on the landing wall (y 6496..8641)
       ]
     },
     f2: {
@@ -4438,7 +4438,7 @@ window.HouseScene = (function () {
       W: [
         { c: 3450, w: 1800, sill: 900, h: 1500, type: 'win', chajja: true },     // bedroom 02 west window (enlarged, lights the NW desk)
         { c: 5000, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },      // bath vent
-        { c: 7200, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }     // staircase landing
+        { c: 7568.5, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }   // staircase landing, centred on the landing wall (y 6496..8641)
       ]
     }
   };
@@ -7520,7 +7520,7 @@ window.HouseScene = (function () {
         Lum.wallBracket(9370, 300, 1.80, 'y', 'W');   // solid common bath wall
 
         /* --- STAIRCASE --- */
-        Lum.wallBracket(230, 7568, 1.85, 'y', 'E');   // solid west masonry wall at landing
+        Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
       }
 
       if (fi === 2) {
@@ -7554,7 +7554,7 @@ window.HouseScene = (function () {
         Lum.floorLamp(9300, 5200, 1.55);              // freestanding floor lamp
 
         /* --- STAIRCASE --- */
-        Lum.wallBracket(230, 7568, 1.85, 'y', 'E');   // solid west masonry wall at landing
+        Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
       }
 
       /* ---- curtains on living / bed / office windows ---- */
