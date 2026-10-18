@@ -192,7 +192,7 @@
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20261018_stairtile1"></script>
+<script src="houseScene.js?v=20261018_slabedge3"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -1278,6 +1278,7 @@ if(!window.THREE || !window.HouseScene){
   /* ============================================================
      build the house (verified geometry) and re-skin it
      ============================================================ */
+  window.__HOUSE_WALK = true;   // walk mode: shell drawn once (exterior), no dollhouse copies
   const data = window.HouseScene.build(THREE);
   const L = data.LEVELS;
   const FP = data.footprint || window.HouseScene.FOOTPRINT || { x0: 0, x1: 16600, y0: 0, y1: 8870, upperY0: -762, northBalcY1: 9900 };
@@ -1336,6 +1337,10 @@ if(!window.THREE || !window.HouseScene){
     const matClone = isFloor ? new Map() : null;
     group.traverse(o => {
       if (!o.isMesh) return;
+      // wall-top caps only finish the dollhouse cut (index.html); walking
+      // through, the storeys stack and a cap would read as a band at every
+      // slab edge
+      if (isFloor && o.userData.matKey === 'copingLight') { o.visible = false; return; }
       if (isFloor && o.material && !o.material.userData.poff) {
         const src = o.material;
         let cloned = matClone.get(src);
