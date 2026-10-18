@@ -4482,7 +4482,7 @@ window.HouseScene = (function () {
       // kitchen (opening). The bands are only as deep as their fittings.
       { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 6830, w: 2400, sill: 0, h: 2400, noFrame: true }, { c: 10750, w: 900, sill: 0, h: 2400 }] },   // aluminium slider has its own frame
       { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2918.5, w: 2483, sill: 0, h: 2400, startA: 0.88 }] },     // kitchen|dining: one opening over the SW counter + the way in; casing clears the fridge handles (4221), south side rises off the worktop
-      { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000, noFrame: true }] },   // hall|pooja (teak doorway of its own) (open view to the mandir, centred on the room)
+      { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000 }] },   // hall|pooja (open view to the mandir, centred on the room) (open view to the mandir, centred on the room)
       { dir: 'y', b: [10780, 10893], a: [6815, 8642], ops: [{ c: 7730, w: 1500 }] },   // hall|entrance
       { dir: 'x', b: [6700, 6815], a: [10893, 12421], ops: [] },                        // pooja|entrance
       { dir: 'x', b: [4945, 5060], a: [9370, 12421], ops: [] }                         // kitchen | pooja (the common wall the pooja now sits against)
@@ -7510,7 +7510,7 @@ window.HouseScene = (function () {
         Lum.raw(12248, 5880, fY + 0.95, 'flame');     // prabhavali backlight
         Lum.raw(12372, 5530, fY + 1.52, 'flame');     // hanging brass lamps
         Lum.raw(12372, 6230, fY + 1.52, 'flame');
-        Lum.wallBracket(10893, 5880, 1.85, 'y', 'E');
+        Lum.wallBracket(10893, 5195, 1.85, 'y', 'E');      // on the solid wall beside the doorway (5880 was mid-opening)
 
         /* --- MASTER BEDROOM (230..4805, 232..4432) --- */
         westSuiteLights(Lum, fY);
@@ -7985,28 +7985,21 @@ window.HouseScene = (function () {
 
           // 1) Auspicious Brass-Clad Threshold (Telugu Gadapa / Padi) with Kumkum & Turmeric
           const dwY0 = midY - 500, dwY1 = midY + 500;
-          pb(bag, 'brassI', 10885, 10915, dwY0, dwY1, fY, fY + 0.035);
-          pb(bag, 'saffron', 10888, 10912, dwY0 + 20, dwY1 - 20, fY + 0.035, fY + 0.040);
+          pb(bag, 'brassI', 10893, 10915, dwY0, dwY1, fY, fY + 0.035);     // on the pooja floor, just past the casing
+          pb(bag, 'saffron', 10896, 10912, dwY0 + 20, dwY1 - 20, fY + 0.035, fY + 0.040);
           for (let dy = dwY0 + 60; dy <= dwY1 - 60; dy += 110) {
             bag.sph('vermilion', 10900 / 1000, fY + 0.044, -dy / 1000, 0.008);
           }
 
-          // Ornate Teakwood Doorway Frame with Brass Accents & Makara-Torana
-          pb(bag, 'oakDark', 10875, 10915, dwY0 - 35, dwY0, fY, fY + 2.20);
-          pb(bag, 'oakDark', 10875, 10915, dwY1, dwY1 + 35, fY, fY + 2.20);
-          pb(bag, 'oakDark', 10875, 10915, dwY0 - 35, dwY1 + 35, fY + 2.15, fY + 2.25);
-          // Brass corner plates on door frame
-          for (const yf of [dwY0 - 15, dwY1 + 15]) {
-            pb(bag, 'brassI', 10872, 10918, yf - 18, yf + 18, fY + 0.05, fY + 0.20);
-            pb(bag, 'brassI', 10872, 10918, yf - 18, yf + 18, fY + 2.05, fY + 2.20);
-          }
-          // Carved Torana band with mango leaves over entrance
-          pb(bag, 'oak', 10870, 10918, dwY0 - 20, dwY1 + 20, fY + 2.22, fY + 2.30);
+          // The doorway takes the same walnut casing as every room opening
+          // (build loop). Mango-leaf thoranam hung from its head on the hall
+          // side, where you approach the shrine.
           for (let gy = dwY0 + 40; gy < dwY1 - 40; gy += 60) {
-            bag.sph('green2', 10875 / 1000, fY + 2.20, -gy / 1000, 0.022);
-            bag.sph('leafLight', 10872 / 1000, fY + 2.17, -(gy + 20) / 1000, 0.016);
-            if (gy % 120 < 60) bag.sph('lotusPink', 10870 / 1000, fY + 2.19, -gy / 1000, 0.012);
+            bag.sph('green2', 10752 / 1000, fY + 2.06, -gy / 1000, 0.022);
+            bag.sph('leafLight', 10755 / 1000, fY + 2.03, -(gy + 20) / 1000, 0.016);
+            if (gy % 120 < 60) bag.sph('lotusPink', 10750 / 1000, fY + 2.05, -gy / 1000, 0.012);
           }
+          pb(bag, 'brassI', 10748, 10764, dwY0 - 20, dwY1 + 20, fY + 2.085, fY + 2.095);   // cord
 
           // Traditional Kolam / Rangoli ring at threshold
           bag.cyl('lotusPink', 11080 / 1000, fY + 0.018, -midY / 1000, 0.22, 0.008);
@@ -8304,7 +8297,6 @@ window.HouseScene = (function () {
         { id: 'modern_arm_chair_01', fi: 1, x: 5433, y: 6080, rot: 90 },
         { id: 'modern_arm_chair_01', fi: 1, x: 8827, y: 6220, rot: 270 },
         { id: 'potted_plant_01', fi: 1, x: 5250, y: 8040, rot: 30 },
-        { id: 'potted_plant_02', fi: 1, x: 9350, y: 8380, rot: 200 },   // out of the foyer opening's walking line
         { id: 'ceramic_vase_02', fi: 1, x: 7500, y: 6150, z: 0.40 },
         { id: 'wooden_bowl_01', fi: 1, x: 7300, y: 6430, z: 0.40 },
         // ---- FF dining / kitchen / foyer ----
