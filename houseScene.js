@@ -4175,10 +4175,10 @@ window.HouseScene = (function () {
     },
     /* Rectangular timber casing for a wall opening in a wall running along
        y (wall x0..x1, opening y0..y1, height h): walnut linings through
-       both reveals and the soffit, 90 mm architraves 22 proud on both
+       both reveals and the soffit, slim 50 mm architraves 15 proud on both
        faces, mitred square. */
     openingFrame(bag, x0, x1, y0, y1, fY, h) {
-      const zt = fY + h, L = 20, A = 90, P = 22, M = 'walnutI';
+      const zt = fY + h, L = 18, A = 50, P = 15, M = 'walnutI';
       pb(bag, M, x0, x1, y0, y0 + L, fY, zt);                         // jamb linings
       pb(bag, M, x0, x1, y1 - L, y1, fY, zt);
       pb(bag, M, x0, x1, y0, y1, zt - L / 1000, zt);                   // soffit lining
@@ -7949,12 +7949,9 @@ window.HouseScene = (function () {
         // reveal, architraves both faces. A fluted partition fills its south
         // end inside the wall line, exactly opening height, and carries
         // Ganesha facing east to the main door; y 7450..8460 stays clear.
-        // Shoes go in a tall cabinet in the NW corner (never the NE), its
-        // mirror leaf facing south — not at the door.
         Fur.openingFrame(bag, 10780, 10893, 6980, 8480, fY, 2.10);
         Fur.foyerPartition(bag, 10792, 10881, 7000, 7450, fY, 2.08);
         Fur.ganeshaShrine(bag, 10881, 7225, fY);
-        Fur.shoeCabinet(bag, 10940, 11540, 8322, 8642, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
         // Room x 10893–12418, y 5060–6700. Mandir on EAST wall facing WEST.
