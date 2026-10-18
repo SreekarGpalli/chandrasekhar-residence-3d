@@ -5469,11 +5469,11 @@ window.HouseScene = (function () {
 
     /* curtain schedule: living / bed / office windows */
     const CURT = [
-      [ { f: 'E', c: 6150, w: 1500, sill: 900, h: 1500, m: 'curtain', lo: 5320 },   // GF office E (AC to the south)
-        { f: 'N', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2' },  // GF bed02
+      [ { f: 'E', c: 6150, w: 1500, sill: 900, h: 1500, m: 'curtain', lo: 5380, short: true },   // GF office E (rod stops 60 short of the AC to the south)
+        { f: 'N', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', short: true },  // GF bed02
         { f: 'N', c: 6800, w: 1800, sill: 900, h: 1400, m: 'curtain', bot: 0.88 },   // GF hall (behind the sofa)
-        { f: 'N', c: 11000, w: 1500, sill: 900, h: 1400, m: 'curtain' },  // GF office N
-        { f: 'S', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', lo: 3830 },  // GF master S
+        { f: 'N', c: 11000, w: 1500, sill: 900, h: 1400, m: 'curtain', short: true },  // GF office N
+        { f: 'S', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', lo: 3830, short: true },  // GF master S
         { f: 'W', c: 3100, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 2600, bot: 1.08 },  // GF master W (over the vanity desk)
         { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', bot: 1.08 } ],// GF bed02 W (behind the bed)
       // The four north windows flanking the double-height media wall (FF + SF).
