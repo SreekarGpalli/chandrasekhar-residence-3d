@@ -24,7 +24,7 @@ window.HouseAudit = (function () {
     'poojaPhotoFrame', 'rangeHood', 'hob', 'sink', 'tv', 'floorLamp', 'drum']);
   const BUILTIN = new Set(['fullHeightWardrobe', 'wardrobe', 'vastuWardrobe', 'counterX', 'kitBaseDoors',
     'kitBaseDrawers', 'kitWallRun', 'kitPantry', 'wallCabinet', 'tvFeatureWall', 'shelves', 'crockeryUnit',
-    'privacyScreen', 'console', 'wc', 'basin', 'fridge', 'washer', 'side']);
+    'privacyScreen', 'console', 'wc', 'basin', 'fridge', 'washer', 'side', 'openingFrame', 'slidingDoor', 'foyerPartition']);
 
   function floorOf(y, L) {
     const F = [L.f0, L.f1, L.f2, L.roof];
@@ -80,6 +80,24 @@ window.HouseAudit = (function () {
     const items = A.items.map((it, i) => Object.assign({ id: i, name: it.name, args: it.args.map(v => typeof v === 'number' ? Math.round(v * 1000) / 1000 : v) }, planBox(it.box)))
       .filter(it => isFinite(it.x0));
     items.forEach(it => { it.fi = floorOf(it.z0, L); it.zr0 = it.z0 - [L.f0, L.f1, L.f2][Math.max(0, it.fi)]; it.zr1 = it.z1 - [L.f0, L.f1, L.f2][Math.max(0, it.fi)]; });
+    // A door casing's bbox is the whole ring, which would read as a solid
+    // block across the doorway. Swap each for its real pieces (jamb linings,
+    // head, architraves on both faces) so clashes and reachability see what
+    // is actually there. Mirrors Fur.openingFrame in houseScene.js.
+    for (let k = items.length - 1; k >= 0; k--) {
+      const it = items[k]; if (it.name !== 'openingFrame') continue;
+      const [dir, w0, w1, a0, a1, , h, sA] = it.args, zA = sA || 0, Lj = 18, A = 50, P = 15;
+      const tag = it.args.slice(0, 5).join(',');
+      const parts = [];
+      const put = (nm, s0, s1, d0, d1, z0, z1) => parts.push(Object.assign({ id: items.length + parts.length, name: 'openingFrame', args: [nm, tag], fi: it.fi, zr0: z0, zr1: z1, z0: it.z0 - it.zr0 + z0, z1: it.z0 - it.zr0 + z1 },
+        dir === 'y' ? { x0: d0, x1: d1, y0: s0, y1: s1 } : { x0: s0, x1: s1, y0: d0, y1: d1 }));
+      put('jambA', a0, a0 + Lj, w0, w1, zA, h); put('jambB', a1 - Lj, a1, w0, w1, 0, h); put('head', a0, a1, w0, w1, h - 0.018, h);
+      for (const [g, f0, f1] of [['lo', w0 - P, w0], ['hi', w1, w1 + P]]) {
+        put('arcA-' + g, a0 - A, a0 + Lj, f0, f1, zA, h + 0.05); put('arcB-' + g, a1 - Lj, a1 + A, f0, f1, 0, h + 0.05); put('arcH-' + g, a0 - A, a1 + A, f0, f1, h - 0.018, h + 0.05);
+      }
+      items.splice(k, 1, ...parts);
+    }
+    items.forEach((it, i) => { it.id = i; });
     // CC0 scans from the live scene
     const live = (window.__wt && __wt.scene) || null;
     if (live) {
@@ -105,7 +123,12 @@ window.HouseAudit = (function () {
       for (let i = 0; i < solid.length; i++) for (let j = i + 1; j < solid.length; j++) {
         const a = solid[i], b = solid[j];
         const ox = ov(a.x0, a.x1, b.x0, b.x1), oy = ov(a.y0, a.y1, b.y0, b.y1), oz = ov(a.z0, a.z1, b.z0, b.z1);
-        if (ox > 30 && oy > 30 && oz > 0.03) {
+        // casing pieces are 15-18 mm thin: any real overlap counts, but not
+        // a casing against its own pieces
+        const fa = a.name === 'openingFrame', fb = b.name === 'openingFrame';
+        if (fa && fb && a.args[1] === b.args[1]) continue;
+        const t = fa || fb ? 1 : 30, tz = fa || fb ? 0.005 : 0.03;
+        if (ox > t && oy > t && oz > tz) {
           // an object resting on another's top is fine
           if (Math.abs(a.z0 - b.z1) < 0.03 || Math.abs(b.z0 - a.z1) < 0.03) continue;
           report.clashes.push({ fi, a: a.name + ' ' + a.args.slice(0, 5).join(','), b: b.name + ' ' + b.args.slice(0, 5).join(','), ox: Math.round(ox), oy: Math.round(oy) });
@@ -219,7 +242,7 @@ window.HouseAudit = (function () {
         await fetch(opts.post + 'plan-f' + fi + '.png', { method: 'POST', body: url });
       }
     }
-    report.items = items.filter(i => i.fi >= 0).map(i => ({ fi: i.fi, name: i.name, args: i.args.slice(0, 7), box: [i.x0, i.x1, i.y0, i.y1].map(Math.round), z: [+(i.zr0).toFixed(2), +(i.zr1).toFixed(2)] }));
+    report.items = items.filter(i => i.fi >= 0).map(i => ({ fi: i.fi, name: i.name, args: i.args.slice(0, 9), box: [i.x0, i.x1, i.y0, i.y1].map(Math.round), z: [+(i.zr0).toFixed(2), +(i.zr1).toFixed(2)] }));
     if (opts.post) await fetch(opts.post + 'audit.json', { method: 'POST', body: JSON.stringify(report, null, 1) });
     return { counts: { clashes: report.clashes.length, intoWalls: report.intoWalls.length, doors: report.doors.length, unreachable: report.unreachable.length } };
   }

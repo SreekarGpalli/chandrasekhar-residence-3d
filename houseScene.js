@@ -3122,7 +3122,7 @@ window.HouseScene = (function () {
     privacyScreen(bag, wallX, doorY0, doorY1, fY) {
       // Door leaf is y doorY0..doorY1 on the wall at wallX.
       // Place a single E–W wing immediately north of the frame.
-      const y0 = doorY1 + 40;            // clear of door frame
+      const y0 = doorY1 + 66;            // clear of the walnut casing (architrave to doorY1 + 50)
       const y1 = y0 + 150;               // 150 mm thick solid wall
       const x0 = wallX + 10;             // leave the wall face clean
       const x1 = wallX + 1050;           // ~1.05 m into dining — enough to block view
@@ -4178,15 +4178,16 @@ window.HouseScene = (function () {
        faces, mitred square. `dir` is the way the wall runs ('x' or 'y'),
        w0..w1 its thickness, a0..a1 the opening along it, h its height (m).
        The build loop puts one on every interior door/opening. */
-    openingFrame(bag, dir, w0, w1, a0, a1, fY, h) {
-      const zt = fY + h, L = 18, A = 50, P = 15, M = 'walnutI';
+    openingFrame(bag, dir, w0, w1, a0, a1, fY, h, startA) {
+      // startA (m): side A rises off a worktop instead of the floor
+      const zt = fY + h, L = 18, A = 50, P = 15, M = 'walnutI', zA = fY + (startA || 0);
       const put = (s0, s1, d0, d1, z0, z1) =>
         dir === 'y' ? pb(bag, M, d0, d1, s0, s1, z0, z1) : pb(bag, M, s0, s1, d0, d1, z0, z1);
-      put(a0, a0 + L, w0, w1, fY, zt);                                // jamb linings
+      put(a0, a0 + L, w0, w1, zA, zt);                                // jamb linings
       put(a1 - L, a1, w0, w1, fY, zt);
       put(a0, a1, w0, w1, zt - L / 1000, zt);                         // soffit lining
       for (const [f0, f1] of [[w0 - P, w0], [w1, w1 + P]]) {          // architraves, both faces
-        put(a0 - A, a0 + L, f0, f1, fY, zt + A / 1000);
+        put(a0 - A, a0 + L, f0, f1, zA, zt + A / 1000);
         put(a1 - L, a1 + A, f0, f1, fY, zt + A / 1000);
         put(a0 - A, a1 + A, f0, f1, zt - L / 1000, zt + A / 1000);
       }
@@ -4197,8 +4198,8 @@ window.HouseScene = (function () {
       const lz = fY + 1.00;
       prb(bag, 'oakDark', faceX, faceX + 240, cy - 220, cy + 220, lz - 0.05, lz, 5);
       pb(bag, 'brassI', faceX + 236, faceX + 242, cy - 220, cy + 220, lz - 0.045, lz - 0.005);
-      bag.cyl('brassI', (faceX + 4) / 1000, lz + 0.30, -cy / 1000, 0.25, 0.008, 0, 0, Math.PI / 2);
-      bag.cyl('peetaRed', (faceX + 9) / 1000, lz + 0.30, -cy / 1000, 0.215, 0.004, 0, 0, Math.PI / 2);
+      bag.cyl('brassI', (faceX + 4) / 1000, lz + 0.30, -cy / 1000, 0.21, 0.008, 0, 0, Math.PI / 2);
+      bag.cyl('peetaRed', (faceX + 9) / 1000, lz + 0.30, -cy / 1000, 0.18, 0.004, 0, 0, Math.PI / 2);
       // the idol itself is a scanned model (placeInteriorModels: 'ganesha')
       bag.cyl('brassI', (faceX + 175) / 1000, lz + 0.012, -(cy - 165) / 1000, 0.03, 0.022);
       bag.cone('lamp', (faceX + 175) / 1000, lz + 0.04, -(cy - 165) / 1000, 0.009, 0.026);
@@ -4456,14 +4457,14 @@ window.HouseScene = (function () {
       { dir: 'x', b: [2216, 2331], a: [6752, 9487], ops: [{ c: 8120, w: 1500, sill: 900, h: 1400 }] }, // dining|utility north wall window
       { dir: 'y', b: [6752, 6870], a: [230, 2332], ops: [] },                           // mbath|utility
       { dir: 'y', b: [9371, 9487], a: [230, 2331], ops: [{ c: 1300, w: 800 }] },       // utility|kitchen door
-      { dir: 'y', b: [9371, 9487], a: [2331, 4027], ops: [{ c: 3514, w: 1026 }] },     // kitchen|dining
+      { dir: 'y', b: [9371, 9487], a: [2331, 4027], ops: [{ c: 3530, w: 960 }] },      // kitchen|dining (casing clears the fridge end at y 3000)
       { dir: 'x', b: [4027, 4142], a: [9371, 12420], ops: [] },                         // kitchen|office
       { dir: 'y', b: [9371, 9487], a: [4142, 8640], ops: [] }                           // hall/dining|office
     ],
     [ // FF
       { dir: 'y', b: [4805, 4920], a: [232, 4432], ops: [{ c: 3850, w: 1000 }] },      // master east
       { dir: 'x', b: [4432, 4547], a: [230, 3105], ops: [] },                           // master|mbath
-      { dir: 'x', b: [4432, 4547], a: [3216, 4805], ops: [{ c: 3750, w: 800 }] },      // master|walkin (door clear of the wardrobe front)
+      { dir: 'x', b: [4432, 4547], a: [3216, 4805], ops: [{ c: 3700, w: 800 }] },      // master|walkin (casing ends 4150, clear of the wardrobe front 4183)
       { dir: 'y', b: [3105, 3216], a: [4432, 6381], ops: [{ c: 5025, w: 850 }] },       // mbath|walkin (bath widened 400 into the walk-in)
       { dir: 'x', b: [6381, 6496], a: [230, 4805], ops: [] },                           // stair south
       { dir: 'y', b: [4805, 4920], a: [4432, 6496], ops: [] },                          // spine filler
@@ -4480,7 +4481,7 @@ window.HouseScene = (function () {
       // the east shell: utility | dining (slider), cbath | dining, wet kitchen |
       // kitchen (opening). The bands are only as deep as their fittings.
       { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 6830, w: 2400, sill: 0, h: 2400, noFrame: true }, { c: 10750, w: 900, sill: 0, h: 2400 }] },   // aluminium slider has its own frame
-      { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2961.5, w: 2569, sill: 0, h: 2400 }] },     // kitchen|dining: one opening over the breakfast counter + the way in (no pier)
+      { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2918.5, w: 2483, sill: 0, h: 2400, startA: 0.88 }] },     // kitchen|dining: one opening over the SW counter + the way in; casing clears the fridge handles (4221), south side rises off the worktop
       { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000, noFrame: true }] },   // hall|pooja (teak doorway of its own) (open view to the mandir, centred on the room)
       { dir: 'y', b: [10780, 10893], a: [6815, 8642], ops: [{ c: 7730, w: 1500 }] },   // hall|entrance
       { dir: 'x', b: [6700, 6815], a: [10893, 12421], ops: [] },                        // pooja|entrance
@@ -4489,7 +4490,7 @@ window.HouseScene = (function () {
     [ // SF
       { dir: 'y', b: [4805, 4920], a: [232, 4432], ops: [{ c: 3800, w: 1000 }] },      // master02 east
       { dir: 'x', b: [4432, 4547], a: [230, 3105], ops: [] },                           // master|mbath
-      { dir: 'x', b: [4432, 4547], a: [3216, 4805], ops: [{ c: 3750, w: 800 }] },      // master|walkin (door clear of the wardrobe front)
+      { dir: 'x', b: [4432, 4547], a: [3216, 4805], ops: [{ c: 3700, w: 800 }] },      // master|walkin (casing ends 4150, clear of the wardrobe front 4183)
       { dir: 'y', b: [3105, 3216], a: [4432, 6381], ops: [{ c: 5025, w: 850 }] },       // mbath|walkin (bath widened 400 into the walk-in)
       { dir: 'x', b: [6381, 6496], a: [230, 4805], ops: [] },                           // stair south
       { dir: 'y', b: [4805, 4920], a: [4432, 6496], ops: [] },                          // spine filler
@@ -7371,7 +7372,7 @@ window.HouseScene = (function () {
         // shell walls (mat), or openings with joinery of their own (noFrame)
         if (!w.mat) for (const o of w.ops) {
           if ((o.sill || 0) > 0 || o.noFrame) continue;
-          Fur.openingFrame(bag, w.dir, w.b[0], w.b[1], o.c - o.w / 2, o.c + o.w / 2, fY, (o.h || 2100) / 1000);
+          Fur.openingFrame(bag, w.dir, w.b[0], w.b[1], o.c - o.w / 2, o.c + o.w / 2, fY, (o.h || 2100) / 1000, o.startA);
         }
       }
 
@@ -7494,8 +7495,8 @@ window.HouseScene = (function () {
         Lum.pendant(9580, 1950, 1.60, 0.12);         // pair over the SW counter
         Lum.pendant(9580, 2430, 1.60, 0.12);
         Lum.downlight(11000, 150);
-        Lum.task(9500, 10290, 1075, 1380, 1.44);     // under the wall units (their soffit is at +1.45)
-        Lum.task(11210, 12090, 1075, 1380, 1.44);
+        Lum.task(9500, 10220, 1075, 1380, 1.44);     // under the wall units (their soffit is at +1.45)
+        Lum.task(11280, 12090, 1075, 1380, 1.44);
         Lum.task(10360, 12090, 4635, 4940, 1.44);
         Lum.task(12080, 12400, 140, 890, 1.38);      // wet kitchen uppers start at +1.40
 
@@ -7615,8 +7616,10 @@ window.HouseScene = (function () {
         Fur.chair(bag, 4000, 8040, fY, 'E');                             // ergonomic study chair facing East
         // Hall (Living room) furniture layout
         pb(bag, 'rug', 5400, 8800, 5800, 8400, fY + 0.012, fY + 0.018); // living rug under L-sofa set
-        Fur.sofa(bag, 4920, 5620, 6200, 8640, fY, 'W', false, true);             // L-sofa long side on West wall
-        Fur.sofa(bag, 5620, 7420, 7940, 8640, fY, 'N', true, false);             // L-sofa short side on North wall
+        // L-sofa stands 150 off the north wall so the window's curtains hang
+        // behind it instead of through its back
+        Fur.sofa(bag, 4920, 5620, 6200, 8490, fY, 'W', false, true);             // L-sofa long side on West wall
+        Fur.sofa(bag, 5620, 7420, 7790, 8490, fY, 'N', true, false);             // L-sofa short side, off the North wall
         Fur.chair(bag, 6000, 5800, fY, 'N');                        // side sofa chair 1 on South facing North
         Fur.chair(bag, 7000, 5800, fY, 'N');                        // side sofa chair 2 on South facing North
         Fur.table(bag, 5900, 7100, 6600, 7400, fY, 0.42);           // centered coffee table
@@ -7913,16 +7916,16 @@ window.HouseScene = (function () {
         const K = { s: 1077, sF: 1677, hob: 2100, sink: 3200 };   // worktop south edge / run front / appliance centres
 
         // Base counters
-        Fur.counterX(bag, 9486, 10300, K.s, K.sF, fY);              // SW south leg (to the opening)
+        Fur.counterX(bag, 9486, 10230, K.s, K.sF, fY);              // SW south leg (stops short of the opening's casing)
         Fur.counterX(bag, 9385, 10086, K.sF, 2700, fY);             // SW west leg: worktop lip lands on the wall's dining face (9371)
-        Fur.counterX(bag, 11200, 11800, K.s, K.sF, fY);             // SE south leg (from the opening)
+        Fur.counterX(bag, 11270, 11800, K.s, K.sF, fY);             // SE south leg (starts clear of the opening's casing)
         Fur.counterX(bag, 11800, 12408, K.s, 4933, fY, { cx: 12110, cy: K.sink, w: 420, d: 760 });   // east run, sink on the window
         Fur.counterX(bag, 10350, 11800, 4345, 4945, fY);            // north run (to fridge)
 
         // Base doors. Corner squares behind a crossing leg are blind.
-        Fur.kitBaseDoors(bag, 'N', K.sF, 10110, 10290, fY, null);   // SW: spice pull-out east of the corner
+        Fur.kitBaseDoors(bag, 'N', K.sF, 10100, 10222, fY, null);   // SW: spice pull-out east of the corner
         Fur.kitBaseDoors(bag, 'E', 10086, 1690, 2690, fY, null);    // SW west leg
-        Fur.kitBaseDoors(bag, 'N', K.sF, 11210, 11790, fY, null);   // SE south leg
+        Fur.kitBaseDoors(bag, 'N', K.sF, 11278, 11790, fY, null);   // SE south leg
         Fur.kitBaseDrawers(bag, 'W', 11800, 1690, 2510, fY);        // under the hob
         Fur.kitBaseDoors(bag, 'W', 11800, 2530, 2810, fY, null);
         Fur.kitBaseDoors(bag, 'W', 11800, 2830, 3570, fY, null);    // under the sink
@@ -7935,8 +7938,8 @@ window.HouseScene = (function () {
         Fur.rangeHood(bag, 12110, K.hob, fY);
 
         // Wall units (z 1.45..2.30, 320 deep)
-        Fur.kitWallRun(bag, 9486, 10300, 1065, 1385, fY, 'N', 2);   // over the SW leg
-        Fur.kitWallRun(bag, 11200, 12100, 1065, 1385, fY, 'N', 2);  // over the SE leg, into the corner
+        Fur.kitWallRun(bag, 9486, 10230, 1065, 1385, fY, 'N', 2);   // over the SW leg
+        Fur.kitWallRun(bag, 11270, 12100, 1065, 1385, fY, 'N', 2);  // over the SE leg, into the corner
         Fur.kitWallRun(bag, 12100, 12420, 3860, 4600, fY, 'W', 2);  // east wall, north of the window (stops at the north run's door line)
         Fur.kitWallRun(bag, 10350, 12100, 4625, 4945, fY, 'S', 4);  // north wall, into the corner
 
@@ -7947,10 +7950,10 @@ window.HouseScene = (function () {
         pb(bag, 'quartz', 12408, 12420, 2600, 3800, fY + 0.88, fY + 1.10);   // under the window sill
         pb(bag, 'quartz', 12408, 12420, 3800, 4933, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 10350, 11800, 4933, 4945, fY + 0.88, fY + 1.45);
-        pb(bag, 'quartz', 9486, 10300, 1065, 1077, fY + 0.88, fY + 1.45);
-        pb(bag, 'quartz', 11200, 11800, 1065, 1077, fY + 0.88, fY + 1.45);
+        pb(bag, 'quartz', 9486, 10230, 1065, 1077, fY + 0.88, fY + 1.45);
+        pb(bag, 'quartz', 11270, 11800, 1065, 1077, fY + 0.88, fY + 1.45);
         // The hatch, the 100 mm pier beside it and the doorway are one opening
-        // (y 1677..4246). The SW west leg stands in the old wall line and stops
+        // (y 1677..4160). The SW west leg stands in the old wall line and stops
         // on it: no overhang, no stools — its back is plastered and skirted
         // flush with the wall's dining face (x 9371), so from the dining it
         // reads as the wall dropping to worktop height.
@@ -8301,7 +8304,7 @@ window.HouseScene = (function () {
         { id: 'modern_arm_chair_01', fi: 1, x: 5433, y: 6080, rot: 90 },
         { id: 'modern_arm_chair_01', fi: 1, x: 8827, y: 6220, rot: 270 },
         { id: 'potted_plant_01', fi: 1, x: 5250, y: 8040, rot: 30 },
-        { id: 'potted_plant_02', fi: 1, x: 9700, y: 8060, rot: 200 },
+        { id: 'potted_plant_02', fi: 1, x: 9350, y: 8380, rot: 200 },   // out of the foyer opening's walking line
         { id: 'ceramic_vase_02', fi: 1, x: 7500, y: 6150, z: 0.40 },
         { id: 'wooden_bowl_01', fi: 1, x: 7300, y: 6430, z: 0.40 },
         // ---- FF dining / kitchen / foyer ----
