@@ -1365,6 +1365,11 @@ window.HouseScene = (function () {
         bag.step(mat, (aA + aB) / 2000, cyStep, -(b0 + b1) / 2000,
                  Math.abs(stepGo) / 1000, stepRise, (b1 - b0) / 1000, 0, ry, 0);
       }
+      if (opts.riser) {
+        // 10 mm riser facing on the step's leading face, under the nosing
+        const rf = aA;
+        slab(opts.riser, sign > 0 ? rf - 10 : rf, sign > 0 ? rf : rf + 10, top - stepRise, top - tt, 6);
+      }
       if (opts.tread) {
         // tile/timber going with a 12 mm nosing over the riser below
         const nLo = sign > 0 ? lo : lo - 12, nHi = sign > 0 ? hi + 12 : hi;
@@ -5960,7 +5965,7 @@ window.HouseScene = (function () {
     }
 
     // Interior stair finish kit (wood treads, soft risers, brass rail)
-    const STAIR_IN = { tread: 'oak', riser: 'white2' };
+    const STAIR_IN = { tread: FLOOR_TILE, riser: FLOOR_TILE };   // internal stair finish = the house floor tile
     const RAIL_IN = { post: 'charDark', spindle: 'steel', rail: 'brass' };
     // Exterior stair handrail — dark posts, stainless rail (matches balcony rails)
     const RAIL_OUT = { post: 'ms', spindle: 'ms', rail: 'steel' };
@@ -8066,8 +8071,8 @@ window.HouseScene = (function () {
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: 'oak' });
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), 'oak');
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE });
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE);
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95);
         // furniture
         westSuite(bag, fY);
@@ -8411,28 +8416,28 @@ window.HouseScene = (function () {
 
         // Internal stair: flight B FF→SF (from mid landing) + full SF→roof U-stair
         const midFF = landI(L.f1);
-        stairLanding(bag, 230, 1330, 6496, 8641, midFF, 'oak');
+        stairLanding(bag, 230, 1330, 6496, 8641, midFF, FLOOR_TILE);
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95);
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
-                    { tread: 'oak', foot: false });
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false });
         // tops at L.f1 + 20*RISE_I = L.f2
 
         // flight A' SF → mid landing toward roof
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: 'oak' });
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), 'oak');
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE);
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95);
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
-                    { tread: 'oak', foot: false });
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95);
 
-        /* Mumty arrival pad (void stays open for the climb). */
-        stairLanding(bag, 4630, 5600, 6496, 8641, L.roof);
-        pb(bag, 'terraceF', 4630, 5580, 6516, 8621, L.roof, L.roof + 0.02);
+        /* Mumty arrival pad (void stays open for the climb) — the stair's
+           own top landing, so the same tile as the flights. */
+        stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, FLOOR_TILE);
         westSuite(bag, fY);
         // --- east bath walls: large-format tile ---
         Fur.clad(bag, 'y', 4920, 'E', 233, 1758, fY, 2.40);          // east bath west
