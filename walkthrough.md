@@ -254,12 +254,172 @@ Implemented the owner's hand-drawn first-floor plan: the south side now properly
 
 ---
 
+## Phase 10 — Double-Height Void Geometry Reconfiguration (Completed)
+
+Reconfigured the duplex double-height void (gap in the First Floor ceiling / Second Floor slab) per owner instructions:
+1. **East Extension to North Window End**:
+   - The void previously ended at $x = 8241\text{ mm}$ (the west reveal of the North window at $c = 8760\text{ mm}$, $w = 1000\text{ mm}$).
+   - Extended the void eastward across the full window span to $x = 9260\text{ mm}$ (flush with the east reveal of the North window).
+   - This brings the North window directly into the double-height space, bathing the full two-storey volume in natural daylight.
+2. **South-to-North Dimension Reduction**:
+   - The void's southern edge was previously at $y = 6000\text{ mm}$.
+   - Shifted the south boundary northwards by $996\text{ mm}$ to $y = 6996\text{ mm}$, perfectly aligning with the centerline / midpoint of the downward flight (Flight A) of the internal staircase ($y = 6496\text{ mm}$ to $7496\text{ mm}$).
+   - The west edge remains unchanged at $x = 6020\text{ mm}$.
+   - The TV feature wall on the solid North wall ($x = 6020\text{ mm}$ to $8241\text{ mm}$) remains in place as requested.
+3. **Slabs, Tiles, Soffits & Railings**:
+   - Updated Second Floor base slabs (`buildFloor` fi=2), `drawSFSlab`, `drawSFTiles`, and `drawSFSoffit` to reflect the new void boundaries ($x = 6020\text{ mm}$ to $9260\text{ mm}$, $y = 6996\text{ mm}$ to $8641\text{ mm}$).
+   - The solid floor on the Second Floor now extends across $y = 6496\text{ mm}$ to $6996\text{ mm}$ east of the stairwell ($x = 4630\text{ mm}$ to $12421\text{ mm}$).
+   - Re-routed Second Floor safety railings to guard the new opening:
+     - West railing: $x = 6020\text{ mm}$, from $y = 6996\text{ mm}$ to $8641\text{ mm}$ ($h = 1.0\text{ m}$).
+     - South railing: $y = 6996\text{ mm}$, from $x = 6020\text{ mm}$ to $9260\text{ mm}$ ($h = 1.0\text{ m}$).
+     - East railing: $x = 9260\text{ mm}$, from $y = 6996\text{ mm}$ to $8641\text{ mm}$ ($h = 1.0\text{ m}$).
+   - Adjusted ceiling downlights on First Floor and Second Floor so no canisters hang in mid-air inside the void.
+   - Updated `ROOMS[2]` room polygons (`FAMILY ROOM`, `LOUNGE`, `GALLERY`) for seamless floor tiling and HUD tracking.
+
+---
+
+## Phase 11 — Tall Double-Height North Windows & Beam Band (Completed)
+
+Transformed the two stacked North windows east of the TV feature wall ($c = 8760\text{ mm}$, $w = 1000\text{ mm}$, span $8260\text{ mm}$ to $9260\text{ mm}$) into grand architectural double-height windows:
+1. **Tall Window Dimensions**:
+   - Both the First Floor window (`OPEN.f1.N`) and Second Floor window (`OPEN.f2.N`) were enlarged from standard bedroom windows ($\text{sill} = 900\text{ mm}, h = 1400\text{ mm}$) to expansive picture glazing with a low sill ($\text{sill} = 300\text{ mm}$) and soaring $2.5\text{ m}$ height ($h = 2500\text{ mm}$).
+   - Lower window spans $Z = 4.403\text{ m}$ to $6.903\text{ m}$ ($2.8\text{ m}$ above FF finished floor).
+   - Upper window spans $Z = 7.756\text{ m}$ to $10.256\text{ m}$ ($2.8\text{ m}$ above SF finished floor, reaching up under the roof beam).
+2. **Intermediate Structural Beam Band**:
+   - Preserved the structural floor beam and slab band spanning between the two storeys ($Z = 6.903\text{ m}$ to $7.756\text{ m}$, total height $853\text{ mm}$).
+   - This band incorporates the $403\text{ mm}$ beam drop below the Second Floor ceiling soffit, the $150\text{ mm}$ slab thickness, and the $300\text{ mm}$ Second Floor sill upstand.
+3. **Clean Architectural Glass View**:
+   - Removed gathered fabric curtains from this double-height window bay to keep the full $1.0\text{ m} \times 2.5\text{ m}$ glass panels completely open, maximizing natural daylight flooding the double-height void.
+
+---
+
+## Phase 12 — Ultra-Tight Spandrel Beam Gap & Architectural Blinds (Completed)
+
+Refined the double-height glazing and window treatments per owner feedback:
+1. **Ultra-Tight Structural Spandrel Beam Gap**:
+   - The user requested closing the vertical distance between the two stacked North windows east of the TV wall ($c = 8760\text{ mm}$, $w = 1000\text{ mm}$) to leave just the floor slab plus a minimal beam drop:
+     - **Lower Window (First Floor `OPEN.f1.N`)**: Lowered sill to $\text{sill} = 200\text{ mm}$ and raised height to $h = 2900\text{ mm}$. Window head now reaches $Z = 7.203\text{ m}$, leaving just a crisp $103\text{ mm}$ beam drop below the Second Floor slab soffit ($7.306\text{ m}$).
+     - **Upper Window (Second Floor `OPEN.f2.N`)**: Lowered sill to $\text{sill} = 100\text{ mm}$ (minimal floor curb) and adjusted height to $h = 2850\text{ mm}$ ($Z = 7.556\text{ m}$ to $10.406\text{ m}$).
+     - **Inter-Window Distance Reduced**: The gap between the upper window sill ($7.556\text{ m}$) and lower window head ($7.203\text{ m}$) is now just **$353\text{ mm}$** ($103\text{ mm}$ beam drop + $150\text{ mm}$ slab + $100\text{ mm}$ curb), down from $853\text{ mm}$ in Phase 11. The two storeys now read as a near-continuous architectural glass curtain wall.
+2. **Modern Architectural Roman/Venetian Blinds**:
+   - Replaced clumsy, crowded fabric curtains with a dedicated architectural blind system (`opt.blind = true` in `curtains()`):
+     - **Window West of TV Wall ($c = 5500\text{ mm}$)**: Removed the bulky fabric curtains that previously crowded the TV wall pilaster and covered 63% of the glass. Implemented a tailored Roman blind with a slim dark aluminum cassette (`aluDark`), brass trim inlay (`brassI`), accordion fold tiers, horizontal brass ribs, and bottom weighted hem bar. The blind is neatly inset within the window opening ($x = 5020\text{ mm}$ to $5980\text{ mm}$), preserving a generous $40\text{ mm}$ clear reveal to the TV feature wall pilaster ($x = 6020\text{ mm}$), while leaving the lower 75% of the glass unobstructed.
+     - **South-Facing Windows ($c = 3950\text{ mm}$, $c = 10000\text{ mm}$)**: Applied the matching architectural blind system to the First Floor Master Bedroom South window and Second Floor South windows, completely eliminating curtain overhang/bunching against bedside tables and corners.
+
+---
+
+## Phase 13 — TV Feature Wall Redesign: Light Travertine, Oak Fluted Dividers & Floating Console (Completed)
+
+Redesigned the double-height TV unit feature wall ($x = 6020\text{ mm}$ to $8241\text{ mm}$, total height $6.556\text{ m}$) to harmonize with the newly extended double-height void and soaring North picture glazing:
+
+1. **Code Backup**:
+   - The original navy blue classical coffered media wall code was safely archived to [archive/tvFeatureWall_navy_backup.js](./archive/tvFeatureWall_navy_backup.js) for full preservation.
+2. **Vertical Visual Dividers (Non-Protruding)**:
+   - Added two dedicated vertical visual dividers on the TV wall plane, each $240\text{ mm}$ wide, running floor-to-ceiling from First Floor level up through the void to the Second Floor soffit ($Z = 0$ to $6.556\text{ m}$):
+     - **West Divider ($u = 0\dots240\text{ mm}$)**: Separates the small North window ($c = 5500\text{ mm}$) from the TV area.
+     - **East Divider ($u = 1981\dots2221\text{ mm}$)**: Separates the TV area from the tall double-height picture window ($c = 8760\text{ mm}$).
+     - Built with warm natural light oak vertical fluted slats ($16\text{ mm}$ slat width, $10\text{ mm}$ depth, $14\text{ mm}$ spacing) mounted over a smoked oak backing.
+     - Framed along the inner edge with continuous, full-height satin brass reveal lines (`brassI`) and recessed shadow reveals.
+     - Sits completely flat on the wall plane (only $12\text{ mm}$ proud of the field), creating a powerful vertical gesture without protruding into the room.
+3. **Serene Light Palette & Central Field**:
+   - Replaced the dark navy coffered grid with a budget-friendly, contemporary light palette:
+     - **Lower Field ($Z = 0.06\text{ m}\dots3.353\text{ m}$)**: Warm honed cream travertine stone field (`travertine`) with delicate horizontal satin brass inlays (`brassI`) dividing the stone courses.
+     - **Upper Void Field ($Z = 3.353\text{ m}\dots6.556\text{ m}$)**: Warm-white matte lacquer acoustic panels (`lacq`) with refined vertical brass reveal seams, reflecting natural daylight from the adjacent tall window.
+     - **Plinth & Crown Reveals**: Recessed dark bronze negative shadow plinth ($60\text{ mm}$) and top soffit shadow reveal (`aluDark`).
+4. **TV & Floating Media Console**:
+   - 55" OLED TV centered at $Z = 1.27\text{ m}$ AFF with ultra-slim flush bracket.
+   - Minimalist floating console ($1650\text{ mm}$ wide, $320\text{ mm}$ deep, $300\text{ mm}$ high, floating $300\text{ mm}$ AFF):
+     - Warm natural oak carcass with softened corners.
+     - Honed travertine top surface plate with bevel.
+     - Three seamless push-latch doors: center door in micro-fluted oak, side doors in warm-white matte lacquer.
+     - Satin brass lip trim and warm 2700K indirect LED under-glow (`coveLED`) washing the floor tiles below.
+     - Minimalist accessories: compact soundbar, trio of design books, travertine tray, and polished brass sphere.
+
+---
+
+## Phase 14 — TV Feature Wall Redesign: Single South Fluted Border & Seamless North Glazing Transition (Completed)
+
+Refined the TV feature wall design per user feedback: the vertical visual divider was updated to be present **strictly on the South flank** (left/small window side), with **no border on the North flank** (right/tall picture window side), allowing an unobstructed, seamless transition into the double-height picture window:
+
+1. **South Flank Vertical Fluted Divider ($u = 0\dots260\text{ mm}$)**:
+   - Dedicated full-height visual divider column ($260\text{ mm}$ wide) running floor-to-ceiling from First Floor level up to the Second Floor soffit ($Z = 0$ to $6.556\text{ m}$).
+   - Separates the small North window ($c = 5500\text{ mm}$, with Roman blind) and stair approach from the TV area.
+   - Built with 7 precision-fluted natural light oak slats ($18\text{ mm}$ wide, $10\text{ mm}$ deep, $14\text{ mm}$ spacing) over a smoked dark oak backing (`oakDark`).
+   - Inner edge features a concealed vertical linear warm LED wash strip (`coveLED`), continuous satin brass channel (`brassI`), and recessed shadow reveal (`charDark`).
+   - Flat, non-protruding profile ($12\text{ mm}$ depth within the wall finish plane).
+2. **North Flank Seamless Transition ($u = 264\dots2221\text{ mm}$)**:
+   - Completely eliminated the right-side border to prevent visual clutter and clashing against the tall window casing.
+   - The honed cream travertine slab field ($Z = 0.06\text{ m}\dots3.353\text{ m}$) and upper warm-white matte lacquer acoustic panels ($Z = 3.353\text{ m}\dots6.556\text{ m}$) extend continuously and cleanly all the way to the window reveal edge ($x = 8241\text{ mm}$).
+   - Finished along the window jamb with a crisp architectural satin brass knife-edge bead (`brassI`, $4\text{ mm}$) and negative shadow reveal, creating a seamless connection to the natural daylight of the double-height picture window.
+3. **Travertine Field & Bookmatch Paneling**:
+   - 3-panel bookmatch rhythm with delicate vertical shadow reveals.
+   - Horizontal satin brass T-bar inlays at $Z = 680\text{ mm}$ (above console), $Z = 1720\text{ mm}$ (above TV), and $Z = 3353\text{ mm}$ (Second Floor datum band).
+4. **TV & Floating Media Console Alignment**:
+   - TV and console are perfectly centered on the travertine stone field ($u_C = 1240.5\text{ mm}$, $x = 7260.5\text{ mm}$), creating exact equal margins ($366.5\text{ mm}$) on both sides of the 55" OLED screen.
+   - Floating media console ($1760\text{ mm}$ wide, $320\text{ mm}$ deep, $280\text{ mm}$ box height, floating $300\text{ mm}$ AFF):
+     - Balanced $76.5\text{ mm}$ floating reveals on both ends.
+     - Chamfered honed travertine top slab plate matching the wall.
+     - Asymmetric three-door front: South door in fluted natural oak (echoing the south vertical wall column), center and right doors in warm-white matte lacquer (`lacq`).
+     - Concealed 2700K warm LED under-glow (`coveLED`) casting a soft wash across the floor tiles.
+     - Styling: Central soundbar, design books on the south side, and a sculptural travertine tray with polished brass sphere and ceramic bud vase on the north side.
+
+---
+
+## Phase 15 — Double-Height Void Chandelier Redesign: Satin Brass & Frosted Opal Glass Cascade (Completed)
+
+Re-engineered the double-height void chandelier to match the enlarged double-height void geometry ($X = 6020\dots9260\text{ mm}$, $Y = 6996\dots8641\text{ mm}$) and the residence's refined warm contemporary aesthetic:
+
+1. **Centering & Void Spatial Alignment**:
+   - The old chandelier cluster was positioned at $(7125, 7325)$, causing it to sit over $500\text{ mm}$ off-center to the west and only $329\text{ mm}$ from the south bridge railing, with south drops clipping inside the Second Floor slab edge ($y \le 6996$).
+   - Relocated the fixture canopy to the exact bilateral geometric center of the void: **$X_c = 7640\text{ mm}$, $Y_c = 7818\text{ mm}$**.
+   - Clearances are now perfectly balanced: $823\text{ mm}$ to the North TV wall, $822\text{ mm}$ to the South bridge railing, $1620\text{ mm}$ to the West railing, and $1620\text{ mm}$ to the East family room edge.
+2. **Ceiling Canopy**:
+   - Upgraded from a tiny round disc to an elongated stadium-profile brushed satin brass plate ($960\text{ mm} \times 640\text{ mm}$, `brassI`) with a recessed dark bronze shadow plinth (`charDark`) mounted flush at the roof soffit (`VOID_TOP = 6.556\text{ m}` AFF).
+   - Features turned brass strain-relief escutcheons for all 7 suspension cables.
+3. **Sculptural Pendant Design**:
+   - Replaced the blunt, flat grey cylinders with 7 bespoke hand-blown frosted opal glass globes (`curtain`).
+   - Each pendant features:
+     - High-tensile braided stainless steel suspension micro-cable (`steel`).
+     - Stepped cylindrical socket finial and gallery collar in satin brass (`brassI`).
+     - Internal warm 2700K radiant LED core (`lamp`) providing glare-free ambient illumination.
+     - Horizontal satin brass equatorial accent band (`brassI`) matching the TV wall brass inlays.
+     - Turned brass lower finial pin.
+4. **Calibrated 7-Drop Vertical Cascade**:
+   - Drops span a smooth $2.0\text{ m}$ vertical cascade from First Floor living volume through Second Floor gallery eye level:
+     - **Anchor Core** (drop $3.35\text{ m} \to Z = 3.21\text{ m}$ AFF): transitions between storeys at slab level.
+     - **Lower Drops** (drop $3.60\text{ m}\dots3.95\text{ m} \to Z = 2.61\text{ m}\dots2.96\text{ m}$ AFF): float gracefully above the living room seating area, providing intimate ambient warmth well clear of head height ($2.1\text{ m}$) and TV sightlines ($1.61\text{ m}$).
+     - **Mid Drops** (drop $2.70\text{ m}\dots3.10\text{ m} \to Z = 3.46\text{ m}\dots3.86\text{ m}$ AFF): connect the vertical void.
+     - **Upper Drops** (drop $1.95\text{ m}\dots2.30\text{ m} \to Z = 4.26\text{ m}\dots4.61\text{ m}$ AFF): sit directly at eye level ($4.55\text{ m}$) for occupants walking across the Second Floor bridge walkway.
+
+---
+
+## Phase 16 — Double-Height Void Chandelier: Architectural Floating Halo Rings (Completed)
+
+Re-engineered the double-height void chandelier from the ground up based on the user's selected preference for a clean, open, high-end architectural fixture:
+
+1. **Floating Halo Rings Concept**:
+   - Replaced the dangling globe cluster with an architectural **Floating Halo Rings Chandelier** (Flos / Henge / Moooi inspired).
+   - Three concentric, slender satin brass circular rings suspended at dynamic subtle inclinations on fine aircraft cables.
+   - **Completely Open Center**: Unobstructed sightlines through the ring centers directly to the honed travertine feature wall, fluted oak column, and double-height picture window.
+2. **Three Concentric Halo Rings Geometry**:
+   - **Upper Ring** ($1100\text{ mm}$ dia, $R = 550\text{ mm}$, $Z \approx 4.10\text{ m}$ AFF, drop $2.45\text{ m}$): Greets Second Floor gallery occupants at eye level, subtly tilted ($+7^\circ$) towards the tall window.
+   - **Middle Ring** ($800\text{ mm}$ dia, $R = 400\text{ mm}$, $Z \approx 3.35\text{ m}$ AFF, drop $3.20\text{ m}$): Bridges between storeys right at the Second Floor floor line, counter-tilted ($-8^\circ$) for dynamic architectural balance.
+   - **Lower Ring** ($520\text{ mm}$ dia, $R = 260\text{ mm}$, $Z \approx 2.65\text{ m}$ AFF, drop $3.90\text{ m}$): Floats in the upper First Floor living lounge volume, safely clear of head height ($2.1\text{ m}$) and TV sightlines ($1.61\text{ m}$).
+3. **Lighting & Material Detailing**:
+   - **Casing**: Slender precision-formed satin brass circular profile (`brassI`, $18\text{ mm}$ cross-section).
+   - **Integrated Halo Diffuser**: Continuous dual-layer warm 2700K LED channel (`coveLED` + `lamp`) inset along the underside of each ring, casting a seamless 360-degree ambient halo.
+   - **Suspension**: 3 micro-cables per ring ($9$ total) in high-tensile braided steel (`steel`, $1.4\text{ mm}$) with turned satin brass mounting couplers on the rings and brass escutcheons at the ceiling canopy.
+   - **Ceiling Canopy**: Circular satin brass architectural canopy plate ($680\text{ mm}$ dia, `brassI`) with a recessed graphite shadow reveal (`charDark`) flush at the roof soffit (`VOID_TOP = 6.556\text{ m}` AFF).
+
+---
+
 ## Verification & Testing
 
 - **Syntax & Compilation**: Verified [houseScene.js](./houseScene.js) with Node.js script execution — 0 errors.
-- **Interactive Viewers**:
-  - Orbit Viewer ([index.html](./index.html)): All layers render cleanly; south balcony overhangs and raised east balcony decks align perfectly.
-  - Walkthrough ([walkthrough.html](./walkthrough.html)): First-person walking controller navigates transition steps onto the raised East balcony and through doors out to the south service balcony.
-
-
+- **Visual Validation via Browser Subagent**:
+   - Verified in 3D walkthrough at `http://localhost:8080/walkthrough.html`:
+     - First Floor living room view: Slender golden halo rings float weightlessly in the void volume; open centers allow the travertine wall and double-height picture window to shine through with zero clutter.
+     - Direct upward view: Centered concentric geometry and warm 360° halo illumination verified.
+     - Second Floor bridge view: Upper halo ring hovers just below the handrail line, providing an extraordinary architectural vista looking down into the living hall.
+     - Stair/dining approach: Clean, open, airy sightlines confirmed.
 
