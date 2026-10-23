@@ -1844,9 +1844,10 @@ window.DESIGNS = {
         else {
           /* Linear RGB, dark blue-green. The albedo is lit like paint (sun x pi,
              plus IBL), so a pale one - the old 0xc2d8e2 - laid a white film over
-             the room and the panes read as frosted. A dark tint at low opacity
-             reads as clear, slightly green float glass. */
-          m.color.setRGB(0.07, 0.15, 0.17); m.opacity = 0.22; m.envMapIntensity = 1.0;
+             the room and the panes read as frosted. A dark tint at ~40 % opacity
+             reads as blue-green float glass: the room shows through, but it is
+             clearly glazing and not an open hole. */
+          m.color.setRGB(0.10, 0.20, 0.24); m.opacity = 0.42; m.envMapIntensity = 1.2;
         }
       } else if (key === 'lamp' || key === 'downlight') {
         if (m.emissive) m.emissive.setHex(0xffdcae);

@@ -453,5 +453,5 @@ Replaced all Stainless Steel (SS) and chrome railings with Black Mild Steel (MS)
 
 4. **Clear Glazing + Horizontal Window Grilles**:
    - The EPDM gasket was a solid black slab the size of each pane, which boxed the glass in and made every window opaque. It is now a thin 8 mm bead round the glass edge (windows, French doors, sliders, stair-landing ribbon).
-   - Glass is a dark blue-green tint (linear `0.07, 0.15, 0.17`, opacity `0.22`). A pale glass albedo is lit like paint and frosts the pane, so the tint is deliberately dark.
-   - Every openable shell window gets a minimalist grill (`windowGrille()`): black MS $16\text{ mm}$ square horizontal bars at $\sim 150\text{ mm}$ pitch in a $24\text{ mm}$ flat frame, with thin vertical back stays on spans of $1100\text{ mm}$ or more, grouted into the reveal ahead of the UPVC frame. Fixed lights are left bare; `grille: false` opts a window out.
+   - Glass is a dark blue-green tint (linear `0.10, 0.20, 0.24`, opacity `0.42`). A pale glass albedo is lit like paint and frosts the pane, so the tint is deliberately dark.
+   - Every openable shell window gets a minimalist grill (`windowGrille()`): black MS $16\text{ mm}$ square horizontal bars at $\sim 150\text{ mm}$ pitch in a $24\text{ mm}$ flat frame, with thin vertical back stays on spans of $1100\text{ mm}$ or more, fixed on the room side of the window, grouted into the reveal behind the glass as is usual in Indian houses. Fixed lights are left bare; `grille: false` opts a window out.

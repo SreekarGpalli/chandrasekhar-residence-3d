@@ -104,7 +104,7 @@ window.HouseScene = (function () {
     charDark:0x8f8e8b,  // SOFT — slightly deeper cool gray, fascias / soffits
     plinth:  0xb7ae9d,  // SOFT — plinth course
     frame:   0x8e6035,  // Golden Oak / Teak Wood-Laminate UPVC window frames
-    glass:   0x4d6e73,  // clear glazing, faint blue-green absorption. Dark on purpose: a glass albedo is lit like paint, and a pale one adds a white film over the room behind
+    glass:   0x5a7c88,  // blue-green float glass. Dark on purpose: a glass albedo is lit like paint, and a pale one adds a white film over the room behind
     walnut:  0x9c7748,  // warm timber doors
     ms:      0x212224,  // railing bars & security grilles — black Mild Steel (MS)
     brass:   0xc0a06a,  // LINE
@@ -230,7 +230,7 @@ window.HouseScene = (function () {
       if (k === 'glass' || k === 'carGlass' || k === 'lamp') continue;
       mk(k, C[k]);
     }
-    mk('glass', C.glass, { roughness: 0.06, metalness: 0.05, transparent: true, opacity: 0.22, depthWrite: false });
+    mk('glass', C.glass, { roughness: 0.06, metalness: 0.05, transparent: true, opacity: 0.42, depthWrite: false });
     mk('carGlass', 0x1d2429, { roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.85 });
     // Color = C.lamp so walkthrough hex→name resolves 'lamp' for night boost
     mk('lamp', C.lamp, { emissive: srgb(C.lamp), emissiveIntensity: 2.4, roughness: 0.55 });
@@ -888,16 +888,18 @@ window.HouseScene = (function () {
 
   /* Indian-style window grille, minimal: a slim black-MS flat frame with
      horizontal 16 mm square bars at ~150 mm pitch (clear gap under 135 mm, so
-     child-safe) and thin vertical back stays on wide spans. It is grouted into
-     the reveal, 30-56 mm back from the outer face and clear of the UPVC frame
-     (which ends 77 mm back); `back` pushes it further in where a frame stands
-     proud. The frame runs 30 mm into the wall on every side so no end face is
-     exposed. `put` is the orientation-aware box placer, `edge` the outer wall
-     face in mm, `outSign` the direction that face looks. */
+     child-safe) and thin vertical stays on wide spans. It goes on the ROOM side
+     of the window, as it does in Indian houses: out of the weather, behind the
+     glass, grouted into the reveal 26-54 mm back from the room face and clear
+     of the UPVC frame (which starts 63 mm back). Curtains and blinds hang in
+     the room from that face, so they never meet it. The frame runs 30 mm into
+     the wall on every side so no end face is exposed. `put` is the
+     orientation-aware box placer, `edge` the ROOM face of the wall in mm,
+     `outSign` the direction the window looks out. */
   function windowGrille(put, g) {
-    const { a0, a1, b, t, edge, outSign } = g, back = g.back || 0;
-    const dp = (n0, n1) => outSign > 0 ? [edge - back - n1, edge - back - n0] : [edge + back + n0, edge + back + n1];
-    const fr = dp(30, 56), br = dp(36, 52), st = dp(46, 58);
+    const { a0, a1, b, t, edge, outSign } = g;
+    const dp = (n0, n1) => outSign > 0 ? [edge + n0, edge + n1] : [edge - n1, edge - n0];
+    const fr = dp(26, 52), br = dp(32, 48), st = dp(42, 54);
     const GF = 24, BAR = 16, STAY = 16;        // frame flat / square bar / back stay (mm)
     const gz0 = b + GF / 1000, gz1 = t - GF / 1000;
     put('ms', a0 - 30, a0 + GF, fr[0], fr[1], b - 0.03, t + 0.03);
@@ -1184,7 +1186,7 @@ window.HouseScene = (function () {
       }
 
       if (spec.type !== 'fixed' && spec.grille !== false) {
-        windowGrille(put, { a0, a1, b, t, edge: outSign > 0 ? bb1 : bb0, outSign });
+        windowGrille(put, { a0, a1, b, t, edge: outSign > 0 ? bb0 : bb1, outSign });
       }
     }
     if (spec.chajja) {
@@ -6331,9 +6333,9 @@ window.HouseScene = (function () {
       // One thin pane in the frame's rebate. It was a 247 mm glass block over a
       // solid black slab, which turned the whole ribbon into an opaque bar.
       pb(bag, 'glass', 16550, 16564, a0, a1, z0, z1);
-      // Grille grouted into the reveal behind the frame (85 mm back from the face)
+      // Grille on the stairwell side of the wall (x 16300 is its room face)
       windowGrille((mat, aa0, aa1, d0, d1, hh0, hh1) => pb(bag, mat, d0, d1, aa0, aa1, hh0, hh1),
-                   { a0, a1, b: z0, t: z1, edge: 16600, outSign: 1, back: 60 });
+                   { a0, a1, b: z0, t: z1, edge: 16300, outSign: 1 });
       pb(bag, 'stone', 16505, 16628, f0 - 8, f1 + 8, hz0 - 0.028, hz0);
       // Drip edge below the stone sill — keeps water off the soffit
       pb(bag, 'charDark', 16510, 16622, f0 - 4, f1 + 4, hz0 - 0.038, hz0 - 0.028);

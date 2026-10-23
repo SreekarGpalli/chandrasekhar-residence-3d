@@ -1302,7 +1302,7 @@ if(!window.THREE || !window.HouseScene){
       m.roughness = 0.05; m.metalness = 0.0; m.envMapIntensity = 0.9;
       m.transparent = true; m.depthWrite = false;
       if (t.dark) { m.opacity = Math.max(m.opacity != null ? m.opacity : 0.85, 0.82); m.color.setHex(0x20262b); }
-      else { m.opacity = 0.22; m.color.setRGB(0.07, 0.15, 0.17); m.envMapIntensity = 1.0; }   // dark linear tint: a pale albedo is lit like paint and frosts the pane
+      else { m.opacity = 0.42; m.color.setRGB(0.10, 0.20, 0.24); m.envMapIntensity = 1.2; }   // dark linear tint: a pale albedo is lit like paint and frosts the pane
       m.needsUpdate = true; return;
     }
     if (t.emissive) {
