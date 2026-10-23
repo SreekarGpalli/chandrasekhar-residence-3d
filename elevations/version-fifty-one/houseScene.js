@@ -1342,8 +1342,8 @@ window.HouseScene = (function () {
         { c: 8000, w: 1200, sill: 0, h: 2400, type: 'door' }                // duplex entry (near north)
       ],
       N: [
-        { c: 5500, w: 1000, sill: 900, h: 1400, type: 'win' },                   // left of void
-        { c: 8760, w: 1000, sill: 900, h: 1400, type: 'win' },                   // right of void
+        { c: 5500, w: 1000, sill: 200, h: 2900, type: 'win' },                   // left of void
+        { c: 8760, w: 1000, sill: 200, h: 2900, type: 'win' }                    // right of void
       ],
       S: [
         // shell wall runs x 230..4805 only on FF (bedroom stretch): east of it the
@@ -1365,8 +1365,8 @@ window.HouseScene = (function () {
         { c: 7850, w: 900, sill: 0, h: 2100, type: 'door' }                   // family room → NE room (inside the room, not on the facade)
       ],
       N: [
-        { c: 5500, w: 1000, sill: 900, h: 1400, type: 'win' },                   // left of void
-        { c: 8760, w: 1000, sill: 900, h: 1400, type: 'win' }                    // right of void
+        { c: 5500, w: 1000, sill: 100, h: 2850, type: 'win' },                   // left of void
+        { c: 8760, w: 1000, sill: 100, h: 2850, type: 'win' }                    // right of void
       ],
       S: [
         { c: 2500, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true },
