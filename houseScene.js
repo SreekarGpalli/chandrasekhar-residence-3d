@@ -103,10 +103,10 @@ window.HouseScene = (function () {
     charcoal:0x9c9b98,  // SOFT — cool gray (not brown, not ink)
     charDark:0x8f8e8b,  // SOFT — slightly deeper cool gray, fascias / soffits
     plinth:  0xb7ae9d,  // SOFT — plinth course
-    frame:   0x585349,  // PUNCT — soft charcoal openings
-    glass:   0x8ea3af,  // light blue-grey glazing
+    frame:   0x8e6035,  // Golden Oak / Teak Wood-Laminate UPVC window frames
+    glass:   0x4d6e73,  // clear glazing, faint blue-green absorption. Dark on purpose: a glass albedo is lit like paint, and a pale one adds a white film over the room behind
     walnut:  0x9c7748,  // warm timber doors
-    ms:      0x8a8986,  // railing bars — cool grey line
+    ms:      0x212224,  // railing bars & security grilles — black Mild Steel (MS)
     brass:   0xc0a06a,  // LINE
     steel:   0xd2d6da,  // brushed stainless
     paver:   0x878178,  // driveway
@@ -230,7 +230,7 @@ window.HouseScene = (function () {
       if (k === 'glass' || k === 'carGlass' || k === 'lamp') continue;
       mk(k, C[k]);
     }
-    mk('glass', C.glass, { roughness: 0.12, metalness: 0.15, transparent: true, opacity: 0.42, depthWrite: false });
+    mk('glass', C.glass, { roughness: 0.06, metalness: 0.05, transparent: true, opacity: 0.22, depthWrite: false });
     mk('carGlass', 0x1d2429, { roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.85 });
     // Color = C.lamp so walkthrough hex→name resolves 'lamp' for night boost
     mk('lamp', C.lamp, { emissive: srgb(C.lamp), emissiveIntensity: 2.4, roughness: 0.55 });
@@ -344,10 +344,10 @@ window.HouseScene = (function () {
     })();
     M.charcoal.roughness = 0.93; M.charDark.roughness = 0.86; M.charDark.metalness = 0.0;
     M.plinth.roughness = 0.82; M.concrete.roughness = 0.92;
-    M.ms.roughness = 0.45; M.ms.metalness = 0.45;
+    M.ms.roughness = 0.52; M.ms.metalness = 0.25; // Black MS powder-coated/painted satin finish
     M.steel.roughness = 0.3; M.steel.metalness = 0.8;
     M.brass.roughness = 0.34; M.brass.metalness = 0.72;
-    M.frame.roughness = 0.5; M.frame.metalness = 0.35;
+    M.frame.roughness = 0.40; M.frame.metalness = 0.02; // UPVC polymer woodgrain laminate (non-metallic)
     M.accentWarm.roughness = 0.72; M.accentWarm.metalness = 0.2;
     M.copingLight.roughness = 0.75;
     M.balcTile.roughness = 0.5; M.terraceF.roughness = 0.5;
@@ -886,6 +886,36 @@ window.HouseScene = (function () {
     }
   }
 
+  /* Indian-style window grille, minimal: a slim black-MS flat frame with
+     horizontal 16 mm square bars at ~150 mm pitch (clear gap under 135 mm, so
+     child-safe) and thin vertical back stays on wide spans. It is grouted into
+     the reveal, 30-56 mm back from the outer face and clear of the UPVC frame
+     (which ends 77 mm back); `back` pushes it further in where a frame stands
+     proud. The frame runs 30 mm into the wall on every side so no end face is
+     exposed. `put` is the orientation-aware box placer, `edge` the outer wall
+     face in mm, `outSign` the direction that face looks. */
+  function windowGrille(put, g) {
+    const { a0, a1, b, t, edge, outSign } = g, back = g.back || 0;
+    const dp = (n0, n1) => outSign > 0 ? [edge - back - n1, edge - back - n0] : [edge + back + n0, edge + back + n1];
+    const fr = dp(30, 56), br = dp(36, 52), st = dp(46, 58);
+    const GF = 24, BAR = 16, STAY = 16;        // frame flat / square bar / back stay (mm)
+    const gz0 = b + GF / 1000, gz1 = t - GF / 1000;
+    put('ms', a0 - 30, a0 + GF, fr[0], fr[1], b - 0.03, t + 0.03);
+    put('ms', a1 - GF, a1 + 30, fr[0], fr[1], b - 0.03, t + 0.03);
+    put('ms', a0 + GF, a1 - GF, fr[0], fr[1], b - 0.03, gz0);
+    put('ms', a0 + GF, a1 - GF, fr[0], fr[1], gz1, t + 0.03);
+    const span = gz1 - gz0, gaps = Math.max(2, Math.round(span / 0.15));
+    for (let i = 1; i < gaps; i++) {
+      const zc = gz0 + span * i / gaps;
+      put('ms', a0 + GF - 2, a1 - GF + 2, br[0], br[1], zc - BAR / 2000, zc + BAR / 2000);
+    }
+    const wmm = a1 - a0, stays = wmm >= 1100 ? Math.max(1, Math.round(wmm / 750) - 1) : 0;
+    for (let k = 1; k <= stays; k++) {
+      const sx = a0 + wmm * k / (stays + 1);
+      put('ms', sx - STAY / 2, sx + STAY / 2, st[0], st[1], gz0 - 0.002, gz1 + 0.002);
+    }
+  }
+
   /* ---------------- glazing / doors (exterior shell) ---------------- */
   /* face: 'E','W','N','S'; band=[b0,b1] wall thickness in mm */
   function glazing(bag, spec) {
@@ -900,6 +930,17 @@ window.HouseScene = (function () {
     };
     const F = 62, gd0 = mid - 26, gd1 = mid - 10; // glass band
     const fd0 = mid - 52, fd1 = mid + 38;          // frame band
+    /* EPDM gasket = a thin black bead round the glass EDGE. It was a solid slab
+       the size of the pane, which boxed the glass in black and made every window
+       opaque. The strips overlap the pane edge by a few mm so no seam shows. */
+    const bead = (aa0, aa1, hh0, hh1, d0, d1, bw) => {
+      bw = bw || 8;
+      if (aa1 - aa0 < 2 * bw + 4 || hh1 - hh0 < (2 * bw + 4) / 1000) return;
+      put('ms', aa0, aa0 + bw, d0, d1, hh0, hh1);
+      put('ms', aa1 - bw, aa1, d0, d1, hh0, hh1);
+      put('ms', aa0 + bw, aa1 - bw, d0, d1, hh0, hh0 + bw / 1000);
+      put('ms', aa0 + bw, aa1 - bw, d0, d1, hh1 - bw / 1000, hh1);
+    };
 
     if (spec.type === 'door') { // walnut pivot door
       put('frame', a0, a0 + 55, fd0, fd1, b, t);
@@ -947,6 +988,9 @@ window.HouseScene = (function () {
         const l0 = inner0 + i * leafW + (i === 0 ? 0 : 26);
         const l1 = inner0 + (i + 1) * leafW - (i === nLeaf - 1 ? 0 : 26);
         put('frame', l0, l1, mid - 10, mid + 10, lockZ - 0.016, lockZ + 0.016);
+        // Black EPDM rubber weather gasket bordering UPVC door glass
+        bead(l0 + 2, l1 - 2, b + 0.052, lockZ - 0.016, gd0 - 3, gd1 + 3);
+        bead(l0 + 2, l1 - 2, lockZ + 0.016, t - 0.052, gd0 - 3, gd1 + 3);
         put('glass', l0 + 6, l1 - 6, gd0, gd1, b + 0.055, lockZ - 0.018);
         put('glass', l0 + 6, l1 - 6, gd0, gd1, lockZ + 0.018, t - 0.055);
       }
@@ -960,18 +1004,18 @@ window.HouseScene = (function () {
     } else if (spec.type === 'grill' || spec.type === 'railing') {
       if (spec.door) {
         // Proper mild-steel security grille door: framed leaf with stiles,
-        // rails, a solid kick panel, a bar grid and a lever/lock set
+        // rails, a solid kick panel, a bar grid and a lever/lock set in black MS
         const fD0 = mid - 30, fD1 = mid + 30;   // frame depth band (mm)
         const gD0 = mid - 12, gD1 = mid + 12;   // grille-bar depth band (mm)
         const i0 = a0 + 55, i1 = a1 - 55;       // leaf clear span
         // Perimeter leaf frame: hinge stile, lock stile, head + sill rails
-        put('steel', a0, a0 + 55, fD0, fD1, b, t);
-        put('steel', a1 - 55, a1, fD0, fD1, b, t);
-        put('steel', a0, a1, fD0, fD1, t - 0.055, t);
-        put('steel', a0, a1, fD0, fD1, b, b + 0.055);
+        put('ms', a0, a0 + 55, fD0, fD1, b, t);
+        put('ms', a1 - 55, a1, fD0, fD1, b, t);
+        put('ms', a0, a1, fD0, fD1, t - 0.055, t);
+        put('ms', a0, a1, fD0, fD1, b, b + 0.055);
         // Mid (lock) rail
         const mR = b + 1.05;
-        put('steel', i0, i1, fD0, fD1, mR - 0.045, mR + 0.045);
+        put('ms', i0, i1, fD0, fD1, mR - 0.045, mR + 0.045);
         // Solid MS kick panel at the base (450 mm — harder to pry)
         put('ms', i0, i1, gD0 + 3, gD1 - 3, b + 0.055, b + 0.45);
         // Vertical grille bars over the glazed portion (100 mm pitch — thief-proof)
@@ -995,25 +1039,25 @@ window.HouseScene = (function () {
         put('ms', i0, i1, fD0, fD1, b + 0.75, b + 1.55);
         // Butt hinges on the hinge stile
         for (const hz of [b + 0.25, b + 1.20, t - 0.25]) {
-          put('steel', a0 + 8, a0 + 46, fD1, fD1 + 22, hz - 0.06, hz + 0.06);
+          put('ms', a0 + 8, a0 + 46, fD1, fD1 + 22, hz - 0.06, hz + 0.06);
         }
         // Lock housing + lever pulls on both faces of the lock stile
         const hx0 = i1 - 62, hx1 = i1 - 42;
-        put('steel', hx0 - 40, hx1, fD0 - 6, fD1 + 6, mR - 0.085, mR + 0.085);
-        put('chrome', hx0, hx1, fD1, fD1 + 45, b + 0.88, b + 1.22);
-        put('chrome', hx0, hx1, fD0 - 45, fD0, b + 0.88, b + 1.22);
-        put('steel', hx0, hx1, fD1, fD1 + 45, b + 0.90, b + 0.94);
-        put('steel', hx0, hx1, fD1, fD1 + 45, b + 1.16, b + 1.20);
-        put('steel', hx0, hx1, fD0 - 45, fD0, b + 0.90, b + 0.94);
-        put('steel', hx0, hx1, fD0 - 45, fD0, b + 1.16, b + 1.20);
+        put('ms', hx0 - 40, hx1, fD0 - 6, fD1 + 6, mR - 0.085, mR + 0.085);
+        put('ms', hx0, hx1, fD1, fD1 + 45, b + 0.88, b + 1.22);
+        put('ms', hx0, hx1, fD0 - 45, fD0, b + 0.88, b + 1.22);
+        put('ms', hx0, hx1, fD1, fD1 + 45, b + 0.90, b + 0.94);
+        put('ms', hx0, hx1, fD1, fD1 + 45, b + 1.16, b + 1.20);
+        put('ms', hx0, hx1, fD0 - 45, fD0, b + 0.90, b + 0.94);
+        put('ms', hx0, hx1, fD0 - 45, fD0, b + 1.16, b + 1.20);
         // Deadbolt above the lever lock — second locking point
-        put('steel', hx0 - 40, hx1, fD0 - 6, fD1 + 6, b + 1.35, b + 1.50);
+        put('ms', hx0 - 40, hx1, fD0 - 6, fD1 + 6, b + 1.35, b + 1.50);
         // Tower bolt at the door head (rod + slide bracket)
         put('ms', (i0 + i1) / 2 - 6, (i0 + i1) / 2 + 6, gD0, gD1, t - 0.20, t - 0.06);
-        put('steel', (i0 + i1) / 2 - 16, (i0 + i1) / 2 + 16, fD0 - 2, fD1 + 2, t - 0.12, t - 0.06);
+        put('ms', (i0 + i1) / 2 - 16, (i0 + i1) / 2 + 16, fD0 - 2, fD1 + 2, t - 0.12, t - 0.06);
         // Foot bolt at the threshold (rod into the floor)
         put('ms', (i0 + i1) / 2 - 6, (i0 + i1) / 2 + 6, gD0, gD1, b + 0.06, b + 0.16);
-        put('steel', (i0 + i1) / 2 - 16, (i0 + i1) / 2 + 16, fD0 - 2, fD1 + 2, b + 0.06, b + 0.11);
+        put('ms', (i0 + i1) / 2 - 16, (i0 + i1) / 2 + 16, fD0 - 2, fD1 + 2, b + 0.06, b + 0.11);
       } else {
         // Top rail (mild steel)
         put('ms', a0, a1, mid - 15, mid + 15, t - 0.045, t);
@@ -1027,8 +1071,8 @@ window.HouseScene = (function () {
           put('ms', a - 10, a + 10, mid - 10, mid + 10, b + 0.045, t - 0.045);
         }
       }
-    } else if (spec.type === 'slider') { // Sliding glass door system
-      // Outer frame
+    } else if (spec.type === 'slider') { // UPVC Sliding window & door system
+      // Multi-chamber UPVC outer frame
       put('frame', a0, a0 + 55, fd0, fd1, b, t);
       put('frame', a1 - 55, a1, fd0, fd1, b, t);
       put('frame', a0, a1, fd0, fd1, t - 0.055, t);
@@ -1038,19 +1082,21 @@ window.HouseScene = (function () {
       const pW = (a1 - a0) / panes; // panel width
       
       const drawPanel = (xStart, xEnd, trackZ, hasHandle, handleSide) => {
-        // Panel frame
+        // UPVC Panel sash frame (stepped profile)
         put('frame', xStart, xStart + 45, trackZ - 12, trackZ + 12, b + 0.02, t - 0.02);
         put('frame', xEnd - 45, xEnd, trackZ - 12, trackZ + 12, b + 0.02, t - 0.02);
         put('frame', xStart, xEnd, trackZ - 12, trackZ + 12, t - 0.065, t - 0.02);
         put('frame', xStart, xEnd, trackZ - 12, trackZ + 12, b + 0.02, b + 0.065);
+        // Black EPDM rubber weather gasket bordering glass
+        bead(xStart + 36, xEnd - 36, b + 0.056, t - 0.056, trackZ - 6, trackZ + 6);
         // Glass pane
         put('glass', xStart + 40, xEnd - 40, trackZ - 4, trackZ + 4, b + 0.06, t - 0.06);
         // Brass pull handle on both sides
         if (hasHandle) {
           const hX = handleSide === 'left' ? xStart + 60 : xEnd - 75;
-          // Inner handle (dining room side)
+          // Inner handle
           put('brass', hX, hX + 15, trackZ + 14, trackZ + 26, b + 0.95, b + 1.25);
-          // Outer handle (balcony side)
+          // Outer handle
           put('brass', hX, hX + 15, trackZ - 26, trackZ - 14, b + 0.95, b + 1.25);
           // Connector through glass/panel
           put('brass', hX + 4, hX + 11, trackZ - 14, trackZ + 14, b + 1.08, b + 1.12);
@@ -1079,22 +1125,66 @@ window.HouseScene = (function () {
         // Panel 4: right fixed (inner track)
         drawPanel(a0 + 3 * pW - 20, a1 - 15, mid - 20, false);
       }
-    } else { // window / glassdoor / fixed
+    } else { // Golden Oak UPVC window / glassdoor / fixed
+      // Master outer UPVC chamber frame
       put('frame', a0, a0 + F, fd0, fd1, b, t);
       put('frame', a1 - F, a1, fd0, fd1, b, t);
       put('frame', a0, a1, fd0, fd1, t - F / 1000, t);
       put('frame', a0, a1, fd0, fd1, b, b + F / 1000);
+
       const panes = spec.panes != null ? spec.panes : (spec.w >= 1050 ? 2 : 1);
-      if (panes === 2) put('frame', spec.c - 22, spec.c + 22, fd0 + 4, fd1 - 4, b + F / 1000, t - F / 1000);
-      if (panes === 3) {
-        put('frame', a0 + (a1 - a0) / 3 - 20, a0 + (a1 - a0) / 3 + 20, fd0 + 4, fd1 - 4, b + 0.06, t - 0.06);
-        put('frame', a1 - (a1 - a0) / 3 - 20, a1 - (a1 - a0) / 3 + 20, fd0 + 4, fd1 - 4, b + 0.06, t - 0.06);
+      const spanW = a1 - a0 - 2 * F;
+      const bayW = spanW / panes;
+      const mullW = 44; // UPVC T-mullion width
+      const sashW = 42; // UPVC operable sash profile width
+
+      // Intermediate UPVC T-mullions between bays
+      for (let i = 1; i < panes; i++) {
+        const mx = a0 + F + i * bayW;
+        put('frame', mx - mullW / 2, mx + mullW / 2, fd0 + 3, fd1 - 3, b + F / 1000, t - F / 1000);
       }
-      put('glass', a0 + 30, a1 - 30, gd0, gd1, b + 0.03, t - 0.03);
+
+      // Sashes, EPDM gaskets, glass & hardware for each bay
+      for (let i = 0; i < panes; i++) {
+        const p0 = a0 + F + i * bayW + (i === 0 ? 0 : mullW / 2);
+        const p1 = a0 + F + (i + 1) * bayW - (i === panes - 1 ? 0 : mullW / 2);
+        if (p1 - p0 < 40) continue;
+
+        // Inner UPVC sash profile (stepped 4mm proud of outer frame reveal)
+        put('frame', p0, p0 + sashW, fd0 + 6, fd1 - 6, b + (F + 4) / 1000, t - (F + 4) / 1000);
+        put('frame', p1 - sashW, p1, fd0 + 6, fd1 - 6, b + (F + 4) / 1000, t - (F + 4) / 1000);
+        put('frame', p0, p1, fd0 + 6, fd1 - 6, t - (F + 4 + sashW) / 1000, t - (F + 4) / 1000);
+        put('frame', p0, p1, fd0 + 6, fd1 - 6, b + (F + 4) / 1000, b + (F + 4 + sashW) / 1000);
+
+        // Black EPDM rubber weather gasket beading bordering glass
+        bead(p0 + sashW - 5, p1 - sashW + 5, b + (F + sashW) / 1000, t - (F + sashW) / 1000, gd0 - 4, gd1 + 4);
+
+        // Glass pane inside gasket
+        put('glass', p0 + sashW, p1 - sashW, gd0, gd1, b + (F + sashW + 4) / 1000, t - (F + sashW + 4) / 1000);
+
+        // UPVC casement handle on operable leaf (brass/gold finish against golden oak UPVC)
+        if (spec.type !== 'fixed' && spec.h >= 800) {
+          const isOperable = (panes === 1) || (panes === 2 && i === 1) || (panes === 3 && (i === 0 || i === 2));
+          if (isOperable) {
+            const hSideX = (i === 0 && panes > 1) ? p1 - sashW + 8 : p0 + sashW - 8;
+            const hY = b + (t - b) * 0.40;
+            // Escutcheon backplate
+            put('brass', hSideX - 8, hSideX + 8, fd1 - 8, fd1 + 4, hY - 0.045, hY + 0.045);
+            // Turned lever handle arm
+            put('brass', hSideX - 8, hSideX + 8, fd1 + 4, fd1 + 22, hY - 0.012, hY + 0.012);
+            put('brass', hSideX - 4, hSideX + 4, fd1 + 16, fd1 + 22, hY - 0.085, hY + 0.012);
+          }
+        }
+      }
+
       if ((spec.sill || 0) > 250 && spec.type !== 'fixed') { // sill ledge + warm nose
         const sb = outSign > 0 ? [bb1, bb1 + 55] : [bb0 - 55, bb0];
         put('charDark', a0 - 30, a1 + 30, sb[0], sb[1], b - 0.045, b);
         put('copingLight', a0 - 20, a1 + 20, sb[0], sb[1], b - 0.01, b + 0.008);
+      }
+
+      if (spec.type !== 'fixed' && spec.grille !== false) {
+        windowGrille(put, { a0, a1, b, t, edge: outSign > 0 ? bb1 : bb0, outSign });
       }
     }
     if (spec.chajja) {
@@ -1106,26 +1196,52 @@ window.HouseScene = (function () {
     }
   }
 
-  /* Refined balcony railing: dark MS uprights + stainless handrail + mid rail.
+  /* Contemporary Black Mild Steel (MS) Railing:
+     - Top handrail: 50x30 mm rectangular MS hollow section in black MS ('ms')
+     - Vertical pickets: 20x20 mm vertical square MS bars in black MS ('ms'), pitch ~110 mm
+     - Bottom runner: 30x12 mm horizontal MS flat bar at sit + 0.075 m
+     - Intermediate safety runner: 20x10 mm horizontal MS bar at sit + 0.48 m
+     - Base anchor studs: 36x36 mm MS mounting plates at structural baluster stanchions
+     Zero stainless steel (SS) or chrome.
      dir 'x' along x at y=fc, dir 'y' along y at x=fc */
-  function railing(bag, dir, fc, a0, a1, base, h) {
+  function railing(bag, dir, fc, a0, a1, base, h, opts) {
     h = h || 1.0;
+    opts = opts || {};
+    const topM = opts.topRail || 'ms';
     const sit = base + 0.012;
     const len = a1 - a0; if (len < 80) return;
-    const n = Math.max(2, Math.round(len / 118));
+    const n = Math.max(2, Math.round(len / 110));
+    const topH = 0.035; // 35 mm handrail height
+    const botH = 0.015; // 15 mm runner thickness
+    const botZ = sit + 0.075; // bottom runner elevated 75mm off deck for drainage/cleaning
+    const midZ = sit + 0.48;  // intermediate runner
+
+    // 1. Vertical 20x20mm MS square pickets
     for (let i = 0; i <= n; i++) {
       const a = a0 + (len * i) / n;
-      if (dir === 'x') pb(bag, 'steel', a - 9, a + 9, fc - 9, fc + 9, sit, sit + h - 0.04);
-      else pb(bag, 'steel', fc - 9, fc + 9, a - 9, a + 9, sit, sit + h - 0.04);
+      const isPost = (i === 0 || i === n || (i % 8 === 0));
+      const hw = isPost ? 12 : 10; // 24mm stanchion post vs 20mm baluster picket
+      if (dir === 'x') {
+        pb(bag, 'ms', a - hw, a + hw, fc - hw, fc + hw, botZ + botH, sit + h - topH);
+        // Base anchor studs into floor for posts
+        if (isPost) pb(bag, 'ms', a - 18, a + 18, fc - 18, fc + 18, sit, botZ + botH);
+      } else {
+        pb(bag, 'ms', fc - hw, fc + hw, a - hw, a + hw, botZ + botH, sit + h - topH);
+        if (isPost) pb(bag, 'ms', fc - 18, fc + 18, a - 18, a + 18, sit, botZ + botH);
+      }
     }
+
+    // 2. Top Handrail (50x30 mm MS or solid wood rectangular section) & Runners
     if (dir === 'x') {
-      pb(bag, 'steel', a0 - 14, a1 + 14, fc - 22, fc + 22, sit + h - 0.04, sit + h);
-      pb(bag, 'chrome', a0 - 8, a1 + 8, fc - 12, fc + 12, sit + h - 0.01, sit + h + 0.012);
-      pb(bag, 'steel', a0 - 10, a1 + 10, fc - 15, fc + 15, sit + 0.09, sit + 0.125);
+      pb(bag, topM, a0 - 15, a1 + 15, fc - 25, fc + 25, sit + h - topH, sit + h);
+      // Bottom runner bar (30x15 mm MS flat)
+      pb(bag, 'ms', a0 - 10, a1 + 10, fc - 15, fc + 15, botZ, botZ + botH);
+      // Intermediate safety runner bar (20x10 mm MS flat)
+      pb(bag, 'ms', a0 - 10, a1 + 10, fc - 10, fc + 10, midZ, midZ + 0.012);
     } else {
-      pb(bag, 'steel', fc - 22, fc + 22, a0 - 14, a1 + 14, sit + h - 0.04, sit + h);
-      pb(bag, 'chrome', fc - 12, fc + 12, a0 - 8, a1 + 8, sit + h - 0.01, sit + h + 0.012);
-      pb(bag, 'steel', fc - 15, fc + 15, a0 - 10, a1 + 10, sit + 0.09, sit + 0.125);
+      pb(bag, topM, fc - 25, fc + 25, a0 - 15, a1 + 15, sit + h - topH, sit + h);
+      pb(bag, 'ms', fc - 15, fc + 15, a0 - 10, a1 + 10, botZ, botZ + botH);
+      pb(bag, 'ms', fc - 10, fc + 10, a0 - 10, a1 + 10, midZ, midZ + 0.012);
     }
   }
   function railPillar(bag, x, y, base, h) {
@@ -4753,7 +4869,7 @@ window.HouseScene = (function () {
         { c: 8000, w: 1200, sill: 0, h: 2400, type: 'door' }                     // duplex entry pivot (north end)
       ],
       N: [
-        { c: 5500, w: 1000, sill: 900, h: 1400, type: 'win' },                   // left of void
+        { c: 5500, w: 1000, sill: 200, h: 2900, type: 'win' },                   // tall double-height window left of void (top Z=7.203m, tight 103mm beam drop)
         { c: 8760, w: 1000, sill: 200, h: 2900, type: 'win' }                    // tall double-height window right of void (top Z=7.203m, tight 103mm beam drop)
       ],
       S: [
@@ -4772,7 +4888,7 @@ window.HouseScene = (function () {
         { c: 7050, w: 3160, sill: 0, h: 2700, type: 'frenchdoor', panes: 3 }
       ],
       N: [
-        { c: 5500, w: 1000, sill: 900, h: 1400, type: 'win' },                   // left of void
+        { c: 5500, w: 1000, sill: 100, h: 2850, type: 'win' },                   // tall double-height window left of void (sill Z=7.556m, tight 353mm beam/slab gap)
         { c: 8760, w: 1000, sill: 100, h: 2850, type: 'win' }                    // tall double-height window right of void (sill Z=7.556m, tight 353mm beam/slab gap)
       ],
       S: [
@@ -5921,15 +6037,12 @@ window.HouseScene = (function () {
         { f: 'S', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', lo: 3830, short: true },  // GF master S
         { f: 'W', c: 3100, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 2600, bot: 1.08 },  // GF master W (over the vanity desk)
         { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', bot: 1.08 } ],// GF bed02 W (behind the bed)
-      // The windows flanking the TV wall (FF + SF) and towards the south side:
-      // - Window west of TV wall (c = 5500) uses tailored architectural blinds cleanly inset within the opening,
-      //   leaving a generous 40 mm reveal to the TV wall pilaster without clumsy bunched fabric or finial collisions.
+      // The windows flanking the TV wall (c = 5500 and c = 8760, FF + SF) are full-height double-height architectural glazing
+      // kept cleanly unobstructed without fabric bunching to maximize natural daylight flooding the double-height void.
       // - South-facing windows (c = 3950, c = 10000) use clean architectural blinds that clear side tables and headboards.
-      [ { f: 'N', c: 5500, w: 1000, sill: 900, h: 1400, m: 'curtain', blind: true },   // FF hall W of TV wall
-        { f: 'S', c: 3950, w: 1500, sill: 900, h: 1400, m: 'curtain2', blind: true }, // FF master S (clean architectural blind, clears bedside table)
+      [ { f: 'S', c: 3950, w: 1500, sill: 900, h: 1400, m: 'curtain2', blind: true }, // FF master S (clean architectural blind, clears bedside table)
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain', lo: 2480, hi: 4420, bot: 0.88 } ],// FF master W (over the desk)
-      [ { f: 'N', c: 5500, w: 1000, sill: 900, h: 1400, m: 'curtain', blind: true },   // SF gallery W of TV wall
-        { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
+      [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
         { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420, short: true },  // SF bed03 E corner (apron, like the rest of the floor)
         { f: 'S', c: 3950, w: 1500, sill: 900, h: 1400, m: 'curtain2', blind: true }, // SF master02 S (clean architectural blind)
         { f: 'S', c: 10000, w: 1500, sill: 900, h: 1400, m: 'curtain', blind: true }, // SF bed03 S (clean architectural blind)
@@ -6134,7 +6247,7 @@ window.HouseScene = (function () {
         const stepH = baseH + i * rise;
         const a = startA + sign * i * tread;
         posts.push({ a, y: stepH });
-        const collarM = (style && style.rail) || 'steel';
+        const collarM = (style && style.rail) || 'ms';
         if (dir === 'x') {
           pb(bag, postM, a - 12, a + 12, fc - 12, fc + 12, stepH, stepH + h);
           if (style) pb(bag, collarM, a - 14, a + 14, fc - 14, fc + 14, stepH + h - 0.03, stepH + h);
@@ -6177,11 +6290,11 @@ window.HouseScene = (function () {
       }
     }
 
-    // Interior stair finish kit (wood treads, soft risers, brass rail)
+    // Interior stair finish kit (wood treads, soft risers, black MS pickets with wooden top handrail)
     const STAIR_IN = { tread: FLOOR_TILE, riser: FLOOR_TILE };   // internal stair finish = the house floor tile
-    const RAIL_IN = { post: 'charDark', spindle: 'steel', rail: 'brass' };
-    // Exterior stair handrail — dark posts, stainless rail (matches balcony rails)
-    const RAIL_OUT = { post: 'ms', spindle: 'ms', rail: 'steel' };
+    const RAIL_IN = { post: 'ms', spindle: 'ms', rail: 'frame' };
+    // Exterior stair handrail — black MS posts, black MS rail
+    const RAIL_OUT = { post: 'ms', spindle: 'ms', rail: 'ms' };
 
     /* helpers reused by exterior + floors */
     /** East wall + middle wall stair geometry under flight 1 */
@@ -6215,7 +6328,12 @@ window.HouseScene = (function () {
         const c = a0 + (inner * k) / 3;
         pb(bag, 'frame', 16522, 16602, c - mull / 2, c + mull / 2, z0, z1);
       }
-      pb(bag, 'glass', 16335, 16582, a0, a1, z0, z1);
+      // One thin pane in the frame's rebate. It was a 247 mm glass block over a
+      // solid black slab, which turned the whole ribbon into an opaque bar.
+      pb(bag, 'glass', 16550, 16564, a0, a1, z0, z1);
+      // Grille grouted into the reveal behind the frame (85 mm back from the face)
+      windowGrille((mat, aa0, aa1, d0, d1, hh0, hh1) => pb(bag, mat, d0, d1, aa0, aa1, hh0, hh1),
+                   { a0, a1, b: z0, t: z1, edge: 16600, outSign: 1, back: 60 });
       pb(bag, 'stone', 16505, 16628, f0 - 8, f1 + 8, hz0 - 0.028, hz0);
       // Drip edge below the stone sill — keeps water off the soffit
       pb(bag, 'charDark', 16510, 16622, f0 - 4, f1 + 4, hz0 - 0.038, hz0 - 0.028);
@@ -6294,19 +6412,19 @@ window.HouseScene = (function () {
              to (0, −sin rx, cos rx) — so a POSITIVE rx tilts the far end DOWN.
              With +atan2 the handrail fell as the stair rose: it raked against
              the slope, crossing the flight instead of following it. */
-          bag.box('steel', xRail / 1000, (pitch(yBot) + pitch(yTop)) / 2 + H,
+          bag.box('ms', xRail / 1000, (pitch(yBot) + pitch(yTop)) / 2 + H,
                   -((yBot + yTop) / 2) / 1000, 0.040, 0.040, len,
                   -Math.atan2(rise, run), 0, 0);
           // Brackets back to the rods, and a stub post at each end
           for (let y = yTop + 120; y <= yBot - 120; y += 570) {
-            pb(bag, 'steel', xRod, xRail + 20, y - 14, y + 14,
+            pb(bag, 'ms', xRod, xRail + 20, y - 14, y + 14,
                pitch(y) + H - 0.022, pitch(y) + H + 0.018);
           }
           for (const y of [yTop + 40, yBot - 40]) {
-            pb(bag, 'steel', xRail - 20, xRail + 20, y - 20, y + 20, pitch(y), pitch(y) + H + 0.02);
+            pb(bag, 'ms', xRail - 20, xRail + 20, y - 20, y + 20, pitch(y), pitch(y) + H + 0.02);
           }
           // Return into the landing U-turn at yTop (1040)
-          pb(bag, 'steel', xRail - 20, xRail + 20, 1000, yTop + 20,
+          pb(bag, 'ms', xRail - 20, xRail + 20, 1000, yTop + 20,
              LAND_E + H - 0.02, LAND_E + H + 0.02);
         })();
 
@@ -6379,7 +6497,7 @@ window.HouseScene = (function () {
             pb(bag, 'ms', 15400, 15414, y - 45, y + 45, zU - 0.20, zU);
           }
           // Tie the head of the screen into the upper flight's east rail (fc 15380)
-          pb(bag, 'steel', 15380, xC + 22, yHi - 60, yHi, L.f1 + 0.90, L.f1 + 0.95);
+          pb(bag, 'ms', 15380, xC + 22, yHi - 60, yHi, L.f1 + 0.90, L.f1 + 0.95);
         })();
 
         // ——— Flight 2 (upper flight): climbing rails on both open edges ———
@@ -6400,7 +6518,7 @@ window.HouseScene = (function () {
           // Post helper matching RAIL_OUT
           const uPost = (x, y) => {
             pb(bag, 'ms', x - 12, x + 12, y - 12, y + 12, LAND_E, rH);
-            pb(bag, 'steel', x - 14, x + 14, y - 14, y + 14, rH - 0.03, rH);
+            pb(bag, 'ms', x - 14, x + 14, y - 14, y + 14, rH - 0.03, rH);
           };
           // Spindle helper
           const uSpin = (x, y) => {
@@ -6408,23 +6526,20 @@ window.HouseScene = (function () {
           };
 
           // --- East leg (Flight 1 side: y 820..1040 at x=xF1) ---
-          pb(bag, 'steel', xF1 - 20, xF1 + 20, yTurn - 20, yMouth + 20, rH - 0.02, rH + 0.02);
-          pb(bag, 'chrome', xF1 - 10, xF1 + 10, yTurn - 10, yMouth + 10, rH + 0.01, rH + 0.025);
-          pb(bag, 'steel', xF1 - 10, xF1 + 10, yTurn, yMouth, LAND_E + 0.08, LAND_E + 0.11);
+          pb(bag, 'ms', xF1 - 20, xF1 + 20, yTurn - 20, yMouth + 20, rH - 0.02, rH + 0.02);
+          pb(bag, 'ms', xF1 - 10, xF1 + 10, yTurn, yMouth, LAND_E + 0.08, LAND_E + 0.11);
           uPost(xF1, yMouth);
           uPost(xF1, yTurn);
           uSpin(xF1, (yTurn + yMouth) / 2);
 
           // --- U-turn cross rail (x xF2..xF1 at y=yTurn) ---
-          pb(bag, 'steel', xF2 - 20, xF1 + 20, yTurn - 20, yTurn + 20, rH - 0.02, rH + 0.02);
-          pb(bag, 'chrome', xF2 - 10, xF1 + 10, yTurn - 10, yTurn + 10, rH + 0.01, rH + 0.025);
-          pb(bag, 'steel', xF2, xF1, yTurn - 10, yTurn + 10, LAND_E + 0.08, LAND_E + 0.11);
+          pb(bag, 'ms', xF2 - 20, xF1 + 20, yTurn - 20, yTurn + 20, rH - 0.02, rH + 0.02);
+          pb(bag, 'ms', xF2, xF1, yTurn - 10, yTurn + 10, LAND_E + 0.08, LAND_E + 0.11);
           uSpin((xF1 + xF2) / 2, yTurn);
 
           // --- West leg (Flight 2 side: y 820..1040 at x=xF2) ---
-          pb(bag, 'steel', xF2 - 20, xF2 + 20, yTurn - 20, yMouth + 20, rH - 0.02, rH + 0.02);
-          pb(bag, 'chrome', xF2 - 10, xF2 + 10, yTurn - 10, yMouth + 10, rH + 0.01, rH + 0.025);
-          pb(bag, 'steel', xF2 - 10, xF2 + 10, yTurn, yMouth, LAND_E + 0.08, LAND_E + 0.11);
+          pb(bag, 'ms', xF2 - 20, xF2 + 20, yTurn - 20, yMouth + 20, rH - 0.02, rH + 0.02);
+          pb(bag, 'ms', xF2 - 10, xF2 + 10, yTurn, yMouth, LAND_E + 0.08, LAND_E + 0.11);
           uPost(xF2, yTurn);
           uPost(xF2, yMouth);
           uSpin(xF2, (yTurn + yMouth) / 2);
@@ -6438,11 +6553,11 @@ window.HouseScene = (function () {
 
         // Outer corner posts (matching RAIL_OUT)
         pb(bag, 'ms', 16300 - 14, 16300 + 14, 180 - 14, 180 + 14, LAND_E, LAND_E + 0.95);
-        pb(bag, 'steel', 16300 - 16, 16300 + 16, 180 - 16, 180 + 16, LAND_E + 0.92, LAND_E + 0.95);
+        pb(bag, 'ms', 16300 - 16, 16300 + 16, 180 - 16, 180 + 16, LAND_E + 0.92, LAND_E + 0.95);
         pb(bag, 'ms', 14520 - 14, 14520 + 14, 180 - 14, 180 + 14, LAND_E, LAND_E + 0.95);
-        pb(bag, 'steel', 14520 - 16, 14520 + 16, 180 - 16, 180 + 16, LAND_E + 0.92, LAND_E + 0.95);
+        pb(bag, 'ms', 14520 - 16, 14520 + 16, 180 - 16, 180 + 16, LAND_E + 0.92, LAND_E + 0.95);
         pb(bag, 'ms', 14520 - 14, 14520 + 14, 1040 - 14, 1040 + 14, LAND_E, LAND_E + 0.95);
-        pb(bag, 'steel', 14520 - 16, 14520 + 16, 1040 - 16, 1040 + 16, LAND_E + 0.92, LAND_E + 0.95);
+        pb(bag, 'ms', 14520 - 16, 14520 + 16, 1040 - 16, 1040 + 16, LAND_E + 0.92, LAND_E + 0.95);
 
 
         /* ——— Lockable gate at the stair foot ———————————————————
@@ -6470,13 +6585,13 @@ window.HouseScene = (function () {
           const zLeaf = z0 + 2.15;                 // gate head (swing leaf top)
           const z1 = L.f1 - L.slabT;               // fanlight head = soffit
 
-          // ——— Perimeter frame: charcoal MS angle-iron surround ———
+          // ——— Perimeter frame: black MS angle-iron surround ———
           const FW = 40;                            // frame width (mm)
-          pb(bag, 'frame', xW - FW, xW, yF - 4, yB + 4, z0, z1 + 0.05);   // west jamb
-          pb(bag, 'frame', xE, xE + FW, yF - 4, yB + 4, z0, z1 + 0.05);   // east jamb
-          pb(bag, 'frame', xW - FW, xE + FW, yF - 4, yB + 4, z1, z1 + 0.05);   // head
-          pb(bag, 'frame', xW - FW, xE + FW, yF - 4, yB + 4, zLeaf, zLeaf + 0.05);  // transom
-          pb(bag, 'frame', xW - FW, xE + FW, yF - 4, yB + 4, z0, z0 + 0.05);  // threshold
+          pb(bag, 'ms', xW - FW, xW, yF - 4, yB + 4, z0, z1 + 0.05);   // west jamb
+          pb(bag, 'ms', xE, xE + FW, yF - 4, yB + 4, z0, z1 + 0.05);   // east jamb
+          pb(bag, 'ms', xW - FW, xE + FW, yF - 4, yB + 4, z1, z1 + 0.05);   // head
+          pb(bag, 'ms', xW - FW, xE + FW, yF - 4, yB + 4, zLeaf, zLeaf + 0.05);  // transom
+          pb(bag, 'ms', xW - FW, xE + FW, yF - 4, yB + 4, z0, z0 + 0.05);  // threshold
 
           // ——— Fanlight above transom ———————————————————————————
           // Contemporary grid: vertical flat bars + one horizontal mid-bar,
@@ -6500,8 +6615,8 @@ window.HouseScene = (function () {
           const leafSpan = lE - lW;
 
           // Stiles (hinge + lock) — 32 mm flat bar
-          pb(bag, 'steel', lW, lW + 32, yF + 4, yB - 4, z0 + 0.05, zLeaf - 0.01);
-          pb(bag, 'steel', lE - 32, lE, yF + 4, yB - 4, z0 + 0.05, zLeaf - 0.01);
+          pb(bag, 'ms', lW, lW + 32, yF + 4, yB - 4, z0 + 0.05, zLeaf - 0.01);
+          pb(bag, 'ms', lE - 32, lE, yF + 4, yB - 4, z0 + 0.05, zLeaf - 0.01);
 
           // Solid kick panel at the base — 250 mm, prevents foot-prying
           const kickTop = z0 + 0.30;
@@ -6536,43 +6651,43 @@ window.HouseScene = (function () {
           const guardX0 = lE - guardW, guardX1 = lE;
           const guardZ0 = z0 + 0.35, guardZ1 = z0 + 1.55;  // covers deadbolt (0.35) to above lever (1.22)
           // Main plate — slightly proud of the bars on both faces
-          pb(bag, 'steel', guardX0, guardX1, yF - 2, yB + 2, guardZ0, guardZ1);
+          pb(bag, 'ms', guardX0, guardX1, yF - 2, yB + 2, guardZ0, guardZ1);
           // Bolt-head studs at four corners (tamper-resistant fixings)
           for (const gx of [guardX0 + 30, guardX1 - 30]) {
             for (const gz of [guardZ0 + 0.06, guardZ1 - 0.06]) {
-              pb(bag, 'chrome', gx - 8, gx + 8, yB + 1, yB + 6, gz - 0.008, gz + 0.008);
-              pb(bag, 'chrome', gx - 8, gx + 8, yF - 6, yF - 1, gz - 0.008, gz + 0.008);
+              pb(bag, 'ms', gx - 8, gx + 8, yB + 1, yB + 6, gz - 0.008, gz + 0.008);
+              pb(bag, 'ms', gx - 8, gx + 8, yF - 6, yF - 1, gz - 0.008, gz + 0.008);
             }
           }
 
           // ——— Lock hardware ————————————————————————————————————
           // Mortise lock body (inside the lock stile, behind the guard)
-          pb(bag, 'steel', lE - 54, lE - 6, yF - 14, yB + 14, z0 + 0.98, z0 + 1.16);
+          pb(bag, 'ms', lE - 54, lE - 6, yF - 14, yB + 14, z0 + 0.98, z0 + 1.16);
           // D-pull handles on both faces — a proper pull, not just a lever nub
           // Outside (yB face): tubular D-pull
-          pb(bag, 'chrome', lE - 100, lE - 50, yB + 2, yB + 12, z0 + 0.88, z0 + 0.92);  // top mount
-          pb(bag, 'chrome', lE - 100, lE - 50, yB + 2, yB + 12, z0 + 1.16, z0 + 1.20);  // bottom mount
-          pb(bag, 'chrome', lE - 80, lE - 70, yB + 10, yB + 40, z0 + 0.90, z0 + 1.18);  // grip bar
+          pb(bag, 'ms', lE - 100, lE - 50, yB + 2, yB + 12, z0 + 0.88, z0 + 0.92);  // top mount
+          pb(bag, 'ms', lE - 100, lE - 50, yB + 2, yB + 12, z0 + 1.16, z0 + 1.20);  // bottom mount
+          pb(bag, 'ms', lE - 80, lE - 70, yB + 10, yB + 40, z0 + 0.90, z0 + 1.18);  // grip bar
           // Inside (yF face): matching D-pull
-          pb(bag, 'chrome', lE - 100, lE - 50, yF - 12, yF - 2, z0 + 0.88, z0 + 0.92);
-          pb(bag, 'chrome', lE - 100, lE - 50, yF - 12, yF - 2, z0 + 1.16, z0 + 1.20);
-          pb(bag, 'chrome', lE - 80, lE - 70, yF - 40, yF - 10, z0 + 0.90, z0 + 1.18);
+          pb(bag, 'ms', lE - 100, lE - 50, yF - 12, yF - 2, z0 + 0.88, z0 + 0.92);
+          pb(bag, 'ms', lE - 100, lE - 50, yF - 12, yF - 2, z0 + 1.16, z0 + 1.20);
+          pb(bag, 'ms', lE - 80, lE - 70, yF - 40, yF - 10, z0 + 0.90, z0 + 1.18);
           // Key cylinder on outside face (visible escutcheon)
-          pb(bag, 'chrome', lE - 30, lE - 14, yB + 2, yB + 16, z0 + 1.03, z0 + 1.09);
+          pb(bag, 'ms', lE - 30, lE - 14, yB + 2, yB + 16, z0 + 1.03, z0 + 1.09);
           // Keeper plate in the east jamb frame
-          pb(bag, 'steel', xE, xE + 12, yF - 4, yB + 4, z0 + 1.00, z0 + 1.14);
+          pb(bag, 'ms', xE, xE + 12, yF - 4, yB + 4, z0 + 1.00, z0 + 1.14);
 
           // Deadbolt — separate from the mortise, at shin level
-          pb(bag, 'steel', lE - 54, lE - 6, yF - 14, yB + 14, z0 + 0.38, z0 + 0.50);
-          pb(bag, 'steel', xE, xE + 12, yF - 4, yB + 4, z0 + 0.40, z0 + 0.48);   // keeper
+          pb(bag, 'ms', lE - 54, lE - 6, yF - 14, yB + 14, z0 + 0.38, z0 + 0.50);
+          pb(bag, 'ms', xE, xE + 12, yF - 4, yB + 4, z0 + 0.40, z0 + 0.48);   // keeper
 
           // ——— Three heavy-duty hinges on the west jamb ————————
           for (const zh of [z0 + 0.22, z0 + 1.10, zLeaf - 0.28]) {
-            pb(bag, 'steel', xW - 2, xW + 22, yF - 10, yB + 10, zh, zh + 0.12);
+            pb(bag, 'ms', xW - 2, xW + 22, yF - 10, yB + 10, zh, zh + 0.12);
           }
           // Anti-lift pins on hinge stile (engage frame when gate is closed)
           for (const zp of [z0 + 0.60, z0 + 1.60]) {
-            pb(bag, 'steel', xW + 4, xW + 24, yF + 4, yB - 4, zp - 0.025, zp + 0.025);
+            pb(bag, 'ms', xW + 4, xW + 24, yF + 4, yB - 4, zp - 0.025, zp + 0.025);
           }
         })();
 
@@ -8318,7 +8433,7 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: FLOOR_TILE, riser: FLOOR_TILE });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE);
-        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95);
+        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // furniture
         westSuite(bag, fY);
         Fur.clad(bag, 'x', 950, 'S', 8250, 9370, fY, 2.40);          // common bath north
@@ -8653,16 +8768,16 @@ window.HouseScene = (function () {
         // below its bottom: pb() drops the inverted runs, but the base collar,
         // the plus arms and the coping still land as loose slabs floating over
         // the deck. There is nothing to draw on this storey.
-        // Duplex void safety railings overlooking the first floor hall
-        railing(bag, 'y', 6020, 6996, 8641, fY, 1.0);
-        railing(bag, 'x', 6996, 6020, 9260, fY, 1.0);
-        railing(bag, 'y', 9260, 6996, 8641, fY, 1.0);
+        // Duplex void safety railings overlooking the first floor hall (black MS pickets + wooden top bar)
+        railing(bag, 'y', 6020, 6996, 8641, fY, 1.0, { topRail: 'frame' });
+        railing(bag, 'x', 6996, 6020, 9260, fY, 1.0, { topRail: 'frame' });
+        railing(bag, 'y', 9260, 6996, 8641, fY, 1.0, { topRail: 'frame' });
         Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, false);
 
         // Internal stair: flight B FF→SF (from mid landing) + full SF→roof U-stair
         const midFF = landI(L.f1);
         stairLanding(bag, 230, 1330, 6496, 8641, midFF, FLOOR_TILE);
-        railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95);
+        railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false });
@@ -8673,12 +8788,12 @@ window.HouseScene = (function () {
                     { tread: FLOOR_TILE, riser: FLOOR_TILE });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE);
-        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95);
+        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
-        railing(bag, 'y', 4630, 7496, 7641, fY, 0.95);
+        railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
            own top landing, so the same tile as the flights. */

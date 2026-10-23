@@ -1420,8 +1420,8 @@ window.DESIGNS = {
     // and the brass line becomes a satin grey, so nothing gold remains
     brass:      0x8d9295,
     accentWarm: 0x93989b,
-    ms:         0x3c4043,
-    frame:      0x26292c,
+    ms:         0x212224,   // Black Mild Steel (MS) railings & security grilles
+    frame:      0x8e6035,   // Golden Oak / Teak Wood-Laminate UPVC window frames
     steel:      0x44484c,
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
@@ -1841,7 +1841,13 @@ window.DESIGNS = {
         m.roughness = 0.045; m.metalness = 0.0;
         m.envMapIntensity = 1.6;
         if (key === 'carGlass') { m.color.setHex(0x171b1f); m.opacity = 0.86; }
-        else { m.color.setHex(0x1e262c); m.opacity = 0.72; }
+        else {
+          /* Linear RGB, dark blue-green. The albedo is lit like paint (sun x pi,
+             plus IBL), so a pale one - the old 0xc2d8e2 - laid a white film over
+             the room and the panes read as frosted. A dark tint at low opacity
+             reads as clear, slightly green float glass. */
+          m.color.setRGB(0.07, 0.15, 0.17); m.opacity = 0.22; m.envMapIntensity = 1.0;
+        }
       } else if (key === 'lamp' || key === 'downlight') {
         if (m.emissive) m.emissive.setHex(0xffdcae);
         m.emissiveIntensity = 2.2; m.envMapIntensity = 0.2;

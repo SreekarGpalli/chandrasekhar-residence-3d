@@ -413,13 +413,45 @@ Re-engineered the double-height void chandelier from the ground up based on the 
 
 ---
 
-## Verification & Testing
+---
 
-- **Syntax & Compilation**: Verified [houseScene.js](./houseScene.js) with Node.js script execution — 0 errors.
-- **Visual Validation via Browser Subagent**:
-   - Verified in 3D walkthrough at `http://localhost:8080/walkthrough.html`:
-     - First Floor living room view: Slender golden halo rings float weightlessly in the void volume; open centers allow the travertine wall and double-height picture window to shine through with zero clutter.
-     - Direct upward view: Centered concentric geometry and warm 360° halo illumination verified.
-     - Second Floor bridge view: Upper halo ring hovers just below the handrail line, providing an extraordinary architectural vista looking down into the living hall.
-     - Stair/dining approach: Clean, open, airy sightlines confirmed.
+## Phase 17 — Black MS Railings & Golden Oak UPVC Windows (Completed)
 
+Replaced all Stainless Steel (SS) and chrome railings with Black Mild Steel (MS) railings everywhere, and transformed all window frames into Golden Oak / Teak Wood-Laminate UPVC window joinery per Indian residential building standards:
+
+1. **Everywhere Black Mild Steel (MS) Railing**:
+   - Completely eliminated all stainless steel (`steel`) and chrome (`chrome`) elements from railings across the entire residence.
+   - **Vertical MS Square Pickets Design**:
+     - Upright pickets: $20 \times 20\text{ mm}$ square mild steel balusters in satin black (`ms`), spaced uniformly at $\sim 110\text{ mm}$ pitch.
+     - Top handrail: $50 \times 30\text{ mm}$ rectangular MS box section in black (`ms`).
+     - Bottom runner bar: $30 \times 12\text{ mm}$ horizontal MS flat bar elevated $+75\text{ mm}$ off the finished floor for easy balcony washing and drainage.
+     - Intermediate safety runner: $20 \times 10\text{ mm}$ horizontal MS safety runner bar at mid-height ($+480\text{ mm}$ AFF).
+     - Base anchor studs: $36 \times 36\text{ mm}$ MS base plates securing stanchion posts to the structural concrete slabs.
+   - **Applied Everywhere**:
+     - First Floor and Second Floor East, South, and North Balconies.
+     - Second Floor internal bridge / gallery void railings guarding the double-height living room below.
+     - External U-staircase (both climbing flights, mid-landing continuous U-turn, landing perimeter rails, void guardrails).
+     - Internal staircases (Ground to First, First to Second, landings).
+     - Rooftop mumty access railings.
+     - Ground Floor portico security stair gate & utility security door stiles, rails, and kick plates.
+
+2. **Golden Oak / Teak Wood-Laminate UPVC Windows**:
+   - Converted all window and door joinery into authentic multi-chamber UPVC sections with Golden Oak / Teak wood-laminate finish (`0x8e6035` in `frame`), popular in contemporary Indian luxury villas:
+     - **Outer Master Chamber Frame**: $60\text{ mm}$ extruded UPVC frame casing with integrated weather flange.
+     - **Inner Operable Sashes**: $42\text{ mm}$ stepped UPVC sash profiles sitting inside the outer frame with realistic reveal lines.
+     - **EPDM Rubber Weather Gaskets**: Continuous black rubber beading (`ms`) bordering the perimeter of every glass pane, authentic to Indian UPVC windows (Fenesta / Kommerling style).
+     - **Glazing Beads**: Internal beveled UPVC profile beads securing the glass.
+     - **Hardware**: Satin brass casement espagnolette handles (`brass`) mounted on operable sashes.
+     - **Sliding Systems**: Multi-track UPVC sliding frames with stepped slider panels, black EPDM gaskets, and brass pull hardware.
+     - **French Doors**: Heavy-duty UPVC balcony door profiles with multi-point locking gear and EPDM gaskets.
+     - **Material Properties**: Non-metallic polymer laminate (`metalness: 0.02`, `roughness: 0.40`).
+
+3. **Blender & 3D Export Synchronization**:
+   - Re-exported the updated procedural house to `Blender/chandrasekhar_residence_full.glb` via `scripts/export-to-blender.js`.
+   - Verified live in both the orbit viewer ([index.html](./index.html)) and first-person walkthrough ([walkthrough.html](./walkthrough.html)).
+
+
+4. **Clear Glazing + Horizontal Window Grilles**:
+   - The EPDM gasket was a solid black slab the size of each pane, which boxed the glass in and made every window opaque. It is now a thin 8 mm bead round the glass edge (windows, French doors, sliders, stair-landing ribbon).
+   - Glass is a dark blue-green tint (linear `0.07, 0.15, 0.17`, opacity `0.22`). A pale glass albedo is lit like paint and frosts the pane, so the tint is deliberately dark.
+   - Every openable shell window gets a minimalist grill (`windowGrille()`): black MS $16\text{ mm}$ square horizontal bars at $\sim 150\text{ mm}$ pitch in a $24\text{ mm}$ flat frame, with thin vertical back stays on spans of $1100\text{ mm}$ or more, grouted into the reveal ahead of the UPVC frame. Fixed lights are left bare; `grille: false` opts a window out.
