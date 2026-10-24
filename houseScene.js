@@ -1782,6 +1782,19 @@ window.HouseScene = (function () {
     }
   }
 
+  /* Void chandelier: halo ring radius (m) and drop below the slab soffit (m).
+     One table for the model (Fur.voidCluster) and its lights (Lum.cluster),
+     so a lamp and its light cannot drift apart. Drops put the rings at
+     2.70 / 3.25 / 3.85 / 4.55 m above the FF floor: the lowest clears
+     heads, the next pair straddle the SF floor line, and all four sit
+     below SF eye level, so the gallery looks down onto lit tops. */
+  const VOID_RINGS = [
+    { R: 0.24, drop: 3.86 },
+    { R: 0.34, drop: 3.31 },
+    { R: 0.47, drop: 2.71 },
+    { R: 0.62, drop: 2.01 }
+  ];
+
   /* ============ furniture kit (all plan-mm + floorY) ============ */
   const Fur = {
     bed(bag, x0, x1, y0, y1, fY, head /* 'N','S','E','W' */) {
@@ -2245,22 +2258,28 @@ window.HouseScene = (function () {
     },
 
     /* ================================================================
-       DOUBLE-HEIGHT TV FEATURE WALL — Modern Warm Minimalist Design
-       Redesigned (Oct 2026): Light, contemporary, serene palette with
-       budget-friendly elegance to harmonize with the double-height void
-       and tall North picture glazing. (Original navy classical wall backed
-       up in archive/tvFeatureWall_navy_backup.js).
-         - Vertical Visual Dividers: Full-height (floor to ceiling soffit)
-           fluted natural oak vertical slat bands on the West flank
-           (dividing from the small window) and East flank (dividing from
-           the tall double-height windows). Flat, non-protruding profile
-           (12 mm) with continuous brushed brass reveal inlays.
-         - Central Field: Serene, warm honed travertine stone backing
-           and warm-white matte lacquer acoustic panels with refined
-           horizontal brass shadow reveals.
-         - TV Zone: 55" OLED flush-bracket mounted at 1270 mm eye level.
-         - Floating Console: Minimalist light oak + warm-white lacquer
-           console with soft warm LED under-glow casting light on the floor.
+       DOUBLE-HEIGHT TV FEATURE WALL — teak plinth, limewash tower
+       (Oct 2026 redesign; the previous travertine / fluted-oak wall is in
+       git history at 27ff6ba, the navy classical one in archive/).
+
+       The house is off-white + black MS + brass hairlines, with teak as its
+       ONE warm accent (doors 'walnut', window frames 'frame'). The wall
+       follows the same rule instead of adding a second family of timber and
+       a stone:
+         - TIMBER ONLY WHERE IT IS SEEN AND TOUCHED: teak veneer from the
+           floor to 2.1 m (the door-head line), 4.7 m2 of it. Everything
+           above is paint. The old wall clad 14 m2 top to bottom.
+         - Reeded flanks (330 mm each, the hall's fluted-door language) frame
+           a flat field. The TV sits in a dark inset, so a black screen
+           against two bright windows has no hard edge to the wall around it.
+         - ONE brass line across the top of the timber: it is the veneer edge
+           cap, so it costs nothing extra. Two vertical hairlines mark the
+           flanks. No other metal on the wall.
+         - Above 2.1 m: plain limewash, floor-to-soffit tone, left empty on
+           purpose. The chandelier is the focal piece in front of it.
+         - Floating white console, warm under-glow.
+       Everything is symmetric about the pier axis (x = 7130), which is also
+       the sofa, rug and window-pair axis.
        Wall: 2221 x 6556 mm (FF floor -> SF soffit, x0 = 6020, x1 = 8241).
        Called once per storey: isLower = true for FF, false for SF.
        ================================================================ */
@@ -2279,145 +2298,83 @@ window.HouseScene = (function () {
         if (b - a < 0.0005) return;
         pb(bag, m, x0 + u0, x0 + u1, ya, yb, fY0 + a, fY0 + b);
       };
-
-      // rounded box helper for slats and console
       const rbox = (m, u0, u1, ya, yb, za, zb, rad) => {
         const a = Math.max(za / 1000, zLo), b = Math.min(zb / 1000, zHi);
         if (b - a < 0.0005) return;
         prb(bag, m, x0 + u0, x0 + u1, ya, yb, fY0 + a, fY0 + b, rad || 4);
       };
 
-      const yField = backY - 16;                  // base panel face (16 mm off shell)
-      const divW = 260;                           // width of south vertical divider (mm)
+      const yField = backY - 16;                  // limewash face (16 mm off the shell)
+      const yP = yField - 45;                     // teak face: 45 mm proud, so a 45 mm recess takes the TV flush
+      const mid = W / 2;                          // pier axis (x = 7130)
+      const zP0 = 60, zP1 = 2100;                 // teak: above a 60 mm shadow plinth, up to the door-head line
 
-      // 1. BASE BACKER BOARD & PLINTH REVEAL (Full 2.22m width, floor to soffit)
-      box('white2', 0, W, yField, backY, 0, Hmm);
-      // Recessed negative shadow plinth (60 mm high, dark bronze shadow gap at floor)
-      box('aluDark', 0, W, yField - 4, yField, 0, 60);
-
-      // 2. SOUTH VERTICAL VISUAL DIVIDER (South / West flank ONLY, u = 0..divW)
-      // Dividing small window (south/west) from the TV wall, non-protruding flat profile.
-      // Runs floor-to-ceiling (0 to Hmm).
-      // Smoked dark oak backing strip in the shadow gaps
-      box('oakDark', 4, divW - 4, yField - 2, yField, 60, Hmm);
-      // Outer shadow gap against small window reveal
-      box('aluDark', 0, 4, yField - 10, yField, 60, Hmm);
-
-      // Fluted vertical timber slats in warm natural light oak
-      // Slats are 18 mm wide, 10 mm deep, spaced 14 mm apart (pitch 32 mm)
-      const slatW = 18, slatD = 10, slatGap = 14, pitch = slatW + slatGap;
-      const nSlats = 7;                           // 7 slats = 210 mm span
-      const margin = (divW - (nSlats * pitch - slatGap)) / 2; // ~25 mm side margins
-
-      for (let i = 0; i < nSlats; i++) {
-        const su0 = margin + i * pitch;
-        const su1 = su0 + slatW;
-        rbox('oak', su0, su1, yField - 2 - slatD, yField - 2, 60, Hmm, 3);
-      }
-
-      // Inner vertical reveal edge between divider and stone field:
-      // Concealed warm linear LED wash strip + satin brass channel + shadow reveal
-      box('coveLED', divW - 10, divW - 6, yField - 8, yField - 2, 60, Hmm);
-      box('brassI', divW - 6, divW, yField - 12, yField, 60, Hmm);
-      box('charDark', divW, divW + 4, yField - 4, yField, 60, Hmm);
-
-      // 3. MAIN FIELD (From divider u = divW + 4 to north/east window edge u = W)
-      // No border on north/east side: field extends seamlessly to the double-height window opening!
-      const cU0 = divW + 4, cU1 = W;
-      const datumZ = H * 1000;                    // 3353 mm (Second Floor floor line)
-
-      // Lower Section (Z = 60 to datumZ):
-      // Warm honed travertine porcelain feature field
-      box('travertine', cU0, cU1 - 4, yField - 10, yField, 60, datumZ - 6);
-
-      // Clean architectural brass knife-edge finish on right edge meeting big window opening
-      box('brassI', W - 4, W, yField - 12, yField, 60, Hmm);
-      box('charDark', W - 6, W - 4, yField - 4, yField, 60, Hmm);
-
-      // Horizontal architectural satin brass inlays dividing stone slabs:
-      box('brassI', cU0, cU1 - 4, yField - 12, yField - 9, 680, 686);        // above console
-      box('brassI', cU0, cU1 - 4, yField - 12, yField - 9, 1720, 1726);      // above TV
-      box('brassI', cU0, cU1, yField - 14, yField - 8, datumZ - 6, datumZ); // Second floor datum band
-      box('charDark', cU0, cU1, yField - 6, yField, datumZ, datumZ + 6);     // shadow reveal
-
-      // Subtle vertical travertine panel joints (3-panel bookmatch rhythm)
-      const fieldMid = (cU0 + cU1) / 2;           // ~1240.5 mm (center of travertine field)
-      const panelStep = (cU1 - cU0) / 3;          // ~652 mm
-      box('charDark', cU0 + panelStep - 1, cU0 + panelStep + 1, yField - 11, yField - 9, 60, datumZ - 6);
-      box('charDark', cU1 - panelStep - 1, cU1 - panelStep + 1, yField - 11, yField - 9, 60, datumZ - 6);
-
-      // Upper Section (Z = datumZ + 6 to Hmm):
-      // Warm-white matte lacquer acoustic panels continuing up through void
-      box('lacq', cU0, cU1 - 4, yField - 8, yField, datumZ + 6, Hmm - 40);
-
-      // Delicate vertical architectural panel seams in the upper field
-      box('brassI', cU0 + panelStep - 2, cU0 + panelStep + 2, yField - 10, yField - 7, datumZ + 20, Hmm - 50);
-      box('brassI', cU1 - panelStep - 2, cU1 - panelStep + 2, yField - 10, yField - 7, datumZ + 20, Hmm - 50);
-      box('white', fieldMid - 2, fieldMid + 2, yField - 9, yField - 7, datumZ + 40, Hmm - 60);
-
-      // Top soffit shadow reveal
-      box('aluDark', 0, W, yField - 10, yField, Hmm - 40, Hmm);
-
+      // 1. LIMEWASH FIELD, floor to soffit, one tone
+      box('wallLime', 0, W, yField, backY, 0, Hmm);
       if (!isLower) return;
 
-      // 4. TV SCREEN (55" OLED, center 1270 mm AFF, perfectly centered on travertine field)
-      const tvW = 1220, tvH = 686, tvC = 1270;
-      const tz0 = tvC - tvH / 2, tz1 = tvC + tvH / 2;
-      const yTv = yField - 10;
-      const tvX = fieldMid;                       // exact center of travertine field
-      // Slim low-profile wall bracket
-      box('blackM', tvX - 250, tvX + 250, yTv - 25, yTv, tz0 + 120, tz1 - 120);
-      // Ultra-thin bezel + OLED screen
-      box('blackM', tvX - tvW / 2 - 4, tvX + tvW / 2 + 4, yTv - 45, yTv - 25, tz0 - 4, tz1 + 4);
-      box('tv', tvX - tvW / 2, tvX + tvW / 2, yTv - 48, yTv - 45, tz0, tz1);
-      // Tiny power LED indicator
-      box('lamp', tvX - 3, tvX + 3, yTv - 49, yTv - 45, tz0 - 4, tz0 - 1);
+      // 2. SHADOW PLINTH: the teak floats 60 mm off the floor on a dark reveal
+      box('aluDark', 0, W, yP + 6, yField, 0, zP0);
 
-      // 5. FLOATING LIGHT OAK MEDIA CONSOLE (1760 mm wide, centered on travertine field)
-      const cW = 1760, cD = 320, cz0 = 300, cz1 = 580;
-      const c0 = fieldMid - cW / 2, c1 = fieldMid + cW / 2;
-      const yC = yField - 10;
-      const cy0 = yC - cD;
+      // 3. TV RECESS (1300 x 766, centred on the axis, 55" with a 40 mm margin)
+      const nW = 1300, nH = 766, nC = 1250;
+      const nu0 = mid - nW / 2, nu1 = mid + nW / 2;
+      const nz0 = nC - nH / 2, nz1 = nC + nH / 2;
 
-      // Main oak carcass with softened corners
-      rbox('oak', c0, c1, cy0 + 6, yC, cz0, cz1, 6);
-      // Honed travertine top surface plate with bevel
-      prb(bag, 'travertine', x0 + c0 - 4, x0 + c1 + 4, cy0 - 4, yC, fY0 + (cz1 - 16) / 1000, fY0 + cz1 / 1000, 4);
+      // 4. TEAK VOLUME in four pieces around the recess
+      box('walnut', 0, nu0, yP, yField, zP0, zP1);
+      box('walnut', nu1, W, yP, yField, zP0, zP1);
+      box('walnut', nu0, nu1, yP, yField, zP0, nz0);
+      box('walnut', nu0, nu1, yP, yField, nz1, zP1);
+      // recess back: deep teak, so the screen edge dissolves into it
+      box('woodD', nu0, nu1, yField - 5, yField, nz0, nz1);
 
-      // Console front doors: 3 doors (left fluted oak echoing divider, center & right warm-white lacquer)
-      const dW = (cW - 20) / 3;
-      for (let i = 0; i < 3; i++) {
-        const da = c0 + 8 + i * dW + 2;
-        const db = da + dW - 4;
-        const doorMat = (i === 0) ? 'oak' : 'lacq';
-        rbox(doorMat, da, db, cy0, cy0 + 8, cz0 + 10, cz1 - 20, 3);
-        if (i === 0) {
-          // Micro flutes on south-most door tying into the south fluted wall column
-          for (let fu = da + 8; fu + 10 <= db - 8; fu += 16) {
-            rbox('oakDark', fu, fu + 8, cy0 - 2, cy0 + 6, cz0 + 16, cz1 - 26, 2);
-          }
+      // 5. REEDED FLANKS: 330 mm each side, dark grooves behind half-round reeds
+      const bw = 330, reedW = 14, reedD = 9, reedP = 26, nReed = 12;
+      const reedM = (bw - (nReed * reedP - (reedP - reedW))) / 2;   // side margin
+      for (const side of [0, 1]) {
+        const b0 = side ? W - bw : 0;
+        box('woodD', b0 + 2, b0 + bw - 2, yP - 3, yP, zP0 + 24, zP1 - 24);
+        for (let i = 0; i < nReed; i++) {
+          const ru = b0 + reedM + i * reedP;
+          rbox('walnut', ru, ru + reedW, yP - 3 - reedD, yP - 3, zP0 + 30, zP1 - 30, 5);
         }
+        // hairline where the reeded flank meets the flat field
+        const hl = side ? W - bw : bw;
+        box('brassI', hl - 1.5, hl + 1.5, yP - 5, yP, zP0, zP1);
       }
 
-      // Brushed brass accent trim under the console top lip
-      box('brassI', c0 - 2, c1 + 2, cy0 - 2, cy0 + 4, cz1 - 22, cz1 - 16);
+      // 6. BRASS CAP across the top of the teak (veneer edge cover, 8 mm proud)
+      box('brassI', 0, W, yP - 8, yField, zP1, zP1 + 7);
 
-      // Warm 2700K indirect LED under-glow (casts gentle wash on floor tiles)
-      box('coveLED', c0 + 40, c1 - 40, cy0 + 40, yC - 30, cz0 - 4, cz0);
+      // 7. TV: 1220 x 686 flush in the recess, slim flat mount behind
+      const tvW = 1220, tvH = 686;
+      const tz0 = nC - tvH / 2, tz1 = nC + tvH / 2;
+      const yTv = yP + 3;                         // bezel front; the screen face is flush with the teak
+      box('blackM', mid - 250, mid + 250, yField - 28, yField - 5, tz0 + 120, tz1 - 120);
+      box('blackM', mid - tvW / 2 - 3, mid + tvW / 2 + 3, yTv, yField - 28, tz0 - 3, tz1 + 3);
+      box('tv', mid - tvW / 2, mid + tvW / 2, yP, yTv, tz0, tz1);
 
-      // 6. MINIMALIST AUDIO & STYLING
-      // Compact sleek soundbar resting on console top centered under TV
+      // 8. FLOATING CONSOLE (1700 x 280 x 340), warm-white lacquer, push-to-open
+      const cW = 1700, cD = 340, cz0 = 300, cz1 = 580;
+      const c0 = mid - cW / 2, c1 = mid + cW / 2;
+      const cy0 = yP - cD;
+      rbox('lacq', c0, c1, cy0, yP, cz0, cz1, 5);
+      // door joints
+      for (const k of [1, 2]) {
+        const ju = c0 + (cW * k) / 3;
+        box('woodD', ju - 1.5, ju + 1.5, cy0 - 1, cy0 + 2, cz0 + 8, cz1 - 8);
+      }
+      // warm indirect under-glow (casts a gentle wash on the floor tiles)
+      box('coveLED', c0 + 40, c1 - 40, cy0 + 40, yP - 30, cz0 - 4, cz0);
+
+      // 9. STYLING: slim soundbar under the TV, books left, brass sphere + vase right
       const sbW = 860, sbH = 50, sbD = 75;
-      box('charDark', tvX - sbW / 2, tvX + sbW / 2, yC - sbD - 20, yC - 20, cz1, cz1 + sbH);
-      box('blackM', tvX - sbW / 2 + 4, tvX + sbW / 2 - 4, yC - sbD - 22, yC - sbD - 18, cz1 + 4, cz1 + sbH - 4);
-
-      // Left styling (near fluted oak column): Trio of architectural monographs
-      Fur.books(bag, x0 + c0 + 160, yC - 160, fY0 + cz1 / 1000, 3, true);
-
-      // Right styling (near window): Sculptural travertine tray + brass sphere + minimalist ceramic vase
-      pb(bag, 'travertine', x0 + c1 - 280, x0 + c1 - 140, yC - 230, yC - 110, fY0 + cz1 / 1000, fY0 + cz1 / 1000 + 0.035);
-      bag.sph('brassI', (x0 + c1 - 200) / 1000, fY0 + cz1 / 1000 + 0.035 + 0.05, -(yC - 170) / 1000, 0.05);
-      bag.cyl('ceramic', (x0 + c1 - 90) / 1000, fY0 + cz1 / 1000 + 0.08, -(yC - 160) / 1000, 0.035, 0.16);
+      box('charDark', mid - sbW / 2, mid + sbW / 2, yP - sbD - 20, yP - 20, cz1, cz1 + sbH);
+      Fur.books(bag, x0 + c0 + 170, yP - 170, fY0 + cz1 / 1000, 3, true);
+      pb(bag, 'brassI', x0 + c1 - 250, x0 + c1 - 120, yP - 240, yP - 120, fY0 + cz1 / 1000, fY0 + cz1 / 1000 + 0.012);
+      bag.sph('brassI', (x0 + c1 - 185) / 1000, fY0 + cz1 / 1000 + 0.012 + 0.05, -(yP - 180) / 1000, 0.05);
+      bag.cyl('ceramic', (x0 + c1 - 80) / 1000, fY0 + cz1 / 1000 + 0.08, -(yP - 170) / 1000, 0.035, 0.16);
     },
     counterX(bag, x0, x1, y0, y1, fY) {
       // Full base carcass + toe-kick recess + granite worktop + steel edge trim
@@ -3530,96 +3487,56 @@ window.HouseScene = (function () {
       bag.cyl('lamp', wx, bY - 0.062, wz, r * 0.78, 0.014);
     },
 
-    /* Feature Chandelier for Double-Height Void — Floating Halo Rings
-       Bespoke architectural floating halo chandelier (Flos / Henge style)
-       composed of three concentric, slender satin brass rings suspended
-       at subtle inclinations with continuous 360° warm diffuse LED halo glow:
-         - Preserves completely unobstructed sightlines through the open ring
-           centers to the TV wall and tall double-height picture window.
-         - Ceiling Canopy: Circular brushed satin brass canopy plate (`brassI`)
-           with recessed dark bronze shadow plinth (`charDark`) flush at roof soffit.
-         - Three Floating Rings:
-             1. Upper Ring (1100 mm dia, Z ≈ 4.10 m AFF): Greets Second Floor
-                gallery bridge at eye level, subtly tilted towards the tall window.
-             2. Middle Ring (800 mm dia, Z ≈ 3.35 m AFF): Bridges between storeys
-                at the Second Floor floor line, counter-tilted for dynamic balance.
-             3. Lower Ring (520 mm dia, Z ≈ 2.65 m AFF): Floats in First Floor
-                lounge volume well above head clearance (2.1 m) and TV top (1.61 m).
-         - Integrated Lighting: Dual-layer continuous halo (`coveLED` + `lamp`)
-           radiating soft, glare-free 2700K ambient illumination. */
-    voidCluster(bag, x, y, ceilY, ringSpecs) {
+    /* Feature chandelier for the double-height void — four brass halo rings.
+       A halo is an extruded brass channel bent to a true circle (one
+       revolved profile, not straight stubs): outer face brushed brass, an
+       opal diffuser strip flush in the underside, and the inner face glowing,
+       so from the gallery the far side of each ring reads as a lit hoop.
+       Concentric, level, on the sofa / TV axis. Each ring hangs from the one
+       canopy on three 6 mm brass rods; the rods of the four rings are
+       staggered 30 degrees, so the twelve of them fan out evenly and the
+       smaller rings sit inside the cone the larger rods draw. Rods are 6 mm
+       rather than a real 3 mm cable on purpose: at this viewing distance a
+       thinner line is sub-pixel and breaks into dashes.
+       Sightlines stay open: rings are hollow, rods are slim. */
+    voidCluster(bag, x, y, ceilY, rings) {
+      rings = rings || VOID_RINGS;
       const wx = x / 1000, wz = -y / 1000;
+      const SEG = 72;
 
-      // 1. CEILING CANOPY (Circular brushed satin brass plate flush at roof soffit)
-      bag.cyl('brassI', wx, ceilY - 0.012, wz, 0.34, 0.024);
-      bag.cyl('charDark', wx, ceilY - 0.026, wz, 0.36, 0.008);
-      bag.cyl('brassI', wx, ceilY - 0.029, wz, 0.22, 0.006);
+      // closed (r,h) polygon, counter-clockwise so every face points out of the metal
+      const ring = (mat, yB, R, r0, r1, h0, h1) =>
+        bag.lathe(mat, wx, yB, wz, [[R + r0, h0], [R + r1, h0], [R + r1, h1], [R + r0, h1], [R + r0, h0]], SEG);
 
-      // Default specs for the 3 rings
-      const specs = ringSpecs || [
-        { r: 0.55, drop: 2.45, tx:  0.12, tz: -0.08, phase: 0,   tubeR: 0.011, glowR: 0.007 },
-        { r: 0.40, drop: 3.20, tx: -0.14, tz:  0.10, phase: 0.4, tubeR: 0.010, glowR: 0.0065 },
-        { r: 0.26, drop: 3.90, tx:  0.05, tz:  0.04, phase: 0.8, tubeR: 0.009, glowR: 0.006 }
-      ];
+      // 1. CANOPY: stepped satin-brass disc just off the soffit, on a 4 mm dark shadow gasket
+      bag.lathe('brassI', wx, ceilY - 0.044, wz,
+        [[0, 0], [0.165, 0], [0.165, 0.008], [0.150, 0.016], [0.150, 0.040], [0, 0.040]], 56);
+      bag.lathe('charDark', wx, ceilY - 0.004, wz,
+        [[0, 0], [0.150, 0], [0.150, 0.004], [0, 0.004]], 56);
 
-      const nSegs = 40;
-      for (let sIdx = 0; sIdx < specs.length; sIdx++) {
-        const s = specs[sIdx];
-        const ringCY = ceilY - s.drop;
-        const pts = [];
+      rings.forEach((s, k) => {
+        const yB = ceilY - s.drop;               // underside of the ring
+        const R = s.R, bodyH = 0.032;
 
-        // Generate 3D ring vertices with smooth tilt
-        for (let i = 0; i <= nSegs; i++) {
-          const phi = (2 * Math.PI * i) / nSegs;
-          const lx = s.r * Math.cos(phi), ly = 0, lz = s.r * Math.sin(phi);
-          // Rotation around Z
-          const rx = lx * Math.cos(s.tz) - ly * Math.sin(s.tz);
-          const ry1 = lx * Math.sin(s.tz) + ly * Math.cos(s.tz);
-          // Rotation around X
-          const ry = ry1 * Math.cos(s.tx) - lz * Math.sin(s.tx);
-          const rz = ry1 * Math.sin(s.tx) + lz * Math.cos(s.tx);
-          pts.push({ x: wx + rx, y: ringCY + ry, z: wz + rz });
+        // 2. HALO: brass body, opal diffuser strip in the underside, glowing inner face
+        ring('brassI', yB, R, -0.020, 0.020, 0.007, bodyH);
+        ring('lamp', yB, R, -0.015, 0.015, 0.0, 0.007);
+        bag.lathe('coveLED', wx, yB, wz, [[R - 0.0205, bodyH - 0.002], [R - 0.0205, 0.009]], SEG);
+
+        // 3. THREE RODS per ring, from the canopy to the top of the ring
+        for (let j = 0; j < 3; j++) {
+          const th = ((k * 30 + j * 120) * Math.PI) / 180;
+          const c = Math.cos(th), s2 = Math.sin(th);
+          const rc = 0.095 + 0.016 * k;          // canopy anchor radius: bigger ring, wider anchor
+          const px = wx + R * c, pz = wz + R * s2, py = yB + bodyH;
+          const ax = wx + rc * c, az = wz + rc * s2, ay = ceilY - 0.044;
+          bag.branch('brassI', px, py + 0.012, pz, ax, ay, az, 0.003, 0.003);
+          bag.cyl('brassI', ax, ay - 0.006, az, 0.0075, 0.014);   // canopy ferrule
+          bag.cyl('brassI', px, py + 0.008, pz, 0.0085, 0.016);   // ring clamp
+          bag.sph('brassI', px, py + 0.018, pz, 0.0075);          // clamp cap
         }
-
-        // Draw the continuous tubular brass casing and inner LED halo
-        for (let i = 0; i < nSegs; i++) {
-          const p0 = pts[i], p1 = pts[i + 1];
-          // Outer satin brass housing tube
-          bag.branch('brassI', p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, s.tubeR);
-          // Inner/under radiant warm LED halo strip (emits 360-deg warm glow)
-          bag.branch('coveLED', p0.x, p0.y - 0.004, p0.z, p1.x, p1.y - 0.004, p1.z, s.glowR);
-          // Subtle warm filament accent line inside the channel
-          bag.branch('lamp', p0.x, p0.y - 0.006, p0.z, p1.x, p1.y - 0.006, p1.z, s.glowR * 0.6);
-        }
-
-        // 3 Suspension cables per ring (at 120-degree intervals)
-        const cableSteps = [
-          Math.floor(nSegs * ((0 + s.phase) % 1)),
-          Math.floor(nSegs * ((0.333 + s.phase) % 1)),
-          Math.floor(nSegs * ((0.666 + s.phase) % 1))
-        ];
-
-        for (const cStep of cableSteps) {
-          const pt = pts[cStep];
-          // Turned satin brass clamp/coupler on the ring
-          bag.sph('brassI', pt.x, pt.y, pt.z, s.tubeR * 1.55);
-          bag.cyl('brassI', pt.x, pt.y + 0.015, pt.z, 0.008, 0.030);
-
-          // Canopy anchor point (spread around canopy perimeter)
-          const angle = (2 * Math.PI * cStep) / nSegs;
-          const canR = 0.16 + sIdx * 0.06;
-          const cx = wx + canR * Math.cos(angle);
-          const cz = wz + canR * Math.sin(angle);
-
-          // Canopy brass escutcheon
-          bag.cyl('brassI', cx, ceilY - 0.024, cz, 0.012, 0.024);
-
-          // Ultra-fine braided steel suspension wire
-          bag.branch('steel', pt.x, pt.y + 0.025, pt.z, cx, ceilY - 0.030, cz, 0.0014);
-        }
-      }
+      });
     },
-
     /* Mirror vanity bar — diffused, mounted ABOVE the mirror head and washing
        down the face. Bathroom glare is nearly always a bare bulb at eye level;
        this keeps the source over the brow line. */
@@ -4533,8 +4450,7 @@ window.HouseScene = (function () {
       drum(bag, 'linen', cx, cy, fY + h - 0.12, fY + h + 0.18, 0.2, 0.003);
       bag.cyl('lamp', cx / 1000, fY + h - 0.125, -cy / 1000, 0.17, 0.01);
     },
-    // Feature void chandelier is implemented in voidCluster above (bespoke
-    // 7-drop satin brass and frosted opal glass sculptural cascade).
+    // Feature void chandelier is voidCluster above (four brass halo rings).
     pendant(bag, x, y, ceilY, drop = 0.9, r = 0.13, shade = 'blackM') {
       const bY = ceilY - drop;
       drum(bag, 'blackM', x, y, ceilY - 0.025, ceilY, 0.05, 0.004);
@@ -4938,7 +4854,7 @@ window.HouseScene = (function () {
       // exterior over the whole SE corner (120 hits on a four-face sweep).
       { dir: 'y', b: [12420, 12650], a: [0, 1411], mat: 'eastPlaster', faces: { lo: 'white2' }, ops: [] }, // southeast east wall, solid (open south of y 0 into the service lobby)
       { dir: 'y', b: [14040, 14270], a: [-762, 0], mat: 'eastPlaster', faces: { lo: 'white2' }, ops: [{ c: -300, w: 600, sill: 0, h: 2400 }] }, // service-lobby end wall, flush with the lift's east face, with the secure grill door
-      { dir: 'x', b: [-762, -646], a: [4805, 14270], faces: { lo: 'white' }, ops: [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }, { c: 13230, w: 1200, sill: 900, h: 1400 }] }, // weather-secured south wall: utility grill, cbath ventilator, wet-kitchen grill, service-lobby grill
+      { dir: 'x', b: [-762, -646], a: [4805, 14270], faces: { lo: 'white' }, ops: [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11910, w: 3840, sill: 900, h: 1400 }] }, // weather-secured south wall: utility grill, cbath ventilator, one long wet-kitchen + service-lobby grill
       { dir: 'y', b: [4805, 4920], a: [-646, 232], faces: { lo: 'white' }, ops: [{ c: -207, w: 800, sill: 0, h: 2400, noFrame: true }] }, // utility west wall + SW grill door onto the bedroom south balcony
       { dir: 'y', b: [8135, 8250], a: [-646, 950], ops: [{ c: 520, w: 700 }] },        // utility | common bath wall + door
       // One straight service line, y 950..1065, from the bedroom partition to
@@ -5896,22 +5812,11 @@ window.HouseScene = (function () {
           put((x0 + x1) / 2, (y0 + y1) / 2, aY - 0.04, 'task');
           return this;
         },
-        cluster(x, y, topY, ringSpecs) {
-          Fur.voidCluster(bag, x, y, topY, ringSpecs);
-          const defaultRings = ringSpecs || [
-            { r: 0.55, drop: 2.45 },
-            { r: 0.40, drop: 3.20 },
-            { r: 0.26, drop: 3.90 }
-          ];
-          for (const s of defaultRings) {
-            const yM = topY - s.drop;
-            for (let a = 0; a < 3; a++) {
-              const ang = (2 * Math.PI * a) / 3;
-              const px = x + s.r * 0.8 * Math.cos(ang);
-              const py = y + s.r * 0.8 * Math.sin(ang);
-              put(px, py, yM - 0.04, 'cluster');
-            }
-          }
+        /* --- void chandelier: one source on the axis just under each halo --- */
+        cluster(x, y, topY, rings) {
+          rings = rings || VOID_RINGS;
+          Fur.voidCluster(bag, x, y, topY, rings);
+          for (const s of rings) put(x, y, topY - s.drop - 0.05, 'cluster');
           return this;
         },
         floorLamp(x, y, h) {
@@ -6981,11 +6886,10 @@ window.HouseScene = (function () {
               [{ c: -300, w: 600, sill: 0, h: 2400 }], null, { lo: 'white2' });
       glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
       wallRun(eBag, 'white2', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,
-              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }, { c: 13230, w: 1200, sill: 900, h: 1400 }], null, { lo: 'white' });
+              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11910, w: 3840, sill: 900, h: 1400 }], null, { lo: 'white' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 13230, w: 1200, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
       // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // Terrace edge: NO solid parapet wall — open metal railings like FF/SF balconies.
       // Thin slab fascia (same language as outdoor decks) + railing @ L.roof.
@@ -8051,16 +7955,13 @@ window.HouseScene = (function () {
         Lum.downlight(9600, 7600);                    // downlights east of void on solid ceiling
         Lum.downlight(10200, 5800);
         Lum.downlight(10200, 7600);
-        /* --- DOUBLE-HEIGHT VOID CHANDELIER — FLOATING HALO RINGS ---
-           Void opening in SF slab: X = 6020..9260 (W = 3240 mm), Y = 6996..8641 (L = 1645 mm).
-           Geometric center: X = 7640 mm, Y = 7818 mm.
-           VOID_TOP soffit: 6.556 m AFF First Floor.
-           Three floating concentric satin brass halo rings with 360° warm diffuse LED glow:
-             1. Upper Ring (1100 mm dia, Z ≈ 4.10 m AFF, drop: 2.45 m): eye level at SF bridge.
-             2. Middle Ring (800 mm dia, Z ≈ 3.35 m AFF, drop: 3.20 m): bridges the storeys.
-             3. Lower Ring (520 mm dia, Z ≈ 2.65 m AFF, drop: 3.90 m): upper FF living lounge volume.
-           Completely open in the center, preserving clear sightlines to TV wall and tall window! */
-        Lum.cluster(7640, 7818, VOID_TOP);
+        /* --- DOUBLE-HEIGHT VOID CHANDELIER — FOUR BRASS HALO RINGS ---
+           Void opening in the SF slab: X 6020..9260, Y 6996..8641, soffit
+           VOID_TOP = 6.556 m AFF. Hung on x = 7130, the axis of the sofa,
+           rug, TV and the window pair, not the geometric middle of the
+           opening (7640); y = 7818 is the middle of the opening's depth.
+           Rings and drops live in VOID_RINGS (model and lights share it). */
+        Lum.cluster(7130, 7818, VOID_TOP);
 
         /* --- DINING (4921..9371, 1526..4506) --- */
         Lum.fan(7150, 3000);                          // ceiling fan centered over dining zone
@@ -8429,8 +8330,7 @@ window.HouseScene = (function () {
         // Service-band openings for dollhouse (also on exterior)
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
-        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 13230, w: 1200, sill: 900, h: 1400, type: 'grill' });
+        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
         glazing(bag, { face: 'E', band: [14040, 14270], floorY: fY, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
         glazing(bag, { face: 'W', band: [4805, 4920], floorY: fY, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
         // This storey only (FF slab → cut). Not the full tower from ground.

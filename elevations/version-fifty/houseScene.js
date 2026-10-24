@@ -2675,11 +2675,10 @@ window.HouseScene = (function () {
               [{ c: -300, w: 600, sill: 0, h: 2400 }]);
       glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
       wallRun(eBag, 'white', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,
-              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }, { c: 13230, w: 1200, sill: 900, h: 1400 }]);
+              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11910, w: 3840, sill: 900, h: 1400 }]);
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 13230, w: 1200, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
       // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // Terrace edge: NO solid parapet wall — open metal railings like FF/SF balconies.
       // Thin slab fascia (same language as outdoor decks) + railing @ L.roof.
