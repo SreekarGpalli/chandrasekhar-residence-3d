@@ -4807,7 +4807,8 @@ window.HouseScene = (function () {
       R('FOYER', '1528 × 1827', 10893, 12421, 6815, 8642, 'circ'),
       R('POOJA', '1525 × 1640', 10893, 12418, 5060, 6700, 'pooja'),
       R('COMMON BATH', '1120 × 1596', 8250, 9370, -646, 950, 'bath'),  // relocated into the south band per owner plan
-      R('WET KITCHEN', '2934 × 1596', 9486, 12420, -646, 950, 'utility'),   // stove + grill door / DW + sink, nothing more
+      R('WET KITCHEN', '2934 × 1596', 9486, 12420, -646, 950, 'utility'),   // stove / DW + sink, nothing more; opens east into the service lobby
+      R('SERVICE LOBBY', '1620 × 646', 12420, 14040, -646, 0, 'utility'),   // wet kitchen -> grill door at the east end of the lift's back wall
       R('UTILITY', '3215 × 1596', 4920, 8135, -646, 950, 'utility'),   // W/D stack + the SW door  // extends west to the dining|bedroom partition line
       R('SOUTH BALCONY', '4805 × 762', 0, 4805, -762, 0, 'out'),
       R('STAIRCASE', '4690 × 2145', 230, 4920, 6496, 8641, 'circ'),
@@ -4864,7 +4865,6 @@ window.HouseScene = (function () {
     },
     f1: {
       E: [
-        { c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true },        // southeast corner east-facing secure grill door
         { c: 3200, w: 1200, sill: 1100, h: 900, type: 'win' },                   // kitchen
         { c: 5880, w: 1000, sill: 2150, h: 550, type: 'fixed', panes: 2 },       // pooja clerestory light (centered on pooja/mandir axis)
         { c: 7100, w: 450, sill: 0, h: 2400, type: 'fixed', panes: 1 },          // entry sidelite
@@ -4936,8 +4936,9 @@ window.HouseScene = (function () {
       // service band, and the exterior draws the same run in eastPlaster. It
       // needs `mat` so both representations agree; as white2 it z-fought the
       // exterior over the whole SE corner (120 hits on a four-face sweep).
-      { dir: 'y', b: [12420, 12650], a: [-762, 1411], mat: 'eastPlaster', faces: { lo: 'white2' }, ops: [{ c: -300, w: 600, sill: 0, h: 2400 }] }, // southeast east wall with secure grill door
-      { dir: 'x', b: [-762, -646], a: [4805, 12420], faces: { lo: 'white' }, ops: [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }] }, // weather-secured south wall: utility grill, cbath ventilator, wet-kitchen grill
+      { dir: 'y', b: [12420, 12650], a: [0, 1411], mat: 'eastPlaster', faces: { lo: 'white2' }, ops: [] }, // southeast east wall, solid (open south of y 0 into the service lobby)
+      { dir: 'y', b: [14040, 14270], a: [-762, 0], mat: 'eastPlaster', faces: { lo: 'white2' }, ops: [{ c: -300, w: 600, sill: 0, h: 2400 }] }, // service-lobby end wall, flush with the lift's east face, with the secure grill door
+      { dir: 'x', b: [-762, -646], a: [4805, 14270], faces: { lo: 'white' }, ops: [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }, { c: 13230, w: 1200, sill: 900, h: 1400 }] }, // weather-secured south wall: utility grill, cbath ventilator, wet-kitchen grill, service-lobby grill
       { dir: 'y', b: [4805, 4920], a: [-646, 232], faces: { lo: 'white' }, ops: [{ c: -207, w: 800, sill: 0, h: 2400, noFrame: true }] }, // utility west wall + SW grill door onto the bedroom south balcony
       { dir: 'y', b: [8135, 8250], a: [-646, 950], ops: [{ c: 520, w: 700 }] },        // utility | common bath wall + door
       // One straight service line, y 950..1065, from the bedroom partition to
@@ -6972,13 +6973,19 @@ window.HouseScene = (function () {
       wallRun(eBag, 'white2', 'y', -646, 950, 8135, 8250, L.f1, L.f2, L.f1,
               [{ c: 520, w: 700, sill: 0, h: 2100 }]); // utility | cbath wall + door
       wallRun(eBag, 'white2', 'y', -646, 950, 9370, 9486, L.f1, L.f2, L.f1, []); // cbath | wet kitchen divider
-      wallRun(eBag, 'eastPlaster', 'y', -762, 1411, EB[0], EB[1], L.f1, L.f2, L.f1,
-              [{ c: -300, w: 600, sill: 0, h: 2400 }], null, { lo: 'white2' }); // SE corner east wall (grill door leaf from OPEN.f1.E)
-      wallRun(eBag, 'white2', 'x', 4805, 12420, -762, -646, L.f1, L.f2, L.f1,
-              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }], null, { lo: 'white' });
+      wallRun(eBag, 'eastPlaster', 'y', 0, 1411, EB[0], EB[1], L.f1, L.f2, L.f1,
+              [], null, { lo: 'white2' }); // SE corner east wall — solid; south of y 0 it is open into the service lobby
+      // Service lobby: the wet kitchen runs on east under the lift's back wall (x 12650..14270)
+      // to a grill door in the end wall, flush with the lift's east face.
+      wallRun(eBag, 'eastPlaster', 'y', -762, 0, 14040, 14270, L.f1, L.f2, L.f1,
+              [{ c: -300, w: 600, sill: 0, h: 2400 }], null, { lo: 'white2' });
+      glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
+      wallRun(eBag, 'white2', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,
+              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }, { c: 13230, w: 1200, sill: 900, h: 1400 }], null, { lo: 'white' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 13230, w: 1200, sill: 900, h: 1400, type: 'grill' });
       // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // Terrace edge: NO solid parapet wall — open metal railings like FF/SF balconies.
       // Thin slab fascia (same language as outdoor decks) + railing @ L.roof.
@@ -7580,6 +7587,9 @@ window.HouseScene = (function () {
       outdoorDeck(o1, 9536, 12370, -596, 900, f1);
       // South hang through the service-band gap (outside the y=-762 wall)
       outdoorDeck(o1, 4805, EX0, -732, -650, f1);
+      // Service lobby floor (wet kitchen -> grill door at the lift's east end)
+      outdoorDeck(o1, 12370, 12650, -596, 0, f1);
+      outdoorDeck(o1, 12650, 14040, -596, -497, f1);
       // Edge fascia — north lip stops on the east box, which carries its own
       // 275 mm frame round the corner. Running the lip through to 18052 was
       // the old bay's outer face and left a coplanar white-on-white seam.
@@ -7591,12 +7601,12 @@ window.HouseScene = (function () {
       pb(o1, 'charDark', 0, BOX_X, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', -10, 90, Y1n, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f1 - 0.24, f1 - 0.18);
-      // Metal on east + NE/SE bays. Long north/south runs and west returns are walls.
-      // South bedroom balcony: plaster wall, same run as the SF wall above.
-      edgeWall(o1, 'y', 80, SOUTH_FC, 0, f1, 1.08, { plain: true });
-      edgeWall(o1, 'x', SOUTH_FC, 0, 4805, f1, 1.08, { plain: true });
+      // Metal on east + NE/SE bays and the SW balcony. North run + NW return stay plaster.
+      // South bedroom balcony: MS rail on both runs, like the rest of the FF edge.
+      railing(o1, 'y', 80, SOUTH_FC, 0, f1, 1.0);
+      railing(o1, 'x', SOUTH_FC, 80, 4805, f1, 1.0);
       railPillar(o1, 80, SOUTH_FC, f1, 1.08);
-      railing(o1, 'x', SOUTH_FC, EX0, EAST_SOUTH_RET_XW, f1, 1.0);
+      // (x 12650..14270 is the service-lobby south wall now, not a rail)
       externalStairVoidRails(o1, f1);
       (function ffNorthGuard() {
         const nX0 = 80, nX1 = BOX_X;
@@ -8064,6 +8074,7 @@ window.HouseScene = (function () {
         Lum.pendant(9580, 1950, 1.60, 0.12);         // pair over the SW counter
         Lum.pendant(9580, 2430, 1.60, 0.12);
         Lum.downlight(11000, 150);
+        Lum.downlight(13230, -320);                   // service lobby
         Lum.task(9500, 10220, 1075, 1380, 1.44);     // under the wall units (their soffit is at +1.45)
         Lum.task(11280, 12090, 1075, 1380, 1.44);
         Lum.task(10360, 12090, 4635, 4940, 1.44);
@@ -8419,6 +8430,8 @@ window.HouseScene = (function () {
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
+        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 13230, w: 1200, sill: 900, h: 1400, type: 'grill' });
+        glazing(bag, { face: 'E', band: [14040, 14270], floorY: fY, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
         glazing(bag, { face: 'W', band: [4805, 4920], floorY: fY, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
         // This storey only (FF slab → cut). Not the full tower from ground.
         liftTower(bag, cut, [fY], fY);
@@ -8680,8 +8693,8 @@ window.HouseScene = (function () {
           bag.sph('brassI', 11820 / 1000, fY + 2.14, -midY / 1000, 0.018); // clapper
         })();
         // --- Wet Kitchen (south band off the kitchen: stove on the East wall
-        // beside the SE grill door, sink + dishwasher on the West divider) ---
-        // Band is y -646..950 now: DW + sink on the west, grill door + stove
+        // beside the passage to the SE grill door, sink + dishwasher on the West divider) ---
+        // Band is y -646..950 now: DW + sink on the west, passage + stove
         // on the east, and nothing else.
         // 1. West counter against the divider (full band depth)
         Fur.counterX(bag, 9486, 10086, -520, 950, fY, { cx: 9786, cy: 540, w: 420, d: 760 });
@@ -8701,7 +8714,7 @@ window.HouseScene = (function () {
         bag.cyl('alu', 10098 / 1000, fY + 0.46, -505 / 1000, 0.006, 0.08); // Handles
         bag.cyl('alu', 10098 / 1000, fY + 0.46, -565 / 1000, 0.006, 0.08);
 
-        // 2. East counter with the stove, North of the SE grill door (door spans y -600..0)
+        // 2. East counter with the stove, North of the passage to the grill door (passage spans y -600..0)
         Fur.counterX(bag, 11820, 12409, 60, 950, fY);
         Fur.hob(bag, 12114, 505, fY);
 

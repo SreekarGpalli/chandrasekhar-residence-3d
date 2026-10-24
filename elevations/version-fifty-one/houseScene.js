@@ -1335,7 +1335,6 @@ window.HouseScene = (function () {
     },
     f1: {
       E: [
-        { c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true },         // SE service grill (south)
         { c: 3200, w: 1200, sill: 1100, h: 900, type: 'win' },                   // kitchen (south)
         { c: 6150, w: 900, sill: 1500, h: 900, type: 'fixed', panes: 1 }, // square fixed (slightly left, aligned)
         { c: 7100, w: 450, sill: 0, h: 2400, type: 'fixed', panes: 1 },     // sidelite (south of door)
@@ -2709,13 +2708,19 @@ window.HouseScene = (function () {
       wallRun(eBag, 'white', 'y', -646, 1377, 8135, 8250, L.f1, L.f2, L.f1,
               [{ c: 1000, w: 700, sill: 0, h: 2100 }]); // utility | cbath wall + door
       pb(eBag, 'white', 9370, 9486, -646, 1411, L.f1, L.f2); // cbath | wet kitchen divider
-      wallRun(eBag, 'eastPlaster', 'y', -762, 1411, EB[0], EB[1], L.f1, L.f2, L.f1,
-              [{ c: -300, w: 600, sill: 0, h: 2400 }]); // SE corner east wall (grill door leaf from OPEN.f1.E)
-      wallRun(eBag, 'white', 'x', 4805, 12420, -762, -646, L.f1, L.f2, L.f1,
-              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }]);
+      wallRun(eBag, 'eastPlaster', 'y', 0, 1411, EB[0], EB[1], L.f1, L.f2, L.f1,
+              []); // SE corner east wall — solid; south of y 0 it is open into the service lobby
+      // Service lobby: the wet kitchen runs on east under the lift's back wall (x 12650..14270)
+      // to a grill door in the end wall, flush with the lift's east face.
+      wallRun(eBag, 'eastPlaster', 'y', -762, 0, 14040, 14270, L.f1, L.f2, L.f1,
+              [{ c: -300, w: 600, sill: 0, h: 2400 }]);
+      glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
+      wallRun(eBag, 'white', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,
+              [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11205, w: 2430, sill: 900, h: 1400 }, { c: 13230, w: 1200, sill: 900, h: 1400 }]);
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11205, w: 2430, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 13230, w: 1200, sill: 900, h: 1400, type: 'grill' });
       // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // Terrace edge: NO solid parapet wall — open metal railings like FF/SF balconies.
       // Thin slab fascia (same language as outdoor decks) + railing @ L.roof.
@@ -3282,6 +3287,9 @@ window.HouseScene = (function () {
       outdoorDeck(o1, 9536, 12370, -596, 1360, f1);
       // South hang through the service-band gap (outside the y=-762 wall)
       outdoorDeck(o1, 4805, EX0, -732, -650, f1);
+      // Service lobby floor (wet kitchen -> grill door at the lift's east end)
+      outdoorDeck(o1, 12370, 12650, -596, 0, f1);
+      outdoorDeck(o1, 12650, 14040, -596, -497, f1);
       // Edge fascia — north lip stops on the east box, which carries its own
       // 275 mm frame round the corner. Running the lip through to 18052 was
       // the old bay's outer face and left a coplanar white-on-white seam.
@@ -3293,12 +3301,12 @@ window.HouseScene = (function () {
       pb(o1, 'charDark', 0, BOX_X, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', -10, 90, Y1n, NBY1 + 14, f1 - 0.24, f1 - 0.18);
       pb(o1, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f1 - 0.24, f1 - 0.18);
-      // Metal on east + NE/SE bays. Long north/south runs and west returns are walls.
-      // South bedroom balcony: plaster wall, same run as the SF wall above.
-      edgeWall(o1, 'y', 80, SOUTH_FC, 0, f1, 1.08, { plain: true });
-      edgeWall(o1, 'x', SOUTH_FC, 0, 4805, f1, 1.08, { plain: true });
+      // Metal on east + NE/SE bays and the SW balcony. North run + NW return stay plaster.
+      // South bedroom balcony: MS rail on both runs, like the rest of the FF edge.
+      railing(o1, 'y', 80, SOUTH_FC, 0, f1, 1.0);
+      railing(o1, 'x', SOUTH_FC, 80, 4805, f1, 1.0);
       railPillar(o1, 80, SOUTH_FC, f1, 1.08);
-      railing(o1, 'x', SOUTH_FC, EX0, EAST_SOUTH_RET_XW, f1, 1.0);
+      // (x 12650..14270 is the service-lobby south wall now, not a rail)
       externalStairVoidRails(o1, f1);
       (function ffNorthGuard() {
         const nX0 = 80, nX1 = BOX_X;
