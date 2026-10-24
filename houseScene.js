@@ -210,7 +210,7 @@ window.HouseScene = (function () {
     artC:      0x33465d,  // canvas — indigo
     artD:      0x899985,  // canvas — sage
     mirrorI:   0xdee2e4,  // silvered mirror
-    wallLime:  0xd8cfc2,  // limewash feature wall
+    wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
     tileBath:  0xdbd5cb   // large-format bath wall tile
   };
 
@@ -786,8 +786,8 @@ window.HouseScene = (function () {
         place(mat, roundedBoxGeom(sx, sy, sz, r, puff), cx, cy, cz, 1, 1, 1, rx, ry, rz),
       lathe: (mat, cx, cy, cz, pts, segs, s) =>
         place(mat, latheGeom(pts, segs), cx, cy, cz, s || 1, s || 1, s || 1),
-      latheS: (mat, cx, cy, cz, pts, segs, sx, sy, sz, ry) =>
-        place(mat, latheGeom(pts, segs), cx, cy, cz, sx, sy, sz, 0, ry || 0, 0),
+      latheS: (mat, cx, cy, cz, pts, segs, sx, sy, sz, ry, rx) =>
+        place(mat, latheGeom(pts, segs), cx, cy, cz, sx, sy, sz, rx || 0, ry || 0, 0),
       branch: (mat, x0, y0, z0, x1, y1, z1, r0, r1) => {
         const dx = x1 - x0, dy = y1 - y0, dz = z1 - z0;
         const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -2258,28 +2258,26 @@ window.HouseScene = (function () {
     },
 
     /* ================================================================
-       DOUBLE-HEIGHT TV FEATURE WALL — teak plinth, limewash tower
-       (Oct 2026 redesign; the previous travertine / fluted-oak wall is in
-       git history at 27ff6ba, the navy classical one in archive/).
+       DOUBLE-HEIGHT TV FEATURE WALL — one painted arch
+       (Oct 23 2026. Earlier walls are in git: teak plinth b/f this,
+       travertine at 27ff6ba, navy classical in archive/.)
 
-       The house is off-white + black MS + brass hairlines, with teak as its
-       ONE warm accent (doors 'walnut', window frames 'frame'). The wall
-       follows the same rule instead of adding a second family of timber and
-       a stone:
-         - TIMBER ONLY WHERE IT IS SEEN AND TOUCHED: teak veneer from the
-           floor to 2.1 m (the door-head line), 4.7 m2 of it. Everything
-           above is paint. The old wall clad 14 m2 top to bottom.
-         - Reeded flanks (330 mm each, the hall's fluted-door language) frame
-           a flat field. The TV sits in a dark inset, so a black screen
-           against two bright windows has no hard edge to the wall around it.
-         - ONE brass line across the top of the timber: it is the veneer edge
-           cap, so it costs nothing extra. Two vertical hairlines mark the
-           flanks. No other metal on the wall.
-         - Above 2.1 m: plain limewash, floor-to-soffit tone, left empty on
-           purpose. The chandelier is the focal piece in front of it.
-         - Floating white console, warm under-glow.
-       Everything is symmetric about the pier axis (x = 7130), which is also
-       the sofa, rug and window-pair axis.
+       Paint only: no cladding, no joinery around the screen, nothing
+       sized to today's TV. The pier stays the same white as the room and a
+       single tall arch is painted on it in a clay limewash:
+         - 1800 wide on the pier axis (x = 7130, also the sofa / rug /
+           window-pair axis), 210 mm of white either side to the frames.
+         - Its crown is a semicircle (r 900) whose top lands exactly on the
+           head of the SF windows either side (6.303 m AFF), so the arch and
+           the two tall windows read as one composition across both storeys.
+         - The halo chandelier hangs inside the arch outline: the rings are
+           the arch's circle repeated in light.
+         - Clay is the teak of the doors and frames, softened. A mid-tone
+           behind the screen is also kinder on the eye than white.
+         - Any TV up to 75" (1670 wide) sits inside the arch on a flat
+           bracket; change the set and nothing on the wall changes.
+       Cost: masking, a string-line compass and two coats of limewash.
+       Console: one plain floating unit in the door teak, push-to-open.
        Wall: 2221 x 6556 mm (FF floor -> SF soffit, x0 = 6020, x1 = 8241).
        Called once per storey: isLower = true for FF, false for SF.
        ================================================================ */
@@ -2289,10 +2287,8 @@ window.HouseScene = (function () {
       const fY0 = isLower ? fY : fY - H;          // FF floor datum (base of void)
       const TOP = 2 * H - L.slabT;                // FF floor -> SF soffit (6.556 m)
       const zLo = isLower ? 0 : H, zHi = isLower ? H : TOP;
-      const Hmm = TOP * 1000;                     // 6556 mm
 
-      // box in wall-local mm: u from x0, depth y in plan mm, z in mm AFF.
-      // Automatically clipped to this storey's vertical slice so FF and SF merge seamlessly.
+      // box in wall-local mm, clipped to this storey's slice
       const box = (m, u0, u1, ya, yb, za, zb) => {
         const a = Math.max(za / 1000, zLo), b = Math.min(zb / 1000, zHi);
         if (b - a < 0.0005) return;
@@ -2304,77 +2300,48 @@ window.HouseScene = (function () {
         prb(bag, m, x0 + u0, x0 + u1, ya, yb, fY0 + a, fY0 + b, rad || 4);
       };
 
-      const yField = backY - 16;                  // limewash face (16 mm off the shell)
-      const yP = yField - 45;                     // teak face: 45 mm proud, so a 45 mm recess takes the TV flush
       const mid = W / 2;                          // pier axis (x = 7130)
-      const zP0 = 60, zP1 = 2100;                 // teak: above a 60 mm shadow plinth, up to the door-head line
+      const aR = 900;                             // arch half-width = crown radius
+      const apex = 1000 * (H + 0.100 + 2.850);    // SF window head: SF sill 100 + h 2850 (6303)
+      const spring = apex - aR;                   // springing line (5403)
+      const yPaint = backY - 1.5;                 // a paint film, not a panel
 
-      // 1. LIMEWASH FIELD, floor to soffit, one tone
-      box('wallLime', 0, W, yField, backY, 0, Hmm);
-      if (!isLower) return;
-
-      // 2. SHADOW PLINTH: the teak floats 60 mm off the floor on a dark reveal
-      box('aluDark', 0, W, yP + 6, yField, 0, zP0);
-
-      // 3. TV RECESS (1300 x 766, centred on the axis, 55" with a 40 mm margin)
-      const nW = 1300, nH = 766, nC = 1250;
-      const nu0 = mid - nW / 2, nu1 = mid + nW / 2;
-      const nz0 = nC - nH / 2, nz1 = nC + nH / 2;
-
-      // 4. TEAK VOLUME in four pieces around the recess
-      box('walnut', 0, nu0, yP, yField, zP0, zP1);
-      box('walnut', nu1, W, yP, yField, zP0, zP1);
-      box('walnut', nu0, nu1, yP, yField, zP0, nz0);
-      box('walnut', nu0, nu1, yP, yField, nz1, zP1);
-      // recess back: deep teak, so the screen edge dissolves into it
-      box('woodD', nu0, nu1, yField - 5, yField, nz0, nz1);
-
-      // 5. REEDED FLANKS: 330 mm each side, dark grooves behind half-round reeds
-      const bw = 330, reedW = 14, reedD = 9, reedP = 26, nReed = 12;
-      const reedM = (bw - (nReed * reedP - (reedP - reedW))) / 2;   // side margin
-      for (const side of [0, 1]) {
-        const b0 = side ? W - bw : 0;
-        box('woodD', b0 + 2, b0 + bw - 2, yP - 3, yP, zP0 + 24, zP1 - 24);
-        for (let i = 0; i < nReed; i++) {
-          const ru = b0 + reedM + i * reedP;
-          rbox('walnut', ru, ru + reedW, yP - 3 - reedD, yP - 3, zP0 + 30, zP1 - 30, 5);
-        }
-        // hairline where the reeded flank meets the flat field
-        const hl = side ? W - bw : bw;
-        box('brassI', hl - 1.5, hl + 1.5, yP - 5, yP, zP0, zP1);
+      // 1. ARCH: straight body floor -> springing, then the round crown
+      box('wallLime', mid - aR, mid + aR, yPaint, backY, 0, spring);
+      if (!isLower) {
+        // crown: a 96-segment disc, centred on the springing line, 0.5 mm
+        // in front of the body so the overlapping lower half cannot z-fight
+        bag.latheS('wallLime', (x0 + mid) / 1000, fY0 + spring / 1000, -(yPaint - 0.5) / 1000,
+          [[0, 0], [aR / 1000, 0]], 96, 1, 1, 1, 0, -Math.PI / 2);
+        return;
       }
 
-      // 6. BRASS CAP across the top of the teak (veneer edge cover, 8 mm proud)
-      box('brassI', 0, W, yP - 8, yField, zP1, zP1 + 7);
+      // 2. TV: flat on the paint, centre 1250 AFF (55" today)
+      const tvW = 1220, tvH = 686, tvC = 1250;
+      const tz0 = tvC - tvH / 2, tz1 = tvC + tvH / 2;
+      const yTv = yPaint - 32;                    // flat bracket + slim set
+      box('blackM', mid - 250, mid + 250, yTv + 12, yPaint, tz0 + 120, tz1 - 120);
+      box('blackM', mid - tvW / 2 - 3, mid + tvW / 2 + 3, yTv + 3, yTv + 12, tz0 - 3, tz1 + 3);
+      box('tv', mid - tvW / 2, mid + tvW / 2, yTv, yTv + 3, tz0, tz1);
 
-      // 7. TV: 1220 x 686 flush in the recess, slim flat mount behind
-      const tvW = 1220, tvH = 686;
-      const tz0 = nC - tvH / 2, tz1 = nC + tvH / 2;
-      const yTv = yP + 3;                         // bezel front; the screen face is flush with the teak
-      box('blackM', mid - 250, mid + 250, yField - 28, yField - 5, tz0 + 120, tz1 - 120);
-      box('blackM', mid - tvW / 2 - 3, mid + tvW / 2 + 3, yTv, yField - 28, tz0 - 3, tz1 + 3);
-      box('tv', mid - tvW / 2, mid + tvW / 2, yP, yTv, tz0, tz1);
-
-      // 8. FLOATING CONSOLE (1700 x 280 x 340), warm-white lacquer, push-to-open
-      const cW = 1700, cD = 340, cz0 = 300, cz1 = 580;
+      // 3. FLOATING CONSOLE (1600 x 300 x 350) in the door teak, inside the arch
+      const cW = 1600, cD = 350, cz0 = 300, cz1 = 600;
       const c0 = mid - cW / 2, c1 = mid + cW / 2;
-      const cy0 = yP - cD;
-      rbox('lacq', c0, c1, cy0, yP, cz0, cz1, 5);
-      // door joints
-      for (const k of [1, 2]) {
+      const cy0 = yPaint - cD;
+      rbox('walnut', c0, c1, cy0, yPaint, cz0, cz1, 4);
+      for (const k of [1, 2]) {                   // push-to-open door joints
         const ju = c0 + (cW * k) / 3;
         box('woodD', ju - 1.5, ju + 1.5, cy0 - 1, cy0 + 2, cz0 + 8, cz1 - 8);
       }
-      // warm indirect under-glow (casts a gentle wash on the floor tiles)
-      box('coveLED', c0 + 40, c1 - 40, cy0 + 40, yP - 30, cz0 - 4, cz0);
+      box('coveLED', c0 + 40, c1 - 40, cy0 + 40, yPaint - 30, cz0 - 4, cz0);
 
-      // 9. STYLING: slim soundbar under the TV, books left, brass sphere + vase right
+      // 4. STYLING: soundbar, books left, brass sphere + vase right
       const sbW = 860, sbH = 50, sbD = 75;
-      box('charDark', mid - sbW / 2, mid + sbW / 2, yP - sbD - 20, yP - 20, cz1, cz1 + sbH);
-      Fur.books(bag, x0 + c0 + 170, yP - 170, fY0 + cz1 / 1000, 3, true);
-      pb(bag, 'brassI', x0 + c1 - 250, x0 + c1 - 120, yP - 240, yP - 120, fY0 + cz1 / 1000, fY0 + cz1 / 1000 + 0.012);
-      bag.sph('brassI', (x0 + c1 - 185) / 1000, fY0 + cz1 / 1000 + 0.012 + 0.05, -(yP - 180) / 1000, 0.05);
-      bag.cyl('ceramic', (x0 + c1 - 80) / 1000, fY0 + cz1 / 1000 + 0.08, -(yP - 170) / 1000, 0.035, 0.16);
+      box('charDark', mid - sbW / 2, mid + sbW / 2, yPaint - sbD - 20, yPaint - 20, cz1, cz1 + sbH);
+      Fur.books(bag, x0 + c0 + 170, yPaint - 170, fY0 + cz1 / 1000, 3, true);
+      pb(bag, 'brassI', x0 + c1 - 250, x0 + c1 - 120, yPaint - 240, yPaint - 120, fY0 + cz1 / 1000, fY0 + cz1 / 1000 + 0.012);
+      bag.sph('brassI', (x0 + c1 - 185) / 1000, fY0 + cz1 / 1000 + 0.012 + 0.05, -(yPaint - 180) / 1000, 0.05);
+      bag.cyl('ceramic', (x0 + c1 - 80) / 1000, fY0 + cz1 / 1000 + 0.08, -(yPaint - 170) / 1000, 0.035, 0.16);
     },
     counterX(bag, x0, x1, y0, y1, fY) {
       // Full base carcass + toe-kick recess + granite worktop + steel edge trim
@@ -7148,8 +7115,8 @@ window.HouseScene = (function () {
             for (const cx of flankCenters(o.c, o.w, 160)) {
               // The north wall between these two windows is the double-height
               // TV feature wall (x 6020..8241, FF floor to SF soffit). The inner
-              // flanks at 6160 and 8100 land on its pilasters — lamp body, lens
-              // and all — so they are skipped on both storeys.
+              // flanks at 6160 and 8100 would sit on the pier beside the painted
+              // arch, so they are skipped on both storeys to keep it clean.
               if (cx > 6020 && cx < 8241) continue;
               northWallLamp(cx, fl);
             }
