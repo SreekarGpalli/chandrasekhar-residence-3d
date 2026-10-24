@@ -971,10 +971,11 @@ window.HouseScene = (function () {
       put('steel', hx - 110, hx + 15, ia[0], ia[1], b + 1.045, b + 1.075); // lever arm
     } else if (spec.type === 'frenchdoor') { // floor-to-head glazed French door
       const nLeaf = spec.panes || 2;
-      put('frame', a0, a0 + 52, fd0, fd1, b, t);
-      put('frame', a1 - 52, a1, fd0, fd1, b, t);
-      put('frame', a0, a1, fd0, fd1, t - 0.052, t);
-      put('frame', a0, a1, fd0, fd1, b, b + 0.052);
+      const FM = spec.frameMat || 'frame';
+      put(FM, a0, a0 + 52, fd0, fd1, b, t);
+      put(FM, a1 - 52, a1, fd0, fd1, b, t);
+      put(FM, a0, a1, fd0, fd1, t - 0.052, t);
+      put(FM, a0, a1, fd0, fd1, b, b + 0.052);
       // Stone threshold proud of the outer face
       const th = outSign > 0 ? [bb1 - 8, bb1 + 70] : [bb0 - 70, bb0 + 8];
       put('charDark', a0 - 20, a1 + 20, th[0], th[1], b, b + 0.028);
@@ -984,12 +985,12 @@ window.HouseScene = (function () {
       const lockZ = b + 1.02;
       for (let i = 1; i < nLeaf; i++) {
         const mx = inner0 + i * leafW;
-        put('frame', mx - 26, mx + 26, fd0 + 2, fd1 - 2, b + 0.052, t - 0.052);
+        put(FM, mx - 26, mx + 26, fd0 + 2, fd1 - 2, b + 0.052, t - 0.052);
       }
       for (let i = 0; i < nLeaf; i++) {
         const l0 = inner0 + i * leafW + (i === 0 ? 0 : 26);
         const l1 = inner0 + (i + 1) * leafW - (i === nLeaf - 1 ? 0 : 26);
-        put('frame', l0, l1, mid - 10, mid + 10, lockZ - 0.016, lockZ + 0.016);
+        put(FM, l0, l1, mid - 10, mid + 10, lockZ - 0.016, lockZ + 0.016);
         // Black EPDM rubber weather gasket bordering UPVC door glass
         bead(l0 + 2, l1 - 2, b + 0.052, lockZ - 0.016, gd0 - 3, gd1 + 3);
         bead(l0 + 2, l1 - 2, lockZ + 0.016, t - 0.052, gd0 - 3, gd1 + 3);
@@ -1128,56 +1129,79 @@ window.HouseScene = (function () {
         drawPanel(a0 + 3 * pW - 20, a1 - 15, mid - 20, false);
       }
     } else { // Golden Oak UPVC window / glassdoor / fixed
-      // Master outer UPVC chamber frame
-      put('frame', a0, a0 + F, fd0, fd1, b, t);
-      put('frame', a1 - F, a1, fd0, fd1, b, t);
-      put('frame', a0, a1, fd0, fd1, t - F / 1000, t);
-      put('frame', a0, a1, fd0, fd1, b, b + F / 1000);
+      /* Options: `slim` = a fixed light glazed straight into a 40 mm frame
+         (no sash ring, so the glass reaches nearly to the opening edge);
+         `tiers` = the opening split by 44 mm transoms into stacked lights,
+         bottom to top, each { h (mm), panes, fixed }: fixed lights are
+         glazed into the frame, the rest are side-hung casement leaves. */
+      const Fo = spec.slim ? 40 : F;
+      put('frame', a0, a0 + Fo, fd0, fd1, b, t);
+      put('frame', a1 - Fo, a1, fd0, fd1, b, t);
+      put('frame', a0, a1, fd0, fd1, t - Fo / 1000, t);
+      put('frame', a0, a1, fd0, fd1, b, b + Fo / 1000);
 
-      const panes = spec.panes != null ? spec.panes : (spec.w >= 1050 ? 2 : 1);
-      const spanW = a1 - a0 - 2 * F;
-      const bayW = spanW / panes;
-      const mullW = 44; // UPVC T-mullion width
+      const mullW = 44; // UPVC T-mullion / transom width
       const sashW = 42; // UPVC operable sash profile width
+      const tiers = spec.tiers || [{ h: spec.h, fixed: spec.type === 'fixed',
+        panes: spec.panes != null ? spec.panes : (spec.w >= 1050 ? 2 : 1) }];
+      const spanW = a1 - a0 - 2 * Fo;
+      let hAcc = 0;
+      tiers.forEach((tr, k) => {
+        const first = k === 0, last = k === tiers.length - 1;
+        const zb = b + hAcc / 1000; hAcc += tr.h;
+        const zt = last ? t : b + hAcc / 1000;
+        const z0 = first ? b + Fo / 1000 : zb + mullW / 2000;    // clear opening of this light
+        const z1 = last ? t - Fo / 1000 : zt - mullW / 2000;
+        if (!last) put('frame', a0 + Fo, a1 - Fo, fd0 + 3, fd1 - 3, z1, z1 + mullW / 1000);   // transom
+        const panes = tr.panes || 1, bayW = spanW / panes;
+        const noSash = tr.fixed && (spec.slim || spec.tiers);
 
-      // Intermediate UPVC T-mullions between bays
-      for (let i = 1; i < panes; i++) {
-        const mx = a0 + F + i * bayW;
-        put('frame', mx - mullW / 2, mx + mullW / 2, fd0 + 3, fd1 - 3, b + F / 1000, t - F / 1000);
-      }
+        // Intermediate UPVC T-mullions between bays
+        for (let i = 1; i < panes; i++) {
+          const mx = a0 + Fo + i * bayW;
+          put('frame', mx - mullW / 2, mx + mullW / 2, fd0 + 3, fd1 - 3, z0, z1);
+        }
 
-      // Sashes, EPDM gaskets, glass & hardware for each bay
-      for (let i = 0; i < panes; i++) {
-        const p0 = a0 + F + i * bayW + (i === 0 ? 0 : mullW / 2);
-        const p1 = a0 + F + (i + 1) * bayW - (i === panes - 1 ? 0 : mullW / 2);
-        if (p1 - p0 < 40) continue;
+        // Sashes, EPDM gaskets, glass & hardware for each bay
+        for (let i = 0; i < panes; i++) {
+          const p0 = a0 + Fo + i * bayW + (i === 0 ? 0 : mullW / 2);
+          const p1 = a0 + Fo + (i + 1) * bayW - (i === panes - 1 ? 0 : mullW / 2);
+          if (p1 - p0 < 40) continue;
+          if (noSash) {
+            // Fixed light: glass straight into the frame rebate, gasket on its edge
+            bead(p0, p1, z0, z1, gd0 - 4, gd1 + 4, 6);
+            put('glass', p0, p1, gd0, gd1, z0, z1);
+            continue;
+          }
 
-        // Inner UPVC sash profile (stepped 4mm proud of outer frame reveal)
-        put('frame', p0, p0 + sashW, fd0 + 6, fd1 - 6, b + (F + 4) / 1000, t - (F + 4) / 1000);
-        put('frame', p1 - sashW, p1, fd0 + 6, fd1 - 6, b + (F + 4) / 1000, t - (F + 4) / 1000);
-        put('frame', p0, p1, fd0 + 6, fd1 - 6, t - (F + 4 + sashW) / 1000, t - (F + 4) / 1000);
-        put('frame', p0, p1, fd0 + 6, fd1 - 6, b + (F + 4) / 1000, b + (F + 4 + sashW) / 1000);
+          // Inner UPVC sash profile (stepped 4mm proud of outer frame reveal)
+          put('frame', p0, p0 + sashW, fd0 + 6, fd1 - 6, z0 + 0.004, z1 - 0.004);
+          put('frame', p1 - sashW, p1, fd0 + 6, fd1 - 6, z0 + 0.004, z1 - 0.004);
+          put('frame', p0, p1, fd0 + 6, fd1 - 6, z1 - 0.004 - sashW / 1000, z1 - 0.004);
+          put('frame', p0, p1, fd0 + 6, fd1 - 6, z0 + 0.004, z0 + 0.004 + sashW / 1000);
 
-        // Black EPDM rubber weather gasket beading bordering glass
-        bead(p0 + sashW - 5, p1 - sashW + 5, b + (F + sashW) / 1000, t - (F + sashW) / 1000, gd0 - 4, gd1 + 4);
+          // Black EPDM rubber weather gasket bordering glass
+          bead(p0 + sashW - 5, p1 - sashW + 5, z0 + sashW / 1000, z1 - sashW / 1000, gd0 - 4, gd1 + 4);
 
-        // Glass pane inside gasket
-        put('glass', p0 + sashW, p1 - sashW, gd0, gd1, b + (F + sashW + 4) / 1000, t - (F + sashW + 4) / 1000);
+          // Glass pane inside gasket
+          put('glass', p0 + sashW, p1 - sashW, gd0, gd1, z0 + (sashW + 4) / 1000, z1 - (sashW + 4) / 1000);
 
-        // UPVC casement handle on operable leaf (brass/gold finish against golden oak UPVC)
-        if (spec.type !== 'fixed' && spec.h >= 800) {
-          const isOperable = (panes === 1) || (panes === 2 && i === 1) || (panes === 3 && (i === 0 || i === 2));
-          if (isOperable) {
-            const hSideX = (i === 0 && panes > 1) ? p1 - sashW + 8 : p0 + sashW - 8;
-            const hY = b + (t - b) * 0.40;
-            // Escutcheon backplate
-            put('brass', hSideX - 8, hSideX + 8, fd1 - 8, fd1 + 4, hY - 0.045, hY + 0.045);
-            // Turned lever handle arm
-            put('brass', hSideX - 8, hSideX + 8, fd1 + 4, fd1 + 22, hY - 0.012, hY + 0.012);
-            put('brass', hSideX - 4, hSideX + 4, fd1 + 16, fd1 + 22, hY - 0.085, hY + 0.012);
+          // UPVC casement handle on operable leaf (brass/gold finish against golden oak UPVC)
+          if (!tr.fixed && zt - zb >= 0.8) {
+            const isOperable = spec.tiers ? true
+              : (panes === 1) || (panes === 2 && i === 1) || (panes === 3 && (i === 0 || i === 2));
+            if (isOperable) {
+              const hSideX = (i === 0 && panes > 1) ? p1 - sashW + 8 : p0 + sashW - 8;
+              const hY = zb + (zt - zb) * 0.40;
+              // Escutcheon backplate
+              put('brass', hSideX - 8, hSideX + 8, fd1 - 8, fd1 + 4, hY - 0.045, hY + 0.045);
+              // Turned lever handle arm
+              put('brass', hSideX - 8, hSideX + 8, fd1 + 4, fd1 + 22, hY - 0.012, hY + 0.012);
+              put('brass', hSideX - 4, hSideX + 4, fd1 + 16, fd1 + 22, hY - 0.085, hY + 0.012);
+            }
           }
         }
-      }
+      });
 
       if ((spec.sill || 0) > 250 && spec.type !== 'fixed') { // sill ledge + warm nose
         const sb = outSign > 0 ? [bb1, bb1 + 55] : [bb0 - 55, bb0];
@@ -1185,7 +1209,7 @@ window.HouseScene = (function () {
         put('copingLight', a0 - 20, a1 + 20, sb[0], sb[1], b - 0.01, b + 0.008);
       }
 
-      if (spec.type !== 'fixed' && spec.grille !== false) {
+      if ((spec.type !== 'fixed' || spec.grille === true) && spec.grille !== false) {
         windowGrille(put, { a0, a1, b, t, edge: outSign > 0 ? bb0 : bb1, outSign });
       }
     }
@@ -4728,6 +4752,7 @@ window.HouseScene = (function () {
   /* ============ exterior opening schedules ============ */
   /* east band x: [12420,12650]; north y: [8640,8870]; south y: [0,230]; west x: [0,230] */
   const EB = [12420, 12650], NB = [8640, 8870], SB = [0, 230], WB = [0, 230];
+  const TV_WIN_TIERS = [{ h: 1400, panes: 2 }, { h: 800, fixed: true }];
   const OPEN = {
     // floor 0
     f0: {
@@ -4762,14 +4787,27 @@ window.HouseScene = (function () {
         { c: 8000, w: 1200, sill: 0, h: 2400, type: 'door' }                     // duplex entry pivot (north end)
       ],
       N: [
-        { c: 5500, w: 1000, sill: 200, h: 2900, type: 'win' },                   // tall double-height window left of void (top Z=7.203m, tight 103mm beam drop)
-        { c: 8760, w: 1000, sill: 200, h: 2900, type: 'win' },                   // tall double-height window right of void (top Z=7.203m, tight 103mm beam drop)
-        // foyer ribbon light: ONE fixed pane, no mullion, no grille, 1200..1800
-        // AFF (~4'..6' on the 11' storey). 2400 x 600 (4:1) so it reads as a
-        // ribbon, not a small window; centred in the solid run between the
-        // tall window (east jamb 9260) and the entry corner (12420), 380 of
-        // wall either side; c 10840 is also the Ganesha fin's axis.
-        { c: 10840, w: 2400, sill: 1200, h: 600, type: 'fixed', panes: 1 }
+        // Tall windows either side of the TV wall (top Z=7.203m, tight 103mm
+        // beam drop). Sill on the house's 900 line like every other window,
+        // plain wall below. Not one 1000 x 2200 leaf - that would swing a
+        // door-sized sash across the 1 m north balcony: a PAIR of side-hung
+        // casements in the 900..2300 band (every other window's sill and
+        // head) - each leaf only ~420 wide, outward-opening on 180-degree
+        // hinges with wall stay hooks, so they fold flat to the facade and
+        // the balcony stays walkable - and a fixed top light to the head.
+        // Grille stays on the room side.
+        { c: 5500, w: 1000, sill: 900, h: 2200, type: 'win', tiers: TV_WIN_TIERS },
+        { c: 8760, w: 1000, sill: 900, h: 2200, type: 'win', tiers: TV_WIN_TIERS },
+        // foyer ribbon light: ONE fixed pane in a slim 40 mm frame. Clear glass
+        // 1200..1800 AFF, centred on 1500 - standing eye level for Indian
+        // adults (~1.42 women / ~1.54 men), so both look out through the
+        // middle of it, and the view clears the 1.08 m balcony parapet
+        // outside. 2400 wide (4:1 ribbon), centred in the solid run between
+        // the tall window (east jamb 9260) and the entry corner (12420), 380
+        // of wall either side; c 10840 is also the Ganesha fin's axis.
+        // Security grille on the room side: the house's own horizontal-bar
+        // grille, same as every other window.
+        { c: 10840, w: 2400, sill: 1160, h: 680, type: 'fixed', panes: 1, slim: true, grille: true }
       ],
       S: [
         { c: 3950, w: 1500, sill: 900, h: 1400, type: 'win' }                    // master bedroom south window, SE corner
@@ -4784,7 +4822,7 @@ window.HouseScene = (function () {
       E: [
         { c: 3800, w: 1000, sill: 1100, h: 1200, type: 'win', chajja: true },    // Bedroom 03 north-edge window
         // Family room glass wall
-        { c: 7050, w: 3160, sill: 0, h: 2700, type: 'frenchdoor', panes: 3 }
+        { c: 7050, w: 3160, sill: 0, h: 2700, type: 'frenchdoor', panes: 3, frameMat: 'ms' }   // black MS-finish frame, like the rods and rails outside
       ],
       N: [
         { c: 5500, w: 1000, sill: 100, h: 2850, type: 'win' },                   // tall double-height window left of void (sill Z=7.556m, tight 353mm beam/slab gap)
@@ -7625,9 +7663,9 @@ window.HouseScene = (function () {
         // x 14270→17097 has no guard here: the L-box ribs run past the slab
         // and are the guard (see seRodBox). The plaster parapet that used to
         // sit on this run is what made the SE corner read as two objects.
-        railPillar(o2, 80, SOUTH_FC, f2, 1.08);
-        railPillar(o2, 4805, SOUTH_FC, f2, 1.08);
-        railPillar(o2, EX0, SOUTH_FC, f2, 1.08);
+        // Pillars: the west end plus two mids at equal thirds of the run
+        // (80 / 4810 / 9540, 4730 apart); the east end is the lift wall.
+        railPillarsAlong(o2, 'x', SOUTH_FC, 80, EAST_SOUTH_RET_XW, f2, 1.08, { end: true });
       })();
       railing(o2, 'y', 80, SOUTH_FC, 0, f2, 1.0); // SW corner return
       (function sfEastGuard() {
