@@ -4500,18 +4500,24 @@ window.HouseScene = (function () {
     },
 
     /* ---------------- FOYER ----------------
-       Free-standing fluted partition running along y (x0..x1 thick): a
-       walnut-dark core with oak flutes on both faces, top rail, shadow
-       plinth. A divider, not a wall. */
+       Fluted fin running along y (x0..x1 thick), floor to soffit, in the
+       house's one timber: flutes and bullnose in the interior walnut of the
+       door casings (walnutI), dark-wood grooves between them, dark shadow
+       reveals top and bottom so it reads as one full-height plane, not a
+       piece of furniture. y0 stops on a wall; the free end at y1 is a
+       full-thickness bullnose, so it ends in a curve, not a cut. */
     foyerPartition(bag, x0, x1, y0, y1, fY, h) {
-      h = h || 2.40;
-      const c0 = x0 + 25, c1 = x1 - 25;
-      pb(bag, 'oakDark', c0, c1, y0, y1, fY + 0.06, fY + h - 0.06);
-      pb(bag, 'aluDark', c0 + 10, c1 - 10, y0 + 20, y1 - 20, fY, fY + 0.06);
-      prb(bag, 'oak', x0, x1, y0, y1, fY + h - 0.06, fY + h, 4);
-      for (let y = y0 + 15; y + 30 <= y1 - 15; y += 45) {
-        prb(bag, 'oak', x0, c0 + 2, y, y + 30, fY + 0.06, fY + h - 0.06, 9);
-        prb(bag, 'oak', c1 - 2, x1, y, y + 30, fY + 0.06, fY + h - 0.06, 9);
+      h = h || L.f2f - L.slabT;                   // floor -> soffit (3.203)
+      const c0 = x0 + 25, c1 = x1 - 25, g = 0.06, gT = 0.02;
+      const r = (x1 - x0) / 2, yN = y1 - r;       // bullnose centre
+      const z0 = fY + g, z1 = fY + h - gT;
+      pb(bag, 'woodD', c0, c1, y0, yN, z0, z1);
+      pb(bag, 'woodD', c0 + 10, c1 - 10, y0, yN, fY, z0);             // shadow plinth
+      pb(bag, 'woodD', c0 + 10, c1 - 10, y0, yN, z1, fY + h);         // shadow reveal at the soffit
+      bag.cyl('walnutI', (x0 + r) / 1000, (z0 + z1) / 2, -yN / 1000, r / 1000, z1 - z0);
+      for (let y = y0 + 15; y + 30 <= yN - 15; y += 45) {
+        prb(bag, 'walnutI', x0, c0 + 2, y, y + 30, z0, z1, 9);
+        prb(bag, 'walnutI', c1 - 2, x1, y, y + 30, z0, z1, 9);
       }
     },
     /* Rectangular timber casing for a room opening: walnut linings through
@@ -4537,7 +4543,7 @@ window.HouseScene = (function () {
        facing east to the main door: brass prabhavali behind, diya, flowers. */
     ganeshaShrine(bag, faceX, cy, fY) {
       const lz = fY + 1.00;
-      prb(bag, 'oakDark', faceX, faceX + 240, cy - 220, cy + 220, lz - 0.05, lz, 5);
+      prb(bag, 'walnutI', faceX, faceX + 240, cy - 220, cy + 220, lz - 0.05, lz, 5);
       pb(bag, 'brassI', faceX + 236, faceX + 242, cy - 220, cy + 220, lz - 0.045, lz - 0.005);
       bag.cyl('brassI', (faceX + 4) / 1000, lz + 0.30, -cy / 1000, 0.21, 0.008, 0, 0, Math.PI / 2);
       bag.cyl('peetaRed', (faceX + 9) / 1000, lz + 0.30, -cy / 1000, 0.18, 0.004, 0, 0, Math.PI / 2);
@@ -4687,7 +4693,9 @@ window.HouseScene = (function () {
       // pooja drops south against the kitchen wall. The dividing wall sits at
       // y 6700..6815 — south of the entry sidelite (c 7100 → y 6875..7325), so
       // door and sidelite both read as one composition inside the entrance.
-      R('FOYER', '1528 × 1827', 10893, 12421, 6815, 8642, 'circ'),
+      // Oct 2026: open to the hall (no wall on x 10780..10893), so the foyer
+      // floor runs on to the hall's edge; only the Ganesha screen marks it.
+      R('FOYER', '1641 × 1827', 10780, 12421, 6815, 8642, 'circ'),
       R('POOJA', '1525 × 1640', 10893, 12418, 5060, 6700, 'pooja'),
       R('COMMON BATH', '1120 × 1596', 8250, 9370, -646, 950, 'bath'),  // relocated into the south band per owner plan
       R('WET KITCHEN', '2934 × 1596', 9486, 12420, -646, 950, 'utility'),   // stove / DW + sink, nothing more; opens east into the service lobby
@@ -4755,7 +4763,13 @@ window.HouseScene = (function () {
       ],
       N: [
         { c: 5500, w: 1000, sill: 200, h: 2900, type: 'win' },                   // tall double-height window left of void (top Z=7.203m, tight 103mm beam drop)
-        { c: 8760, w: 1000, sill: 200, h: 2900, type: 'win' }                    // tall double-height window right of void (top Z=7.203m, tight 103mm beam drop)
+        { c: 8760, w: 1000, sill: 200, h: 2900, type: 'win' },                   // tall double-height window right of void (top Z=7.203m, tight 103mm beam drop)
+        // foyer ribbon light: ONE fixed pane, no mullion, no grille, 1200..1800
+        // AFF (~4'..6' on the 11' storey). 2400 x 600 (4:1) so it reads as a
+        // ribbon, not a small window; centred in the solid run between the
+        // tall window (east jamb 9260) and the entry corner (12420), 380 of
+        // wall either side; c 10840 is also the Ganesha fin's axis.
+        { c: 10840, w: 2400, sill: 1200, h: 600, type: 'fixed', panes: 1 }
       ],
       S: [
         { c: 3950, w: 1500, sill: 900, h: 1400, type: 'win' }                    // master bedroom south window, SE corner
@@ -4829,8 +4843,10 @@ window.HouseScene = (function () {
       // kitchen (opening). The bands are only as deep as their fittings.
       { dir: 'x', b: [950, 1065], a: [4920, 12421], ops: [{ c: 6830, w: 2400, sill: 0, h: 2400, noFrame: true }, { c: 10750, w: 900, sill: 0, h: 2400 }] },   // aluminium slider has its own frame
       { dir: 'y', b: [9371, 9486], a: [1065, 4945], ops: [{ c: 2918.5, w: 2483, sill: 0, h: 2400, startA: 0.88 }] },     // kitchen|dining: one opening over the SW counter + the way in; casing clears the fridge handles (4221), south side rises off the worktop
-      { dir: 'y', b: [10780, 10893], a: [4945, 6700], ops: [{ c: 5880, w: 1000 }] },   // hall|pooja (open view to the mandir, centred on the room) (open view to the mandir, centred on the room)
-      { dir: 'y', b: [10780, 10893], a: [6815, 8642], ops: [{ c: 7730, w: 1500 }] },   // hall|entrance
+      // hall|pooja (open view to the mandir, centred on the room). It runs on
+      // to the pooja|entrance wall's north face: the hall|entrance wall is
+      // gone, so this end is now the corner the foyer screen stands against.
+      { dir: 'y', b: [10780, 10893], a: [4945, 6815], ops: [{ c: 5880, w: 1000 }] },
       { dir: 'x', b: [6700, 6815], a: [10893, 12421], ops: [] },                        // pooja|entrance
       { dir: 'x', b: [4945, 5060], a: [9370, 12421], ops: [] }                         // kitchen | pooja (the common wall the pooja now sits against)
     ],
@@ -6175,7 +6191,7 @@ window.HouseScene = (function () {
     /** East wall + middle wall stair geometry under flight 1 */
     function stairWalls(bag, numSteps) {
       // East: plaster to FF. Ribbon sits just above the landing — three
-      // equal ~1.05 m lights, 55 mm frames (same family as the windows),
+      // equal ~1.05 m lights, 55 mm frames in black MS (like the SE box slits),
       // 300 mm plaster cheeks, thin stone sill.
       const y0 = 230, y1 = towY[1];
       const inset = 300, jamb = 55, mull = 36;
@@ -6194,14 +6210,14 @@ window.HouseScene = (function () {
       pb(bag, 'white', 16292, 16608, y0 - 8, y1 + 8, LAND_E - 0.018, LAND_E + 0.006);
       const f0 = a0 - jamb, f1 = a1 + jamb;
       const hz0 = z0 - 0.045, hz1 = z1 + 0.045;
-      pb(bag, 'frame', 16515, 16610, f0, a0, hz0, hz1);
-      pb(bag, 'frame', 16515, 16610, a1, f1, hz0, hz1);
-      pb(bag, 'frame', 16515, 16610, f0, f1, hz0, z0);
-      pb(bag, 'frame', 16515, 16610, f0, f1, z1, hz1);
+      pb(bag, 'ms', 16515, 16610, f0, a0, hz0, hz1);
+      pb(bag, 'ms', 16515, 16610, a1, f1, hz0, hz1);
+      pb(bag, 'ms', 16515, 16610, f0, f1, hz0, z0);
+      pb(bag, 'ms', 16515, 16610, f0, f1, z1, hz1);
       const inner = a1 - a0;
       for (let k = 1; k <= 2; k++) {
         const c = a0 + (inner * k) / 3;
-        pb(bag, 'frame', 16522, 16602, c - mull / 2, c + mull / 2, z0, z1);
+        pb(bag, 'ms', 16522, 16602, c - mull / 2, c + mull / 2, z0, z1);
       }
       // One thin pane in the frame's rebate. It was a 247 mm glass block over a
       // solid black slab, which turned the whole ribbon into an opaque bar.
@@ -7278,7 +7294,8 @@ window.HouseScene = (function () {
 
         // South wall with three smaller vertical slit windows:
         // Spanned evenly across the solid wall (xW0 to xBack, total width = 2827 mm).
-        // Each vertical window has its own perimeter charcoal frame, glass, and stone sill ledge.
+        // Each vertical window has its own black MS perimeter frame (same black as the rods
+        // and rails), glass, and stone sill ledge.
         const zWs = L.f1 + 0.90, zWh = L.f1 + 2.70;
         const totalSpan = xBack - xW0; // 2827 mm
         const NUM_WINS = 3;
@@ -7317,10 +7334,10 @@ window.HouseScene = (function () {
           const w = wins[i];
           const xf0 = w.x0, xf1 = w.x1;
           // Perimeter frame (left jamb, right jamb, sill, head)
-          pb(eBag, 'frame', xf0, xf0 + WIN_J, yFf, yFb, zHf0, zHf1);
-          pb(eBag, 'frame', xf1 - WIN_J, xf1, yFf, yFb, zHf0, zHf1);
-          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zHf0, zWs);
-          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zWh, zHf1);
+          pb(eBag, 'ms', xf0, xf0 + WIN_J, yFf, yFb, zHf0, zHf1);
+          pb(eBag, 'ms', xf1 - WIN_J, xf1, yFf, yFb, zHf0, zHf1);
+          pb(eBag, 'ms', xf0, xf1, yFf, yFb, zHf0, zWs);
+          pb(eBag, 'ms', xf0, xf1, yFf, yFb, zWh, zHf1);
           // Glazing
           pb(eBag, 'glass', xf0 + WIN_J, xf1 - WIN_J, yFace - 6, yFace + 24, zWs, zWh);
           // Projecting stone sill ledge
@@ -7600,12 +7617,11 @@ window.HouseScene = (function () {
       pb(o2, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f2 - 0.24, f2 - 0.18);
       pb(o2, 'charDark', -10, 90, Y1n, NBY1 + 14, f2 - 0.24, f2 - 0.18);
       pb(o2, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 16, -762 + 96, f2 - 0.24, f2 - 0.18);
-      // South — same runs as FF: plaster 0–4805, metal EX0–lift,
-      // then plaster under the pergola. Same line, same height, same ends.
+      // South — one MS rail end to end (owner, Oct 2026: no plaster parapet
+      // on the SF south), west return included, pillars kept on the column
+      // lines. Same rail, height and line as the FF south balcony.
       (function sfSouthSERail() {
-        edgeWall(o2, 'x', SOUTH_FC, 0, 4805, f2, 1.08, { plain: true });
-        edgeWall(o2, 'x', SOUTH_FC, 4805, EX0, f2, 1.08, { plain: true });
-        railing(o2, 'x', SOUTH_FC, EX0, EAST_SOUTH_RET_XW, f2, 1.0);
+        railing(o2, 'x', SOUTH_FC, 80, EAST_SOUTH_RET_XW, f2, 1.0);
         // x 14270→17097 has no guard here: the L-box ribs run past the slab
         // and are the guard (see seRodBox). The plaster parapet that used to
         // sit on this run is what made the SE corner read as two objects.
@@ -7613,7 +7629,7 @@ window.HouseScene = (function () {
         railPillar(o2, 4805, SOUTH_FC, f2, 1.08);
         railPillar(o2, EX0, SOUTH_FC, f2, 1.08);
       })();
-      edgeWall(o2, 'y', 80, SOUTH_FC, 0, f2, 1.08, { plain: true }); // SW corner
+      railing(o2, 'y', 80, SOUTH_FC, 0, f2, 1.0); // SW corner return
       (function sfEastGuard() {
         // Pergola bay: no guard drawn here either — the L-box ribs carry up
         // past the slab and guard it, one screen from the FF sill to the cap.
@@ -7917,7 +7933,6 @@ window.HouseScene = (function () {
       if (fi === 1) {
         /* --- HALL / family lounge (4920..10780, 4507..8642) --- */
         Lum.fan(9500, 6800);                          // ceiling fan in east family lounge
-        Lum.ac('x', 8642, 9400, 10350, 'S');          // high-wall split AC on North EXTERIOR wall (compressor on north balcony)
         Lum.downlight(8800, 5800);                    // downlights south of void
         Lum.downlight(9600, 7600);                    // downlights east of void on solid ceiling
         Lum.downlight(10200, 5800);
@@ -7948,9 +7963,9 @@ window.HouseScene = (function () {
         Lum.task(10360, 12090, 4635, 4940, 1.44);
         Lum.task(12080, 12400, 140, 890, 1.38);      // wet kitchen uppers start at +1.40
 
-        /* --- FOYER (10893..12421, 6815..8642) --- */
+        /* --- FOYER (10780..12421, 6815..8642, open to the hall) --- */
         Lum.downlight(11700, 7800);
-        Lum.raw(11056, 7060, fY + 1.04, 'flame');     // diya at the Ganesha
+        Lum.raw(11056, 6935, fY + 1.04, 'flame');     // diya at the Ganesha
 
         /* --- POOJA (10893..12418, 5060..6700) --- */
         Lum.raw(11650, 5560, fY + 0.52, 'flame');     // south kuthu-vilakku
@@ -7993,7 +8008,6 @@ window.HouseScene = (function () {
 
         /* --- FAMILY ROOM (9260..12421, 4546..8641) --- */
         Lum.fan(10300, 6600);                         // ceiling fan centered in family room
-        Lum.ac('x', 8641, 9400, 10350, 'S');          // high-wall split AC on North EXTERIOR wall (compressor on north balcony)
         Lum.downlight(9600, 5800);                    // surface downlights over family room floor
         Lum.downlight(9600, 7400);
         Lum.downlight(11400, 5800);
@@ -8410,13 +8424,17 @@ window.HouseScene = (function () {
         pb(bag, 'skirt', 9359, 9373, 1677, 2700, fY - 0.005, fY + 0.07);
         // --- Entrance (north bay: duplex entry door c 8000 + sidelite c 7100) ---
         // Cleared for Vastu; the south wall is the pooja's, so nothing stands
-        // against it. The hall opening (wall x 10780..10893, y 6980..8480,
-        // 2.1 m) is cased in walnut — a plain rectangle, lined through the
-        // reveal, architraves both faces. A fluted partition fills its south
-        // end inside the wall line, exactly opening height, and carries
-        // Ganesha facing east to the main door; y 7450..8460 stays clear.
-        Fur.foyerPartition(bag, 10792, 10881, 7000, 7450, fY, 2.08);
-        Fur.ganeshaShrine(bag, 10881, 7225, fY);
+        // against it. Oct 2026: the hall|foyer wall and its walnut casing are
+        // gone (they framed the hall down to a 1 m slot), so from the door the
+        // void, chandelier and gallery are in view. What is left is one fluted
+        // fin on the old wall line, butted to the pooja wall corner: 570
+        // long, floor to soffit (a half-height screen read as a stray piece of
+        // furniture), bullnosed at its free end, centred on the entry
+        // sidelite (c 7100) so Ganesha faces the glass and greets the door.
+        // It half-screens the lounge from the doorstep; y 7385..8642 (1.26 m)
+        // stays open.
+        Fur.foyerPartition(bag, 10792, 10881, 6815, 7385, fY);
+        Fur.ganeshaShrine(bag, 10881, 7100, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
         // Room x 10893–12418, y 5060–6700. Mandir on EAST wall facing WEST.
@@ -8757,7 +8775,7 @@ window.HouseScene = (function () {
         // "Lord-ganesha" by Thunk3D scanner / Diana123456, CC-BY-4.0
         // (sketchfab.com/3d-models/lord-ganesha-1399da994ce54420878133a81f2f8f1e),
         // simplified 900k -> ~90k verts; untextured scan, cast in brass here.
-        { id: 'ganesha', file: 'ganesha.glb', fi: 1, x: 11006, y: 7225, z: 1.00, rot: 90, h: 0.42, brass: true },
+        { id: 'ganesha', file: 'ganesha.glb', fi: 1, x: 11006, y: 7100, z: 1.00, rot: 90, h: 0.42, brass: true },
         // ---- SF east bedroom ----
         { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
         { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
