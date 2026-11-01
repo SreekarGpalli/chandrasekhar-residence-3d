@@ -132,13 +132,13 @@ window.HouseScene = (function () {
     // the plot floats in. Dry Anantapur earth instead.
     ground:  0x9a9078,
     plotPad: 0xa2977f,
-    // floor tints — warm living / cool wet rooms
-    // Oct 2026: living / circulation / kitchen take a large-format warm
-    // marble-look porcelain; bedrooms and walk-ins an engineered oak plank.
-    tLiving: 0xebe6de, tBed: 0xb99674, tBath: 0xd3cec6,
-    tKitch:  0xe9e4dc, tUtil: 0xcac5bd, tOut:   0x706d6a, // tOut dedupe vs concrete
-    tCirc:   0xeae5dd, tOffice: 0xe8e3db, tPooja: 0xeee4d0,
-    tWalk:   0xb89573,
+    // floor tints — Nov 2026: every interior room, kitchen, bath and utility
+    // included, is the one polished book-matched marble (FLOOR_TILE), so the
+    // interior keys all share one tint; only outdoor decks differ.
+    tLiving: 0xebe6de, tBed: 0xebe6de, tBath: 0xebe6de,
+    tKitch:  0xebe6de, tUtil: 0xebe6de, tOut:   0x706d6a, // tOut dedupe vs concrete
+    tCirc:   0xebe6de, tOffice: 0xebe6de, tPooja: 0xebe6de,
+    tWalk:   0xebe6de,
     // furniture
     fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x5c4030,
     woodD:   0x3e2c20, mattress:0xeee8dc, pillow: 0xf4efe6,
@@ -4771,6 +4771,10 @@ window.HouseScene = (function () {
       R('WALK-IN', '2700 × 1280', 4920, 7620, 1871, 3151, 'walk'),
       R('FAMILY ROOM', '3161 × 4095', 9260, 12421, 4546, 8641, 'living'),
       R('LOUNGE', '4340 × 2450', 4920, 9260, 4546, 6996, 'living'),
+      // the passage from the lounge to the bedrooms: it was in no room, so it
+      // had no floor tile — bare slab between the walk-in's north wall (y 3266)
+      // and the lounge, spine wall to bed03's west wall
+      R('PASSAGE', '2700 × 1280', 4920, 7620, 3266, 4546, 'circ'),
       R('GALLERY', '1100 × 2145', 4920, 6020, 6496, 8641, 'circ'),
       R('EAST BALCONY', '3720 × 9632', 12650, 17362, -762, 8870, 'out'),
       R('SOUTH BALCONY', '17362 × 762', 0, 17362, -762, 0, 'out'),
