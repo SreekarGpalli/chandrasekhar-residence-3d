@@ -3,21 +3,14 @@
 Exterior-only variants of the Chandrasekhar Residence (G+2, Anantapur).
 **No interiors** — partitions, furniture, and dollhouse floors removed.
 
-Nav is five active versions: **V41 · V43 · V49 (V43, SF pulled in) · V50 (V41, SF pulled in) · V51 (V43, NE room)**.
+Nav is two active versions: **V41 · V43**. V49 / V50 / V51 (SF pulled in, NE room) were deleted; they remain in git history before the commit that removed them.
 
 | Code | Name | Folder | Key Facade Concept |
 |------|------|--------|---------------------|
-| **V51** | **V43 NE Room** | `version-fifty-one/` | V43 with a closed room on the SF east deck NE corner, lift footprint (1620 × 2035, x 12650–14270, y 6835–8870) under the terrace slab; no exterior door (entered from the family room); SF French glass moved south and narrowed to 2100 (y 4600–6700) |
-| **V50** | **V41 SF Pulled In** | `version-fifty/` | V41 with the SF east wall moved 1525 mm (5 ft) in (band x 10895–11125); roof terrace ends in one straight east parapet on the lift west wall (x 12650); lift roof separate; flat pillar-free east parapet; two SF columns (portico design) at y 8720 / 4290; freed strip decked |
-| **V49** | **V43 SF Pulled In** | `version-forty-nine/` | Same change on V43 |
 | **V43** | **Continuous Rods** | `version-forty-three/` | Continuous unbroken vertical rods (~4.87 m) from ground ceiling beam soffit to second-floor balustrade + recessed floor slabs |
 | **V41** | **Clover Jali** | `version-forty-one/` | Bespoke 4-leaf clover heart breeze block screen on East facade + South solid wall with 3 slit windows |
 
 Each version has one viewer — the photoreal pipeline.
-
-## Versions Forty-Nine and Fifty
-
-Same change applied to V43 (→ V49) and V41 (→ V50), exterior only. On the second floor the east wall, which used to run along the lift's west face at x 12420–12650, moves 1525 mm (5 ft) inside to x 10895–11125. The glass wall and windows are unchanged, and the SF north and south walls stop on it. The lift keeps a wall of its own on the old line (x 12420–12650, y 0–2035). The roof terrace now ends on that same line: the slab's east edge is x 12650 for the full length, and one straight east parapet sits over the lift's west wall, with no step. The lift has its own roof slab outside the parapet, extended 1200 mm north (to y 3235) as a rain canopy over the SF lift door, with the lift's east wall carried north under it on the SF; the pergola keeps its posts. The east parapet is one flat run with no pillars. Two exposed columns carry the roof edge on the SF, on the portico column grid (y 8720, just short of the house's NE corner, and y 4290), built with the same section and finish as the portico columns (columnsEast), outer face flush with x 12650. The freed SF strip (x 11125–12650) is open deck. Constants: `SF_PULL`, `SF_EB`, `ROOF_EX`, `ROOF_COLS` next to `SHELTER_X`.
 
 ## Version Forty-Three
 
