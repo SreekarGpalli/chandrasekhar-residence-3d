@@ -1363,7 +1363,7 @@ if(!window.THREE || !window.HouseScene){
       }
       const name = o.material && o.material.userData ? o.material.userData.name : undefined;
       const t = treatment(name || '');
-      if (t.tex) boxUV(o.geometry, t.tile);
+      if (t.tex && !t.preUV) boxUV(o.geometry, t.tile);   // preUV: houseScene laid the UVs (tile grids, one-piece treads)
     });
   });
 

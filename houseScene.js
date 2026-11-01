@@ -139,6 +139,9 @@ window.HouseScene = (function () {
     tKitch:  0xebe6de, tUtil: 0xebe6de, tOut:   0x706d6a, // tOut dedupe vs concrete
     tCirc:   0xebe6de, tOffice: 0xebe6de, tPooja: 0xebe6de,
     tWalk:   0xebe6de,
+    // tFloor: the laid marble itself (per-zone tile grids, one-piece treads);
+    // a hair off the others so the palette keeps one name per hex
+    tFloor:  0xebe6df,
     // furniture
     fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x5c4030,
     woodD:   0x3e2c20, mattress:0xeee8dc, pillow: 0xf4efe6,
@@ -385,7 +388,7 @@ window.HouseScene = (function () {
     if (M.oak) { M.oak.roughness = 0.46; M.oak.metalness = 0.02; }
     if (M.woodD) { M.woodD.roughness = 0.48; M.woodD.metalness = 0.02; }
     // warm vitrified floors — slightly polished
-    for (const k of ['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tCirc', 'tOffice', 'tPooja', 'tWalk', 'tOut']) {
+    for (const k of ['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tCirc', 'tOffice', 'tPooja', 'tWalk', 'tFloor', 'tOut']) {
       if (M[k]) { M[k].roughness = 0.35; M[k].metalness = 0.02; }
     }
     return M;
@@ -442,6 +445,126 @@ window.HouseScene = (function () {
      call records the world bounding box of the geometry it emitted, so a
      plan / clash / reachability check can be run over the furnished house. */
   const AUD = { on: false, depth: 0, cur: null, items: [] };
+
+  /* ---------------- craftsman tile laying ----------------
+     The floor marble is laid the way a mason would, not projected from the
+     world origin:
+       - every ZONE (a room, or rooms with no wall between them) gets its own
+         grid, fitted so the courses meet the walls on a joint or, failing
+         that, in a cut no thinner than half a slab — never a sliver;
+       - every doorway is ONE threshold slab; every stair tread and riser is
+         ONE piece cut from a single slab, so no joint ever crosses it;
+       - each slab is one of the texture's 4 painted slabs in one of 8
+         orientations, never the same as the slab beside it.
+     The viewers must not re-project these UVs (treatment flag preUV). The
+     atlas is 2x2 slabs per texture period, so a slab's corner is a half. */
+  function tileHash(a, b, c) {
+    let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263) ^ Math.imul(c | 0, 1274126177);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+  // slab variant v (0..31): atlas cell v & 3, orientation v >> 2 (swap / flip u / flip v)
+  function slabUV(v, a, b) {
+    const o = v >> 2;
+    let p = (o & 1) ? b : a, q = (o & 1) ? a : b;
+    if (o & 2) p = 1 - p;
+    if (o & 4) q = 1 - q;
+    p = Math.max(0, Math.min(1, p)); q = Math.max(0, Math.min(1, q));
+    return [((v & 1) + p) / 2, (((v >> 1) & 1) + q) / 2];
+  }
+  // one cut piece (tread, riser, threshold) on a single slab, centred with a
+  // margin so none of the slab's joint lines reach it. Bounds in metres.
+  function pieceMap(x0, x1, z0, z1, y0, y1, v) {
+    const S = Math.max(1.1, Math.max(x1 - x0, z1 - z0, y1 - y0) * 1.06);
+    return (p, n) => {
+      const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z);
+      let a, b, wa, wb;
+      if (ay >= ax && ay >= az) { a = p.x - x0; b = p.z - z0; wa = x1 - x0; wb = z1 - z0; }
+      else if (ax >= az) { a = p.z - z0; b = p.y - y0; wa = z1 - z0; wb = y1 - y0; }
+      else { a = p.x - x0; b = p.y - y0; wa = x1 - x0; wb = y1 - y0; }
+      return slabUV(v, (1 - wa / S) / 2 + a / S, (1 - wb / S) / 2 + b / S);
+    };
+  }
+  // exposed boundary edges of a zone along one axis: [position mm, +1 if the
+  // floor lies on the + side of it (a min edge) / -1 (a max edge)]
+  function zoneEdges(zr, axis) {
+    const inside = (x, y) => zr.some(r => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1);
+    const out = [];
+    for (const r of zr) for (const side of [1, -1]) {
+      const e = axis === 'x' ? (side > 0 ? r.x0 : r.x1) : (side > 0 ? r.y0 : r.y1);
+      for (let t = 0.1; t < 1; t += 0.2) {
+        const along = axis === 'x' ? r.y0 + (r.y1 - r.y0) * t : r.x0 + (r.x1 - r.x0) * t;
+        const o = e - side * 2;
+        if (!(axis === 'x' ? inside(o, along) : inside(along, o))) { out.push([e, side]); break; }
+      }
+    }
+    return out;
+  }
+  // The house is laid in 1200 mm slabs throughout (one slab size, as bought);
+  // a zone may only trim that by a hair (±2.5%) to land a wall on a joint.
+  // Choose that trim and the joint line o: every exposed edge either on a
+  // joint or cut to at least half a slab, and a plain room cut EQUALLY on
+  // both sides — the mason's centre-out rule.
+  function fitAxis(edges, lo, hi) {
+    const W = hi - lo, M = 1200;
+    let best = null;
+    const consider = (m, o) => {
+      let minP = 1, exact = 0;
+      const cuts = [];
+      for (const [e, side] of edges) {
+        const r = (((e - o) % m) + m) % m;
+        let s;
+        if (r < 3 || m - r < 3) { s = m; exact++; } else { s = side > 0 ? m - r : r; cuts.push(s); }
+        if (s / m < minP) minP = s / m;
+      }
+      const sym = edges.length === 2 && cuts.length === 2 && Math.abs(cuts[0] - cuts[1]) < 12 ? 1 : 0;
+      const sc = Math.min(minP, 0.5) * 1000 + exact * 15 + sym * 25 - Math.abs(m - M) / 10;
+      if (!best || sc > best.sc) best = { m, o, sc };
+    };
+    if (W < 1230) consider(W, lo);                       // one slab wall to wall
+    for (let m = M - 30; m <= M + 30; m += 5) {
+      consider(m, lo);
+      for (const [e] of edges) consider(m, e);
+      consider(m, (lo + hi) / 2);                        // joint on the centreline
+      consider(m, (lo + hi) / 2 + m / 2);                // slab centred
+      for (let off = 0; off < m; off += 15) consider(m, lo + off);
+    }
+    return { m: best.m, o: best.o };
+  }
+  // group touching / overlapping rects into zones and lay each one
+  function layZones(rs) {
+    const par = rs.map((_, i) => i), find = i => (par[i] === i ? i : (par[i] = find(par[i])));
+    for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) {
+      const a = rs[i], b = rs[j];
+      const dx = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), dy = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
+      if (dx >= -3 && dy >= -3 && (dx >= 300 || dy >= 300)) par[find(i)] = find(j);
+    }
+    const groups = {};
+    rs.forEach((r, i) => (groups[find(i)] || (groups[find(i)] = [])).push(r));
+    return Object.keys(groups).map(k => {
+      const zr = groups[k];
+      const bx0 = Math.min(...zr.map(r => r.x0)), bx1 = Math.max(...zr.map(r => r.x1));
+      const by0 = Math.min(...zr.map(r => r.y0)), by1 = Math.max(...zr.map(r => r.y1));
+      const gx = fitAxis(zoneEdges(zr, 'x'), bx0, bx1), gy = fitAxis(zoneEdges(zr, 'y'), by0, by1);
+      const vm = new Map();
+      const i0 = Math.floor((bx0 - gx.o) / gx.m), i1 = Math.floor((bx1 - gx.o) / gx.m);
+      const j0 = Math.floor((by0 - gy.o) / gy.m), j1 = Math.floor((by1 - gy.o) / gy.m);
+      for (let tj = j0; tj <= j1; tj++) for (let ti = i0; ti <= i1; ti++) {
+        const h = tileHash(Math.round(bx0) + Math.round(by0) * 7, ti, tj);
+        const left = vm.get((ti - 1) + ',' + tj), down = vm.get(ti + ',' + (tj - 1));
+        let cell = h & 3;
+        for (let t = 0; t < 4 && ((left !== undefined && (left & 3) === cell) || (down !== undefined && (down & 3) === cell)); t++) cell = (cell + 1) & 3;
+        vm.set(ti + ',' + tj, cell | (((h >>> 4) & 7) << 2));
+      }
+      // audit hook (like AUD): with window.__HOUSE_AUDIT set, every zone's fit and
+      // its cut sizes at each exposed edge are recorded in window.__LAY
+      if (typeof window !== 'undefined' && window.__HOUSE_AUDIT) {
+        const cut = (edges, g) => edges.map(([e, side]) => { const r = (((e - g.o) % g.m) + g.m) % g.m; return Math.round((r < 3 || g.m - r < 3 ? g.m : side > 0 ? g.m - r : r)); });
+        (window.__LAY = window.__LAY || []).push({ box: [bx0, bx1, by0, by1].map(Math.round), mx: Math.round(gx.m), my: Math.round(gy.m), cutX: cut(zoneEdges(zr, 'x'), gx), cutY: cut(zoneEdges(zr, 'y'), gy), rooms: zr.length });
+      }
+      return { rects: zr, bx0, bx1, by0, by1, gx, gy, variant: (ti, tj) => { const v = vm.get(ti + ',' + tj); return v === undefined ? 0 : v; } };
+    });
+  }
 
   /* ---------------- geometry bag (merged per material) ---------------- */
   function makeBag(THREE) {
@@ -507,28 +630,72 @@ window.HouseScene = (function () {
     // face from `down` below the plate to its top, `out` mm proud — so a
     // floor edge over a void (stairwell, double height, landing) reads as
     // plain wall instead of tile edge + slab edge + the line between.
-    function plate(mat, x0, x1, y0, y1, z0, z1, edge) {
+    // lay: 'room' (joins the tile grid of its zone, see layZones) or 'piece'
+    // (one slab, e.g. a doorway threshold); omitted = plain plate, box UVs
+    function plate(mat, x0, x1, y0, y1, z0, z1, edge, lay) {
       if (x1 - x0 < 0.5 || y1 - y0 < 0.5) return;
-      const key = [mat, z0.toFixed(4), z1.toFixed(4), edge ? edge.mat + '/' + edge.down + '/' + edge.out : ''].join('|');
-      (plates[key] || (plates[key] = { mat, z0, z1, edge, rects: [] })).rects.push([x0, x1, y0, y1]);
+      const key = [mat, z0.toFixed(4), z1.toFixed(4), edge ? edge.mat + '/' + edge.down + '/' + edge.out : '', lay ? 'L' : ''].join('|');
+      const P = plates[key] || (plates[key] = { mat, z0, z1, edge, rects: [], lay: [] });
+      P.rects.push([x0, x1, y0, y1]); P.lay.push(lay || null);
     }
+    // explicit-UV hook: while set, add() takes UVs from fn(worldPos, normal)
+    // instead of box-projecting (one cut piece on one slab: stair treads, risers)
+    let curUV = null;
     function flushPlates() {
       const uniq = (arr) => { arr.sort((p, q) => p - q); const o = []; for (const v of arr) if (!o.length || v - o[o.length - 1] > 0.05) o.push(v); return o; };
       for (const key of Object.keys(plates)) {
         const Pl = plates[key], xs0 = [], ys0 = [];
         for (const r of Pl.rects) { xs0.push(r[0], r[1]); ys0.push(r[2], r[3]); }
         const fine = (v, step) => { const o = [v[0]]; for (let k = 1; k < v.length; k++) { const n = Math.ceil((v[k] - v[k - 1]) / step); for (let m = 1; m < n; m++) o.push(v[k - 1] + (v[k] - v[k - 1]) * m / n); o.push(v[k]); } return o; };
+        // laid plates: each zone's tile joints become grid lines too, so a
+        // cell never straddles a joint and takes its UVs from one slab
+        const laid = Pl.lay.some(Boolean);
+        let zoneOf = null;
+        if (laid) {
+          const idx = [];
+          Pl.rects.forEach((r, i) => { if (Pl.lay[i] === 'room') idx.push(i); });
+          const zones = layZones(idx.map(i => ({ x0: Pl.rects[i][0], x1: Pl.rects[i][1], y0: Pl.rects[i][2], y1: Pl.rects[i][3], i })));
+          zoneOf = new Map();
+          const ex = xs0.slice(), ey = ys0.slice();
+          const near = (arr, v) => arr.some(e => Math.abs(e - v) < 4);
+          for (const z of zones) {
+            for (const r of z.rects) zoneOf.set(r.i, z);
+            for (let x = z.gx.o + Math.ceil((z.bx0 - z.gx.o) / z.gx.m) * z.gx.m; x < z.bx1; x += z.gx.m) if (!near(ex, x)) xs0.push(x);
+            for (let y = z.gy.o + Math.ceil((z.by0 - z.gy.o) / z.gy.m) * z.gy.m; y < z.by1; y += z.gy.m) if (!near(ey, y)) ys0.push(y);
+          }
+        }
         const xs = fine(uniq(xs0), 1000), ys = fine(uniq(ys0), 1000), NX = xs.length - 1, NY = ys.length - 1;   // <= 1 m cells (see flushWalls)
         if (NX < 1 || NY < 1) continue;
-        const on = new Uint8Array(NX * NY);
+        const own = new Int32Array(NX * NY).fill(-1);   // which rect lays this cell (first listed wins)
         for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) {
           const xc = (xs[i] + xs[i + 1]) / 2, yc = (ys[j] + ys[j + 1]) / 2;
-          for (const r of Pl.rects) if (xc > r[0] && xc < r[1] && yc > r[2] && yc < r[3]) { on[i * NY + j] = 1; break; }
+          for (let k = 0; k < Pl.rects.length; k++) { const r = Pl.rects[k]; if (xc > r[0] && xc < r[1] && yc > r[2] && yc < r[3]) { own[i * NY + j] = k; break; } }
         }
-        const S = (i, j) => i >= 0 && j >= 0 && i < NX && j < NY && on[i * NY + j] === 1;
+        const S = (i, j) => i >= 0 && j >= 0 && i < NX && j < NY && own[i * NY + j] >= 0;
+        // UVs of a cell's four corners (i,j) (i+1,j) (i+1,j+1) (i,j+1)
+        const cellUV = (i, j) => {
+          const k = own[i * NY + j], r = Pl.rects[k];
+          const xa = xs[i], xb = xs[i + 1], ya = ys[j], yb = ys[j + 1];
+          let f;
+          if (Pl.lay[k] === 'room') {
+            const z = zoneOf.get(k), gx = z.gx, gy = z.gy;
+            const ti = Math.floor(((xa + xb) / 2 - gx.o) / gx.m), tj = Math.floor(((ya + yb) / 2 - gy.o) / gy.m);
+            const v = z.variant(ti, tj), tx = gx.o + ti * gx.m, ty = gy.o + tj * gy.m;
+            f = (x, y) => slabUV(v, (x - tx) / gx.m, (y - ty) / gy.m);
+          } else {
+            const w = r[1] - r[0], d = r[3] - r[2], Sz = Math.max(1100, 1.06 * Math.max(w, d));
+            const v = tileHash(Math.round(r[0]), Math.round(r[2]), 3) & 31;
+            f = (x, y) => slabUV(v, (1 - w / Sz) / 2 + (x - r[0]) / Sz, (1 - d / Sz) / 2 + (y - r[2]) / Sz);
+          }
+          return [f(xa, ya), f(xb, ya), f(xb, yb), f(xa, yb)];
+        };
         const P = (x, y, z) => [x / 1000, z, -y / 1000];
-        const q = { pos: [], nor: [], idx: [] };
-        const vert = (pt, n) => { q.pos.push(pt[0], pt[1], pt[2]); q.nor.push(n[0], n[1], n[2]); return q.pos.length / 3 - 1; };
+        const q = { pos: [], nor: [], idx: [], uv: laid ? [] : null };
+        const vert = (pt, n, uv) => {
+          q.pos.push(pt[0], pt[1], pt[2]); q.nor.push(n[0], n[1], n[2]);
+          if (q.uv) q.uv.push(uv ? uv[0] : 0, uv ? uv[1] : 0);
+          return q.pos.length / 3 - 1;
+        };
         const tri = (a, b, c, n) => {
           const t = q.pos, ax = t[3 * a], ay = t[3 * a + 1], az = t[3 * a + 2];
           const ux = t[3 * b] - ax, uy = t[3 * b + 1] - ay, uz = t[3 * b + 2] - az;
@@ -540,7 +707,13 @@ window.HouseScene = (function () {
           const map = new Map();
           const V = (i, j) => { const k = i * (NY + 1) + j; let v = map.get(k); if (v === undefined) { v = vert(P(xs[i], ys[j], z), n); map.set(k, v); } return v; };
           for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) if (S(i, j)) {
-            const a = V(i, j), b = V(i + 1, j), c = V(i + 1, j + 1), d = V(i, j + 1);
+            let a, b, c, d;
+            if (laid && z === Pl.z1) {
+              // a laid cell owns its four vertices: the UV jumps at every joint
+              const u = cellUV(i, j);
+              a = vert(P(xs[i], ys[j], z), n, u[0]); b = vert(P(xs[i + 1], ys[j], z), n, u[1]);
+              c = vert(P(xs[i + 1], ys[j + 1], z), n, u[2]); d = vert(P(xs[i], ys[j + 1], z), n, u[3]);
+            } else { a = V(i, j); b = V(i + 1, j); c = V(i + 1, j + 1); d = V(i, j + 1); }
             tri(a, b, c, n); tri(a, c, d, n);
           }
         }
@@ -579,8 +752,9 @@ window.HouseScene = (function () {
           const geo = new THREE.BufferGeometry();
           geo.setAttribute('position', new THREE.Float32BufferAttribute(qq.pos, 3));
           geo.setAttribute('normal', new THREE.Float32BufferAttribute(qq.nor, 3));
+          if (qq.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(qq.uv, 2));
           geo.setIndex(qq.idx);
-          add(m, geo, IDENT);
+          add(m, geo, IDENT, !!qq.uv);
           geo.dispose();
         }
       }
@@ -669,9 +843,10 @@ window.HouseScene = (function () {
       }
       for (const k in walls) delete walls[k];
     }
-    function add(mat, geom, matrix) {
+    function add(mat, geom, matrix, keepUV) {
       const b = bucket(mat);
       const p = geom.attributes.position, n = geom.attributes.normal;
+      const uvIn = keepUV ? geom.attributes.uv : null;
       tmp.nm.getNormalMatrix(matrix);
       const base = b.vc;
       // grow typed chunks less often: push numbers is still simplest for
@@ -695,7 +870,9 @@ window.HouseScene = (function () {
         // Dominant-normal box projection instead, the same one walkthrough.html
         // computes for itself. Metre units; material repeat does the tiling.
         const nx = Math.abs(tmp.n.x), ny = Math.abs(tmp.n.y), nz = Math.abs(tmp.n.z);
-        if (ny >= nx && ny >= nz) b.uv.push(tmp.v.x, tmp.v.z);
+        if (uvIn) b.uv.push(uvIn.getX(i), uvIn.getY(i));
+        else if (curUV) { const t = curUV(tmp.v, tmp.n); b.uv.push(t[0], t[1]); }
+        else if (ny >= nx && ny >= nz) b.uv.push(tmp.v.x, tmp.v.z);
         else if (nx >= nz) b.uv.push(tmp.v.z, tmp.v.y);
         else b.uv.push(tmp.v.x, tmp.v.y);
       }
@@ -801,6 +978,7 @@ window.HouseScene = (function () {
         add(mat, cylG, m4);
       },
       wall, plate,
+      uv: fn => { curUV = fn || null; },
       build: (THREE2, materials) => {
         flushWalls();
         flushPlates();
@@ -1527,13 +1705,23 @@ window.HouseScene = (function () {
     // structural concrete is what this looks like on the day the shuttering
     // comes off, not on the day anyone moves in.
     const tt = opts.tread ? 0.012 : 0;
-    // one box call for either axis: `a` is the running span, `b` the cross-band
-    const slab = (m, aLo, aHi, h0, h1, inset) => {
-      const i0 = inset || 0;
-      if (alongY) pb(bag, m, b0 + i0, b1 - i0, aLo, aHi, h0, h1);
-      else pb(bag, m, aLo, aHi, b0 + i0, b1 - i0, h0, h1);
+    // A finish in the house floor marble is cut from ONE slab per piece: no
+    // joint across a tread, and the slab changes from step to step. v = slab variant.
+    const tpb = (m, x0, x1, y0, y1, h0, h1, v) => {
+      if (m === FLOOR_TILE && v !== undefined) bag.uv(pieceMap(x0 / 1000, x1 / 1000, -y1 / 1000, -y0 / 1000, h0, h1, v));
+      pb(bag, m, x0, x1, y0, y1, h0, h1);
+      bag.uv(null);
     };
+    // one box call for either axis: `a` is the running span, `b` the cross-band
+    const slab = (m, aLo, aHi, h0, h1, inset, v) => {
+      const i0 = inset || 0;
+      if (alongY) tpb(m, b0 + i0, b1 - i0, aLo, aHi, h0, h1, v);
+      else tpb(m, aLo, aHi, b0 + i0, b1 - i0, h0, h1, v);
+    };
+    const hb = tileHash(Math.round(b0), Math.round(aBot), 1) & 3;
     for (let i = 1; i <= n; i++) {
+      const vT = ((i + hb) & 3) | ((tileHash(i, hb, 5) & 7) << 2);          // this step's tread slab
+      const vR = ((i + hb + 2) & 3) | ((tileHash(i, hb, 9) & 7) << 2);      // its riser: another slab
       const top = zBot + i * stepRise;
       const aA = aBot + (i - 1) * stepGo, aB = aBot + i * stepGo;
       const lo = Math.min(aA, aB), hi = Math.max(aA, aB);
@@ -1550,16 +1738,16 @@ window.HouseScene = (function () {
       if (opts.riser) {
         // 10 mm riser facing on the step's leading face, under the nosing
         const rf = aA;
-        slab(opts.riser, sign > 0 ? rf - 10 : rf, sign > 0 ? rf : rf + 10, top - stepRise, top - tt, 6);
+        slab(opts.riser, sign > 0 ? rf - 10 : rf, sign > 0 ? rf : rf + 10, top - stepRise, top - tt, 6, vR);
       }
       if (opts.tread) {
         // tile/timber going with a 12 mm nosing over the riser below
         const nLo = sign > 0 ? lo : lo - 12, nHi = sign > 0 ? hi + 12 : hi;
-        slab(opts.tread, nLo, nHi, top - tt, top, 6);
+        slab(opts.tread, nLo, nHi, top - tt, top, 6, vT);
         // skirting up the wall side of each step
         if (opts.skirt) {
-          if (alongY) pb(bag, opts.tread, b1 - 6, b1, lo, hi, top, top + 0.09);
-          else pb(bag, opts.tread, lo, hi, b1 - 6, b1, top, top + 0.09);
+          if (alongY) tpb(opts.tread, b1 - 6, b1, lo, hi, top, top + 0.09, vT);
+          else tpb(opts.tread, lo, hi, b1 - 6, b1, top, top + 0.09, vT);
         }
       }
     }
@@ -1582,7 +1770,7 @@ window.HouseScene = (function () {
     pb(bag, m, x0, x1, y0, y1, top - t, top - treadT);
     // finish edge to edge; its exposed edges are plastered down over the
     // slab, so the landing edge reads as one plain face (no tile/slab lines)
-    if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 });
+    if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 }, finish === FLOOR_TILE ? 'room' : null);
   }
 
   /* slab plate with optional rectangular hole */
@@ -4719,7 +4907,9 @@ window.HouseScene = (function () {
   const R = (name, dims, x0, x1, y0, y1, type) => ({ name, dims, x0, x1, y0, y1, type });
   // The one interior floor finish (large-format marble-look full-body
   // porcelain). Every interior room gets it — see the floor plate in build().
-  const FLOOR_TILE = 'tLiving';
+  // Its own key (not tLiving): the tiles carry laid UVs, so the viewers must
+  // not box-project them (treatment flag preUV in lib/interiorKit.js).
+  const FLOOR_TILE = 'tFloor';
 
   const ROOMS = [
     [ // GF
@@ -7827,29 +8017,32 @@ window.HouseScene = (function () {
         pb(bag, 'white', X0, X1, 8641, Y1n, fY - L.slabT, fY);
       }
 
-      // Interior floor: ONE full-body porcelain (FLOOR_TILE) through every
-      // room, laid as one plate — each room's rect wall face to wall face,
-      // plus the strip through every doorway — so the tile runs on
-      // unbroken from room to room. It sits straight on the slab (no gap
-      // line) and wherever its edge is exposed (stairwell, double-height
-      // void) that edge is plastered down over the slab like a wall.
-      // Outdoor decks keep their own finishes. Any room added to ROOMS /
+      // Interior floor: ONE full-body marble (FLOOR_TILE) through every room,
+      // laid like a mason would (see layZones): each room — or rooms with no
+      // wall between them — is one zone with its own grid fitted to its walls,
+      // and every doorway is ONE threshold slab, so no sliver course runs
+      // along a wall and no joint crosses a door. It sits straight on the slab
+      // (no gap line) and wherever its edge is exposed (stairwell,
+      // double-height void) that edge is plastered down over the slab like a
+      // wall. Outdoor decks keep their own finishes. Any room added to ROOMS /
       // opening added to IW is picked up here, and skirting only runs
       // where this floor exists.
       const FZ0 = fY, FZ1 = fY + 0.014;   // above the deck tile (+0.012), under the rugs (+0.016)
-      const floorRects = [];
+      const floorRects = [], floorLay = [];
       for (const r of ROOMS[fi]) {
         if (r.type === 'out' || r.name === 'LIFT' || r.name === 'PORTICO' || r.name.includes('TERRACE') || r.name.includes('BALCONY')) continue;
         // SF only: the stairwell is a void from x 230 to 4630 (the FF->SF
         // flight rises through it); just the walkway strip is floor.
         floorRects.push([fi === 2 && r.name === 'STAIRCASE' ? 4630 : r.x0, r.x1, r.y0, r.y1]);
+        floorLay.push('room');
       }
       for (const w of IW[fi]) for (const o of w.ops) {
         if ((o.sill || 0) > 0) continue;
         const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2;
         floorRects.push(w.dir === 'x' ? [a0, a1, w.b[0], w.b[1]] : [w.b[0], w.b[1], a0, a1]);
+        floorLay.push('piece');
       }
-      for (const r of floorRects) bag.plate(FLOOR_TILE, r[0], r[1], r[2], r[3], FZ0, FZ1, fi ? { mat: 'white2', down: L.slabT, out: 2 } : null);
+      floorRects.forEach((r, i) => bag.plate(FLOOR_TILE, r[0], r[1], r[2], r[3], FZ0, FZ1, fi ? { mat: 'white2', down: L.slabT, out: 2 } : null, floorLay[i]));
       const onFloor = (x, y) => floorRects.some(r => x > r[0] && x < r[1] && y > r[2] && y < r[3]);
 
       // exterior walls (cut) — door openings become gaps; windows leave sill stubs

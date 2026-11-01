@@ -1772,7 +1772,7 @@ window.DESIGNS = {
      point. */
   const DEPTH_LAYER = {
     terraceF: 1, balcTile: 1, tOut: 1, pave: 1, paver: 1, paver2: 1, roadLine: 1,
-    tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
+    tFloor: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
     tPooja: 1, tWalk: 1, copingLight: 1, plinth: 1, soil: 1, grass: 1, rug: 1,
     skirt: 2, woodD: 2, walnut: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
     brass: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,
@@ -1901,7 +1901,7 @@ window.DESIGNS = {
       m.needsUpdate = true;
     }
 
-    if (t.tex) boxUV(o.geometry, t.tile);
+    if (t.tex && !t.preUV) boxUV(o.geometry, t.tile);   // preUV: houseScene laid the UVs (tile grids, one-piece treads)
 
     const isGlass = key === 'glass' || key === 'carGlass';
     o.castShadow = !(isGlass || key === 'ground' || key === 'plotPad' || key === 'road' || key === 'roadLine');
