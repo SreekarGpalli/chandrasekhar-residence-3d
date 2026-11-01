@@ -3604,9 +3604,11 @@ window.HouseScene = (function () {
       if (back === 'W') return [x0 + v0, x0 + v1, y0 + u0, y0 + u1];
       return [x1 - v1, x1 - v0, y0 + u0, y0 + u1];
     }
+    // rotation that leans an upright part's top toward the wall, same on all
+    // four walls (plan y runs along world -z, so N/S and E/W differ in sign)
     function rot(t) {
       if (!t) return [0, 0, 0];
-      return back === 'S' ? [t, 0, 0] : back === 'N' ? [-t, 0, 0] : back === 'W' ? [0, 0, -t] : [0, 0, t];
+      return back === 'S' ? [t, 0, 0] : back === 'N' ? [-t, 0, 0] : back === 'W' ? [0, 0, t] : [0, 0, -t];
     }
     return {
       W, D,
@@ -3619,9 +3621,11 @@ window.HouseScene = (function () {
         prb(bag, mat, r[0], r[1], r[2], r[3], h0, h1, rad, puff, t[0], t[1], t[2]);
       },
       // a cushion/pillow: built lying flat (thickness = h), then stood up by
-      // `tilt` radians about the wall axis so its domed faces point outward
+      // `tilt` radians about the wall axis so its domed faces point outward.
+      // Its far edge swings up to become the top, so it needs the opposite
+      // sign to an upright part: the top then rests back against the wall.
       pillow(bag, mat, uC, vC, hC, wU, hV, thick, tilt, rad, puffK) {
-        const r = rect(uC - wU / 2, uC + wU / 2, vC - hV / 2, vC + hV / 2), t = rot(tilt);
+        const r = rect(uC - wU / 2, uC + wU / 2, vC - hV / 2, vC + hV / 2), t = rot(-tilt);
         prb(bag, mat, r[0], r[1], r[2], r[3], hC - thick / 2000, hC + thick / 2000,
             rad != null ? rad : Math.min(70, thick * 0.45), -thick * (puffK != null ? puffK : 0.28), t[0], t[1], t[2]);
       },
