@@ -8580,20 +8580,22 @@ window.HouseScene = (function () {
       /* West bedroom suite — the FF master and the SF bedroom above it share
          one plan. Bed head on the south wall (Vastu: sleep with the head to
          the south). The 1200 south window stays in the SE corner (x 3500..
-         4700): the bed's east 500 mm and the east side table sit under its
-         900 sill (headboard tops out at 860); 920 mm clear in front of the
-         west wardrobe, 800 mm aisle along the east wall. Wardrobe on
+         4700); the bed stays clear of it and only the east side table sits
+         under it. Between the jamb and the wardrobe face (x 830) a king plus
+         two tables would leave 370 mm for the wardrobe doors, so it is a
+         queen (1500): 670 mm clear at the west table, 1.1 m along the bed,
+         1.35 m open floor to the east wall. Wardrobe on
          the west wall stopping short of the widened window, sit-stand desk
          in the NW corner on the north wall. The bath took 400 mm of the
          walk-in (partition x 3105..3216); the walk-in is a closed
          mirror-shutter wardrobe on the east wall plus a full-length mirror
          on the north wall. */
       function westSuite(bag, fY) {
-        Fur.rug(bag, 1900, 4300, 400, 2800, fY);
-        Fur.bed(bag, 2200, 4000, 232, 2132, fY, 'S');                // king, headboard on the south wall
-        Fur.side(bag, 1750, 2150, 232, 732, fY);                      // west side table
-        Fur.side(bag, 4050, 4450, 232, 732, fY);                      // east side table, under the window
-        Fur.bench(bag, 2550, 3650, 2190, 2590, fY);                   // bench at the foot of the bed
+        Fur.rug(bag, 1500, 3900, 400, 2800, fY);
+        Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S');                // queen, headboard on the south wall, 50 short of the window jamb
+        Fur.side(bag, 1500, 1900, 232, 732, fY);                      // west side table
+        Fur.side(bag, 3550, 3950, 232, 732, fY);                      // east side table, under the window
+        Fur.bench(bag, 2150, 3250, 2190, 2590, fY);                   // bench at the foot of the bed
         Fur.fullHeightWardrobe(bag, 230, 830, 232, 2470, fY, fY + 3.203);   // west wall, short of the window
         Fur.art(bag, 'y', 4805, 'W', 1850, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
         Fur.standingDesk(bag, 420, 1820, 3730, 4412, fY, 'N');        // NW corner, on the north wall, clear of the curtain
@@ -8611,7 +8613,7 @@ window.HouseScene = (function () {
         Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 2.40);          // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
-        Lum.fan(3100, 1182);                          // centred on the king bed (2200..4000 x 232..2132)
+        Lum.fan(2700, 1182);                          // centred on the queen bed (1950..3450 x 232..2132)
         Lum.ac('x', 4432, 2250, 3200, 'S');           // north wall, between the desk and the walk-in door
         Lum.downlight(1120, 3800);                    // over the desk top, in front of the chair's head
         Lum.downlight(1250, 1350);                    // in front of the wardrobe (face x 830, y 232..2470)
@@ -8621,8 +8623,8 @@ window.HouseScene = (function () {
            .corner('y', 230, 4432, 4805, 'W')         // east wall
            .corner('x', 230, 4805, 4432, 'S')         // north wall (desk, AC, walk-in door)
            .corner('y', 2470, 4432, 230, 'E');        // west wall, over the desk window
-        Lum.raw(1950, 482, fY + 0.86, 'bedside');
-        Lum.raw(4250, 482, fY + 0.86, 'bedside');
+        Lum.raw(1700, 482, fY + 0.86, 'bedside');
+        Lum.raw(3750, 482, fY + 0.86, 'bedside');
         // walk-in
         Lum.downlight(3710, 5450);
         Lum.task(3260, 4160, 6300, 6370, 2.38);       // wash over the dressing mirror
