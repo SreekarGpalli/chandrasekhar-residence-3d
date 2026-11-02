@@ -5035,7 +5035,7 @@ window.HouseScene = (function () {
         { c: 10840, w: 2400, sill: 1160, h: 680, type: 'fixed', panes: 1, slim: true, grille: true }
       ],
       S: [
-        { c: 3950, w: 1500, sill: 900, h: 1400, type: 'win' }                    // master bedroom south window, SE corner
+        { c: 3200, w: 1200, sill: 900, h: 1400, type: 'win' }                    // master bedroom south window, centred over the bed head
       ],
       W: [
         { c: 3450, w: 1800, sill: 900, h: 1500, type: 'win', chajja: true },     // master bedroom west window (enlarged, lights the NW desk)
@@ -5054,7 +5054,7 @@ window.HouseScene = (function () {
         { c: 8760, w: 1000, sill: 100, h: 2850, type: 'win' }                    // tall double-height window right of void (sill Z=7.556m, tight 353mm beam/slab gap)
       ],
       S: [
-        { c: 3950, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true },    // west bedroom, SE corner
+        { c: 3200, w: 1200, sill: 900, h: 1400, type: 'win', chajja: true },    // west bedroom, centred over the bed head
         { c: 6200, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
         { c: 10000, w: 1500, sill: 900, h: 1400, type: 'win', chajja: true } // east bedroom south window
       ],
@@ -6209,12 +6209,12 @@ window.HouseScene = (function () {
         { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', bot: 1.08 } ],// GF bed02 W (behind the bed)
       // The windows flanking the TV wall (c = 5500 and c = 8760, FF + SF) are full-height double-height architectural glazing
       // kept cleanly unobstructed without fabric bunching to maximize natural daylight flooding the double-height void.
-      // - South-facing windows (c = 3950, c = 10000) use clean architectural blinds that clear side tables and headboards.
-      [ { f: 'S', c: 3950, w: 1500, sill: 900, h: 1400, m: 'curtain2', blind: true }, // FF master S (clean architectural blind, clears bedside table)
+      // - South-facing windows (c = 3200, c = 10000) use clean architectural blinds that clear side tables and headboards.
+      [ { f: 'S', c: 3200, w: 1200, sill: 900, h: 1400, m: 'curtain2', blind: true }, // FF master S (clean architectural blind, over the headboard)
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain', lo: 2480, hi: 4420, bot: 0.88 } ],// FF master W (over the desk)
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
         { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420, short: true },  // SF bed03 E corner (apron, like the rest of the floor)
-        { f: 'S', c: 3950, w: 1500, sill: 900, h: 1400, m: 'curtain2', blind: true }, // SF master02 S (clean architectural blind)
+        { f: 'S', c: 3200, w: 1200, sill: 900, h: 1400, m: 'curtain2', blind: true }, // SF master02 S (clean architectural blind, over the headboard)
         { f: 'S', c: 10000, w: 1500, sill: 900, h: 1400, m: 'curtain', blind: true }, // SF bed03 S (clean architectural blind)
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', lo: 2480, hi: 4420, bot: 0.88 } ]// SF master02 W (over the desk)
     ];
@@ -8578,18 +8578,20 @@ window.HouseScene = (function () {
       }
 
       /* West bedroom suite — the FF master and the SF bedroom above it share
-         one plan. Bed head on the east wall (south of the door), wardrobe on
+         one plan. Bed head on the south wall (Vastu: sleep with the head to
+         the south) under the 1200 south window, centred on it; 700 mm aisle
+         to the east wall, 1 m+ in front of the west wardrobe. Wardrobe on
          the west wall stopping short of the widened window, sit-stand desk
          in the NW corner on the north wall. The bath took 400 mm of the
          walk-in (partition x 3105..3216); the walk-in is a closed
          mirror-shutter wardrobe on the east wall plus a full-length mirror
          on the north wall. */
       function westSuite(bag, fY) {
-        Fur.rug(bag, 2250, 4650, 650, 3050, fY);
-        Fur.bed(bag, 2905, 4805, 950, 2750, fY, 'E');                // king, headboard on the east wall
-        Fur.side(bag, 4305, 4805, 470, 870, fY);                      // south side table
-        Fur.side(bag, 4305, 4805, 2830, 3230, fY);                    // north side table (door from y 3300)
-        Fur.bench(bag, 2450, 2850, 1300, 2400, fY);                   // bench at the foot of the bed
+        Fur.rug(bag, 2000, 4400, 400, 2800, fY);
+        Fur.bed(bag, 2300, 4100, 232, 2132, fY, 'S');                // king, headboard on the south wall
+        Fur.side(bag, 1850, 2250, 232, 732, fY);                      // west side table
+        Fur.side(bag, 4150, 4550, 232, 732, fY);                      // east side table
+        Fur.bench(bag, 2650, 3750, 2190, 2590, fY);                   // bench at the foot of the bed
         Fur.fullHeightWardrobe(bag, 230, 830, 232, 2470, fY, fY + 3.203);   // west wall, short of the window
         Fur.art(bag, 'y', 4805, 'W', 1850, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
         Fur.standingDesk(bag, 420, 1820, 3730, 4412, fY, 'N');        // NW corner, on the north wall, clear of the curtain
@@ -8607,18 +8609,18 @@ window.HouseScene = (function () {
         Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 2.40);          // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
-        Lum.fan(3855, 1850);                          // centred on the king bed (2905..4805 x 950..2750)
+        Lum.fan(3200, 1182);                          // centred on the king bed (2300..4100 x 232..2132)
         Lum.ac('x', 4432, 2250, 3200, 'S');           // north wall, between the desk and the walk-in door
         Lum.downlight(1120, 3800);                    // over the desk top, in front of the chair's head
         Lum.downlight(1250, 1350);                    // in front of the wardrobe (face x 830, y 232..2470)
         // corner line round the room; the wardrobe runs to the slab, so the
         // south run starts at its face and the west run starts north of it
         Lum.corner('x', 830, 4805, 230, 'N')          // south wall (over the window)
-           .corner('y', 230, 4432, 4805, 'W')         // east wall, over the bed head
+           .corner('y', 230, 4432, 4805, 'W')         // east wall
            .corner('x', 230, 4805, 4432, 'S')         // north wall (desk, AC, walk-in door)
            .corner('y', 2470, 4432, 230, 'E');        // west wall, over the desk window
-        Lum.raw(4555, 670, fY + 0.86, 'bedside');
-        Lum.raw(4555, 3030, fY + 0.86, 'bedside');
+        Lum.raw(2050, 482, fY + 0.86, 'bedside');
+        Lum.raw(4350, 482, fY + 0.86, 'bedside');
         // walk-in
         Lum.downlight(3710, 5450);
         Lum.task(3260, 4160, 6300, 6370, 2.38);       // wash over the dressing mirror
