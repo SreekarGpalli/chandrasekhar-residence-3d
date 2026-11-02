@@ -8255,8 +8255,8 @@ window.HouseScene = (function () {
         Lum.pendant(9580, 2430, 1.60, 0.12);
         Lum.downlight(11000, 150);
         Lum.downlight(13230, -320);                   // service lobby
-        Lum.task(9500, 10220, 1075, 1380, 1.44);     // under the wall units (their soffit is at +1.45)
-        Lum.task(11280, 12090, 1075, 1380, 1.44);
+        Lum.task(9500, 10076, 1075, 1380, 1.44);     // under the wall units (their soffit is at +1.45)
+        Lum.task(11424, 12090, 1075, 1380, 1.44);
         Lum.task(10360, 12090, 4635, 4940, 1.44);
         Lum.task(12080, 12400, 140, 890, 1.38);      // wet kitchen uppers start at +1.40
 
@@ -8696,25 +8696,25 @@ window.HouseScene = (function () {
         Fur.crockeryUnit(bag, 4920, 5370, 1530, 3180, fY);
         // --- Kitchen (x 9486..12420, y 1065..4945) ---
         // The wet-kitchen band was pulled south (wall now y 950..1065), so the
-        // kitchen runs on to it. No pantry: the SW corner is a base L — its
-        // south leg against the south wall lines up with the SE run across
-        // the wet-kitchen opening (x 10300..11200), same depth, same top, same
-        // wall units over both; its west leg is the breakfast peninsula in the
-        // old dining wall line. Uppers everywhere there is solid wall; none on
-        // the east window (y 2600..3800) or over the breakfast counter.
+        // kitchen runs on to it. No pantry. The west counter is one straight
+        // run at one depth (front x 10086) from the south wall to y 2700: its
+        // north part is the breakfast counter in the old dining wall line.
+        // The SE return stops at x 11414 so both sides end 664 from the
+        // wet-kitchen doorway's centre (c 10750), base and wall units alike.
+        // Uppers everywhere there is solid wall; none on the east window
+        // (y 2600..3800) or over the breakfast counter.
         const K = { s: 1077, sF: 1677, hob: 2100, sink: 3200 };   // worktop south edge / run front / appliance centres
 
         // Base counters
-        Fur.counterX(bag, 9486, 10230, K.s, K.sF, fY);              // SW south leg (stops short of the opening's casing)
-        Fur.counterX(bag, 9385, 10086, K.sF, 2700, fY);             // SW west leg: worktop lip lands on the wall's dining face (9371)
-        Fur.counterX(bag, 11270, 11800, K.s, K.sF, fY);             // SE south leg (starts clear of the opening's casing)
+        Fur.counterX(bag, 9486, 10086, K.s, K.sF - 28, fY);         // west run, south wall end (tops butt at y 1663, no overlap)
+        Fur.counterX(bag, 9385, 10086, K.sF, 2700, fY);             // west run, breakfast part: worktop lip lands on the wall's dining face (9371)
+        Fur.counterX(bag, 11414, 11800, K.s, K.sF, fY);             // SE south leg, mirrors the west run's end about c 10750
         Fur.counterX(bag, 11800, 12408, K.s, 4933, fY, { cx: 12110, cy: K.sink, w: 420, d: 760 });   // east run, sink on the window
         Fur.counterX(bag, 10350, 11800, 4345, 4945, fY);            // north run (to fridge)
 
         // Base doors. Corner squares behind a crossing leg are blind.
-        Fur.kitBaseDoors(bag, 'N', K.sF, 10100, 10222, fY, null);   // SW: spice pull-out east of the corner
-        Fur.kitBaseDoors(bag, 'E', 10086, 1690, 2690, fY, null);    // SW west leg
-        Fur.kitBaseDoors(bag, 'N', K.sF, 11278, 11790, fY, null);   // SE south leg
+        Fur.kitBaseDoors(bag, 'E', 10086, 1090, 2690, fY, null);    // west run, one door line wall to end
+        Fur.kitBaseDoors(bag, 'N', K.sF, 11422, 11790, fY, null);   // SE south leg
         Fur.kitBaseDrawers(bag, 'W', 11800, 1690, 2510, fY);        // under the hob
         Fur.kitBaseDoors(bag, 'W', 11800, 2530, 2810, fY, null);
         Fur.kitBaseDoors(bag, 'W', 11800, 2830, 3570, fY, null);    // under the sink
@@ -8727,8 +8727,8 @@ window.HouseScene = (function () {
         Fur.rangeHood(bag, 12110, K.hob, fY);
 
         // Wall units (z 1.45..2.30, 320 deep)
-        Fur.kitWallRun(bag, 9486, 10230, 1065, 1385, fY, 'N', 2);   // over the SW leg
-        Fur.kitWallRun(bag, 11270, 12100, 1065, 1385, fY, 'N', 2);  // over the SE leg, into the corner
+        Fur.kitWallRun(bag, 9486, 10086, 1065, 1385, fY, 'N', 2);   // over the west run's south end, flush with its front
+        Fur.kitWallRun(bag, 11414, 12100, 1065, 1385, fY, 'N', 2);  // over the SE leg, into the corner
         Fur.kitWallRun(bag, 12100, 12420, 3860, 4600, fY, 'W', 2);  // east wall, north of the window (stops at the north run's door line)
         Fur.kitWallRun(bag, 10350, 12100, 4625, 4945, fY, 'S', 4);  // north wall, into the corner
 
@@ -8739,8 +8739,8 @@ window.HouseScene = (function () {
         pb(bag, 'quartz', 12408, 12420, 2600, 3800, fY + 0.88, fY + 1.10);   // under the window sill
         pb(bag, 'quartz', 12408, 12420, 3800, 4933, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 10350, 11800, 4933, 4945, fY + 0.88, fY + 1.45);
-        pb(bag, 'quartz', 9486, 10230, 1065, 1077, fY + 0.88, fY + 1.45);
-        pb(bag, 'quartz', 11270, 11800, 1065, 1077, fY + 0.88, fY + 1.45);
+        pb(bag, 'quartz', 9486, 10086, 1065, 1077, fY + 0.88, fY + 1.45);
+        pb(bag, 'quartz', 11414, 11800, 1065, 1077, fY + 0.88, fY + 1.45);
         // The hatch, the 100 mm pier beside it and the doorway are one opening
         // (y 1677..4160). The SW west leg stands in the old wall line and stops
         // on it: no overhang, no stools — its back is plastered and skirted
