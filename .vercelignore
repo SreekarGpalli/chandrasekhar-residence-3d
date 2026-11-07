@@ -19,3 +19,28 @@ Blender/*_new.glb
 archive/
 
 models/interior/ganesha/lord-ganesha.glb
+
+# --- kept in GitHub, never loaded by the site (Nov 2026 deploy slim: ~223 MB -> ~41 MB) ---
+# render outputs and capture screenshots
+output/
+elevations/compare/
+elevations/compare-renders.html
+elevations/WhatsApp*
+elevations/version-*/*.png
+elevations/version-*/*.jpg
+# interior models not placed in houseScene.js (only the ids in its P list load)
+models/interior/brass_diya_lantern/
+models/interior/brass_vase_01/
+models/interior/brass_vase_02/
+models/interior/ceramic_vase_03/
+models/interior/ceramic_vase_04/
+models/interior/coffee_table_round_01/
+models/interior/mid_century_lounge_chair/
+models/interior/modern_ceiling_lamp_01/
+models/interior/modern_wooden_cabinet/
+models/interior/side_table_01/
+# dev tooling
+scripts/
+.kilo
+**/*.py
+**/*.ps1
