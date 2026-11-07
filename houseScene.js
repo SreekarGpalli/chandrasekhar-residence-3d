@@ -182,7 +182,7 @@ window.HouseScene = (function () {
        name, but the hex fallback still needs it. */
     oak:       0x3f2612,  // dark smoked oak (harmonized with oakDark, dedupe)
     oakDark:   0x3f2613,  // smoked oak — fluted panel backing, accents
-    alu:       0xbcae93,  // champagne anodised aluminium profile
+    alu:       0x3f2619,  // shutter/frame profiles, anodised brown to match the timber
     aluDark:   0x48484a,  // graphite anodised aluminium
     lacq:      0xe4ded3,  // warm-white matte lacquer shutter
     lacqSage:  0x9ea594,  // sage matte lacquer (kitchen base run)
