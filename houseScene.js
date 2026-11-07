@@ -1390,6 +1390,30 @@ window.HouseScene = (function () {
         const z0 = first ? b + Fo / 1000 : zb + mullW / 2000;    // clear opening of this light
         const z1 = last ? t - Fo / 1000 : zt - mullW / 2000;
         if (!last) put('frame', a0 + Fo, a1 - Fo, fd0 + 3, fd1 - 3, z1, z1 + mullW / 1000);   // transom
+        if (tr.fan) {
+          /* ventilator light: an exhaust fan fitted in the frame in place of the
+             glass. White plate in the glass plane, a dark round throat with
+             three louvre slats across it on the room side, and a hub. */
+          const fa0 = a0 + Fo, fa1 = a1 - Fo, fcx = (fa0 + fa1) / 2, fcz = (z0 + z1) / 2;
+          const fr = Math.min((fa1 - fa0) / 2, (z1 - z0) * 500) - 12;           // throat radius, mm
+          const dPlate = outSign < 0 ? mid - 6 : mid - 22, rd = -outSign;       // room-facing face + room direction
+          put('whiteG', fa0, fa1, mid - 22, mid - 6, z0, z1);
+          const dc = dPlate + rd * 5;
+          const wx = horiz ? fcx / 1000 : dc / 1000, wz = horiz ? -dc / 1000 : -fcx / 1000;
+          if (horiz) bag.cyl('charDark', wx, fcz, wz, fr / 1000, 0.010, Math.PI / 2, 0, 0);
+          else bag.cyl('charDark', wx, fcz, wz, fr / 1000, 0.010, 0, 0, Math.PI / 2);
+          const sd = [dPlate + rd * 7, dPlate + rd * 14].sort((m, n) => m - n);
+          for (const k of [-0.5, 0, 0.5]) {
+            const zc = fcz + k * fr / 1000, half = Math.sqrt(Math.max(0, fr * fr - (k * fr) * (k * fr))) - 4;
+            put('whiteG', fcx - half, fcx + half, sd[0], sd[1], zc - 0.006, zc + 0.006);
+          }
+          const hd = [dPlate + rd * 5, dPlate + rd * 16].sort((m, n) => m - n);
+          put('whiteG', fcx - 14, fcx + 14, hd[0], hd[1], fcz - 0.014, fcz + 0.014);
+          // weather louvre on the outside face: flat slats across the light
+          const dOut = outSign < 0 ? mid - 22 : mid - 6, od = [dOut, dOut + outSign * 9].sort((m, n) => m - n);
+          for (let zz = z0 + 0.03; zz < z1 - 0.02; zz += 0.045) put('whiteG', fa0 + 6, fa1 - 6, od[0], od[1], zz, zz + 0.016);
+          return;
+        }
         const panes = tr.panes || 1, bayW = spanW / panes;
         const noSash = tr.fixed && (spec.slim || spec.tiers);
 
@@ -5144,6 +5168,7 @@ window.HouseScene = (function () {
   /* east band x: [12420,12650]; north y: [8640,8870]; south y: [0,230]; west x: [0,230] */
   const EB = [12420, 12650], NB = [8640, 8870], SB = [0, 230], WB = [0, 230];
   const TV_WIN_TIERS = [{ h: 1400, panes: 2 }, { h: 800, fixed: true }];
+  const BATH_FAN_TIERS = [{ h: 500, panes: 1 }, { h: 300, fan: true }];
   const OPEN = {
     // floor 0
     f0: {
@@ -5205,7 +5230,7 @@ window.HouseScene = (function () {
       ],
       W: [
         { c: 3450, w: 1800, sill: 900, h: 1500, type: 'win', chajja: true },     // master bedroom west window (enlarged, lights the NW desk)
-        { c: 4850, w: 500, sill: 1700, h: 600, type: 'win', chajja: true },      // master bath vent: dry end of the wall, clear of the shower (y 4600..5100)
+        { c: 4850, w: 500, sill: 1500, h: 800, type: 'win', chajja: true, tiers: BATH_FAN_TIERS },  // master bath: casement + exhaust fan in the top light; dry end of the wall (y 4600..5100)
         { c: 7568.5, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }   // staircase landing, centred on the landing wall (y 6496..8641)
       ]
     },
@@ -5226,7 +5251,7 @@ window.HouseScene = (function () {
       ],
       W: [
         { c: 3450, w: 1800, sill: 900, h: 1500, type: 'win', chajja: true },     // bedroom 02 west window (enlarged, lights the NW desk)
-        { c: 4850, w: 500, sill: 1700, h: 600, type: 'win', chajja: true },      // bath vent: dry end of the wall, clear of the shower (y 4600..5100)
+        { c: 4850, w: 500, sill: 1500, h: 800, type: 'win', chajja: true, tiers: BATH_FAN_TIERS },  // bath: casement + exhaust fan in the top light
         { c: 7568.5, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }   // staircase landing, centred on the landing wall (y 6496..8641)
       ]
     }
@@ -8858,17 +8883,31 @@ window.HouseScene = (function () {
            above it (x 1130..1230), the three wet walls in green zellige from the
            floor to the slab, and a matching pan with a square drain */
         Fur.shower(bag, 1130, 1230, 5127, 6371, fY, 1.05); Fur.showerHead(bag, 680, 6381, fY, 'S', true);
-        // the laid floor tops out at fY + 0.014, so the pan stands 6 mm proud of it
-        pb(bag, 'tileShower', 230, 1130, 5127, 6371, fY + 0.012, fY + 0.020);
+        // the laid floor tops out at fY + 0.014, so the pan stands 6 mm proud of it;
+        // it runs the whole alcove (x 230..1130) to the bath's south wall
+        pb(bag, 'tileShower', 230, 1130, 4557, 6371, fY + 0.012, fY + 0.020);
         pb(bag, 'blackM', 625, 735, 5695, 5805, fY + 0.020, fY + 0.023);
         pb(bag, 'tileShower', 640, 720, 5710, 5790, fY + 0.023, fY + 0.0235);
         Fur.wc(bag, 1700, 6096, fY, 'S');
         Fur.basin(bag, 2300, 3105, 5881, 6381, fY, 'N', { flat: true }); Fur.mirror(bag, 2330, 3075, 6369, 6381, fY, 'S');
         Fur.clad(bag, 'x', 6381, 'S', 230, 1130, fY, 3.203, 'tileShower');   // shower back wall, floor to slab
         Fur.clad(bag, 'x', 6381, 'S', 1130, 3105, fY, 2.40);
-        Fur.clad(bag, 'x', 4547, 'N', 230, 3105, fY, 2.40);
-        Fur.clad(bag, 'y', 230, 'E', 4547, 5127, fY, 1.65);                  // west, dry end (vent above)
+        Fur.clad(bag, 'x', 4547, 'N', 230, 1130, fY, 3.203, 'tileShower');   // alcove's south wall, floor to slab
+        Fur.clad(bag, 'x', 4547, 'N', 1130, 3105, fY, 2.40);
         Fur.clad(bag, 'y', 230, 'E', 5127, 6371, fY, 3.203, 'tileShower');   // west, shower: floor to slab
+        {
+          // west wall, dry end: the same tile all round the window (y 4600..5100, z 1.5..2.3),
+          // with a tiled lining in the reveal
+          const wz0 = fY + 1.5, wz1 = fY + 2.3;
+          pb(bag, 'tileShower', 230, 240, 4547, 5127, fY, wz0);
+          pb(bag, 'tileShower', 230, 240, 4547, 5127, wz1, fY + 3.203);
+          pb(bag, 'tileShower', 230, 240, 4547, 4600, wz0, wz1);
+          pb(bag, 'tileShower', 230, 240, 5100, 5127, wz0, wz1);
+          pb(bag, 'tileShower', 165, 230, 4600, 4610, wz0, wz1);
+          pb(bag, 'tileShower', 165, 230, 5090, 5100, wz0, wz1);
+          pb(bag, 'tileShower', 165, 230, 4600, 5100, wz0, wz0 + 0.010);
+          pb(bag, 'tileShower', 165, 230, 4600, 5100, wz1 - 0.010, wz1);
+        }
         Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 2.40);                 // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
@@ -8903,9 +8942,7 @@ window.HouseScene = (function () {
         } else {
           Lum.downlight(1700, 5300);
         }
-        // F on the west wall, high over the shower (steam rises); the plan's
-        // spot (y 4720) now holds the window, so the fan moved south of it
-        Lum.exhaust(240, 5750, 2.70);
+        // F: the exhaust fan is fitted in the bath window's top light (see OPEN.f1/f2 W)
         Lum.vanity('x', 2330, 3075, 6381, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2702.5)
       }
 
