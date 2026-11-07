@@ -157,6 +157,7 @@ window.HouseScene = (function () {
     skirt:   0x5f594f,
     curtain: 0xd4cec2,   // dedupe vs tKitch
     curtain2:0xc4bbaf,   // dedupe vs fabric
+    zebraSheer: 0xf0e9dc, // warm-white mesh between the shade bands
     downlight:0xf4ead2,
     coveLED: 0xffe3b4,   // concealed indirect strip — never seen direct
     road:    0x3f4043,
@@ -234,6 +235,9 @@ window.HouseScene = (function () {
       mk(k, C[k]);
     }
     mk('glass', C.glass, { roughness: 0.06, metalness: 0.05, transparent: true, opacity: 0.42, depthWrite: false });
+    M.zebraSheer.transparent = true;
+    M.zebraSheer.opacity = 0.20;
+    M.zebraSheer.depthWrite = false;
     mk('carGlass', 0x1d2429, { roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.85 });
     // Color = C.lamp so walkthrough hex→name resolves 'lamp' for night boost
     mk('lamp', C.lamp, { emissive: srgb(C.lamp), emissiveIntensity: 2.4, roughness: 0.55 });
@@ -398,7 +402,7 @@ window.HouseScene = (function () {
      transparent glass). Keeping these out of the shadow map is a large
      first-frame win and avoids muddy noisy shadows. */
   const NO_SHADOW_CAST = {
-    glass: 1, carGlass: 1, ground: 1, plotPad: 1, grass: 1, soil: 1,
+    glass: 1, carGlass: 1, zebraSheer: 1, ground: 1, plotPad: 1, grass: 1, soil: 1,
     green: 1, green2: 1, leafDark: 1, leafLight: 1, boug: 1, ixora: 1,
     flowerPink: 1, road: 1, roadLine: 1, roadLine2: 1
   };
@@ -409,7 +413,7 @@ window.HouseScene = (function () {
   const NON_COLLIDE_MATERIALS = {
     // openings / portals (doors use walnut; cabinets share wood*)
     glass: 1, carGlass: 1, walnut: 1, liftDoor: 1, frame: 1,
-    brass: 1, chrome: 1, curtain: 1, curtain2: 1,
+    brass: 1, chrome: 1, curtain: 1, curtain2: 1, zebraSheer: 1,
     woodD: 1, woodF: 1,
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
@@ -1006,6 +1010,7 @@ window.HouseScene = (function () {
             mesh.castShadow = false;
             mesh.renderOrder = 2 + (key === 'carGlass' ? 1 : 0);
           }
+          if (key === 'zebraSheer') mesh.renderOrder = 4; // blend over the glazing
           g.add(mesh);
         }
         // dispose shared unit prototypes once this bag is finished
@@ -6132,6 +6137,27 @@ window.HouseScene = (function () {
         if (face === 'E' || face === 'W') prb(bag, m, lo, hi, a0, a1, h0, h1, r);
         else prb(bag, m, a0, a1, lo, hi, h0, h1, r);
       };
+      if (opt.zebra) {
+        // Cordless zebra roller with matching cassette and weighted hem.
+        const case0 = c - w / 2 + 5, case1 = c + w / 2 - 5;
+        const fabric0 = case0 + 10, fabric1 = case1 - 10;
+        const bottom = head - h * 0.75 / 1000;
+        rail(case0, case1, 0, 66, head - 0.045, head + 0.018, 'whiteG', 7);
+        rail(case0 + 8, case1 - 8, 24, 60, bottom - 0.014, bottom + 0.010, 'whiteG', 4);
+
+        // Both fabric runs are aligned in the daylight position.
+        const fabricTop = head - 0.044;
+        for (let z = fabricTop; z > bottom; z -= 0.125) {
+          const stripeBottom = Math.max(bottom, z - 0.075);
+          for (const d of [26, 55]) {
+            rail(fabric0, fabric1, d, d + 1, stripeBottom, z, fab, 0.4);
+            if (stripeBottom > bottom) {
+              rail(fabric0, fabric1, d, d + 1, Math.max(bottom, z - 0.125), stripeBottom, 'zebraSheer', 0.4);
+            }
+          }
+        }
+        return;
+      }
       if (opt.blind) {
         // Modern architectural Roman / Venetian blind system
         // Clean head cassette + horizontal fold slats drawn neatly to top ~28%
@@ -6209,9 +6235,9 @@ window.HouseScene = (function () {
         { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', bot: 1.08 } ],// GF bed02 W (behind the bed)
       // The windows flanking the TV wall (c = 5500 and c = 8760, FF + SF) are full-height double-height architectural glazing
       // kept cleanly unobstructed without fabric bunching to maximize natural daylight flooding the double-height void.
-      // - South-facing windows (c = 4100, c = 10000) use clean architectural blinds that clear side tables and headboards.
-      [ { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', blind: true }, // FF master S (clean architectural blind, clears headboard + bedside table)
-        { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', blind: true } ], // FF master W (matches the south window blind)
+      // SF south-facing bedroom windows use Roman blinds to clear the furniture.
+      [ { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // FF master south
+        { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ], // FF master west
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
         { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420, short: true },  // SF bed03 E corner (apron, like the rest of the floor)
         { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', blind: true }, // SF master02 S (clean architectural blind, clears headboard + bedside table)

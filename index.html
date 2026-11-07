@@ -1903,7 +1903,7 @@ window.DESIGNS = {
     if (t.tex && !t.preUV) boxUV(o.geometry, t.tile);   // preUV: houseScene laid the UVs (tile grids, one-piece treads)
 
     const isGlass = key === 'glass' || key === 'carGlass';
-    o.castShadow = !(isGlass || key === 'ground' || key === 'plotPad' || key === 'road' || key === 'roadLine');
+    o.castShadow = !(isGlass || key === 'zebraSheer' || key === 'ground' || key === 'plotPad' || key === 'road' || key === 'roadLine');
     o.receiveShadow = !isGlass;
     o.userData.reflect = isGlass ? 0.9 : (t.reflect || 0);
     if (o.userData.reflect > 0.05) REFLECTIVE.push(o);
