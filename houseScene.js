@@ -139,9 +139,9 @@ window.HouseScene = (function () {
     tKitch:  0xebe6de, tUtil: 0xebe6de, tOut:   0x706d6a, // tOut dedupe vs concrete
     tCirc:   0xebe6de, tOffice: 0xebe6de, tPooja: 0xebe6de,
     tWalk:   0xebe6de,
-    // tFloor: the laid marble itself (per-zone tile grids, one-piece treads);
-    // a hair off the others so the palette keeps one name per hex
-    tFloor:  0xebe6df,
+    // tFloor: the laid 1200 x 1800 slabs (per-zone grids, one-piece treads). The
+    // slab colour is painted in the texture (floorSlab), so this is near-white
+    tFloor:  0xfdfcfa,
     // furniture
     fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x5c4030,
     woodD:   0x3e2c20, mattress:0xeee8dc, pillow: 0xf4efe6,
@@ -218,7 +218,7 @@ window.HouseScene = (function () {
     limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
-    skirtTile: 0xebe6e0   // interior skirting: cut from the floor marble (same tint as tFloor)
+    skirtTile: 0xfdfcf8   // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
   };
 
   /* materials: key -> spec; emissive optional */
@@ -461,10 +461,15 @@ window.HouseScene = (function () {
          that, in a cut no thinner than half a slab — never a sliver;
        - every doorway is ONE threshold slab; every stair tread and riser is
          ONE piece cut from a single slab, so no joint ever crosses it;
-       - each slab is one of the texture's 4 painted slabs in one of 8
-         orientations, never the same as the slab beside it.
-     The viewers must not re-project these UVs (treatment flag preUV). The
-     atlas is 2x2 slabs per texture period, so a slab's corner is a half. */
+       - each slab is one of the texture's 4 painted slabs, flipped either
+         way, never the same as the slab beside it.
+     Slabs are RECTANGULAR, 1200 x 1800 mm (4 x 6 ft, the large-format GVT
+     slab sold in India). Each atlas cell is one slab painted with its short
+     side along u and its long side along v, squashed into a square cell; the
+     swap bit turns it so the long side runs along whichever plan axis the
+     zone chose. The viewers must not re-project these UVs (treatment flag
+     preUV). The atlas is 2x2 slabs per texture period. */
+  const SLAB_S = 1200, SLAB_L = 1800;
   function tileHash(a, b, c) {
     let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263) ^ Math.imul(c | 0, 1274126177);
     h = Math.imul(h ^ (h >>> 13), 1274126177);
@@ -481,15 +486,24 @@ window.HouseScene = (function () {
   }
   // one cut piece (tread, riser, threshold) on a single slab, centred with a
   // margin so none of the slab's joint lines reach it. Bounds in metres.
+  // A piece wa x wb (any units) cut from ONE 1200 x 1800 slab: its long side
+  // on the slab's long side, centred with a margin. Returns the variant (swap
+  // bit set to match) and the slab extent along a and b in the piece's units.
+  function pieceFit(wa, wb, v, unit) {
+    const swap = wa > wb, su = swap ? wb : wa, sv = swap ? wa : wb;
+    const k = Math.max(1, su * 1.06 / (SLAB_S * unit), sv * 1.06 / (SLAB_L * unit));
+    const Su = SLAB_S * unit * k, Sv = SLAB_L * unit * k;
+    return { v: (v & 3) | (swap ? 4 : 0) | (v & 24), Sa: swap ? Sv : Su, Sb: swap ? Su : Sv };
+  }
   function pieceMap(x0, x1, z0, z1, y0, y1, v) {
-    const S = Math.max(1.1, Math.max(x1 - x0, z1 - z0, y1 - y0) * 1.06);
     return (p, n) => {
       const ax = Math.abs(n.x), ay = Math.abs(n.y), az = Math.abs(n.z);
       let a, b, wa, wb;
       if (ay >= ax && ay >= az) { a = p.x - x0; b = p.z - z0; wa = x1 - x0; wb = z1 - z0; }
       else if (ax >= az) { a = p.z - z0; b = p.y - y0; wa = z1 - z0; wb = y1 - y0; }
       else { a = p.x - x0; b = p.y - y0; wa = x1 - x0; wb = y1 - y0; }
-      return slabUV(v, (1 - wa / S) / 2 + a / S, (1 - wb / S) / 2 + b / S);
+      const f = pieceFit(wa, wb, v, 0.001);
+      return slabUV(f.v, (1 - wa / f.Sa) / 2 + a / f.Sa, (1 - wb / f.Sb) / 2 + b / f.Sb);
     };
   }
   // exposed boundary edges of a zone along one axis: [position mm, +1 if the
@@ -507,13 +521,14 @@ window.HouseScene = (function () {
     }
     return out;
   }
-  // The house is laid in 1200 mm slabs throughout (one slab size, as bought);
-  // a zone may only trim that by a hair (±2.5%) to land a wall on a joint.
+  // The house is laid in one slab size, 1200 x 1800, as bought; along each
+  // axis a zone may only trim its module (1200 or 1800) by a hair (±2.5%) to
+  // land a wall on a joint.
   // Choose that trim and the joint line o: every exposed edge either on a
   // joint or cut to at least half a slab, and a plain room cut EQUALLY on
   // both sides — the mason's centre-out rule.
-  function fitAxis(edges, lo, hi) {
-    const W = hi - lo, M = 1200;
+  function fitAxis(edges, lo, hi, M) {
+    const W = hi - lo, T = Math.round(M * 0.025 / 5) * 5;
     let best = null;
     const consider = (m, o) => {
       let minP = 1, exact = 0;
@@ -525,18 +540,18 @@ window.HouseScene = (function () {
         if (s / m < minP) minP = s / m;
       }
       const sym = edges.length === 2 && cuts.length === 2 && Math.abs(cuts[0] - cuts[1]) < 12 ? 1 : 0;
-      const sc = Math.min(minP, 0.5) * 1000 + exact * 15 + sym * 25 - Math.abs(m - M) / 10;
+      const sc = Math.min(minP, 0.5) * 1000 + exact * 15 + sym * 25 - Math.abs(m - M) / 10 * (1200 / M);
       if (!best || sc > best.sc) best = { m, o, sc };
     };
-    if (W < 1230) consider(W, lo);                       // one slab wall to wall
-    for (let m = M - 30; m <= M + 30; m += 5) {
+    if (W < M + T) consider(W, lo);                      // one slab wall to wall
+    for (let m = M - T; m <= M + T; m += 5) {
       consider(m, lo);
       for (const [e] of edges) consider(m, e);
       consider(m, (lo + hi) / 2);                        // joint on the centreline
       consider(m, (lo + hi) / 2 + m / 2);                // slab centred
       for (let off = 0; off < m; off += 15) consider(m, lo + off);
     }
-    return { m: best.m, o: best.o };
+    return { m: best.m, o: best.o, sc: best.sc };
   }
   // group touching / overlapping rects into zones and lay each one
   function layZones(rs) {
@@ -552,7 +567,15 @@ window.HouseScene = (function () {
       const zr = groups[k];
       const bx0 = Math.min(...zr.map(r => r.x0)), bx1 = Math.max(...zr.map(r => r.x1));
       const by0 = Math.min(...zr.map(r => r.y0)), by1 = Math.max(...zr.map(r => r.y1));
-      const gx = fitAxis(zoneEdges(zr, 'x'), bx0, bx1), gy = fitAxis(zoneEdges(zr, 'y'), by0, by1);
+      // long side along x or along y: whichever lands the walls on joints or
+      // on the fattest cuts; on a tie, along the zone's longer dimension
+      const ex = zoneEdges(zr, 'x'), ey = zoneEdges(zr, 'y');
+      const ax = [fitAxis(ex, bx0, bx1, SLAB_L), fitAxis(ey, by0, by1, SLAB_S)];   // long along x
+      const ay = [fitAxis(ex, bx0, bx1, SLAB_S), fitAxis(ey, by0, by1, SLAB_L)];   // long along y
+      const longX = bx1 - bx0 >= by1 - by0;
+      const sX = ax[0].sc + ax[1].sc + (longX ? 20 : 0), sY = ay[0].sc + ay[1].sc + (longX ? 0 : 20);
+      const swap = sX > sY;
+      const [gx, gy] = swap ? ax : ay;
       const vm = new Map();
       const i0 = Math.floor((bx0 - gx.o) / gx.m), i1 = Math.floor((bx1 - gx.o) / gx.m);
       const j0 = Math.floor((by0 - gy.o) / gy.m), j1 = Math.floor((by1 - gy.o) / gy.m);
@@ -561,7 +584,7 @@ window.HouseScene = (function () {
         const left = vm.get((ti - 1) + ',' + tj), down = vm.get(ti + ',' + (tj - 1));
         let cell = h & 3;
         for (let t = 0; t < 4 && ((left !== undefined && (left & 3) === cell) || (down !== undefined && (down & 3) === cell)); t++) cell = (cell + 1) & 3;
-        vm.set(ti + ',' + tj, cell | (((h >>> 4) & 7) << 2));
+        vm.set(ti + ',' + tj, cell | (swap ? 4 : 0) | (((h >>> 4) & 3) << 3));
       }
       // audit hook (like AUD): with window.__HOUSE_AUDIT set, every zone's fit and
       // its cut sizes at each exposed edge are recorded in window.__LAY
@@ -690,9 +713,9 @@ window.HouseScene = (function () {
             const v = z.variant(ti, tj), tx = gx.o + ti * gx.m, ty = gy.o + tj * gy.m;
             f = (x, y) => slabUV(v, (x - tx) / gx.m, (y - ty) / gy.m);
           } else {
-            const w = r[1] - r[0], d = r[3] - r[2], Sz = Math.max(1100, 1.06 * Math.max(w, d));
-            const v = tileHash(Math.round(r[0]), Math.round(r[2]), 3) & 31;
-            f = (x, y) => slabUV(v, (1 - w / Sz) / 2 + (x - r[0]) / Sz, (1 - d / Sz) / 2 + (y - r[2]) / Sz);
+            const w = r[1] - r[0], d = r[3] - r[2];
+            const pf = pieceFit(w, d, tileHash(Math.round(r[0]), Math.round(r[2]), 3) & 31, 1);
+            f = (x, y) => slabUV(pf.v, (1 - w / pf.Sa) / 2 + (x - r[0]) / pf.Sa, (1 - d / pf.Sb) / 2 + (y - r[2]) / pf.Sb);
           }
           return [f(xa, ya), f(xb, ya), f(xb, yb), f(xa, yb)];
         };
@@ -4846,6 +4869,7 @@ window.HouseScene = (function () {
        100 thick toward the room, so the wet side stays x0 and below. */
     shower(bag, x0, x1, y0, y1, fY, half, wallAtLo) {
       if (half) {
+        /* the free end is y0, the wall y1; `wallAtLo` swaps them (free end y1, wall y0) */
         const T = 100, top = fY + half;
         pb(bag, 'tileShower', x0, x0 + T, y0, y1, fY, top);                  // wet-side face reads as shower tile
         pb(bag, 'tileBath', x0 + T, x0 + T + 2, y0, y1, fY, top);              // room-side veneer in the bath tile
@@ -4876,7 +4900,6 @@ window.HouseScene = (function () {
     },
     /* Real-life shower set on a wall at plan-y cy (room toward -y when facing 'S'):
        thermostatic valve (plate, two knobs), round rain head on a wall arm, slide
-        /* the free end is y0, the wall y1; `wallAtLo` swaps them (free end y1, wall y0) */
        rail with hand shower and hose to a wall outlet. Matte black, chrome knobs. */
     showerSet(bag, cx, cy, fY, facing) {
       const s = facing === 'N' ? 1 : -1, arm = d => cy + s * d, Z = d => -arm(d) / 1000;
@@ -9116,29 +9139,6 @@ window.HouseScene = (function () {
         Lum.vanity('x', 2330, 3075, 6381, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2702.5)
       }
 
-      if (fi === 1) {
-        // Service-band openings for dollhouse (also on exterior)
-        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
-        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
-        glazing(bag, { face: 'E', band: [14040, 14270], floorY: fY, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
-        glazing(bag, { face: 'W', band: [4805, 4920], floorY: fY, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
-        // This storey only (FF slab → cut). Not the full tower from ground.
-        liftTower(bag, cut, [fY], fY);
-        columnsEast(bag, cut, fY);
-
-        /* NO ground-floor flight here. The internal stair serves the FF–SF duplex
-           and the terrace only; the ground floor is reached from outside and has
-           no connection to it. Nothing in ROOMS[0] is a STAIRCASE either — that
-           bay on the ground floor is the CHILDREN BEDROOM (x 230..4805,
-           y 5460..8640), so a flight landing there would have run through it. */
-
-        // First floor → its own half-landing (flight B of this pair is drawn by SF)
-        stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE, skirt: 'lo' });
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE, undefined, undefined, 'WSN');
-        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
       /* SF east bath (x 4920..7620, y 230..1758), done in the language of the west
          suite's: a 900 x 900 corner shower in green zellige (west + south walls
          floor to slab, pan with square drain), a 1.05 m tiled half wall with glass
@@ -9206,6 +9206,29 @@ window.HouseScene = (function () {
         pb(bag, 'sheet', 4974, 5015, 1313, 1497, Y(1.008), Y(1.019));
       }
 
+      if (fi === 1) {
+        // Service-band openings for dollhouse (also on exterior)
+        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
+        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
+        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
+        glazing(bag, { face: 'E', band: [14040, 14270], floorY: fY, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
+        glazing(bag, { face: 'W', band: [4805, 4920], floorY: fY, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
+        // This storey only (FF slab → cut). Not the full tower from ground.
+        liftTower(bag, cut, [fY], fY);
+        columnsEast(bag, cut, fY);
+
+        /* NO ground-floor flight here. The internal stair serves the FF–SF duplex
+           and the terrace only; the ground floor is reached from outside and has
+           no connection to it. Nothing in ROOMS[0] is a STAIRCASE either — that
+           bay on the ground floor is the CHILDREN BEDROOM (x 230..4805,
+           y 5460..8640), so a flight landing there would have run through it. */
+
+        // First floor → its own half-landing (flight B of this pair is drawn by SF)
+        stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
+        plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE, skirt: 'lo' });
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE, undefined, undefined, 'WSN');
+        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // furniture
         westSuite(bag, fY);
         Fur.clad(bag, 'x', 950, 'S', 8250, 9370, fY, 2.40);          // common bath north
