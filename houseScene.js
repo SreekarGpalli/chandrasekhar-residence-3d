@@ -215,7 +215,7 @@ window.HouseScene = (function () {
     artD:      0x899985,  // canvas — sage
     mirrorI:   0xa4abb0,  // silvered mirror (reads as glass, not a white board, against the bright rooms)
     wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
-    limeWash:  0xfbfaf6,  // near-white: the limewash colours (sage, cream, deep sage) live in the texture: SF west bedroom walls
+    limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
     skirtTile: 0xebe6e0   // interior skirting: cut from the floor marble (same tint as tFloor)
