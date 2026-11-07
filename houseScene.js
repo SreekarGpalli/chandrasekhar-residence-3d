@@ -7836,19 +7836,8 @@ window.HouseScene = (function () {
         for (const o of [{ c: 4300, w: 900 }, { c: 6800, w: 1800 }, { c: 11000, w: 1500 }]) {
           for (const cx of flankCenters(o.c, o.w, 160)) northWallLamp(cx, L.f0);
         }
-        // FF north windows (SF north wall kept clean of wall lamps)
-        for (const fl of [L.f1]) {
-          for (const o of [{ c: 5500, w: 1000 }, { c: 8760, w: 1000 }]) {
-            for (const cx of flankCenters(o.c, o.w, 160)) {
-              // The north wall between these two windows is the double-height
-              // TV feature wall (x 6020..8241, FF floor to SF soffit). The inner
-              // flanks at 6160 and 8100 would sit on the pier beside the painted
-              // arch, so they are skipped to keep it clean.
-              if (cx > 6020 && cx < 8241) continue;
-              northWallLamp(cx, fl);
-            }
-          }
-        }
+        // FF/SF north upper windows: wall lamps omitted per owner request (feature wall keeps 2 TV sconces)
+        /* (upper north flank lamps removed) */
       })();
 
       // ===== EAST FACADE — quiet lime, more layers, no shout =====
@@ -8670,8 +8659,8 @@ window.HouseScene = (function () {
         Lum.fan(7110, 5790);
         Lum.downlight(5760, 5790).downlight(8450, 5790);
         Lum.downlight(5760, 7520);
-        // WL: wall lights flanking the TV on the feature wall (arch, y 8640)
-        Lum.sconce(6317, 8636, 1.45, 'x', 'S').sconce(8003, 8636, 1.45, 'x', 'S');
+        // WL: two wall sconces flanking the TV on the feature wall, symmetrically centered between TV and arch edges
+        Lum.sconce(6375, 8638, 1.35, 'x', 'S').sconce(7885, 8638, 1.35, 'x', 'S');
         /* Corner line: one perimeter round the open living / dining / foyer
            plan, wherever a wall meets the FF ceiling (none on the void, the
            stair or the dining|hall opening). */
