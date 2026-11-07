@@ -8891,9 +8891,9 @@ window.HouseScene = (function () {
         Fur.wc(bag, 1700, 6096, fY, 'S');
         Fur.basin(bag, 2300, 3105, 5881, 6381, fY, 'N', { flat: true }); Fur.mirror(bag, 2330, 3075, 6369, 6381, fY, 'S');
         Fur.clad(bag, 'x', 6381, 'S', 230, 1130, fY, 3.203, 'tileShower');   // shower back wall, floor to slab
-        Fur.clad(bag, 'x', 6381, 'S', 1130, 3105, fY, 2.40);
+        Fur.clad(bag, 'x', 6381, 'S', 1130, 3105, fY, 3.203);
         Fur.clad(bag, 'x', 4547, 'N', 230, 1130, fY, 3.203, 'tileShower');   // alcove's south wall, floor to slab
-        Fur.clad(bag, 'x', 4547, 'N', 1130, 3105, fY, 2.40);
+        Fur.clad(bag, 'x', 4547, 'N', 1130, 3105, fY, 3.203);
         Fur.clad(bag, 'y', 230, 'E', 5127, 6371, fY, 3.203, 'tileShower');   // west, shower: floor to slab
         {
           // west wall, dry end: the same tile all round the window (y 4600..5100, z 1.5..2.3),
@@ -8908,7 +8908,7 @@ window.HouseScene = (function () {
           pb(bag, 'tileShower', 165, 230, 4600, 5100, wz0, wz0 + 0.010);
           pb(bag, 'tileShower', 165, 230, 4600, 5100, wz1 - 0.010, wz1);
         }
-        Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 2.40);                 // east, beside the door
+        Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 3.203);                 // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
         if (fi === 1) {
