@@ -215,6 +215,7 @@ window.HouseScene = (function () {
     artD:      0x899985,  // canvas — sage
     mirrorI:   0xa4abb0,  // silvered mirror (reads as glass, not a white board, against the bright rooms)
     wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
+    limeWash:  0xc4d1c3,  // pale sage limewash: SF west bedroom walls
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
     skirtTile: 0xebe6e0   // interior skirting: cut from the floor marble (same tint as tFloor)
@@ -438,7 +439,7 @@ window.HouseScene = (function () {
     fluted: 1, quartz: 1, marbleV: 1, travertine: 1, stoneDk: 1, boucle: 1,
     linen: 1, linenDk: 1, velvet: 1, terra: 1, rugW: 1, rugD: 1, leather: 1,
     blackM: 1, brassI: 1, ceramic: 1, sheet: 1, duvet: 1, artA: 1, artB: 1,
-    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
+    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, limeWash: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
   };
 
   /* Building footprint in plan-mm (main block + upper-floor south service). */
@@ -9498,6 +9499,26 @@ window.HouseScene = (function () {
            own top landing, so the same tile as the flights. */
         stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, FLOOR_TILE);
         westSuite(bag, fY);
+        /* SF west bedroom only: limewash on the four room-side wall faces (the
+           FF master keeps its white). A 3 mm skin on the faces — skirting stands
+           12 mm proud and covers its foot — with the windows' and doors' holes,
+           and the window reveals lined so they are not left white. */
+        {
+          const T = 3, top = fY + 3.203;
+          const win = o => ({ c: o.c, w: o.w, sill: o.sill, h: o.h });
+          const wW = fd.sch.W.filter(o => o.c < 4432).map(win), wS = fd.sch.S.filter(o => o.c < 4805).map(win);
+          wallRun(bag, 'limeWash', 'y', 230, 4432, 230, 230 + T, fY, top, fY, wW);                               // west
+          wallRun(bag, 'limeWash', 'y', 230, 4432, 4805 - T, 4805, fY, top, fY, [{ c: 3850, w: 1000, sill: 0, h: 2100 }]); // east (door)
+          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 230, 230 + T, fY, top, fY, wS);                       // south
+          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 4432 - T, 4432, fY, top, fY, [{ c: 3700, w: 800, sill: 0, h: 2100 }]); // north (walk-in door)
+          const liner = (dir, o) => {          // reveal liner, room face back to the frame (74 mm)
+            const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2, z0 = fY + o.sill / 1000, z1 = z0 + o.h / 1000;
+            const p = (a, b, z, zz) => dir === 'y' ? pb(bag, 'limeWash', 156, 230, a, b, z, zz) : pb(bag, 'limeWash', a, b, 156, 230, z, zz);
+            p(a0, a1, z0, z0 + 0.003); p(a0, a1, z1 - 0.003, z1);
+            p(a0, a0 + 3, z0, z1); p(a1 - 3, a1, z0, z1);
+          };
+          wW.forEach(o => liner('y', o)); wS.forEach(o => liner('x', o));
+        }
         // --- east bath walls: large-format tile ---
         Fur.clad(bag, 'y', 4920, 'E', 233, 1758, fY, 2.40);          // east bath west
         Fur.clad(bag, 'y', 7620, 'W', 233, 1758, fY, 2.40);          // east bath east
