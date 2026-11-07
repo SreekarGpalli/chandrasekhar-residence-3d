@@ -9499,7 +9499,7 @@ window.HouseScene = (function () {
            own top landing, so the same tile as the flights. */
         stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, FLOOR_TILE);
         westSuite(bag, fY);
-        /* SF west bedroom only: limewash on the four room-side wall faces (the
+        /* SF west bedroom only: limewash on the four room-side wall faces and the ceiling (the
            FF master keeps its white). A 3 mm skin on the faces — skirting stands
            12 mm proud and covers its foot — with the windows' and doors' holes,
            and the window reveals lined so they are not left white. */
@@ -9518,6 +9518,10 @@ window.HouseScene = (function () {
             p(a0, a0 + 3, z0, z1); p(a1 - 3, a1, z0, z1);
           };
           wW.forEach(o => liner('y', o)); wS.forEach(o => liner('x', o));
+          // ceiling in the same paint: a 2 mm skin, wall face to wall face, just under
+          // the roof's 8 mm charDark soffit plate (exterior group, L.roof - slabT
+          // - 0.008), which is what every SF ceiling actually shows
+          pb(bag, 'limeWash', 230, 4805, 230, 4432, top - 0.010, top - 0.008);
         }
         // --- east bath walls: large-format tile ---
         Fur.clad(bag, 'y', 4920, 'E', 233, 1758, fY, 2.40);          // east bath west
