@@ -143,7 +143,7 @@ window.HouseScene = (function () {
     // slab colour is painted in the texture (floorSlab), so this is near-white
     tFloor:  0xfdfcfa,
     // furniture
-    fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x5c4030,
+    fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x3e2c21,
     woodD:   0x3e2c20, mattress:0xeee8dc, pillow: 0xf4efe6,
     bedding: 0xcfc9bc, whiteG: 0xf4efe7, dark: 0x2a2723,   // whiteG dedupe vs pillow
     tv:      0x0b0c0d, rug: 0xb6a98d, carBody: 0x83888d,
@@ -180,7 +180,7 @@ window.HouseScene = (function () {
        systems, warm-white lacquer, sage, travertine and white quartz, linen
        and boucle. Every hex is unique — the viewers resolve treatments by
        name, but the hex fallback still needs it. */
-    oak:       0xcdb391,  // light natural oak veneer / solid
+    oak:       0x7a5c42,  // dark smoked oak (harmonized with oakDark, dedupe)
     oakDark:   0x7d5f45,  // smoked oak — fluted panel backing, accents
     alu:       0xbcae93,  // champagne anodised aluminium profile
     aluDark:   0x48484a,  // graphite anodised aluminium
@@ -2215,17 +2215,17 @@ window.HouseScene = (function () {
       }
 
       // 1. Four solid corner wooden legs
-      addPart('woodF', 40, 120, 40, 120, fY, fY + 0.18);          // Head-Left
-      addPart('woodF', W - 120, W - 40, 40, 120, fY, fY + 0.18);  // Head-Right
-      addPart('woodF', 40, 120, L - 120, L - 40, fY, fY + 0.18);  // Foot-Left
-      addPart('woodF', W - 120, W - 40, L - 120, L - 40, fY, fY + 0.18); // Foot-Right
+      addPart('woodD', 40, 120, 40, 120, fY, fY + 0.18);          // Head-Left
+      addPart('woodD', W - 120, W - 40, 40, 120, fY, fY + 0.18);  // Head-Right
+      addPart('woodD', 40, 120, L - 120, L - 40, fY, fY + 0.18);  // Foot-Left
+      addPart('woodD', W - 120, W - 40, L - 120, L - 40, fY, fY + 0.18); // Foot-Right
 
       // 2. Bed frame side rails and footboard
-      addPart('woodF', 0, 50, 0, L, fY + 0.12, fY + 0.36);         // Left Rail
-      addPart('woodF', W - 50, W, 0, L, fY + 0.12, fY + 0.36);     // Right Rail
-      addPart('woodF', 50, W - 50, L - 50, L, fY + 0.12, fY + 0.36); // Footboard Rail
-      addPart('woodF', 50, W - 50, 0, 50, fY + 0.12, fY + 0.36);   // Headboard Base Rail
-      addPart('woodF', 50, W - 50, 50, L - 50, fY + 0.12, fY + 0.28); // Slat base
+      addPart('woodD', 0, 50, 0, L, fY + 0.12, fY + 0.36);         // Left Rail
+      addPart('woodD', W - 50, W, 0, L, fY + 0.12, fY + 0.36);     // Right Rail
+      addPart('woodD', 50, W - 50, L - 50, L, fY + 0.12, fY + 0.36); // Footboard Rail
+      addPart('woodD', 50, W - 50, 0, 50, fY + 0.12, fY + 0.36);   // Headboard Base Rail
+      addPart('woodD', 50, W - 50, 50, L - 50, fY + 0.12, fY + 0.28); // Slat base
 
       // 3. Panelled headboard + brass cap rail
       addPart('woodD', 0, W, 0, 80, fY + 0.12, fY + 1.18);
@@ -2233,7 +2233,7 @@ window.HouseScene = (function () {
       if (W >= 1300) {
         addPart('fabric2', 60, W / 2 - 20, 55, 95, fY + 0.36, fY + 1.10);
         addPart('fabric2', W / 2 + 20, W - 60, 55, 95, fY + 0.36, fY + 1.10);
-        addPart('woodF', W / 2 - 12, W / 2 + 12, 50, 90, fY + 0.36, fY + 1.10); // centre stile
+        addPart('woodD', W / 2 - 12, W / 2 + 12, 50, 90, fY + 0.36, fY + 1.10); // centre stile
       } else {
         addPart('fabric2', 60, W - 60, 55, 95, fY + 0.36, fY + 1.10);
       }
@@ -2276,7 +2276,7 @@ window.HouseScene = (function () {
       for (const [lx, ly] of [[x0 + 30, y0 + 30], [x1 - 30, y0 + 30], [x0 + 30, y1 - 40], [x1 - 30, y1 - 40]]) {
         bag.cyl('woodD', lx / 1000, fY + 0.05, -ly / 1000, 0.018, 0.10);
       }
-      pb(bag, 'woodF', x0 + 8, x1 - 8, y0 + 8, y1 - 28, fY + 0.10, fY + 0.44);
+      pb(bag, 'woodD', x0 + 8, x1 - 8, y0 + 8, y1 - 28, fY + 0.10, fY + 0.44);
       pb(bag, 'woodD', x0 - 8, x1 + 8, y0 - 8, y1 - 8, fY + 0.44, fY + 0.48);
       // Drawer face + brass bar pull
       pb(bag, 'woodD', x0 + 18, x1 - 18, y1 - 30, y1 - 14, fY + 0.16, fY + 0.40);
@@ -2338,7 +2338,7 @@ window.HouseScene = (function () {
         const u1 = (i + 1) * dw;
 
         // Main lower shutter (proud 14mm)
-        part('woodF', u0 + 6, u1 - 6, D - 15, D, fY + 0.08, hLoftSplit - 0.01);
+        part('woodD', u0 + 6, u1 - 6, D - 15, D, fY + 0.08, hLoftSplit - 0.01);
         
         // Brass vertical bar handle (300mm length)
         const isLeftHandle = (i % 2 === 0);
@@ -2346,7 +2346,7 @@ window.HouseScene = (function () {
         part('brass', handleU - 6, handleU + 6, D, D + 12, fY + 0.95, fY + 1.25);
 
         // Top loft overhead storage shutter (running flush to slab soffit!)
-        part('woodF', u0 + 6, u1 - 6, D - 15, D, hLoftSplit + 0.01, hTop - 0.02);
+        part('woodD', u0 + 6, u1 - 6, D - 15, D, hLoftSplit + 0.01, hTop - 0.02);
         
         // Loft brass square pull
         part('brass', handleU - 6, handleU + 6, D, D + 10, hLoftSplit + 0.15, hLoftSplit + 0.22);
@@ -2383,10 +2383,10 @@ window.HouseScene = (function () {
       }
 
       // 1. Sleek legs at 4 corners
-      addPart('woodF', 20, 70, 20, 70, fY, fY + 0.10);
-      addPart('woodF', W - 70, W - 20, 20, 70, fY, fY + 0.10);
-      addPart('woodF', 20, 70, L - 70, L - 20, fY, fY + 0.10);
-      addPart('woodF', W - 70, W - 20, L - 70, L - 20, fY, fY + 0.10);
+      addPart('woodD', 20, 70, 20, 70, fY, fY + 0.10);
+      addPart('woodD', W - 70, W - 20, 20, 70, fY, fY + 0.10);
+      addPart('woodD', 20, 70, L - 70, L - 20, fY, fY + 0.10);
+      addPart('woodD', W - 70, W - 20, L - 70, L - 20, fY, fY + 0.10);
 
       // 2. Base plinth frame
       addPart('fabric2', 0, W, 0, L, fY + 0.10, fY + 0.22);
@@ -2432,11 +2432,11 @@ window.HouseScene = (function () {
         }
       }
       // Slim seat welting along front edge
-      addPart('woodF', startU + 10, endU - 10, L - 28, L - 12, fY + 0.36, fY + 0.39);
+      addPart('woodD', startU + 10, endU - 10, L - 28, L - 12, fY + 0.36, fY + 0.39);
     },
     table(bag, x0, x1, y0, y1, fY, h, mat) {
       h = h || 0.72;
-      const topMat = mat || 'woodF';
+      const topMat = mat || 'woodD';
       const coffee = h < 0.55;
       // Top plate with slight overhang + edge band
       pb(bag, topMat, x0 - 8, x1 + 8, y0 - 8, y1 + 8, fY + h - 0.028, fY + h);
@@ -2621,7 +2621,7 @@ window.HouseScene = (function () {
         bag.cyl('steel', lx / 1000, fY + 0.14, -ly / 1000, 0.014, 0.28);
       }
       pb(bag, 'woodD', x0, x1, y0, y1, fY + 0.26, fY + 0.42);
-      pb(bag, 'woodF', x0 - 8, x1 + 8, y0 - 8, y1 + 8, fY + 0.42, fY + 0.46);
+      pb(bag, 'woodD', x0 - 8, x1 + 8, y0 - 8, y1 + 8, fY + 0.42, fY + 0.46);
       pb(bag, 'brass', cx - 70, cx + 70, y0 - 6, y0 + 2, fY + 0.33, fY + 0.345);
       // Decorative tray + vase on top
       pb(bag, 'brass', cx - 90, cx + 40, cy - 50, cy + 50, fY + 0.46, fY + 0.48);
@@ -2791,7 +2791,7 @@ window.HouseScene = (function () {
       // Carcass
       pb(bag, 'woodD', x0, x1, y0, y1, z0, z1);
       // Crown
-      pb(bag, 'woodF', x0 - 8, x1 + 8, y0 - 8, y1 + 8, z1, zc);
+      pb(bag, 'woodD', x0 - 8, x1 + 8, y0 - 8, y1 + 8, z1, zc);
       // Doors on the open face
       const T = 18, gap = 3;
       const h0 = z0 + 0.04, h1 = z1 - 0.04;
@@ -2830,7 +2830,7 @@ window.HouseScene = (function () {
     kitPantry(bag, x0, x1, y0, y1, fY, face) {
       const z1 = fY + 2.36;
       pb(bag, 'woodD', x0, x1, y0, y1, fY, z1);
-      pb(bag, 'woodF', x0 - 8, x1 + 8, y0 - 8, y1 + 8, z1, fY + 2.40);
+      pb(bag, 'woodD', x0 - 8, x1 + 8, y0 - 8, y1 + 8, z1, fY + 2.40);
       const T = 18, gap = 3, mid = face === 'E' || face === 'W' ? (y0 + y1) / 2 : (x0 + x1) / 2;
       const h0 = fY + 0.05, h1 = z1 - 0.04;
       if (face === 'E') {
@@ -2951,7 +2951,7 @@ window.HouseScene = (function () {
       const n = hN || 4, books = ['boug', 'bedding', 'brass', 'green2', 'ixora', 'fabric'];
       for (let i = 0; i < n; i++) {
         const h0 = fY + 0.18 + i * 0.31;
-        pb(bag, 'woodF', x0 + 15, x1 - 15, y0 - 18, y1 - 30, h0 - 0.025, h0);
+        pb(bag, 'woodD', x0 + 15, x1 - 15, y0 - 18, y1 - 30, h0 - 0.025, h0);
         let bx = x0 + 60, j = 0;
         while (bx < x1 - 200) {
           const bw = 90 + ((i * 53 + j * 97) % 110);
@@ -3009,11 +3009,11 @@ window.HouseScene = (function () {
       const slabH = fY + 3.203;
       // Draw the open shelving wardrobe (full floor-to-slab height!)
       // 1. Back panel (thin, 15mm)
-      addPart('oak', 0, W, 0, 15, fY, slabH);
+      addPart('oakDark', 0, W, 0, 15, fY, slabH);
       
       // 2. End panels (left and right, depth D)
-      addPart('oak', 0, 18, 15, D, fY, slabH);
-      addPart('oak', W - 18, W, 15, D, fY, slabH);
+      addPart('oakDark', 0, 18, 15, D, fY, slabH);
+      addPart('oakDark', W - 18, W, 15, D, fY, slabH);
 
       // 3. Intermediate vertical dividers (every ~600-800mm)
       const numBays = Math.max(1, Math.round(W / 700));
@@ -3021,7 +3021,7 @@ window.HouseScene = (function () {
       
       for (let i = 1; i < numBays; i++) {
         const uDivider = i * bayW;
-        addPart('oak', uDivider - 9, uDivider + 9, 15, D - 20, fY, slabH);
+        addPart('oakDark', uDivider - 9, uDivider + 9, 15, D - 20, fY, slabH);
       }
 
       // Top ceiling crown / shadow trim at slab soffit
@@ -3033,8 +3033,8 @@ window.HouseScene = (function () {
         const u1 = (i + 1) * bayW - (i === numBays - 1 ? 18 : 9);
         
         // High-level Overhead Loft Shelves (luggage / quilts storage up to slab)
-        addPart('oak', u0, u1, 15, D - 15, fY + 2.30, fY + 2.33);
-        addPart('oak', u0, u1, 15, D - 15, fY + 2.75, fY + 2.78);
+        addPart('oakDark', u0, u1, 15, D - 15, fY + 2.30, fY + 2.33);
+        addPart('oakDark', u0, u1, 15, D - 15, fY + 2.75, fY + 2.78);
         // Suitcases / luggage boxes in loft
         addPart('linen', u0 + 40, u1 - 40, 30, D - 40, fY + 2.33, fY + 2.68);
         addPart('boucle', u0 + 50, u1 - 50, 30, D - 40, fY + 2.78, fY + 3.12);
@@ -3043,20 +3043,20 @@ window.HouseScene = (function () {
         if (i % 2 === 0) {
           // Bay Type A: Lower drawer unit + Hanging space
           addPart('lacq', u0, u1, 15, D - 10, fY, fY + 0.82);
-          addPart('oak', u0 - 4, u1 + 4, 10, D, fY + 0.82, fY + 0.85); // top slab
+          addPart('oakDark', u0 - 4, u1 + 4, 10, D, fY + 0.82, fY + 0.85); // top slab
           
           const numDrawers = 3;
           const dh = 0.82 / numDrawers;
           for (let j = 0; j < numDrawers; j++) {
             const hBottom = fY + j * dh + 0.02;
             const hTop = fY + (j + 1) * dh - 0.02;
-            addPart('oak', u0 + 10, u1 - 10, D - 12, D - 8, hBottom, hTop);
+            addPart('oakDark', u0 + 10, u1 - 10, D - 12, D - 8, hBottom, hTop);
             const cx_local = (u0 + u1) / 2;
             addPart('alu', cx_local - 15, cx_local + 15, D - 8, D, hBottom + dh / 2 - 0.02, hBottom + dh / 2 + 0.02);
           }
           
           // Upper shelf
-          addPart('oak', u0, u1, 15, D - 15, fY + 1.85, fY + 1.88);
+          addPart('oakDark', u0, u1, 15, D - 15, fY + 1.85, fY + 1.88);
           
           // Steel hanging rod (horizontal cylinder)
           const rx_val = isX ? 0 : Math.PI / 2;
@@ -3086,7 +3086,7 @@ window.HouseScene = (function () {
           const sh = 2.20 / numShelves;
           for (let j = 0; j <= numShelves; j++) {
             const hShelf = fY + j * sh;
-            addPart('oak', u0, u1, 15, D - 15, hShelf, hShelf + 0.03);
+            addPart('oakDark', u0, u1, 15, D - 15, hShelf, hShelf + 0.03);
             if (j < numShelves) {
               // two or three stacks of folded knits per shelf
               const nS = (u1 - u0) > 600 ? 3 : 2, sw = (u1 - u0 - 40) / nS;
@@ -3116,7 +3116,7 @@ window.HouseScene = (function () {
       s = s || 1;
       const x = cx / 1000, z = -cy / 1000;
       bag.cyl('brassI', x, baseY + 0.012 * s, z, 0.055 * s, 0.018 * s);
-      bag.cyl('oak', x, baseY + 0.028 * s, z, 0.048 * s, 0.014 * s);
+      bag.cyl('oakDark', x, baseY + 0.028 * s, z, 0.048 * s, 0.014 * s);
       bag.cyl('brassI', x, baseY + 0.038 * s, z, 0.042 * s, 0.008 * s);
     },
 
@@ -3330,7 +3330,7 @@ window.HouseScene = (function () {
       for (const [lx, ly] of [[x0 + 40, y0 + 40], [x1 - 40, y0 + 40], [x0 + 40, y1 - 40], [x1 - 40, y1 - 40]]) {
         bag.cyl('steel', lx / 1000, fY + 0.09, -ly / 1000, 0.018, 0.18);
       }
-      pb(bag, 'woodF', x0 + 15, x1 - 15, y0 + 15, y1 - 15, fY + 0.16, fY + 0.28);
+      pb(bag, 'woodD', x0 + 15, x1 - 15, y0 + 15, y1 - 15, fY + 0.16, fY + 0.28);
       pb(bag, 'woodD', x0 + 10, x1 - 10, y0 + 10, y1 - 10, fY + 0.28, fY + 0.32);
       // Seat cushion
       pb(bag, 'fabric', x0 + 30, x0 + W * 0.58, y0 + 30, y1 - 30, fY + 0.32, fY + 0.42);
@@ -3339,8 +3339,8 @@ window.HouseScene = (function () {
       // Head pillow
       pb(bag, 'curtain', x0 + W * 0.72, x1 - 40, y0 + 50, y1 - 50, fY + 0.70, fY + 0.82);
       // Side arm rails
-      pb(bag, 'woodF', x0 + 20, x1 - 20, y0 + 8, y0 + 28, fY + 0.32, fY + 0.48);
-      pb(bag, 'woodF', x0 + 20, x1 - 20, y1 - 28, y1 - 8, fY + 0.32, fY + 0.48);
+      pb(bag, 'woodD', x0 + 20, x1 - 20, y0 + 8, y0 + 28, fY + 0.32, fY + 0.48);
+      pb(bag, 'woodD', x0 + 20, x1 - 20, y1 - 28, y1 - 8, fY + 0.32, fY + 0.48);
     },
     car(bag, cx, cy, fY) {
       // 1. Wheels & Rims (Mahindra Thar large off-road wheels with spokes & central hub cap)
@@ -3511,7 +3511,7 @@ window.HouseScene = (function () {
       pb(bag, 'counterTop', x0 - 10, x1 + 10, y0 - 10, y1 + 10, fY + 0.85, fY + 0.89);
       // upper glass display shelves (h 1.30m to 2.20m)
       pb(bag, 'woodD', x0, x1 - 40, y0, y1, fY + 1.30, fY + 2.20);
-      pb(bag, 'woodF', x0, x1, y0, y1, fY + 2.20, fY + 2.24); // crown top
+      pb(bag, 'woodD', x0, x1, y0, y1, fY + 2.20, fY + 2.24); // crown top
       // glass display doors on the front (East face, x1 side) — held 2mm proud
       // of the cabinet body so the pane never sits coplanar with it (z-fight)
       pb(bag, 'glass', x1 - 38, x1 - 30, y0 + 40, y1 - 40, fY + 1.35, fY + 2.15);
@@ -3524,7 +3524,7 @@ window.HouseScene = (function () {
        One simple wall, just north of the door, projecting into the room.
        Purpose: stop a direct line of sight from the hall into the bedroom.
        Not an L — a proper short partition / baffle only. */
-    privacyScreen(bag, wallX, doorY0, doorY1, fY) {
+    privacyScreen(bag, wallX, doorY0, doorY1, fY, slabH) {
       // Door leaf is y doorY0..doorY1 on the wall at wallX.
       // Place a single E–W wing immediately north of the frame.
       const y0 = doorY1 + 66;            // clear of the walnut casing (architrave to doorY1 + 50)
@@ -3532,20 +3532,20 @@ window.HouseScene = (function () {
       const x0 = wallX + 10;             // leave the wall face clean
       const x1 = wallX + 1050;           // ~1.05 m into dining — enough to block view
       const z0 = fY;
-      const z1 = fY + 2.35;              // full privacy when standing
+      const z1 = slabH !== undefined ? slabH : (fY + 3.203);              // full height until ceiling
 
       // Core mass (collidable)
       pb(bag, 'oakDark', x0, x1, y0, y1, z0, z1);
 
       // Wood faces — south (door side), north (hall side), east end cap
-      pb(bag, 'oak', x0, x1, y0 - 6, y0, z0, z1);
-      pb(bag, 'oak', x0, x1, y1, y1 + 6, z0, z1);
-      pb(bag, 'oak', x1, x1 + 8, y0 - 6, y1 + 6, z0, z1);
+      pb(bag, 'oakDark', x0, x1, y0 - 6, y0, z0, z1);
+      pb(bag, 'oakDark', x0, x1, y1, y1 + 6, z0, z1);
+      pb(bag, 'oakDark', x1, x1 + 8, y0 - 6, y1 + 6, z0, z1);
 
       // Vertical flutes on the hall-facing side (same language as TV wall)
       const pitch = 58, rib = 24;
       for (let x = x0 + 40; x + rib < x1 - 30; x += pitch) {
-        prb(bag, 'oak', x, x + rib, y1 + 6, y1 + 20, z0 + 0.08, z1 - 0.08, 11);
+        prb(bag, 'oakDark', x, x + rib, y1 + 6, y1 + 20, z0 + 0.05, z1 - 0.04, 11);
       }
 
       // Plinth + crown shadow
@@ -3553,7 +3553,7 @@ window.HouseScene = (function () {
       pb(bag, 'aluDark', x0 - 4, x1 + 10, y0 - 8, y1 + 22, z1 - 0.04, z1);
 
       // Single brass reveal on the free end (quiet detail)
-      pb(bag, 'brassI', x1 + 2, x1 + 6, y0 + 20, y1 - 20, fY + 0.9, fY + 0.92);
+      pb(bag, 'brassI', x1 + 2, x1 + 6, y0 + 20, y1 - 20, z0 + 0.05, z1 - 0.04);
 
       // Soft LED wash on the door-side face (guides you to the bedroom)
       pb(bag, 'lamp', x0 + 30, x1 - 40, y0 - 10, y0 - 4, fY + 0.12, fY + 1.0);
@@ -3562,7 +3562,7 @@ window.HouseScene = (function () {
       // Upper carcass + crown + door faces + brass pulls (matches kitWallRun language)
       const z0 = fY + 1.40, z1 = fY + 2.20, zc = fY + 2.26;
       pb(bag, 'woodD', x0, x1, y0, y1, z0, z1);
-      pb(bag, 'woodF', x0 - 6, x1 + 6, y0 - 6, y1 + 6, z1, zc);
+      pb(bag, 'woodD', x0 - 6, x1 + 6, y0 - 6, y1 + 6, z1, zc);
       const isX = (x1 - x0) >= (y1 - y0);
       if (isX) {
         const n = Math.max(1, Math.round((x1 - x0) / 420));
@@ -4128,7 +4128,7 @@ window.HouseScene = (function () {
        is where makeLum's bedside source is registered. */
     side(bag, x0, x1, y0, y1, fY) {
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-      prb(bag, 'oak', x0, x1, y0, y1 - 20, fY + 0.20, fY + 0.54, 10);
+      prb(bag, 'oakDark', x0, x1, y0, y1 - 20, fY + 0.20, fY + 0.54, 10);
       prb(bag, 'lacq', x0 + 18, x1 - 18, y1 - 34, y1 - 16, fY + 0.24, fY + 0.47, 6);
       pb(bag, 'alu', x0 + 18, x1 - 18, y1 - 30, y1 - 12, fY + 0.47, fY + 0.49);
       // books + brass dish
@@ -4191,13 +4191,13 @@ window.HouseScene = (function () {
         prb(bag, m, x0 + ix, x1 - ix, y0 + iy, y1 - iy, fY, fY + h - 0.06, 12);
         return;
       }
-      prb(bag, mat === 'dark' ? 'oakDark' : 'oak', x0 - 10, x1 + 10, y0 - 10, y1 + 10, fY + h - 0.045, fY + h, 12);
+      prb(bag, mat === 'dark' ? 'oakDark' : 'oakDark', x0 - 10, x1 + 10, y0 - 10, y1 + 10, fY + h - 0.045, fY + h, 12);
       const top = fY + h - 0.045;
       if (lx) {
-        for (const ex of [x0 + 230, x1 - 310]) prb(bag, 'oak', ex, ex + 80, y0 + 170, y1 - 170, fY, top, 12);
+        for (const ex of [x0 + 230, x1 - 310]) prb(bag, 'oakDark', ex, ex + 80, y0 + 170, y1 - 170, fY, top, 12);
         pb(bag, 'oakDark', x0 + 310, x1 - 310, (y0 + y1) / 2 - 20, (y0 + y1) / 2 + 20, top - 0.09, top);
       } else {
-        for (const ey of [y0 + 230, y1 - 310]) prb(bag, 'oak', x0 + 170, x1 - 170, ey, ey + 80, fY, top, 12);
+        for (const ey of [y0 + 230, y1 - 310]) prb(bag, 'oakDark', x0 + 170, x1 - 170, ey, ey + 80, fY, top, 12);
         pb(bag, 'oakDark', (x0 + x1) / 2 - 20, (x0 + x1) / 2 + 20, y0 + 310, y1 - 310, top - 0.09, top);
       }
     },
@@ -4212,14 +4212,14 @@ window.HouseScene = (function () {
       for (const [u, v] of [[50, 40], [430, 40], [50, 440], [430, 440]]) {
         const top = F.pt(u, v), du = u < 240 ? -18 : 18, dv = v < 240 ? -18 : 18;
         const bot = F.pt(u + du, v + dv);
-        bag.branch('oak', top[0] / 1000, fY + 0.40, -top[1] / 1000, bot[0] / 1000, fY, -bot[1] / 1000, 0.016, 0.012);
+        bag.branch('oakDark', top[0] / 1000, fY + 0.40, -top[1] / 1000, bot[0] / 1000, fY, -bot[1] / 1000, 0.016, 0.012);
       }
-      F.rb(bag, 'oak', 30, 450, 30, 460, fY + 0.38, fY + 0.41, 8);
+      F.rb(bag, 'oakDark', 30, 450, 30, 460, fY + 0.38, fY + 0.41, 8);
       F.rb(bag, 'boucle', 15, 465, 40, 475, fY + 0.40, fY + 0.475, 30, 12);
       // back posts + curved upholstered back (three faceted panels)
       for (const u of [55, 425]) {
         const p = F.pt(u, 30);
-        bag.branch('oak', p[0] / 1000, fY + 0.40, -p[1] / 1000, p[0] / 1000, fY + 0.78, -p[1] / 1000, 0.012, 0.012);
+        bag.branch('oakDark', p[0] / 1000, fY + 0.40, -p[1] / 1000, p[0] / 1000, fY + 0.78, -p[1] / 1000, 0.012, 0.012);
       }
       F.rb(bag, 'boucle', 25, 455, 5, 75, fY + 0.52, fY + 0.86, 32, 0, 0.10);
     },
@@ -4230,13 +4230,13 @@ window.HouseScene = (function () {
       const isX = x1 - x0 >= y1 - y0;
       prb(bag, 'oakDark', x0, x1, y0, y1, fY + 0.42, fY + 0.76, 10);
       if (isX && front === 'N') {
-        for (let x = x0 + 30; x + 26 <= x1 - 30; x += 34) prb(bag, 'oak', x, x + 26, y1 - 4, y1 + 16, fY + 0.44, fY + 0.74, 9);
+        for (let x = x0 + 30; x + 26 <= x1 - 30; x += 34) prb(bag, 'oakDark', x, x + 26, y1 - 4, y1 + 16, fY + 0.44, fY + 0.74, 9);
       } else if (isX) {
         const fy = y0 - 2;
-        for (let x = x0 + 30; x + 26 <= x1 - 30; x += 34) prb(bag, 'oak', x, x + 26, fy - 16, fy + 4, fY + 0.44, fY + 0.74, 9);
+        for (let x = x0 + 30; x + 26 <= x1 - 30; x += 34) prb(bag, 'oakDark', x, x + 26, fy - 16, fy + 4, fY + 0.44, fY + 0.74, 9);
       } else {
         const fx = x0 - 2;
-        for (let y = y0 + 30; y + 26 <= y1 - 30; y += 34) prb(bag, 'oak', fx - 16, fx + 4, y, y + 26, fY + 0.44, fY + 0.74, 9);
+        for (let y = y0 + 30; y + 26 <= y1 - 30; y += 34) prb(bag, 'oakDark', fx - 16, fx + 4, y, y + 26, fY + 0.44, fY + 0.74, 9);
       }
       if (front === 'N') prb(bag, 'travertine', x0 - 20, x1 + 20, y0 - 5, y1 + 25, fY + 0.76, fY + 0.80, 8);
       else prb(bag, 'travertine', x0 - 20, x1 + 20, y0 - 25, y1 + 5, fY + 0.76, fY + 0.80, 8);
@@ -4549,10 +4549,10 @@ window.HouseScene = (function () {
       pb(bag, 'lacq', x0, x1 - 20, y0, y1, fY + 0.10, fY + 0.82);
       pb(bag, 'aluDark', x0, x1 - 60, y0 + 40, y1 - 40, fY, fY + 0.10);
       const n = Math.max(2, Math.round((y1 - y0) / 450)), dw = (y1 - y0) / n;
-      for (let i = 0; i < n; i++) aluShutter(bag, 'y', x1, 1, y0 + i * dw + 2, y0 + (i + 1) * dw - 2, fY + 0.10, fY + 0.80, 'oak');
+      for (let i = 0; i < n; i++) aluShutter(bag, 'y', x1, 1, y0 + i * dw + 2, y0 + (i + 1) * dw - 2, fY + 0.10, fY + 0.80, 'oakDark');
       prb(bag, 'quartz', x0, x1 + 15, y0 - 15, y1 + 15, fY + 0.82, fY + 0.86, 4);
       // upper display
-      pb(bag, 'oak', x0, x0 + 18, y0, y1, fY + 1.10, fY + 2.40);
+      pb(bag, 'oakDark', x0, x0 + 18, y0, y1, fY + 1.10, fY + 2.40);
       pb(bag, 'lacq', x0, x1 - 60, y0, y0 + 20, fY + 1.10, fY + 2.40);
       pb(bag, 'lacq', x0, x1 - 60, y1 - 20, y1, fY + 1.10, fY + 2.40);
       pb(bag, 'lacq', x0, x1 - 60, y0, y1, fY + 2.38, fY + 2.42);
@@ -4640,13 +4640,13 @@ window.HouseScene = (function () {
       if (opts.flat) {
         // carcass is hollow under the well: a low base, the two end blocks
         // full height, and short back / front blocks closing the well
-        F.rb(bag, 'oak', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.64, 6);
-        F.rb(bag, 'oak', cabU0, wU0, 24, D - 18, fY + 0.38, fY + 0.81, 6);
-        F.rb(bag, 'oak', wU1, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
-        F.box(bag, 'oak', wU0, wU1, 24, wV0, fY + 0.64, fY + 0.81);
-        F.box(bag, 'oak', wU0, wU1, wV1, D - 18, fY + 0.64, fY + 0.81);
+        F.rb(bag, 'oakDark', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.64, 6);
+        F.rb(bag, 'oakDark', cabU0, wU0, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+        F.rb(bag, 'oakDark', wU1, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+        F.box(bag, 'oakDark', wU0, wU1, 24, wV0, fY + 0.64, fY + 0.81);
+        F.box(bag, 'oakDark', wU0, wU1, wV1, D - 18, fY + 0.64, fY + 0.81);
       } else {
-        F.rb(bag, 'oak', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+        F.rb(bag, 'oakDark', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
       }
 
       // Dual-tier floating drawer system with recessed Gola finger-pull channel
@@ -4658,12 +4658,12 @@ window.HouseScene = (function () {
 
       for (const [bu0, bu1] of bays) {
         // Lower drawer front panel
-        F.rb(bag, 'oak', bu0, bu1, D - 18, D - 4, fY + 0.40, fY + 0.57, 3);
+        F.rb(bag, 'oakDark', bu0, bu1, D - 18, D - 4, fY + 0.40, fY + 0.57, 3);
         // Minimalist metallic edge trim on lower drawer
         F.box(bag, 'brassI', (bu0 + bu1) / 2 - 60, (bu0 + bu1) / 2 + 60, D - 5, D - 2, fY + 0.565, fY + 0.57);
 
         // Upper drawer front panel
-        F.rb(bag, 'oak', bu0, bu1, D - 18, D - 4, fY + 0.61, fY + 0.795, 3);
+        F.rb(bag, 'oakDark', bu0, bu1, D - 18, D - 4, fY + 0.61, fY + 0.795, 3);
         // Minimalist metallic edge trim on upper drawer
         F.box(bag, 'brassI', (bu0 + bu1) / 2 - 60, (bu0 + bu1) / 2 + 60, D - 5, D - 2, fY + 0.79, fY + 0.795);
       }
@@ -5047,11 +5047,11 @@ window.HouseScene = (function () {
       drum(bag, 'blackM', cx, cy, cY - 0.05, cY, 0.07, 0.01);
       bag.cyl('blackM', wx, (cY - 0.05 + fanH + 0.04) / 2, wz, 0.011, cY - 0.05 - fanH - 0.04);
       drum(bag, 'blackM', cx, cy, fanH - 0.04, fanH + 0.05, 0.11, 0.025);
-      drum(bag, 'oak', cx, cy, fanH - 0.06, fanH - 0.04, 0.06, 0.006);
+      drum(bag, 'oakDark', cx, cy, fanH - 0.06, fanH - 0.04, 0.06, 0.006);
       for (let i = 0; i < 3; i++) {
         const th = i * 2 * Math.PI / 3, c = Math.cos(th), s = Math.sin(th);
         bag.box('blackM', wx + c * 0.14, fanH + 0.005, wz - s * 0.14, 0.09, 0.01, 0.03, 0, th, 0);
-        bag.rbox('oak', wx + c * 0.42, fanH + 0.008, wz - s * 0.42, 0.56, 0.012, 0.13, 0.005, 0, 0.06, th, 0);
+        bag.rbox('oakDark', wx + c * 0.42, fanH + 0.008, wz - s * 0.42, 0.56, 0.012, 0.13, 0.005, 0, 0.06, th, 0);
       }
     },
     splitAC(bag, dir, fixed, a0, a1, fY, face) {
@@ -5133,9 +5133,9 @@ window.HouseScene = (function () {
     /* upholstered bench (foot of bed) */
     bench(bag, x0, x1, y0, y1, fY) {
       for (const [lx, ly] of [[x0 + 50, y0 + 50], [x1 - 50, y0 + 50], [x0 + 50, y1 - 50], [x1 - 50, y1 - 50]]) {
-        bag.cyl('oak', lx / 1000, fY + 0.17, -ly / 1000, 0.018, 0.34);
+        bag.cyl('oakDark', lx / 1000, fY + 0.17, -ly / 1000, 0.018, 0.34);
       }
-      prb(bag, 'oak', x0 + 10, x1 - 10, y0 + 10, y1 - 10, fY + 0.32, fY + 0.35, 8);
+      prb(bag, 'oakDark', x0 + 10, x1 - 10, y0 + 10, y1 - 10, fY + 0.32, fY + 0.35, 8);
       prb(bag, 'boucle', x0, x1, y0, y1, fY + 0.35, fY + 0.46, 40, 14);
     },
     /* counter stool */
@@ -5146,7 +5146,7 @@ window.HouseScene = (function () {
                              (cx + c * 190) / 1000, fY, -(cy + s * 190) / 1000, 0.009, 0.009);
       }
       bag.lathe('blackM', cx / 1000, fY + 0.26, -cy / 1000, [[0.165, 0], [0.17, 0.006], [0.165, 0.012], [0.16, 0.006]], 32);
-      drum(bag, 'oak', cx, cy, fY + 0.62, fY + 0.65, 0.19, 0.006);
+      drum(bag, 'oakDark', cx, cy, fY + 0.62, fY + 0.65, 0.19, 0.006);
       drum(bag, 'boucle', cx, cy, fY + 0.65, fY + 0.70, 0.185, 0.02);
     },
     drum(bag, mat, cx, cy, h0, h1, r, bevel) { drum(bag, mat, cx, cy, h0, h1, r, bevel); },
@@ -5231,7 +5231,7 @@ window.HouseScene = (function () {
       const m = (x0 + x1) / 2;
       aluShutter(bag, 'x', y0, -1, x0 + 2, m - 2, fY + 0.10, fY + h - 0.004, 'fluted', { pull: [fY + 0.9, fY + 1.5], pullSide: 'end' });
       aluShutter(bag, 'x', y0, -1, m + 2, x1 - 2, fY + 0.10, fY + h - 0.004, 'mirrorI', { pull: [fY + 0.9, fY + 1.5], pullSide: 'start' });
-      prb(bag, 'oak', x0 - 10, x1 + 10, y0 - 10, y1, fY + h, fY + h + 0.03, 4);
+      prb(bag, 'oakDark', x0 - 10, x1 + 10, y0 - 10, y1, fY + h, fY + h + 0.03, 4);
     },
 
     /* ---------------- WALK-IN ----------------
@@ -5276,7 +5276,7 @@ window.HouseScene = (function () {
       for (let i = 0; i < n; i++) {
         const u0 = i * dw + 3, u1 = (i + 1) * dw - 3, uc = (u0 + u1) / 2;
         for (const [h0, h1] of [[0.12, 0.40], [0.43, 0.71]]) {
-          F.box(bag, 'oak', u0, u1, D, D + 14, Z(h0), Z(h1));
+          F.box(bag, 'oakDark', u0, u1, D, D + 14, Z(h0), Z(h1));
           F.box(bag, 'brass', uc - 70, uc + 70, D + 14, D + 26, Z(h1 - 0.075), Z(h1 - 0.063));
         }
       }
@@ -5336,7 +5336,7 @@ window.HouseScene = (function () {
     standingDesk(bag, x0, x1, y0, y1, fY, back) {
       const F = frameOf(x0, x1, y0, y1, back);
       const W = F.W, D = F.D, top = fY + 0.74;
-      F.rb(bag, 'oak', 0, W, 0, D, top - 0.025, top, 6);
+      F.rb(bag, 'oakDark', 0, W, 0, D, top - 0.025, top, 6);
       for (const u of [130, W - 130]) {
         F.box(bag, 'aluDark', u - 40, u + 40, D / 2 - 30, D / 2 + 30, fY + 0.03, fY + 0.40);
         F.box(bag, 'aluDark', u - 33, u + 33, D / 2 - 24, D / 2 + 24, fY + 0.40, top - 0.06);
@@ -7847,7 +7847,7 @@ window.HouseScene = (function () {
          x 4630..5600, so it goes on the south wall there, where someone standing
          on the landing can actually use it. */
       pb(eBag, 'woodD', 4700, 5520, 6496, 6566, L.roof + 1.40, L.roof + 1.48);
-      pb(eBag, 'woodF', 4720, 5500, 6496, 6510, L.roof + 1.42, L.roof + 1.46);
+      pb(eBag, 'woodD', 4720, 5500, 6496, 6510, L.roof + 1.42, L.roof + 1.46);
       // Ceiling downlight ring
       eBag.cyl('steel', 2.9, L.roof + 2.48, -7.55, 0.06, 0.02);
       eBag.cyl('downlight', 2.9, L.roof + 2.46, -7.55, 0.04, 0.03);
@@ -8882,7 +8882,7 @@ window.HouseScene = (function () {
 
         // 2. Integrated low vanity / dressing table under West window (sill = 1100mm, desk height = 750mm)
         pb(bag, 'woodD', 230, 680, 2600, 3600, fY + 0.72, fY + 0.75);   // vanity desktop
-        pb(bag, 'woodF', 240, 670, 3250, 3590, fY, fY + 0.72);          // drawer pedestal
+        pb(bag, 'woodD', 240, 670, 3250, 3590, fY, fY + 0.72);          // drawer pedestal
         pb(bag, 'brass', 670, 680, 3380, 3460, fY + 0.35, fY + 0.37);   // drawer pull
         Fur.chair(bag, 950, 2950, fY, 'W');                             // dressing chair facing West
 
@@ -8909,7 +8909,7 @@ window.HouseScene = (function () {
         Fur.bed(bag, 230, 2180, 7000, 8500, fY, 'W');                  // queen bed on West wall (940mm open clearance to South wardrobe!)
         // NW corner floating nightstand (wall-mounted, zero floor obstruction)
         pb(bag, 'woodD', 230, 630, 8450, 8640, fY + 0.45, fY + 0.49);
-        pb(bag, 'woodF', 240, 620, 8440, 8455, fY + 0.25, fY + 0.45);
+        pb(bag, 'woodD', 240, 620, 8440, 8455, fY + 0.25, fY + 0.45);
         pb(bag, 'brass', 410, 450, 8430, 8440, fY + 0.33, fY + 0.35);
         bag.cyl('brass', 0.430, fY + 0.50, -8.545, 0.028, 0.04);
         bag.cyl('brass', 0.430, fY + 0.68, -8.545, 0.008, 0.32);
@@ -8918,7 +8918,7 @@ window.HouseScene = (function () {
 
         // 3. North-East corner study workstation & floating library bookshelf
         pb(bag, 'woodD', 4325, 4805, 7440, 8640, fY + 0.72, fY + 0.75); // walnut study desktop in NE corner
-        pb(bag, 'woodF', 4350, 4800, 7460, 7800, fY, fY + 0.72);        // drawer pedestal
+        pb(bag, 'woodD', 4350, 4800, 7460, 7800, fY, fY + 0.72);        // drawer pedestal
         pb(bag, 'woodD', 4555, 4805, 7440, 8640, fY + 1.55, fY + 1.58); // floating upper bookshelf
         pb(bag, 'peetaRed', 4580, 4780, 7500, 7540, fY + 1.58, fY + 1.78);
         pb(bag, 'accentWarm', 4580, 4780, 7545, 7580, fY + 1.58, fY + 1.75);
@@ -8941,26 +8941,26 @@ window.HouseScene = (function () {
         pb(bag, 'rug', 8050, 9250, 8420, 8600, fY + 0.018, fY + 0.024);
         // Shoe cabinet west of door
         pb(bag, 'woodD', 7200, 7900, 8250, 8580, fY, fY + 0.55);
-        pb(bag, 'woodF', 7190, 7910, 8240, 8590, fY + 0.55, fY + 0.58);
+        pb(bag, 'woodD', 7190, 7910, 8240, 8590, fY + 0.55, fY + 0.58);
         pb(bag, 'woodD', 7220, 7880, 8240, 8255, fY + 0.08, fY + 0.50);
         // Crockery Unit on the Dining West Wall (2350..3650)
         pb(bag, 'woodD', 4920, 5320, 2350, 3650, fY, fY + 0.85);
-        pb(bag, 'woodF', 4910, 5330, 2340, 3660, fY + 0.85, fY + 0.89);
+        pb(bag, 'woodD', 4910, 5330, 2340, 3660, fY + 0.85, fY + 0.89);
         pb(bag, 'woodD', 4920, 5240, 2350, 3650, fY + 1.40, fY + 2.10);
         pb(bag, 'glass', 5242, 5260, 2350, 3650, fY + 1.40, fY + 2.10); // pane held proud of body (avoid coplanar z-fight)
-        pb(bag, 'woodF', 4930, 5230, 2360, 3640, fY + 1.63, fY + 1.65);
-        pb(bag, 'woodF', 4930, 5230, 2360, 3640, fY + 1.86, fY + 1.88);
+        pb(bag, 'woodD', 4930, 5230, 2360, 3640, fY + 1.63, fY + 1.65);
+        pb(bag, 'woodD', 4930, 5230, 2360, 3640, fY + 1.86, fY + 1.88);
         pb(bag, 'rug', 6200, 8000, 2900, 4500, fY + 0.012, fY + 0.018); // dining rug
         Fur.table(bag, 6500, 7700, 3300, 4100, fY, 0.74);           // dining (small 4-seater table)
         Fur.chair(bag, 6700, 3050, fY, 'N'); Fur.chair(bag, 7500, 3050, fY, 'N'); // south chairs
         Fur.chair(bag, 6700, 4350, fY, 'S'); Fur.chair(bag, 7500, 4350, fY, 'S'); // north chairs
         // Pooja unit (kitchen NE) — full cupboard + open niche with lamp + small murti shelf
         pb(bag, 'woodD', 11620, 12420, 3427, 4027, fY, fY + 2.36);
-        pb(bag, 'woodF', 11610, 12430, 3415, 4035, fY + 2.36, fY + 2.42);
+        pb(bag, 'woodD', 11610, 12430, 3415, 4035, fY + 2.36, fY + 2.42);
         // Open shrine niche on east face
         pb(bag, 'accentWarm', 12390, 12410, 3550, 3900, fY + 0.90, fY + 1.85);
         pb(bag, 'lamp', 12385, 12395, 3600, 3850, fY + 1.10, fY + 1.65);
-        pb(bag, 'woodF', 12350, 12400, 3580, 3880, fY + 0.85, fY + 0.92);
+        pb(bag, 'woodD', 12350, 12400, 3580, 3880, fY + 0.85, fY + 0.92);
         Fur.murtiGanesha(bag, 12370, 3720, fY + 0.92, 0.55);
         Fur.kuthuVilakku(bag, 12340, 3600, fY + 0.92, 0.45);
         // doors either side of niche
@@ -9451,7 +9451,7 @@ window.HouseScene = (function () {
 
           // 3) Wooden Peeta (two tiers) + Silk Fabric + Storage Drawers
           pb(bag, 'oakDark', mx0 - 20, mx1, my0 - 10, my1 + 10, fY, fY + 0.12);
-          pb(bag, 'oak', mx0 - 5, mx1, my0 + 5, my1 - 5, fY + 0.12, fY + 0.24);
+          pb(bag, 'oakDark', mx0 - 5, mx1, my0 + 5, my1 - 5, fY + 0.12, fY + 0.24);
           pb(bag, 'brassI', mx0 - 8, mx1 - 10, my0 + 15, my1 - 15, fY + 0.235, fY + 0.255);
           pb(bag, 'peetaRed', mx0 + 10, mx1 - 20, my0 + 40, my1 - 40, fY + 0.252, fY + 0.26);
           pb(bag, 'brassI', mx0 + 15, mx1 - 25, my0 + 45, my0 + 55, fY + 0.258, fY + 0.265);
@@ -9474,11 +9474,11 @@ window.HouseScene = (function () {
           pb(bag, 'oakDark', mx0 + 20, mx1 - 28, my1 - 38, my1 - 8, fY + 0.24, fY + 1.85);
           bag.cyl('brassI', (mx0 + 45) / 1000, fY + 1.05, -(my0 + 50) / 1000, 0.018, 1.35);
           bag.cyl('brassI', (mx0 + 45) / 1000, fY + 1.05, -(my1 - 50) / 1000, 0.018, 1.35);
-          pb(bag, 'oak', mx0 + 15, mx1 - 10, my0 + 20, my1 - 20, fY + 1.72, fY + 1.82);
+          pb(bag, 'oakDark', mx0 + 15, mx1 - 10, my0 + 20, my1 - 20, fY + 1.72, fY + 1.82);
 
           // Stepped Gopuram Crown + Sacred Kalasha Top
           pb(bag, 'oakDark', mx0 + 30, mx1, my0 + 30, my1 - 30, fY + 1.82, fY + 1.92);
-          pb(bag, 'oak', mx0 + 80, mx1 - 20, my0 + 80, my1 - 80, fY + 1.92, fY + 2.00);
+          pb(bag, 'oakDark', mx0 + 80, mx1 - 20, my0 + 80, my1 - 80, fY + 1.92, fY + 2.00);
           pb(bag, 'brassI', mx0 + 100, mx1 - 40, my0 + 100, my1 - 100, fY + 1.98, fY + 2.02);
           bag.cyl('brassI', 12250 / 1000, fY + 2.08, -midY / 1000, 0.035, 0.07);
           bag.sph('brassI', 12250 / 1000, fY + 2.14, -midY / 1000, 0.028);
@@ -9536,7 +9536,7 @@ window.HouseScene = (function () {
           bag.sph('vermilion', 12020 / 1000, peetaTop + 0.020, -(midY + 120) / 1000, 0.012);
 
           // 8) Framed Deity Photos on South Wall Shelf (wall face y 5060)
-          pb(bag, 'oak', 11180, 11800, 5083, 5131, fY + 1.32, fY + 1.38);
+          pb(bag, 'oakDark', 11180, 11800, 5083, 5131, fY + 1.32, fY + 1.38);
           pb(bag, 'brassI', 11170, 11810, 5078, 5135, fY + 1.30, fY + 1.325);
           Fur.poojaPhotoFrame(bag, 11200, 11350, 5091, 5123, fY + 1.40, fY + 1.68);
           Fur.poojaPhotoFrame(bag, 11380, 11530, 5091, 5123, fY + 1.40, fY + 1.68);
@@ -9614,10 +9614,10 @@ window.HouseScene = (function () {
         // right beside the SW grill door (y -607..193), facing east. Nothing
         // else on that wall; the wash basin stays on the outer south wall. ---
         Fur.washer(bag, 5205, 600, fY, 'E');                          // washer
-        pb(bag, 'oak', 4920, 5540, 250, 950, fY + 0.88, fY + 0.92);    // shelf between
+        pb(bag, 'oakDark', 4920, 5540, 250, 950, fY + 0.88, fY + 0.92);    // shelf between
         Fur.washer(bag, 5205, 600, fY + 0.92, 'E');                   // dryer on top
         pb(bag, 'lacq', 4920, 5540, 250, 275, fY, fY + 2.40);          // side panel on the door side
-        pb(bag, 'oak', 4920, 5540, 250, 950, fY + 2.36, fY + 2.40);    // top panel
+        pb(bag, 'oakDark', 4920, 5540, 250, 950, fY + 2.36, fY + 2.40);    // top panel
         // open detergent shelf over the stack (machines stay in view)
         pb(bag, 'lacq', 4920, 5530, 275, 950, fY + 1.84, fY + 1.86);
         // dining | utility: 2.4 m two-leaf clear-glass slider (x 5630..8030),
