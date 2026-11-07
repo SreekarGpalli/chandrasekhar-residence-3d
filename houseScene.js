@@ -216,7 +216,8 @@ window.HouseScene = (function () {
     mirrorI:   0xdee2e4,  // silvered mirror
     wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
     tileBath:  0xdbd5cb,  // large-format bath wall tile
-    tileShower:0x6f8b78   // handmade eucalyptus-green zellige, vertical stack: shower walls
+    tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
+    skirtTile: 0xebe6e0   // interior skirting: cut from the floor marble (same tint as tFloor)
   };
 
   /* materials: key -> spec; emissive optional */
@@ -393,7 +394,7 @@ window.HouseScene = (function () {
     if (M.oak) { M.oak.roughness = 0.46; M.oak.metalness = 0.02; }
     if (M.woodD) { M.woodD.roughness = 0.48; M.woodD.metalness = 0.02; }
     // warm vitrified floors — slightly polished
-    for (const k of ['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tCirc', 'tOffice', 'tPooja', 'tWalk', 'tFloor', 'tOut']) {
+    for (const k of ['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tCirc', 'tOffice', 'tPooja', 'tWalk', 'tFloor', 'tOut', 'skirtTile']) {
       if (M[k]) { M[k].roughness = 0.35; M[k].metalness = 0.02; }
     }
     return M;
@@ -419,7 +420,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -1828,9 +1829,11 @@ window.HouseScene = (function () {
         const nLo = sign > 0 ? lo : lo - 12, nHi = sign > 0 ? hi + 12 : hi;
         slab(opts.tread, nLo, nHi, top - tt, top, 6, vT);
         // skirting up the wall side of each step
+        // (true / 'hi' = the wall at b1, 'lo' = the wall at b0), 70 mm like the floor skirting
         if (opts.skirt) {
-          if (alongY) tpb(opts.tread, b1 - 6, b1, lo, hi, top, top + 0.09, vT);
-          else tpb(opts.tread, lo, hi, b1 - 6, b1, top, top + 0.09, vT);
+          const sLo = opts.skirt === 'lo', s0 = sLo ? b0 : b1 - 8, s1 = sLo ? b0 + 8 : b1;
+          if (alongY) tpb(opts.tread, s0, s1, lo, hi, top, top + 0.07, vT);
+          else tpb(opts.tread, lo, hi, s0, s1, top, top + 0.07, vT);
         }
       }
     }
@@ -1846,7 +1849,7 @@ window.HouseScene = (function () {
   }
 
   /* Landing slab with optional wood floor finish on top */
-  function stairLanding(bag, x0, x1, y0, y1, top, finish, thick, mat) {
+  function stairLanding(bag, x0, x1, y0, y1, top, finish, thick, mat, skirtSides) {
     const t = thick || 0.157;
     const m = mat || (finish ? 'white2' : 'concrete');
     const treadT = finish ? 0.012 : 0;
@@ -1854,6 +1857,15 @@ window.HouseScene = (function () {
     // finish edge to edge; its exposed edges are plastered down over the
     // slab, so the landing edge reads as one plain face (no tile/slab lines)
     if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 }, finish === FLOOR_TILE ? 'room' : null);
+    // skirting on the landing's wall sides ('W' x0, 'E' x1, 'S' y0, 'N' y1): a
+    // landing is a floor of its own, so skirtRun (which works at storey level) never reaches it
+    if (finish && skirtSides) {
+      const sb = top - 0.005, st = top + 0.07;
+      if (skirtSides.includes('W')) pb(bag, 'skirtTile', x0, x0 + 12, y0, y1, sb, st);
+      if (skirtSides.includes('E')) pb(bag, 'skirtTile', x1 - 12, x1, y0, y1, sb, st);
+      if (skirtSides.includes('S')) pb(bag, 'skirtTile', x0 + (skirtSides.includes('W') ? 12 : 0), x1 - (skirtSides.includes('E') ? 12 : 0), y0, y0 + 12, sb, st);
+      if (skirtSides.includes('N')) pb(bag, 'skirtTile', x0 + (skirtSides.includes('W') ? 12 : 0), x1 - (skirtSides.includes('E') ? 12 : 0), y1 - 12, y1, sb, st);
+    }
   }
 
   /* slab plate with optional rectangular hole */
@@ -1976,7 +1988,8 @@ window.HouseScene = (function () {
      dir/a/b as wallRun. faces: for dir 'x', 'lo' = y<b0 side, 'hi' = y>b1
      side (for dir 'y' read x for y). Board is buried 2mm into the wall and
      5mm into the floor so no face is coplanar with a parent face. */
-  function skirtRun(bag, dir, a0, a1, b0, b1, floorY, openings, faces, onFloor) {
+  function skirtRun(bag, dir, a0, a1, b0, b1, floorY, openings, faces, onFloor, mat) {
+    mat = mat || 'skirtTile';
     const ops = (openings || []).filter(o => (o.sill || 0) < 100).slice().sort((p, q) => p.c - q.c);
     const segs = []; let cur = a0;
     for (const o of ops) {
@@ -2005,8 +2018,8 @@ window.HouseScene = (function () {
       for (const f of faces) {
         const [c0, c1] = f === 'lo' ? [b0 - 12, b0 + 2] : [b1 - 2, b1 + 12];
         for (const [r0, r1] of runs(s[0], s[1], f)) {
-          if (dir === 'x') pb(bag, 'skirt', r0, r1, c0, c1, h0, h1);
-          else pb(bag, 'skirt', c0, c1, r0, r1, h0, h1);
+          if (dir === 'x') pb(bag, mat, r0, r1, c0, c1, h0, h1);
+          else pb(bag, mat, c0, c1, r0, r1, h0, h1);
         }
       }
     }
@@ -4927,9 +4940,17 @@ window.HouseScene = (function () {
     clad(bag, dir, at, face, a0, a1, fY, h, mat) {
       mat = mat || 'tileBath';
       const out = face === 'N' || face === 'E' ? 1 : -1;
-      const lo = Math.min(at, at + out * 10), hi = Math.max(at, at + out * 10);
+      // zellige is laid 15 mm thick so it swallows the room skirting line; the
+      // cream bath tile keeps a 70 mm marble skirting standing 7 mm proud of it
+      const T = mat === 'tileShower' ? 15 : 10;
+      const lo = Math.min(at, at + out * T), hi = Math.max(at, at + out * T);
       if (dir === 'x') pb(bag, mat, a0, a1, lo, hi, fY, fY + h);
       else pb(bag, mat, lo, hi, a0, a1, fY, fY + h);
+      if (mat === 'tileBath') {
+        const sl = Math.min(at + out * 10, at + out * 17), sh = Math.max(at + out * 10, at + out * 17);
+        if (dir === 'x') pb(bag, 'skirtTile', a0, a1, sl, sh, fY - 0.005, fY + 0.07);
+        else pb(bag, 'skirtTile', sl, sh, a0, a1, fY - 0.005, fY + 0.07);
+      }
     },
 
     /* ---------------- FOYER ----------------
@@ -7670,7 +7691,9 @@ window.HouseScene = (function () {
         const datums = [L.f0, L.f1, L.f2, L.roof];
         for (const z of datums) {
           pb(eBag, 'charDark', EF - 6, EF + 72, ey0, ey1, z - 0.055, z - 0.008);
-          pb(eBag, 'copingLight', EF - 8, EF + 78, ey0 - 8, ey1 + 8, z - 0.008, z + 0.012);
+          // top at z + 0.004: the balcony deck tile (z + 0.012) runs over this ledge,
+          // and a coplanar top z-fights into a white speckled strip along the wall base
+          pb(eBag, 'copingLight', EF - 8, EF + 78, ey0 - 8, ey1 + 8, z - 0.008, z + 0.004);
         }
 
         // Door portal cheeks — per storey, only in the solid strip beside each door.
@@ -8316,6 +8339,16 @@ window.HouseScene = (function () {
       skirtRun(bag, 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, No, ['lo'], onFloor);
       skirtRun(bag, 'x', X0 + 230, sX1d, SB[0], SB[1], fY, So, ['hi'], onFloor);
       skirtRun(bag, 'y', Y0n, Y1n, WB[0], WB[1], fY, Wo, ['hi'], onFloor);
+      // balconies / decks: the same skirting in the deck's own tile wherever a
+      // wall stands on a deck (outside faces of the shell, balcony-side faces
+      // of the service-band walls)
+      const deckRects = fi === 0 ? [] : ROOMS[fi].filter(r => r.type === 'out').map(r => [r.x0, r.x1, r.y0, r.y1]);
+      const onDeck = (x, y) => deckRects.some(r => x > r[0] && x < r[1] && y > r[2] && y < r[3]);
+      if (deckRects.length) {
+        skirtRun(bag, 'y', eY0d, Y1n, EB[0], EB[1], fY, Eo, ['hi'], onDeck, 'balcTile');
+        skirtRun(bag, 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, No, ['hi'], onDeck, 'balcTile');
+        skirtRun(bag, 'x', X0 + 230, sX1d, SB[0], SB[1], fY, So, ['lo'], onDeck, 'balcTile');
+      }
 
       // Render any custom grills or railings in the dollhouse floor group
       for (const face of ['E', 'N', 'S', 'W']) {
@@ -8374,6 +8407,7 @@ window.HouseScene = (function () {
           }
         }
         skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onFloor);
+        if (deckRects.length) skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onDeck, 'balcTile');
         // walnut casing on every room opening — not windows/hatches (sill),
         // shell walls (mat), or openings with joinery of their own (noFrame)
         if (!w.mat) for (const o of w.ops) {
@@ -8899,16 +8933,16 @@ window.HouseScene = (function () {
           // west wall, dry end: the same tile all round the window (y 4600..5100, z 1.5..2.3),
           // with a tiled lining in the reveal
           const wz0 = fY + 1.5, wz1 = fY + 2.3;
-          pb(bag, 'tileShower', 230, 240, 4547, 5127, fY, wz0);
-          pb(bag, 'tileShower', 230, 240, 4547, 5127, wz1, fY + 3.203);
-          pb(bag, 'tileShower', 230, 240, 4547, 4600, wz0, wz1);
-          pb(bag, 'tileShower', 230, 240, 5100, 5127, wz0, wz1);
+          pb(bag, 'tileShower', 230, 245, 4547, 5127, fY, wz0);
+          pb(bag, 'tileShower', 230, 245, 4547, 5127, wz1, fY + 3.203);
+          pb(bag, 'tileShower', 230, 245, 4547, 4600, wz0, wz1);
+          pb(bag, 'tileShower', 230, 245, 5100, 5127, wz0, wz1);
           pb(bag, 'tileShower', 165, 230, 4600, 4610, wz0, wz1);
           pb(bag, 'tileShower', 165, 230, 5090, 5100, wz0, wz1);
           pb(bag, 'tileShower', 165, 230, 4600, 5100, wz0, wz0 + 0.010);
           pb(bag, 'tileShower', 165, 230, 4600, 5100, wz1 - 0.010, wz1);
         }
-        Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 3.203);                 // east, beside the door
+        Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 3.203);               // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
         if (fi === 1) {
@@ -8966,8 +9000,8 @@ window.HouseScene = (function () {
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE });
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE);
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE, skirt: 'lo' });
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // furniture
         westSuite(bag, fY);
@@ -9060,7 +9094,8 @@ window.HouseScene = (function () {
         // flush with the wall's dining face (x 9371), so from the dining it
         // reads as the wall dropping to worktop height.
         pb(bag, 'white2', 9371, 9385, 1677, 2700, fY, fY + 0.84);
-        pb(bag, 'skirt', 9359, 9373, 1677, 2700, fY - 0.005, fY + 0.07);
+        pb(bag, 'skirtTile', 9359, 9373, 1677, 2700, fY - 0.005, fY + 0.07);
+        pb(bag, 'skirtTile', 9383, 9397, 1677, 2700, fY - 0.005, fY + 0.07);       // kitchen face too
         // --- Entrance (north bay: duplex entry door c 8000 + sidelite c 7100) ---
         // Cleared for Vastu; the south wall is the pooja's, so nothing stands
         // against it. Oct 2026: the hall|foyer wall and its walnut casing are
@@ -9315,22 +9350,22 @@ window.HouseScene = (function () {
 
         // Internal stair: flight B FF→SF (from mid landing) + full SF→roof U-stair
         const midFF = landI(L.f1);
-        stairLanding(bag, 230, 1330, 6496, 8641, midFF, FLOOR_TILE);
+        stairLanding(bag, 230, 1330, 6496, 8641, midFF, FLOOR_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false });
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
 
         // flight A' SF → mid landing toward roof
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE });
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE);
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false });
+                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
