@@ -3,3 +3,4 @@
 *.jpg binary
 *.jpeg binary
 *.glb binary
+.githooks/* text eol=lf

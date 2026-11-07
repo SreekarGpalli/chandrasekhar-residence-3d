@@ -5,7 +5,9 @@
   "scripts": {
     "start": "node serve.js",
     "dev": "node serve.js",
-    "export:blender": "node scripts/export-blender-web.js"
+    "export:blender": "node scripts/export-blender-web.js",
+    "check:deploy": "node tools/deploy-budget.mjs",
+    "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch(e){}\""
   },
   "keywords": ["threejs", "blender", "gltf", "draco", "architecture"],
   "author": "",

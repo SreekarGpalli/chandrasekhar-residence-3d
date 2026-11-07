@@ -3,6 +3,7 @@
   "git": {
     "deploymentEnabled": { "**": false, "main": true }
   },
+  "ignoreCommand": "node tools/deploy-budget.mjs --vercel",
   "headers": [
     {
       "source": "/lib/three.min.js",

@@ -39,8 +39,11 @@ models/interior/mid_century_lounge_chair/
 models/interior/modern_ceiling_lamp_01/
 models/interior/modern_wooden_cabinet/
 models/interior/side_table_01/
-# dev tooling
+# dev tooling (tools/ stays deployed: Vercel runs tools/deploy-budget.mjs as its ignoreCommand)
 scripts/
+.github/
+.githooks/
+*.md
 .kilo
 **/*.py
 **/*.ps1

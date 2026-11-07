@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits that would bloat the Vercel deploy or GitHub (see AGENTS.md).
+# Enabled per clone by: git config core.hooksPath .githooks   (npm install does it)
+exec node tools/deploy-budget.mjs
