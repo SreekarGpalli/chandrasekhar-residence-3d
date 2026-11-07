@@ -6663,21 +6663,20 @@ window.HouseScene = (function () {
     /* curtain schedule: living / bed / office windows */
     const CURT = [
       [ { f: 'E', c: 6150, w: 1500, sill: 900, h: 1500, m: 'curtain', lo: 5380, short: true },   // GF office E (rod stops 60 short of the AC to the south)
-        { f: 'N', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', short: true },  // GF bed02
+        { f: 'N', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', zebra: true },  // GF bed02 N: zebra shade matching master suites
         { f: 'N', c: 6800, w: 1800, sill: 900, h: 1400, m: 'curtain', bot: 0.88 },   // GF hall (behind the sofa)
         { f: 'N', c: 11000, w: 1500, sill: 900, h: 1400, m: 'curtain', short: true },  // GF office N
-        { f: 'S', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', lo: 3830, short: true },  // GF master S
-        { f: 'W', c: 3100, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 2600, bot: 1.08 },  // GF master W (over the vanity desk)
-        { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', bot: 1.08 } ],// GF bed02 W (behind the bed)
+        { f: 'S', c: 4300, w: 900, sill: 900, h: 1400, m: 'curtain2', zebra: true },  // GF master S: zebra shade matching master suites
+        { f: 'W', c: 3100, w: 1000, sill: 1100, h: 1200, m: 'curtain2', zebra: true },  // GF master W: zebra shade matching master suites
+        { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', zebra: true } ],// GF bed02 W: zebra shade matching master suites
       // The windows flanking the TV wall (c = 5500 and c = 8760, FF + SF) are full-height double-height architectural glazing
       // kept cleanly unobstructed without fabric bunching to maximize natural daylight flooding the double-height void.
-      // SF south-facing bedroom windows use Roman blinds to clear the furniture.
       [ { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // FF master south
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ], // FF master west
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
-        { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420, short: true },  // SF bed03 E corner (apron, like the rest of the floor)
+        { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain2', zebra: true },  // SF bed03 E: zebra shade matching master suites
         { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF master02 S: same zebra shade as the FF master
-        { f: 'S', c: 8450, w: 1200, sill: 900, h: 1400, m: 'curtain', blind: true }, // SF bed03 S (clean architectural blind in SW corner)
+        { f: 'S', c: 8450, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF bed03 S: zebra shade matching master suites
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ]// SF master02 W: same zebra shade as the FF master
     ];
 
