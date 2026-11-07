@@ -6211,7 +6211,7 @@ window.HouseScene = (function () {
       // kept cleanly unobstructed without fabric bunching to maximize natural daylight flooding the double-height void.
       // - South-facing windows (c = 4100, c = 10000) use clean architectural blinds that clear side tables and headboards.
       [ { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', blind: true }, // FF master S (clean architectural blind, clears headboard + bedside table)
-        { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain', lo: 2480, hi: 4420, bot: 0.88 } ],// FF master W (over the desk)
+        { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', blind: true } ], // FF master W (matches the south window blind)
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
         { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420, short: true },  // SF bed03 E corner (apron, like the rest of the floor)
         { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', blind: true }, // SF master02 S (clean architectural blind, clears headboard + bedside table)
