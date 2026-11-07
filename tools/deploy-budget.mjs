@@ -14,6 +14,7 @@
  * Raise a budget only after confirming the site actually loads the new files.
  */
 import { execFileSync } from 'node:child_process';
+import { readdirSync, statSync } from 'node:fs';
 
 const MB = 1e6;
 const BUDGET = {
@@ -24,11 +25,28 @@ const BUDGET = {
 const vercelMode = process.argv.includes('--vercel');
 
 function git(args, input) {
-  return execFileSync('git', args, { encoding: 'utf8', input, maxBuffer: 64 * MB });
+  return execFileSync('git', args, { encoding: 'utf8', input, maxBuffer: 64 * MB, stdio: ['pipe', 'pipe', 'pipe'] });
 }
 
-function main() {
-  // path -> blob sha, from the index (staged state in a hook, HEAD in CI/Vercel)
+// On Vercel there is no usable .git, and .vercelignore'd files are already
+// deleted before ignoreCommand runs — so what is on disk IS the deployment.
+function filesFromDisk() {
+  const skip = new Set(['.git', 'node_modules', '.vercel']);
+  const out = [];
+  const walk = dir => {
+    for (const d of readdirSync(dir, { withFileTypes: true })) {
+      if (skip.has(d.name)) continue;
+      const p = dir === '.' ? d.name : dir + '/' + d.name;
+      if (d.isDirectory()) walk(p);
+      else if (d.isFile()) out.push({ path: p, size: statSync(p).size, deployed: true });
+    }
+  };
+  walk('.');
+  return out;
+}
+
+function filesFromGit() {
+  // path -> blob sha, from the index (staged state in a hook, HEAD in CI)
   const entries = git(['ls-files', '-s', '-z']).split('\0').filter(Boolean).map(l => {
     const [meta, path] = l.split('\t');
     return { sha: meta.split(' ')[1], path };
@@ -39,7 +57,16 @@ function main() {
   const ignored = new Set(git(['ls-files', '-c', '-i', '--exclude-from=.vercelignore', '-z'])
     .split('\0').filter(Boolean));
 
-  const files = entries.map(e => ({ path: e.path, size: sizes.get(e.sha) || 0, deployed: !ignored.has(e.path) }));
+  return entries.map(e => ({ path: e.path, size: sizes.get(e.sha) || 0, deployed: !ignored.has(e.path) }));
+}
+
+function main() {
+  let files, source = 'git index';
+  try { files = filesFromGit(); }
+  catch (err) {
+    if (!vercelMode) throw err;
+    files = filesFromDisk(); source = 'disk (Vercel build dir)';
+  }
   const deployed = files.filter(f => f.deployed);
   const total = deployed.reduce((s, f) => s + f.size, 0);
   const repoTotal = files.reduce((s, f) => s + f.size, 0);
@@ -54,7 +81,7 @@ function main() {
     problems.push(`Committed file ${f.path} is ${fmt(f.size)} (limit ${fmt(BUDGET.repoFile)} per file in GitHub).`);
 
   console.log(`deploy-budget: ${deployed.length} files / ${fmt(total)} deployed ` +
-    `(budget ${fmt(BUDGET.deployTotal)}); ${files.length} files / ${fmt(repoTotal)} in git.`);
+    `(budget ${fmt(BUDGET.deployTotal)}); ${files.length} files / ${fmt(repoTotal)} checked, from ${source}.`);
   if (!problems.length) return true;
 
   console.error('\nDEPLOY BUDGET EXCEEDED:\n  - ' + problems.join('\n  - '));
