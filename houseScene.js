@@ -896,6 +896,59 @@ window.HouseScene = (function () {
       m4.compose(ps, q, sc); add(mat, geom, m4);
     }
 
+    /* Swept strip with mitred corners and capped ends.
+       pts  = plan path [[x, y], ...] in mm, running ALONG the wall line;
+       left = true when the room is on the left of the direction of travel;
+       sec  = convex cross-section [[d, z], ...]: d mm out from the wall into
+              the room, z metres (absolute).
+       Each path vertex is offset along the bisector (n1 + n2) / (1 + n1.n2),
+       so the section is cut on the mitre plane — an inside corner and an
+       outside (convex) corner both close with no notch, no overlap. */
+    function strip(mat, pts, left, sec) {
+      const n = pts.length;
+      if (n < 2 || sec.length < 3) return;
+      const segN = [];
+      for (let k = 0; k < n - 1; k++) {
+        const dx = pts[k + 1][0] - pts[k][0], dy = pts[k + 1][1] - pts[k][1], L = Math.hypot(dx, dy) || 1;
+        segN.push(left ? [-dy / L, dx / L] : [dy / L, -dx / L]);
+      }
+      const off = pts.map((_, k) => {
+        const a = k > 0 ? segN[k - 1] : segN[0], b = k < n - 1 ? segN[k] : segN[n - 2];
+        const c = 1 + a[0] * b[0] + a[1] * b[1];
+        return c < 0.05 ? a : [(a[0] + b[0]) / c, (a[1] + b[1]) / c];
+      });
+      const rings = pts.map((p, k) => sec.map(([d, z]) =>
+        [(p[0] + off[k][0] * d) / 1000, z, -(p[1] + off[k][1] * d) / 1000]));
+      const mid = (r) => r.reduce((s, v) => [s[0] + v[0] / r.length, s[1] + v[1] / r.length, s[2] + v[2] / r.length], [0, 0, 0]);
+      const b = bucket(mat);
+      const emit = (vs, ref) => {                          // vs: 3 or 4 verts; ref: a point inside the solid
+        const A = vs[0], B = vs[1], C = vs[2];
+        let nx = (B[1] - A[1]) * (C[2] - A[2]) - (B[2] - A[2]) * (C[1] - A[1]);
+        let ny = (B[2] - A[2]) * (C[0] - A[0]) - (B[0] - A[0]) * (C[2] - A[2]);
+        let nz = (B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0]);
+        const cx = vs.reduce((s, v) => s + v[0], 0) / vs.length, cy = vs.reduce((s, v) => s + v[1], 0) / vs.length,
+              cz = vs.reduce((s, v) => s + v[2], 0) / vs.length;
+        let order = vs;
+        if (nx * (cx - ref[0]) + ny * (cy - ref[1]) + nz * (cz - ref[2]) < 0) { nx = -nx; ny = -ny; nz = -nz; order = vs.slice().reverse(); }
+        const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+        const base = b.vc;
+        for (const v of order) {
+          b.pos.push(v[0], v[1], v[2]); b.nor.push(nx, ny, nz);
+          const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
+          if (ay >= ax && ay >= az) b.uv.push(v[0], v[2]); else if (ax >= az) b.uv.push(v[2], v[1]); else b.uv.push(v[0], v[1]);
+        }
+        for (let i = 1; i < order.length - 1; i++) b.idx.push(base, base + i, base + i + 1);
+        b.vc = base + order.length;
+      };
+      const m = sec.length;
+      for (let k = 0; k < n - 1; k++) {
+        const ref = mid(rings[k].concat(rings[k + 1]));
+        for (let j = 0; j < m; j++) emit([rings[k][j], rings[k][(j + 1) % m], rings[k + 1][(j + 1) % m], rings[k + 1][j]], ref);
+      }
+      emit(rings[0], mid(rings[0].concat(rings[1])));
+      emit(rings[n - 1], mid(rings[n - 1].concat(rings[n - 2])));
+    }
+
     /* Rounded box at its true size (metres). Upholstery, joinery edges and
        stone all need a radius: a 90-degree arris catches no light, and that
        hard silhouette is most of what made the old furniture read as CG.
@@ -981,7 +1034,7 @@ window.HouseScene = (function () {
         m4.compose(ps, q, sc);
         add(mat, cylG, m4);
       },
-      wall, plate,
+      wall, plate, strip,
       uv: fn => { curUV = fn || null; },
       build: (THREE2, materials) => {
         flushWalls();
@@ -3532,6 +3585,26 @@ window.HouseScene = (function () {
       bag.box('lamp', wx, topY - H + 0.005, wz, s - 0.03, 0.008, s - 0.03); // edge-lit diffuser plate
     },
 
+    // Slim wall-mounted LED batten; dimensions along the wall are in mm.
+    tubeLight(bag, dir, at, c, mountY, face, half = 600) {
+      const s = face === 'N' || face === 'E' ? 1 : -1;
+      const part = (mat, half, d0, d1, h0, h1) => {
+        const b0 = at + s * d0, b1 = at + s * d1;
+        if (dir === 'x') pb(bag, mat, c - half, c + half, Math.min(b0, b1), Math.max(b0, b1), h0, h1);
+        else pb(bag, mat, Math.min(b0, b1), Math.max(b0, b1), c - half, c + half, h0, h1);
+      };
+      part('whiteG', half, 0, 32, mountY - 0.018, mountY + 0.018);
+      part('lamp', half - 15, 32, 38, mountY - 0.012, mountY + 0.012);
+    },
+    exhaustFan(bag, x, y, mountY) {
+      // West bathroom wall, face into the room. A compact louvred exhaust unit.
+      prb(bag, 'whiteG', x, x + 55, y - 125, y + 125, mountY - 0.125, mountY + 0.125, 8);
+      pb(bag, 'charDark', x + 55, x + 57, y - 105, y + 105, mountY - 0.105, mountY + 0.105);
+      for (let z = -0.09; z <= 0.09; z += 0.03) {
+        pb(bag, 'whiteG', x + 57, x + 67, y - 105, y + 105, mountY + z, mountY + z + 0.012);
+      }
+    },
+
     // 5. Modern Surface-Mounted Aluminium Profile Linear Corner / Perimeter Light
     profileLight(bag, dir, a0, a1, at, mountY, face) {
       const topY = mountY;
@@ -3582,6 +3655,24 @@ window.HouseScene = (function () {
       const mid = (lo + hi) / 2000, off = (at + s * dm) / 1000;
       if (dir === 'x') bag.box('coveLED', mid, zm, -off, len, 0.004, diag, s * Math.PI / 4, 0, 0);
       else bag.box('coveLED', off, zm, -mid, diag, 0.004, len, 0, 0, s * Math.PI / 4);
+    },
+
+    /* 5c. The same corner line as ONE continuous path: mitred at every turn
+       (inside and outside), square-capped at its two ends, so it never stops
+       in a raw cut and never has a notch at a corner. `pts` runs along the
+       wall line; `left` = the room is on the left of travel. */
+    cornerPath(bag, pts, left, ceilY) {
+      const LEG = 65, T = 5, z = ceilY;
+      const zt = (mm) => z + mm / 1000;
+      // ceiling flange, wall flange
+      bag.strip('white2', pts, left, [[0, zt(-T)], [LEG, zt(-T)], [LEG, z], [0, z]]);
+      bag.strip('white2', pts, left, [[0, zt(-LEG)], [T, zt(-LEG)], [T, z], [0, z]]);
+      // opal diffuser: a 4 mm slab on the hypotenuse, ceiling-flange tip to wall-flange tip
+      const A = [LEG, -T], B = [T, -LEG], h = 2;                        // (d mm, z mm below the slab)
+      const nd = 1 / Math.SQRT2, nz = -1 / Math.SQRT2;                  // normal, towards the room and down
+      bag.strip('coveLED', pts, left, [
+        [A[0] + nd * h, zt(A[1] + nz * h)], [B[0] + nd * h, zt(B[1] + nz * h)],
+        [B[0] - nd * h, zt(B[1] - nz * h)], [A[0] - nd * h, zt(A[1] - nz * h)]]);
     },
 
     // 6. Indian Decorative Wall Bracket Light (Tulip / Frosted Glass Shade + Brass Arm)
@@ -6035,6 +6126,24 @@ window.HouseScene = (function () {
           }
           return this;
         },
+        /* --- Corner line as one mitred, capped path (see Fur.cornerPath) ---
+           Light sources as in corner(): one per ~2.8 m of each straight leg,
+           CEIL_SRC under the slab and 450 mm out from the wall. */
+        cornerPath(pts, left) {
+          Fur.cornerPath(bag, pts, left, ceilY);
+          for (let k = 0; k < pts.length - 1; k++) {
+            const [x0, y0] = pts[k], [x1, y1] = pts[k + 1];
+            const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+            if (len < 1) continue;
+            const nx = left ? -dy / len : dy / len, ny = left ? dx / len : -dx / len;
+            const n = Math.max(1, Math.round(len / 2800));
+            for (let i = 0; i < n; i++) {
+              const t = (i + 0.5) / n;
+              put(x0 + dx * t + nx * 450, y0 + dy * t + ny * 450, ceilY - CEIL_SRC, 'cove');
+            }
+          }
+          return this;
+        },
         /* --- Standard 3-Blade Ceiling Fan (1200mm / 48" sweep) --- */
         fan(cx, cy) {
           Fur.ceilingFan(bag, cx, cy, fY, ceilY);
@@ -6047,6 +6156,18 @@ window.HouseScene = (function () {
           return this;
         },
         /* --- Decorative Wall Bracket Light --- */
+        tube(dir, at, c, face, h = 2.35, half = 600) {
+          Fur.tubeLight(bag, dir, at, c, fY + h, face, half);
+          const offset = face === 'N' || face === 'E' ? 70 : -70;
+          if (dir === 'x') put(c, at + offset, fY + h - 0.06, 'profile');
+          else put(at + offset, c, fY + h - 0.06, 'profile');
+          return this;
+        },
+        /* --- bathroom exhaust fan on the west wall (no light source) --- */
+        exhaust(x, y, h) {
+          Fur.exhaustFan(bag, x, y, fY + h);
+          return this;
+        },
         wallBracket(x, y, h, dir, face) {
           Fur.wallBracket(bag, x, y, fY + h, dir, face);
           put(x, y, fY + h, 'bracket');
@@ -8245,21 +8366,24 @@ window.HouseScene = (function () {
            the void edge (y 6996) — it was at x 9500, off in the passage.
            Reading downlights over the two armchairs, one on the passage to
            the foyer and pooja (x 9260..10780). */
-        Lum.fan(7130, 5950);
-        Lum.downlight(5430, 6150);
-        Lum.downlight(8830, 6150);
-        Lum.downlight(10020, 6000);
+        /* Positions below follow the architect's FF electrical plan. */
+        Lum.fan(7110, 5790);
+        Lum.downlight(5760, 5790).downlight(8450, 5790);
+        Lum.downlight(5760, 7520);
+        // WL: wall lights flanking the TV on the feature wall (arch, y 8640)
+        Lum.sconce(6317, 8636, 1.45, 'x', 'S').sconce(8003, 8636, 1.45, 'x', 'S');
         /* Corner line: one perimeter round the open living / dining / foyer
            plan, wherever a wall meets the FF ceiling (none on the void, the
            stair or the dining|hall opening). */
-        Lum.corner('y', 1065, 6496, 4920, 'E')        // west: dining + hall (spine wall)
-           .corner('x', 4920, 9371, 1065, 'N')        // dining south (over the utility slider)
-           .corner('y', 1065, 5060, 9371, 'W')        // dining east (kitchen wall, over the hatch)
-           .corner('x', 9371, 10780, 5060, 'N')       // hall south-east (kitchen wall)
-           .corner('y', 5060, 6815, 10780, 'W')       // hall east (pooja wall)
-           .corner('x', 10900, 12420, 6815, 'N')      // foyer south, clear of the Ganesha fin
-           .corner('y', 6815, 8640, 12420, 'W')       // foyer east, over the entry door
-           .corner('x', 9260, 12420, 8640, 'S');      // north: void edge -> entry corner, over the ribbon window
+        // Two mitred, capped paths (room on the left of travel throughout).
+        // 1: spine wall (south from the stair end) -> dining south -> kitchen
+        //    wall (an OUTSIDE corner at 9371/5060) -> pooja west wall, which
+        //    ends at the pooja's NW corner.
+        Lum.cornerPath([[4920, 6496], [4920, 1065], [9371, 1065], [9371, 5060], [10780, 5060], [10780, 6815]], true);
+        // 2: pooja north wall, starting flush on the Ganesha fin's east face
+        //    (10881) so its end is hidden against the fin -> foyer east wall
+        //    (over the entry door) -> north wall to the void edge.
+        Lum.cornerPath([[10881, 6815], [12420, 6815], [12420, 8640], [9260, 8640]], true);
         /* --- DOUBLE-HEIGHT VOID CHANDELIER — FOUR BRASS HALO RINGS ---
            Void opening in the SF slab: X 6020..9260, Y 6996..8641, soffit
            VOID_TOP = 6.556 m AFF. Hung on x = 7130, the axis of the sofa,
@@ -8269,28 +8393,31 @@ window.HouseScene = (function () {
         Lum.cluster(7130, 7818, VOID_TOP);
 
         /* --- DINING (4921..9371, 1526..4506) --- */
-        Lum.fan(7300, 3100);                          // centred on the table (6400..8200 x 2650..3550)
-        Lum.downlight(6500, 3100);                    // over the table, 200 outside the blade tips
-        Lum.downlight(8100, 3100);                    //   so the fan never strobes them
-        // no pendants here: anything hung over the table would sit inside
-        // the fan's 1.2 m sweep
+        Lum.fan(7110, 2440);                          // FF plan position
+        Lum.downlight(5760, 1240).downlight(8450, 1240);
+        Lum.downlight(5760, 3630).downlight(8450, 3630);
+        // TL on the spine wall's dining face, above the crockery unit (its crown is at +2.42)
+        Lum.tube('y', 4920, 2500, 'E', 2.75);
 
         /* --- KITCHEN & WET KITCHEN --- */
-        Lum.downlight(10900, 3000);
-        Lum.pendant(9580, 1950, 1.60, 0.12);         // pair over the SW counter
-        Lum.pendant(9580, 2430, 1.60, 0.12);
-        Lum.downlight(11000, 150);
+        // FF plan: a fan down the aisle (x 10086..11800) with a surface light at each end
+        Lum.fan(10930, 2855);
+        Lum.downlight(10930, 2010).downlight(10930, 3700);
+        // (the two counter pendants are gone: not on the plan)
+        Lum.downlight(10950, 810).downlight(10950, -380);   // wet kitchen
         Lum.downlight(13230, -320);                   // service lobby
         Lum.task(9500, 10076, 1075, 1380, 1.44);     // under the wall units (their soffit is at +1.45)
         Lum.task(11424, 12090, 1075, 1380, 1.44);
-        Lum.task(10360, 12090, 4635, 4940, 1.44);
+        // TL on the north wall's backsplash, tight under the wall units (soffit +1.45), clear of the fridge (x ..10350)
+        Lum.tube('x', 4933, 10950, 'S', 1.40);
         Lum.task(12080, 12400, 140, 890, 1.38);      // wet kitchen uppers start at +1.40
 
         /* --- FOYER (10780..12421, 6815..8642, open to the hall) --- */
-        Lum.downlight(11600, 7730);                   // foyer centre (corner lines above, in the hall block)
+        Lum.downlight(10830, 7520);                   // FF plan position (corner lines above, in the hall block)
         Lum.raw(11056, 6935, fY + 1.04, 'flame');     // diya at the Ganesha
 
         /* --- POOJA (10893..12418, 5060..6700) --- */
+        Lum.downlight(11520, 5620);                   // FF plan: one surface light
         Lum.raw(11650, 5560, fY + 0.52, 'flame');     // south kuthu-vilakku
         Lum.raw(11650, 6200, fY + 0.52, 'flame');     // north kuthu-vilakku
         Lum.raw(12248, 5880, fY + 0.95, 'flame');     // prabhavali backlight
@@ -8302,8 +8429,21 @@ window.HouseScene = (function () {
         westSuiteLights(Lum, fY);
 
         /* --- SOUTH SERVICE BAND --- */
-        Lum.downlight(6500, 150);
+        Lum.downlight(6530, -110);                    // FF plan position
+        Lum.downlight(8800, 10);                      // utility, FF plan
         Lum.wallBracket(9370, 300, 1.80, 'y', 'W');   // solid common bath wall
+
+        /* --- BALCONIES, STAIR DECK AND PORTICO-TOP (under the SF soffit) ---
+           All from the FF electrical plan. */
+        Lum.downlight(2450, -380);                    // SW balcony
+        Lum.downlight(15720, -380);                   // south portico-top
+        Lum.downlight(2450, 9190).downlight(7110, 9190);       // north balcony
+        Lum.downlight(10950, 9190).downlight(14430, 9190);
+        Lum.downlight(13270, 2850);                   // east corridor north of the lift
+        Lum.downlight(15230, 1960).downlight(16880, 1960);     // over the stair, and the east deck
+        // east balcony: a fan and six lights
+        Lum.fan(14430, 6250);
+        for (const x of [13270, 15590, 16880]) Lum.downlight(x, 4810).downlight(x, 7690);
 
         /* --- STAIRCASE --- */
         Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
@@ -8319,10 +8459,10 @@ window.HouseScene = (function () {
         Lum.downlight(11320, 1740);                   // in front of the wardrobe (face x 11820, y 232..3250)
         Lum.downlight(10950, 3800);                   // over the reading chair in the NE corner
         // (the old east-wall sconce at y 2300 sat behind the wardrobe: removed)
-        Lum.corner('x', 7736, 11820, 230, 'N')        // south wall over the bed head, up to the wardrobe
-           .corner('y', 230, 4432, 7736, 'E')         // west wall (both doors)
-           .corner('x', 7736, 12420, 4432, 'S')       // north wall (AC)
-           .corner('y', 3250, 4432, 12420, 'W');      // east wall north of the wardrobe (corner window)
+        // one mitred path: east wall north of the wardrobe (corner window) ->
+        // north wall (AC) -> west wall (both doors) -> south wall over the bed
+        // head, ending flush on the wardrobe face
+        Lum.cornerPath([[12420, 3250], [12420, 4432], [7736, 4432], [7736, 230], [11820, 230]], true);
         Lum.raw(8810, 442, fY + 0.86, 'bedside');
         Lum.raw(11310, 442, fY + 0.86, 'bedside');
 
@@ -8342,8 +8482,8 @@ window.HouseScene = (function () {
         // Corner line. North wall to the void edge; the south one is a single
         // run along bed03's north wall, from the lounge passage to the east
         // shell. None on the east glass wall: its curtain track is ceiling-hung.
-        Lum.corner('x', 9260, 12420, 8640, 'S')
-           .corner('x', 7620, 12420, 4546, 'N');
+        Lum.cornerPath([[9260, 8640], [12420, 8640]], false)
+           .cornerPath([[7620, 4546], [12420, 4546]], true);
 
         /* --- LOUNGE + PASSAGE (4920..9260, 3266..6996; no ceiling light before) ---
            Open to the family room and the void, so the corner line runs on
@@ -8352,9 +8492,9 @@ window.HouseScene = (function () {
         Lum.downlight(6270, 3900);                    // passage to the bedrooms
         Lum.downlight(7090, 5770);                    // lounge centre
         Lum.downlight(5470, 7570);                    // gallery beside the stair
-        Lum.corner('y', 3266, 6496, 4920, 'E')        // west (spine wall, west-bedroom door)
-           .corner('x', 4920, 7620, 3266, 'N')        // south (walk-in 03 north wall)
-           .corner('y', 3266, 4546, 7620, 'W');       // east return (bed03 doors)
+        // west (spine wall, west-bedroom door) -> south (walk-in 03 north wall)
+        // -> east return (bed03 doors), one mitred path
+        Lum.cornerPath([[4920, 6496], [4920, 3266], [7620, 3266], [7620, 4546]], true);
 
         /* --- STAIRCASE --- */
         Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
@@ -8653,27 +8793,38 @@ window.HouseScene = (function () {
         Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 2.40);          // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
-        Lum.fan(2700, 1182);                          // centred on the queen bed (1950..3450 x 232..2132)
         if (fi === 1) {
-          Lum.ac('y', 4805, 1375, 2325, 'W');        // first floor: east wall, centred above the gallery
+          /* FIRST FLOOR follows the architect's electrical plan (1.1.2 FF ELEC
+             A3): fan on the bed, four surface lights on a 2390 x 2070 grid and
+             a tube light on the head wall. */
+          Lum.fan(2580, 1850);
+          Lum.ac('y', 4805, 1375, 2325, 'W');        // east wall, centred above the gallery
+          Lum.downlight(1380, 820).downlight(3770, 820);
+          Lum.downlight(1380, 2890).downlight(3770, 2890);
+          Lum.tube('x', 230, 2700, 'N', 1.70);        // head wall, centred on the bed
         } else {
+          Lum.fan(2700, 1182);                        // centred on the queen bed (1950..3450 x 232..2132)
           Lum.ac('x', 4432, 2250, 3200, 'S');        // second floor: north wall, between the desk and the walk-in door
+          Lum.downlight(1120, 3800);                  // over the desk top, in front of the chair's head
+          Lum.downlight(1250, 1350);                  // in front of the wardrobe (face x 830, y 232..2470)
         }
-        Lum.downlight(1120, 3800);                    // over the desk top, in front of the chair's head
-        Lum.downlight(1250, 1350);                    // in front of the wardrobe (face x 830, y 232..2470)
         // corner line round the room; the wardrobe runs to the slab, so the
         // south run starts at its face and the west run starts north of it
-        Lum.corner('x', 830, 4805, 230, 'N')          // south wall (over the window)
-           .corner('y', 230, 4432, 4805, 'W')         // east wall
-           .corner('x', 230, 4805, 4432, 'S')         // north wall (desk, walk-in door)
-           .corner('y', 2470, 4432, 230, 'E');        // west wall, over the desk window
+        // one mitred path, ends flush on the wardrobe's faces
+        Lum.cornerPath([[830, 230], [4805, 230], [4805, 4432], [230, 4432], [230, 2470]], true);
         Lum.raw(1700, 482, fY + 0.86, 'bedside');
         Lum.raw(3750, 482, fY + 0.86, 'bedside');
         // walk-in
-        Lum.downlight(3710, 5450);
+        if (fi === 1) Lum.downlight(3490, 5180);      // FF plan position
+        else Lum.downlight(3710, 5450);
         Lum.task(3260, 4160, 6300, 6370, 2.38);       // wash over the dressing mirror
         // bath
-        Lum.downlight(1700, 5300);
+        if (fi === 1) {
+          Lum.downlight(680, 5130).downlight(1910, 5130);   // FF plan: two surface lights
+          Lum.exhaust(230, 4720, 2.10);                      // FF plan: F on the west wall's south end
+        } else {
+          Lum.downlight(1700, 5300);
+        }
         Lum.vanity('x', 2330, 3075, 6381, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2702.5)
       }
 
