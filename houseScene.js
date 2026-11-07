@@ -213,7 +213,7 @@ window.HouseScene = (function () {
     artB:      0xd2b179,  // canvas — ochre
     artC:      0x33465d,  // canvas — indigo
     artD:      0x899985,  // canvas — sage
-    mirrorI:   0xdee2e4,  // silvered mirror
+    mirrorI:   0xa4abb0,  // silvered mirror (reads as glass, not a white board, against the bright rooms)
     wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
@@ -4540,7 +4540,10 @@ window.HouseScene = (function () {
       const F = frameOf(wx0, wx1, wy0, wy1, back);
       const W = F.W;
       F.rb(bag, 'tileBath', W / 2 - 400, W / 2 + 400, -10, 150, fY, fY + 1.12, 8);
-      F.rb(bag, 'blackM', W / 2 - 110, W / 2 + 110, 150, 158, fY + 0.92, fY + 1.06, 3);
+      F.rb(bag, 'blackM', W / 2 - 115, W / 2 + 115, 150, 158, fY + 0.89, fY + 1.07, 3);        // flush plate
+      F.rb(bag, 'chrome', W / 2 - 58, W / 2 + 58, 158, 163, fY + 0.985, fY + 1.03, 2);         // dual flush: full
+      F.rb(bag, 'chrome', W / 2 - 30, W / 2 + 30, 158, 163, fY + 0.935, fY + 0.968, 2);        // dual flush: half
+      F.rb(bag, 'quartz', W / 2 - 410, W / 2 + 410, -10, 160, fY + 1.12, fY + 1.14, 3);        // stone ledge on the cistern box
       // oval bowl: a lathe stretched along the projection axis
       const bc = F.pt(W / 2, 420), alongX = back === 'E' || back === 'W';
       F.rb(bag, 'whiteG', W / 2 - 150, W / 2 + 150, 150, 330, fY + 0.24, fY + 0.40, 60);
@@ -4550,6 +4553,15 @@ window.HouseScene = (function () {
       bag.latheS('whiteG', bc[0] / 1000, fY + 0.40, -bc[1] / 1000,
         [[0.12, 0], [0.186, 0], [0.19, 0.012], [0.185, 0.022], [0.12, 0.022], [0.115, 0.01]], 40,
         alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
+      // soft-close seat on the rim and the lid closed over it, with the hinge block behind
+      bag.latheS('whiteG', bc[0] / 1000, fY + 0.422, -bc[1] / 1000,
+        [[0.115, 0], [0.18, 0], [0.184, 0.01], [0.18, 0.02], [0.115, 0.02]], 40,
+        alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
+      bag.latheS('whiteG', bc[0] / 1000, fY + 0.442, -bc[1] / 1000,
+        [[0, 0.018], [0.09, 0.02], [0.165, 0.016], [0.18, 0.008], [0.184, 0], [0, 0]], 40,
+        alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
+      F.rb(bag, 'whiteG', W / 2 - 105, W / 2 + 105, 160, 205, fY + 0.405, fY + 0.46, 6);       // hinge block
+      for (const du of [-82, 82]) { const q = F.pt(W / 2 + du, 195); bag.cyl('chrome', q[0] / 1000, fY + 0.468, -q[1] / 1000, 0.011, 0.012); }
     },
     /* Contemporary luxury floating architectural vanity unit:
        - Floating wall-hung joinery with dual drawer tiers and recessed Gola finger-pull channel
@@ -4703,6 +4715,27 @@ window.HouseScene = (function () {
         bag.cyl('blackM', lvrPt[0] / 1000, fY + 0.95, -lvrPt[1] / 1000, 0.006, 0.022, 0, 0, Math.PI / 2);
         bag.branch('blackM', lvrPt[0] / 1000, fY + 0.95, -lvrPt[1] / 1000,
           (lvrPt[0] + 16) / 1000, fY + 1.00, -lvrPt[1] / 1000, 0.004, 0.003);
+      } else if (opts.flat) {
+        /* Deck-mounted single-lever basin mixer, matte black, standing 70 mm off the
+           wall on the back deck: flange, tapered body, a gooseneck spout that reaches
+           over the well, aerator, side lever. */
+        const mv = 70, deck = fY + 0.84;
+        const at = (u, v) => { const q = F.pt(u, v); return [q[0] / 1000, -q[1] / 1000]; };
+        const [bx, bz] = at(W / 2, mv);
+        bag.cyl('blackM', bx, deck + 0.006, bz, 0.031, 0.012);                  // flange
+        bag.cyl('chrome', bx, deck + 0.0125, bz, 0.0285, 0.002);                // trim ring
+        bag.branch('blackM', bx, deck + 0.012, bz, bx, deck + 0.17, bz, 0.0185, 0.015);   // body
+        const sp = [[mv, 0.17], [mv + 28, 0.2], [mv + 105, 0.205], [mv + 150, 0.185]];
+        for (let i = 0; i < sp.length - 1; i++) {
+          const [ax, az] = at(W / 2, sp[i][0]), [cx2, cz2] = at(W / 2, sp[i + 1][0]);
+          bag.branch('blackM', ax, deck + sp[i][1], az, cx2, deck + sp[i + 1][1], cz2, 0.0125, 0.0115);
+        }
+        const [tx, tz] = at(W / 2, mv + 150);
+        bag.cyl('blackM', tx, deck + 0.165, tz, 0.0125, 0.04);                  // spout nose
+        bag.cyl('chrome', tx, deck + 0.142, tz, 0.0105, 0.006);                 // aerator
+        const [lx0, lz0] = at(W / 2 + 12, mv), [lx1, lz1] = at(W / 2 + 70, mv);
+        bag.branch('blackM', lx0, deck + 0.115, lz0, lx1, deck + 0.145, lz1, 0.0075, 0.0065); // lever
+        bag.sph('blackM', lx1, deck + 0.145, lz1, 0.0085);
       } else {
         // Wall-mounted designer mixer set with backplate
         F.rb(bag, 'blackM', W / 2 - 40, W / 2 + 150, 0, 6, fY + 1.00, fY + 1.12, 3);
@@ -4770,13 +4803,16 @@ window.HouseScene = (function () {
         const yChassis = Y(4, 10);
         pb(bag, 'aluDark', x0 + 8, x1 - 8, yChassis[0], yChassis[1], mBot + 0.008, mTop - 0.008);
 
-        // 3. Slim champagne aluminium frame
-        const yFrame = Y(8, 18);
-        prb(bag, 'alu', x0, x1, yFrame[0], yFrame[1], mBot, mTop, 10);
+        // 3. Slim champagne aluminium frame: four 14 mm bars, not a slab over the pane
+        const yFrame = Y(8, 19), FB = 14;
+        pb(bag, 'alu', x0, x1, yFrame[0], yFrame[1], mBot, mBot + FB / 1000);
+        pb(bag, 'alu', x0, x1, yFrame[0], yFrame[1], mTop - FB / 1000, mTop);
+        pb(bag, 'alu', x0, x0 + FB, yFrame[0], yFrame[1], mBot + FB / 1000, mTop - FB / 1000);
+        pb(bag, 'alu', x1 - FB, x1, yFrame[0], yFrame[1], mBot + FB / 1000, mTop - FB / 1000);
 
-        // 4. High-definition silvered mirror pane
-        const yGlass = Y(12, 17);
-        prb(bag, 'mirrorI', x0 + 8, x1 - 8, yGlass[0], yGlass[1], mBot + 0.008, mTop - 0.008, 6);
+        // 4. Silvered mirror pane, set 3 mm back from the frame face
+        const yGlass = Y(11, 16);
+        pb(bag, 'mirrorI', x0 + FB - 2, x1 - FB + 2, yGlass[0], yGlass[1], mBot + FB / 1000 - 0.002, mTop - FB / 1000 + 0.002);
       } else {
         // Runs along Y (hung on East or West wall)
         const wallX = (face === 'E' || x0 < 4000) ? Math.min(x0, x1) : Math.max(x0, x1);
@@ -4793,11 +4829,14 @@ window.HouseScene = (function () {
         const xChassis = X(4, 10);
         pb(bag, 'aluDark', xChassis[0], xChassis[1], y0 + 8, y1 - 8, mBot + 0.008, mTop - 0.008);
 
-        const xFrame = X(8, 18);
-        prb(bag, 'alu', xFrame[0], xFrame[1], y0, y1, mBot, mTop, 10);
+        const xFrame = X(8, 19), FB = 14;
+        pb(bag, 'alu', xFrame[0], xFrame[1], y0, y1, mBot, mBot + FB / 1000);
+        pb(bag, 'alu', xFrame[0], xFrame[1], y0, y1, mTop - FB / 1000, mTop);
+        pb(bag, 'alu', xFrame[0], xFrame[1], y0, y0 + FB, mBot + FB / 1000, mTop - FB / 1000);
+        pb(bag, 'alu', xFrame[0], xFrame[1], y1 - FB, y1, mBot + FB / 1000, mTop - FB / 1000);
 
-        const xGlass = X(12, 17);
-        prb(bag, 'mirrorI', xGlass[0], xGlass[1], y0 + 8, y1 - 8, mBot + 0.008, mTop - 0.008, 6);
+        const xGlass = X(11, 16);
+        pb(bag, 'mirrorI', xGlass[0], xGlass[1], y0 + FB - 2, y1 - FB + 2, mBot + FB / 1000 - 0.002, mTop - FB / 1000 + 0.002);
       }
     },
     /* Fixed glass screen in a slim matte-black profile */
@@ -4826,6 +4865,80 @@ window.HouseScene = (function () {
       const alongY = Math.abs(x1 - x0) < Math.abs(y1 - y0);
       if (alongY) pb(bag, 'blackM', x0 - 6, x1 + 6, y1 - 20, y1, fY, fY + 2.08);
       else pb(bag, 'blackM', x1 - 20, x1, y0 - 6, y1 + 6, fY, fY + 2.08);
+    },
+    /* Real-life shower set on a wall at plan-y cy (room toward -y when facing 'S'):
+       thermostatic valve (plate, two knobs), round rain head on a wall arm, slide
+       rail with hand shower and hose to a wall outlet. Matte black, chrome knobs. */
+    showerSet(bag, cx, cy, fY, facing) {
+      const s = facing === 'N' ? 1 : -1, arm = d => cy + s * d, Z = d => -arm(d) / 1000;
+      // thermostatic valve
+      prb(bag, 'blackM', cx - 105, cx + 105, Math.min(arm(0), arm(9)), Math.max(arm(0), arm(9)), fY + 1.04, fY + 1.17, 5);
+      for (const k of [-48, 48]) {
+        bag.cyl('chrome', (cx + k) / 1000, fY + 1.105, Z(18), 0.031, 0.022, Math.PI / 2, 0, 0);
+        bag.cyl('blackM', (cx + k) / 1000, fY + 1.105, Z(26), 0.024, 0.026, Math.PI / 2, 0, 0);
+        pb(bag, 'chrome', cx + k - 2, cx + k + 2, Math.min(arm(37), arm(40)), Math.max(arm(37), arm(40)), fY + 1.105, fY + 1.13);
+      }
+      // rain head: rosette, 300 mm arm, 260 mm round head with a dark spray face
+      bag.cyl('blackM', cx / 1000, fY + 2.15, Z(7), 0.034, 0.014, Math.PI / 2, 0, 0);
+      bag.branch('blackM', cx / 1000, fY + 2.15, Z(14), cx / 1000, fY + 2.15, Z(300), 0.011, 0.011);
+      bag.branch('blackM', cx / 1000, fY + 2.15, Z(300), cx / 1000, fY + 2.118, Z(300), 0.015, 0.015);
+      bag.cyl('blackM', cx / 1000, fY + 2.108, Z(300), 0.131, 0.014);
+      bag.cyl('dark', cx / 1000, fY + 2.0995, Z(300), 0.118, 0.003);
+      // slide rail with hand shower
+      const rx = cx + 300;
+      bag.cyl('blackM', rx / 1000, fY + 1.35, Z(42), 0.011, 0.90);
+      for (const h of [0.93, 1.77]) bag.cyl('blackM', rx / 1000, fY + h, Z(21), 0.013, 0.042, Math.PI / 2, 0, 0);
+      pb(bag, 'blackM', rx - 17, rx + 17, Math.min(arm(24), arm(62)), Math.max(arm(24), arm(62)), fY + 1.43, fY + 1.49);
+      bag.cyl('blackM', rx / 1000, fY + 1.535, Z(66), 0.0165, 0.19);                  // handset handle
+      bag.cyl('blackM', rx / 1000, fY + 1.64, Z(66), 0.048, 0.018);                   // head
+      bag.cyl('chrome', rx / 1000, fY + 1.65, Z(66), 0.038, 0.003);
+      const hose = [[rx, 1.44, 66], [rx + 6, 1.22, 84], [rx + 20, 0.86, 92], [rx - 10, 0.62, 64], [rx - 40, 0.50, 14]];
+      for (let i = 0; i < hose.length - 1; i++) {
+        bag.branch('blackM', hose[i][0] / 1000, fY + hose[i][1], Z(hose[i][2]), hose[i + 1][0] / 1000, fY + hose[i + 1][1], Z(hose[i + 1][2]), 0.0075, 0.0075);
+      }
+      bag.cyl('blackM', (rx - 40) / 1000, fY + 0.48, Z(7), 0.03, 0.014, Math.PI / 2, 0, 0);      // wall outlet
+    },
+    /* Fittings of the west suite bath (x 230..3105, y 4547..6381), in plan-mm:
+       towel bar at the shower exit, shelf with bottles, roll holder, health faucet,
+       hand-towel bar by the basin. */
+    westBathFit(bag, fY) {
+      const Y = h => fY + h;
+      // towel bar on the alcove's south wall (tile face y 4562), towel hung over it
+      for (const x of [340, 890]) {
+        bag.cyl('blackM', x / 1000, Y(1.20), -4570 / 1000, 0.02, 0.008, Math.PI / 2, 0, 0);
+        bag.cyl('blackM', x / 1000, Y(1.20), -4600 / 1000, 0.0105, 0.07, Math.PI / 2, 0, 0);
+      }
+      bag.cyl('blackM', 0.615, Y(1.20), -4635 / 1000, 0.0105, 0.57, 0, 0, Math.PI / 2);
+      pb(bag, 'sheet', 400, 840, 4646, 4657, Y(0.72), Y(1.208));
+      pb(bag, 'sheet', 400, 840, 4611, 4622, Y(0.86), Y(1.208));
+      pb(bag, 'sheet', 400, 840, 4611, 4657, Y(1.208), Y(1.219));
+      // shower shelf on the west wall (tile face x 245) with four bottles
+      pb(bag, 'quartz', 245, 365, 5790, 6290, Y(1.0), Y(1.016));
+      pb(bag, 'quartz', 351, 365, 5790, 6290, Y(1.016), Y(1.03));
+      for (const [y, h, mat, r] of [[5860, 0.21, 'sheet', 0.032], [5975, 0.19, 'artD', 0.03], [6100, 0.23, 'artB', 0.034], [6215, 0.15, 'ceramic', 0.036]]) {
+        bag.cyl(mat, 0.30, Y(1.016 + h / 2), -y / 1000, r, h);
+        bag.cyl('blackM', 0.30, Y(1.016 + h + 0.011), -y / 1000, r * 0.5, 0.022);
+      }
+      // toilet-roll holder and health faucet on the half wall's WC face (x 1232)
+      bag.cyl('blackM', 1.2355, Y(0.68), -6040 / 1000, 0.03, 0.006, 0, 0, Math.PI / 2);
+      bag.cyl('blackM', 1.296, Y(0.68), -6040 / 1000, 0.008, 0.12, 0, 0, Math.PI / 2);
+      bag.cyl('sheet', 1.29, Y(0.68), -6040 / 1000, 0.056, 0.10, 0, 0, Math.PI / 2);
+      bag.cyl('rugW', 1.29, Y(0.68), -6040 / 1000, 0.022, 0.102, 0, 0, Math.PI / 2);
+      bag.sph('blackM', 1.358, Y(0.68), -6040 / 1000, 0.011);
+      pb(bag, 'blackM', 1232, 1250, 6190, 6212, Y(0.76), Y(0.82));
+      bag.cyl('blackM', 1.262, Y(0.88), -6201 / 1000, 0.0135, 0.19);
+      bag.cyl('chrome', 1.262, Y(0.985), -6201 / 1000, 0.02, 0.026);
+      pb(bag, 'chrome', 1252, 1262, 6196, 6206, Y(0.915), Y(0.93));
+      const hf = [[1.262, 0.78, 6201], [1.28, 0.62, 6222], [1.255, 0.42, 6244], [1.242, 0.31, 6252]];
+      for (let i = 0; i < hf.length - 1; i++) bag.branch('steel', hf[i][0], Y(hf[i][1]), -hf[i][2] / 1000, hf[i + 1][0], Y(hf[i + 1][1]), -hf[i + 1][2] / 1000, 0.0065, 0.0065);
+      bag.cyl('chrome', 1.241, Y(0.30), -6252 / 1000, 0.012, 0.03, 0, 0, Math.PI / 2);
+      bag.sph('chrome', 1.236, Y(0.30), -6252 / 1000, 0.011);
+      // hand-towel bar on the east wall beside the basin (tile face x 3095)
+      for (const y of [5575, 5785]) bag.cyl('blackM', 3.063, Y(1.0), -y / 1000, 0.0105, 0.064, 0, 0, Math.PI / 2);
+      bag.cyl('blackM', 3.03, Y(1.0), -5680 / 1000, 0.0105, 0.25, Math.PI / 2, 0, 0);
+      pb(bag, 'sheet', 3010, 3021, 5588, 5772, Y(0.66), Y(1.008));
+      pb(bag, 'sheet', 3040, 3051, 5588, 5772, Y(0.78), Y(1.008));
+      pb(bag, 'sheet', 3010, 3051, 5588, 5772, Y(1.008), Y(1.019));
     },
     /* Rain shower + hand shower + thermostatic mixer, matte black */
     showerHead(bag, cx, cy, fY, facing, noTile) {
@@ -8941,7 +9054,8 @@ window.HouseScene = (function () {
         /* shower x 230..1130 x y 5127..6371: a 1.05 m tiled half wall with glass
            above it (x 1130..1230), the three wet walls in green zellige from the
            floor to the slab, and a matching pan with a square drain */
-        Fur.shower(bag, 1130, 1230, 5127, 6371, fY, 1.05); Fur.showerHead(bag, 680, 6381, fY, 'S', true);
+        Fur.shower(bag, 1130, 1230, 5127, 6371, fY, 1.05); Fur.showerSet(bag, 680, 6366, fY, 'S');   // 6366 = the zellige face (15 mm proud of the wall)
+        Fur.westBathFit(bag, fY);
         // the laid floor tops out at fY + 0.014, so the pan stands 6 mm proud of it;
         // it runs the whole alcove (x 230..1130) to the bath's south wall
         pb(bag, 'tileShower', 230, 1130, 4557, 6371, fY + 0.012, fY + 0.020);
