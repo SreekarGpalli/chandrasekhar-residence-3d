@@ -5462,7 +5462,7 @@ window.HouseScene = (function () {
       { dir: 'x', b: [4945, 5060], a: [9370, 12421], ops: [] }                         // kitchen | pooja (the common wall the pooja now sits against)
     ],
     [ // SF
-      { dir: 'y', b: [4805, 4920], a: [232, 4432], ops: [{ c: 3800, w: 1000 }] },      // master02 east
+      { dir: 'y', b: [4805, 4920], a: [232, 4432], ops: [{ c: 3850, w: 1000 }] },      // master02 east (same as the FF master)
       { dir: 'x', b: [4432, 4547], a: [230, 3105], ops: [] },                           // master|mbath
       { dir: 'x', b: [4432, 4547], a: [3216, 4805], ops: [{ c: 3700, w: 800 }] },      // master|walkin (casing ends 4150, clear of the wardrobe front 4183)
       { dir: 'y', b: [3105, 3216], a: [4432, 6381], ops: [{ c: 5025, w: 850 }] },       // mbath|walkin (bath widened 400 into the walk-in)
@@ -6613,9 +6613,9 @@ window.HouseScene = (function () {
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ], // FF master west
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
         { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain', lo: 3265, hi: 4420, short: true },  // SF bed03 E corner (apron, like the rest of the floor)
-        { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', blind: true }, // SF master02 S (clean architectural blind, clears headboard + bedside table)
+        { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF master02 S: same zebra shade as the FF master
         { f: 'S', c: 10000, w: 1500, sill: 900, h: 1400, m: 'curtain', blind: true }, // SF bed03 S (clean architectural blind)
-        { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', lo: 2480, hi: 4420, bot: 0.88 } ]// SF master02 W (over the desk)
+        { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ]// SF master02 W: same zebra shade as the FF master
     ];
 
     /* -------- site (always visible) -------- */
@@ -9030,21 +9030,18 @@ window.HouseScene = (function () {
         Fur.side(bag, 3550, 3950, 232, 732, fY);                      // east side table, under the window
         Fur.bench(bag, 2150, 3250, 2190, 2590, fY);                   // bench at the foot of the bed
         Fur.fullHeightWardrobe(bag, 230, 830, 232, 2470, fY, fY + 3.203);   // west wall, short of the window
-        if (fi === 1) {
-          Fur.art(bag, 'x', 4432, 'S', 2550, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
-          // East-wall gallery: four frames above, three offset below.
-          [
-            [1280, 1.82, 250, 320, ['artD', 'artB', 'artC']],
-            [1660, 1.82, 310, 240, ['artB', 'artC', 'artA']],
-            [2040, 1.82, 240, 320, ['artC', 'artA', 'artD']],
-            [2420, 1.82, 290, 250, ['artA', 'artD', 'artB']],
-            [1470, 1.43, 300, 230, ['artA', 'artC', 'artD']],
-            [1850, 1.43, 230, 310, ['artD', 'artA', 'artB']],
-            [2230, 1.43, 310, 240, ['artB', 'artD', 'artC']]
-          ].forEach(([c, height, w, h, scheme]) => Fur.art(bag, 'y', 4805, 'W', c, fY, height, w, h, scheme));
-        } else {
-          Fur.art(bag, 'y', 4805, 'W', 1850, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
-        }
+        // the FF master and the SF bedroom are one plan, furnished identically
+        Fur.art(bag, 'x', 4432, 'S', 2550, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
+        // East-wall gallery: four frames above, three offset below.
+        [
+          [1280, 1.82, 250, 320, ['artD', 'artB', 'artC']],
+          [1660, 1.82, 310, 240, ['artB', 'artC', 'artA']],
+          [2040, 1.82, 240, 320, ['artC', 'artA', 'artD']],
+          [2420, 1.82, 290, 250, ['artA', 'artD', 'artB']],
+          [1470, 1.43, 300, 230, ['artA', 'artC', 'artD']],
+          [1850, 1.43, 230, 310, ['artD', 'artA', 'artB']],
+          [2230, 1.43, 310, 240, ['artB', 'artD', 'artC']]
+        ].forEach(([c, height, w, h, scheme]) => Fur.art(bag, 'y', 4805, 'W', c, fY, height, w, h, scheme));
         Fur.standingDesk(bag, 420, 1820, 3730, 4412, fY, 'N');        // NW corner, on the north wall, clear of the curtain
         Fur.ergoChair(bag, 1120, 3330, fY, 'N');
         // walk-in (x 3216..4805, y 4547..6381)
@@ -9084,21 +9081,15 @@ window.HouseScene = (function () {
         Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 3.203);               // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
-        if (fi === 1) {
-          /* FIRST FLOOR follows the architect's electrical plan (1.1.2 FF ELEC
-             A3): fan on the bed, four surface lights on a 2390 x 2070 grid and
-             a tube light on the head wall. */
-          Lum.fan(2580, 1850);
-          Lum.ac('y', 4805, 1375, 2325, 'W');        // east wall, centred above the gallery
-          Lum.downlight(1380, 820).downlight(3770, 820);
-          Lum.downlight(1380, 2890).downlight(3770, 2890);
-          Lum.tube('x', 230, 2700, 'N', 2.80);        // head wall, centred on the bed, up under the ceiling line
-        } else {
-          Lum.fan(2700, 1182);                        // centred on the queen bed (1950..3450 x 232..2132)
-          Lum.ac('x', 4432, 2250, 3200, 'S');        // second floor: north wall, between the desk and the walk-in door
-          Lum.downlight(1120, 3800);                  // over the desk top, in front of the chair's head
-          Lum.downlight(1250, 1350);                  // in front of the wardrobe (face x 830, y 232..2470)
-        }
+        /* The FF master and the SF bedroom are one plan, lit identically: the
+           architect's first-floor electrical plan (1.1.2 FF ELEC A3): fan on the
+           bed, four surface lights on a 2390 x 2070 grid and a tube light on the
+           head wall. */
+        Lum.fan(2580, 1850);
+        Lum.ac('y', 4805, 1375, 2325, 'W');        // east wall, centred above the gallery
+        Lum.downlight(1380, 820).downlight(3770, 820);
+        Lum.downlight(1380, 2890).downlight(3770, 2890);
+        Lum.tube('x', 230, 2700, 'N', 2.80);        // head wall, centred on the bed, up under the ceiling line
         // corner line round the room; the wardrobe runs to the slab, so the
         // line steps out and runs along the wardrobe's face (x 830, y 232..2470)
         // instead of vanishing behind it. One closed mitred loop, seam mid-south-run.
@@ -9106,15 +9097,10 @@ window.HouseScene = (function () {
         Lum.raw(1700, 482, fY + 0.86, 'bedside');
         Lum.raw(3750, 482, fY + 0.86, 'bedside');
         // walk-in
-        if (fi === 1) Lum.downlight(3490, 5180);      // FF plan position
-        else Lum.downlight(3710, 5450);
+        Lum.downlight(3490, 5180);                    // FF plan position
         Lum.task(3260, 4160, 6300, 6370, 2.38);       // wash over the dressing mirror
         // bath
-        if (fi === 1) {
-          Lum.downlight(680, 5130).downlight(1910, 5130);   // FF plan: two surface lights
-        } else {
-          Lum.downlight(1700, 5300);
-        }
+        Lum.downlight(680, 5130).downlight(1910, 5130);     // FF plan: two surface lights
         // F: the exhaust fan is fitted in the bath window's top light (see OPEN.f1/f2 W)
         Lum.vanity('x', 2330, 3075, 6381, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2702.5)
       }

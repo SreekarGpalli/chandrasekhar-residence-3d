@@ -387,7 +387,7 @@ window.DESIGNS = {
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261107_bath_fittings"></script>
+<script src="lib/interiorKit.js?v=20261107_sf_suite_copy"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
@@ -398,7 +398,7 @@ window.DESIGNS = {
 (function () {
   var d = window.DESIGNS[window.DESIGN];
   var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261101_kitchen_runs_uniform'
-                  : 'houseScene.js?v=20261107_bath_fittings';
+                  : 'houseScene.js?v=20261107_sf_suite_copy';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
 </script>
@@ -1432,7 +1432,16 @@ window.DESIGNS = {
   const hex2name = {};
   for (const k in C) { if (!(C[k] in hex2name)) hex2name[C[k]] = k; }
 
-  function boxUV(geo, tile) {
+  /* The second floor repeats the first floor's plan (same suite, same tile layout), so
+     its box-projected UVs are measured from its OWN floor level: a bath wall tile joint
+     then lands at the same height above the floor on both storeys. (The storeys are
+     3.353 m apart, which is not a multiple of any tile size.) */
+  function floorDy(o) {
+    for (let g = o; g; g = g.parent) if (g.name === 'floor2') return 3.353;
+    return 0;
+  }
+  function boxUV(geo, tile, dy) {
+    dy = dy || 0;
     const p = geo.attributes.position, n = geo.attributes.normal;
     if (!p || !n) return;
     const uv = new Float32Array(p.count * 2), inv = 1 / tile;
@@ -1443,7 +1452,7 @@ window.DESIGNS = {
       if (ay >= ax && ay >= az) { u = px; v = pz; }
       else if (ax >= az) { u = pz; v = py; }
       else { u = px; v = py; }
-      uv[2 * i] = u * inv; uv[2 * i + 1] = v * inv;
+      uv[2 * i] = u * inv; uv[2 * i + 1] = (v - (ay >= ax && ay >= az ? 0 : dy)) * inv;
     }
     geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   }
@@ -1900,7 +1909,7 @@ window.DESIGNS = {
       m.needsUpdate = true;
     }
 
-    if (t.tex && !t.preUV) boxUV(o.geometry, t.tile);   // preUV: houseScene laid the UVs (tile grids, one-piece treads)
+    if (t.tex && !t.preUV) boxUV(o.geometry, t.tile, floorDy(o));   // preUV: houseScene laid the UVs (tile grids, one-piece treads)
 
     const isGlass = key === 'glass' || key === 'carGlass';
     o.castShadow = !(isGlass || key === 'zebraSheer' || key === 'ground' || key === 'plotPad' || key === 'road' || key === 'roadLine');

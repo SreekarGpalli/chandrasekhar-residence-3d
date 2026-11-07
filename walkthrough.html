@@ -187,12 +187,12 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261107_bath_fittings"></script>
+<script src="lib/interiorKit.js?v=20261107_sf_suite_copy"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20261107_bath_fittings"></script>
+<script src="houseScene.js?v=20261107_sf_suite_copy"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -1026,7 +1026,16 @@ if(!window.THREE || !window.HouseScene){
   /* world-aligned (box-projected) UVs for the merged geometry, which
      ships with position+normal only. Faces are axis aligned, so the
      dominant normal axis chooses a clean planar projection. */
-  function boxUV(geo, tile) {
+  /* The second floor repeats the first floor's plan (same suite, same tile layout), so
+     its box-projected UVs are measured from its OWN floor level: a bath wall tile joint
+     then lands at the same height above the floor on both storeys. (The storeys are
+     3.353 m apart, which is not a multiple of any tile size.) */
+  function floorDy(o) {
+    for (let g = o; g; g = g.parent) if (g.name === 'floor2') return 3.353;
+    return 0;
+  }
+  function boxUV(geo, tile, dy) {
+    dy = dy || 0;
     if (!geo.attributes.position) return;
     const p = geo.attributes.position, n = geo.attributes.normal;
     const uv = new Float32Array(p.count * 2), inv = 1 / tile;
@@ -1037,7 +1046,7 @@ if(!window.THREE || !window.HouseScene){
       if (ay >= ax && ay >= az) { u = px; v = pz; }
       else if (ax >= az) { u = pz; v = py; }
       else { u = px; v = py; }
-      uv[2 * i] = u * inv; uv[2 * i + 1] = v * inv;
+      uv[2 * i] = u * inv; uv[2 * i + 1] = (v - (ay >= ax && ay >= az ? 0 : dy)) * inv;
     }
     geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   }
@@ -1363,7 +1372,7 @@ if(!window.THREE || !window.HouseScene){
       }
       const name = o.material && o.material.userData ? o.material.userData.name : undefined;
       const t = treatment(name || '');
-      if (t.tex && !t.preUV) boxUV(o.geometry, t.tile);   // preUV: houseScene laid the UVs (tile grids, one-piece treads)
+      if (t.tex && !t.preUV) boxUV(o.geometry, t.tile, floorDy(o));   // preUV: houseScene laid the UVs (tile grids, one-piece treads)
     });
   });
 
