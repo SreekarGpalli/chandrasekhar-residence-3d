@@ -8598,12 +8598,17 @@ window.HouseScene = (function () {
         Fur.bench(bag, 2150, 3250, 2190, 2590, fY);                   // bench at the foot of the bed
         Fur.fullHeightWardrobe(bag, 230, 830, 232, 2470, fY, fY + 3.203);   // west wall, short of the window
         if (fi === 1) {
-          // Three small frames on the east wall, south of the bedroom door.
+          Fur.art(bag, 'x', 4432, 'S', 2550, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
+          // East-wall gallery: four frames above, three offset below.
           [
-            [1250, ['artD', 'artB', 'artC']],
-            [1850, ['artB', 'artC', 'artA']],
-            [2450, ['artC', 'artA', 'artD']]
-          ].forEach(([c, scheme]) => Fur.art(bag, 'y', 4805, 'W', c, fY, 1.62, 420, 520, scheme));
+            [1280, 1.82, 250, 320, ['artD', 'artB', 'artC']],
+            [1660, 1.82, 310, 240, ['artB', 'artC', 'artA']],
+            [2040, 1.82, 240, 320, ['artC', 'artA', 'artD']],
+            [2420, 1.82, 290, 250, ['artA', 'artD', 'artB']],
+            [1470, 1.43, 300, 230, ['artA', 'artC', 'artD']],
+            [1850, 1.43, 230, 310, ['artD', 'artA', 'artB']],
+            [2230, 1.43, 310, 240, ['artB', 'artD', 'artC']]
+          ].forEach(([c, height, w, h, scheme]) => Fur.art(bag, 'y', 4805, 'W', c, fY, height, w, h, scheme));
         } else {
           Fur.art(bag, 'y', 4805, 'W', 1850, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
         }
@@ -8624,7 +8629,7 @@ window.HouseScene = (function () {
       function westSuiteLights(Lum, fY) {
         Lum.fan(2700, 1182);                          // centred on the queen bed (1950..3450 x 232..2132)
         if (fi === 1) {
-          Lum.ac('y', 4805, 1375, 2325, 'W');        // first floor: east wall, centred above the three small frames
+          Lum.ac('y', 4805, 1375, 2325, 'W');        // first floor: east wall, centred above the gallery
         } else {
           Lum.ac('x', 4432, 2250, 3200, 'S');        // second floor: north wall, between the desk and the walk-in door
         }
