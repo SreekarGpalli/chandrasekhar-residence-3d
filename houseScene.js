@@ -8801,7 +8801,7 @@ window.HouseScene = (function () {
           Lum.ac('y', 4805, 1375, 2325, 'W');        // east wall, centred above the gallery
           Lum.downlight(1380, 820).downlight(3770, 820);
           Lum.downlight(1380, 2890).downlight(3770, 2890);
-          Lum.tube('x', 230, 2700, 'N', 1.70);        // head wall, centred on the bed
+          Lum.tube('x', 230, 2700, 'N', 2.35);        // head wall, centred on the bed, well above the headboard
         } else {
           Lum.fan(2700, 1182);                        // centred on the queen bed (1950..3450 x 232..2132)
           Lum.ac('x', 4432, 2250, 3200, 'S');        // second floor: north wall, between the desk and the walk-in door
@@ -8809,9 +8809,9 @@ window.HouseScene = (function () {
           Lum.downlight(1250, 1350);                  // in front of the wardrobe (face x 830, y 232..2470)
         }
         // corner line round the room; the wardrobe runs to the slab, so the
-        // south run starts at its face and the west run starts north of it
-        // one mitred path, ends flush on the wardrobe's faces
-        Lum.cornerPath([[830, 230], [4805, 230], [4805, 4432], [230, 4432], [230, 2470]], true);
+        // line steps out and runs along the wardrobe's face (x 830, y 232..2470)
+        // instead of vanishing behind it. One closed mitred loop, seam mid-south-run.
+        Lum.cornerPath([[2500, 230], [4805, 230], [4805, 4432], [230, 4432], [230, 2470], [830, 2470], [830, 230], [2500, 230]], true);
         Lum.raw(1700, 482, fY + 0.86, 'bedside');
         Lum.raw(3750, 482, fY + 0.86, 'bedside');
         // walk-in
