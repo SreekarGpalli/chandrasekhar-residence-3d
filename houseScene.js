@@ -218,8 +218,7 @@ window.HouseScene = (function () {
     limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
-    skirtTile: 0xfdfcf8,  // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
-    skirtGap:  0xc4c0b9   // flush-skirting shadow gap. Deliberately LIGHT (near the plaster): the gap is 10 mm, ~1-2 px at walking distance and the render has no MSAA before FXAA, so a dark strip that thin steps into black dashes. The recess + its lighting give the shadow line
+    skirtTile: 0xfdfcf8   // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
   };
 
   /* materials: key -> spec; emissive optional */
@@ -422,7 +421,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, skirtGap: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -599,11 +598,12 @@ window.HouseScene = (function () {
 
   /* ---------------- geometry bag (merged per material) ---------------- */
   /* Flush skirting. Not a board stuck on the plaster: the room-side face of the
-     wall is cut as a 70 mm skirting band IN the plaster plane, a 10 mm shadow
-     gap recessed 8 mm above it, then plaster flush again. Built in
-     flushWalls() from the `base` a wall rect carries (see wall()). */
-  // heights in metres, recess depth in plan mm
-  const SKIRT_H = 0.070, SKIRT_GAP_H = 0.010, SKIRT_GAP_D = 8, SKIRT_GAP_MAT = 'skirtGap';
+     wall is cut as a 70 mm skirting band IN the plaster plane, and the plaster
+     starts directly on top of it. No reveal, no gap, no step: band and plaster
+     are one continuous flat face, only the finish changes at 70 mm. Built in
+     flushWalls() from the `base` a wall rect carries (see wall()). Do not add
+     a recess/shadow gap: a 10 mm dark strip aliases into black dashes. */
+  const SKIRT_H = 0.070;
 
   function makeBag(THREE) {
     const buckets = {};
@@ -812,7 +812,7 @@ window.HouseScene = (function () {
         const A = [], Z = [];
         for (const r of W.rects) {
           A.push(r.a0, r.a1); Z.push(r.z0, r.z1);
-          if (r.base) Z.push(r.z0 + SKIRT_H, r.z0 + SKIRT_H + SKIRT_GAP_H);
+          if (r.base) Z.push(r.z0 + SKIRT_H);
           for (const h of r.holes) { A.push(h.a0, h.a1); Z.push(h.z0, h.z1); }
         }
         // Cells no bigger than ~1 m: huge triangles beside the camera get
@@ -834,16 +834,13 @@ window.HouseScene = (function () {
           }
         }
         const S = (i, j) => i >= 0 && j >= 0 && i < NA && j < NZ && solid[i * NZ + j] === 1;
-        // flush skirting: what a cell of the lo/hi big face is — 0 plain wall,
-        // 1 skirting band (same plane), 2 shadow gap (recessed)
-        const kindOf = (side, i, j) => {
-          if (!S(i, j)) return 0;
+        // flush skirting: the material of a cell of the lo/hi big face (the band
+        // finish below SKIRT_H where the rect carries one, else the wall face)
+        const faceMat = (side, i, j) => {
           const r = W.rects[owner[i * NZ + j]];
-          if (!r.base || !r.base[side]) return 0;
-          const zc = (zs[j] + zs[j + 1]) / 2 - r.z0;
-          return zc < SKIRT_H ? 1 : zc < SKIRT_H + SKIRT_GAP_H ? 2 : 0;
+          if (!r.base || !r.base[side]) return null;
+          return (zs[j] + zs[j + 1]) / 2 - r.z0 < SKIRT_H ? r.base[side] : null;
         };
-        const baseMat = (side, i, j) => W.rects[owner[i * NZ + j]].base[side];
         const P = (a, b, z) => W.dir === 'x' ? [a / 1000, z, -b / 1000] : [b / 1000, z, -a / 1000];
         const nA = W.dir === 'x' ? [1, 0, 0] : [0, 0, -1];      // world normal of +a
         const nB = W.dir === 'x' ? [0, 0, -1] : [1, 0, 0];      // world normal of +b
@@ -862,43 +859,28 @@ window.HouseScene = (function () {
           const a = vert(g, p0, n), b = vert(g, p1, n), c = vert(g, p2, n), d = vert(g, p3, n);
           tri(g, a, b, c, n); tri(g, a, c, d, n);
         };
-        // the two big faces, on shared grid vertices
-        // Flush skirting (cells with a `base`): the band stays in the plaster
-        // plane in the skirting material; the gap row is the same face pushed
-        // SKIRT_GAP_D back in a dark material, closed by a downward step under
-        // the plaster, an upward step on top of the band, and a step at either
-        // end of the run. Everything else is the plain wall as before.
-        for (const [sn, bb, defM, n, sg] of [['lo', W.b0, W.lo, neg(nB), 1], ['hi', W.b1, W.hi, nB, -1]]) {
-          const maps = {}, rd = bb + sg * SKIRT_GAP_D;
-          const V = (g, mk, i, j, plane) => {
-            const mp = maps[mk] || (maps[mk] = new Map());
+        // the two big faces, on shared grid vertices; band cells take the skirting
+        // finish in the same plane, so band and plaster share their edge vertices
+        for (const [sn, bb, defM, n] of [['lo', W.b0, W.lo, neg(nB)], ['hi', W.b1, W.hi, nB]]) {
+          const maps = {};
+          const V = (m, i, j) => {
+            const mp = maps[m] || (maps[m] = new Map());
             const k = i * (NZ + 1) + j; let v = mp.get(k);
-            if (v === undefined) { v = vert(g, P(as[i], plane, zs[j]), n); mp.set(k, v); }
+            if (v === undefined) { v = vert(G(m), P(as[i], bb, zs[j]), n); mp.set(k, v); }
             return v;
           };
           for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) if (S(i, j)) {
-            const kd = kindOf(sn, i, j);
-            const m = kd === 1 ? baseMat(sn, i, j) : kd === 2 ? SKIRT_GAP_MAT : defM;
-            const plane = kd === 2 ? rd : bb, mk = m + (kd === 2 ? 'r' : ''), g = G(m);
-            const a = V(g, mk, i, j, plane), b = V(g, mk, i + 1, j, plane), c = V(g, mk, i + 1, j + 1, plane), d = V(g, mk, i, j + 1, plane);
+            const m = faceMat(sn, i, j) || defM, g = G(m);
+            const a = V(m, i, j), b = V(m, i + 1, j), c = V(m, i + 1, j + 1), d = V(m, i, j + 1);
             tri(g, a, b, c, n); tri(g, a, c, d, n);
-            if (kd !== 2) continue;
-            const z0 = zs[j], z1 = zs[j + 1], gg = G(SKIRT_GAP_MAT);
-            quad(G(baseMat(sn, i, j)), P(as[i], bb, z0), P(as[i + 1], bb, z0), P(as[i + 1], rd, z0), P(as[i], rd, z0), [0, 1, 0]);   // top of the band
-            if (S(i, j + 1)) quad(G(defM), P(as[i], bb, z1), P(as[i + 1], bb, z1), P(as[i + 1], rd, z1), P(as[i], rd, z1), [0, -1, 0]); // underside of the plaster
-            if (S(i - 1, j) && kindOf(sn, i - 1, j) !== 2) quad(gg, P(as[i], bb, z0), P(as[i], rd, z0), P(as[i], rd, z1), P(as[i], bb, z1), nA);
-            if (S(i + 1, j) && kindOf(sn, i + 1, j) !== 2) quad(gg, P(as[i + 1], bb, z0), P(as[i + 1], rd, z0), P(as[i + 1], rd, z1), P(as[i + 1], bb, z1), neg(nA));
           }
         }
-        // thickness faces only where solid meets void (ends, reveals, top, bottom).
-        // Where the big face is recessed (gap row) the face is narrower by the
-        // recess; a skirted row's ends and reveals are skirting material.
+        // thickness faces only where solid meets void (ends, reveals, top, bottom);
+        // a skirted row's ends and reveals are skirting material.
         const g = G(W.mat);
         for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) if (S(i, j)) {
-          const a0 = as[i], a1 = as[i + 1], z0 = zs[j], z1 = zs[j + 1];
-          const kl = kindOf('lo', i, j), kh = kindOf('hi', i, j);
-          const b0 = W.b0 + (kl === 2 ? SKIRT_GAP_D : 0), b1 = W.b1 - (kh === 2 ? SKIRT_GAP_D : 0);
-          const ge = kl === 1 ? G(baseMat('lo', i, j)) : kh === 1 ? G(baseMat('hi', i, j)) : g;
+          const a0 = as[i], a1 = as[i + 1], z0 = zs[j], z1 = zs[j + 1], b0 = W.b0, b1 = W.b1;
+          const ge = G(faceMat('lo', i, j) || faceMat('hi', i, j) || W.mat);
           if (!S(i - 1, j)) quad(ge, P(a0, b0, z0), P(a0, b1, z0), P(a0, b1, z1), P(a0, b0, z1), neg(nA));
           if (!S(i + 1, j)) quad(ge, P(a1, b0, z0), P(a1, b1, z0), P(a1, b1, z1), P(a1, b0, z1), nA);
           if (!S(i, j - 1)) quad(g, P(a0, b0, z0), P(a1, b0, z0), P(a1, b1, z0), P(a0, b1, z0), [0, -1, 0]);
@@ -9645,12 +9627,12 @@ window.HouseScene = (function () {
         stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, FLOOR_TILE);
         westSuite(bag, fY);
         /* SF west bedroom only: limewash on the four room-side wall faces and the ceiling (the
-           FF master keeps its white). A 3 mm skin on the faces, starting above the flush
-           skirting's shadow gap (fY + 80 mm) so the skirting and its reveal stay
+           FF master keeps its white). A 3 mm skin on the faces, starting on top of the flush
+           skirting band (fY + 70 mm) so the skirting stays
            clean — with the windows' and doors' holes,
            and the window reveals lined so they are not left white. */
         {
-          const T = 3, top = fY + 3.203, lw0 = fY + SKIRT_H + SKIRT_GAP_H;
+          const T = 3, top = fY + 3.203, lw0 = fY + SKIRT_H;
           const win = o => ({ c: o.c, w: o.w, sill: o.sill, h: o.h });
           const wW = fd.sch.W.filter(o => o.c < 4432).map(win), wS = fd.sch.S.filter(o => o.c < 4805).map(win);
           wallRun(bag, 'limeWash', 'y', 230, 4432, 230, 230 + T, lw0, top, fY, wW);                               // west
