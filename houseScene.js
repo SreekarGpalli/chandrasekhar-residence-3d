@@ -103,9 +103,9 @@ window.HouseScene = (function () {
     charcoal:0x9c9b98,  // SOFT — cool gray (not brown, not ink)
     charDark:0x8f8e8b,  // SOFT — slightly deeper cool gray, fascias / soffits
     plinth:  0xb7ae9d,  // SOFT — plinth course
-    frame:   0x8e6035,  // Golden Oak / Teak Wood-Laminate UPVC window frames
+    frame:   0x3f2618,  // Golden Oak / Teak Wood-Laminate UPVC window frames
     glass:   0x5a7c88,  // blue-green float glass. Dark on purpose: a glass albedo is lit like paint, and a pale one adds a white film over the room behind
-    walnut:  0x9c7748,  // warm timber doors
+    walnut:  0x3f2615,  // warm timber doors
     ms:      0x212224,  // railing bars & security grilles — black Mild Steel (MS)
     brass:   0xc0a06a,  // LINE
     steel:   0xd2d6da,  // brushed stainless
@@ -143,8 +143,8 @@ window.HouseScene = (function () {
     // slab colour is painted in the texture (floorSlab), so this is near-white
     tFloor:  0xfdfcfa,
     // furniture
-    fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x3e2c21,
-    woodD:   0x3e2c20, mattress:0xeee8dc, pillow: 0xf4efe6,
+    fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x3f2617,
+    woodD:   0x3f2616, mattress:0xeee8dc, pillow: 0xf4efe6,
     bedding: 0xcfc9bc, whiteG: 0xf4efe7, dark: 0x2a2723,   // whiteG dedupe vs pillow
     tv:      0x0b0c0d, rug: 0xb6a98d, carBody: 0x83888d,
     carDark: 0x1c1e20, lamp: 0xffd9a0, liftDoor:0xc8ccd1,
@@ -180,8 +180,8 @@ window.HouseScene = (function () {
        systems, warm-white lacquer, sage, travertine and white quartz, linen
        and boucle. Every hex is unique — the viewers resolve treatments by
        name, but the hex fallback still needs it. */
-    oak:       0x7a5c42,  // dark smoked oak (harmonized with oakDark, dedupe)
-    oakDark:   0x7d5f45,  // smoked oak — fluted panel backing, accents
+    oak:       0x3f2612,  // dark smoked oak (harmonized with oakDark, dedupe)
+    oakDark:   0x3f2613,  // smoked oak — fluted panel backing, accents
     alu:       0xbcae93,  // champagne anodised aluminium profile
     aluDark:   0x48484a,  // graphite anodised aluminium
     lacq:      0xe4ded3,  // warm-white matte lacquer shutter
@@ -205,7 +205,7 @@ window.HouseScene = (function () {
     lacqNavy:  0x22385a,  // navy PU satin on the media wall's panel mouldings + TV backing
     lacqNavyDk:0x1a2c48,  // deeper navy PU satin — media wall pilasters, plinth, crown
     paintNavy: 0x22385b,  // same navy, matte emulsion on the wall (hex kept unique)
-    walnutI:   0x7f5434,  // interior walnut veneer (media console)
+    walnutI:   0x3f2614,  // interior walnut veneer (media console)
     ceramic:   0xf1eee8,  // matte ceramic
     sheet:     0xf4f1ec,  // crisp white cotton
     duvet:     0xe1d8c9,  // oatmeal linen duvet

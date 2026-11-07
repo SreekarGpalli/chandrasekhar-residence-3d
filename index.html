@@ -387,7 +387,7 @@ window.DESIGNS = {
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261107_flush_skirting6"></script>
+<script src="lib/interiorKit.js?v=20261107_one_wood2"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
@@ -398,7 +398,7 @@ window.DESIGNS = {
 (function () {
   var d = window.DESIGNS[window.DESIGN];
   var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261101_kitchen_runs_uniform'
-                  : 'houseScene.js?v=20261107_flush_skirting6';
+                  : 'houseScene.js?v=20261107_one_wood2';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
 </script>
@@ -1409,17 +1409,18 @@ window.DESIGNS = {
        instead of the muddy grey-brown a warm map would have given.
        One warm accent against white walls and graphite metal — which is the
        classic reason it works, and the only warmth left in the scheme. */
-    walnut:     0x8a5c31,   // GF / FF / terrace door leaves — teak
-    woodD:      0x6b4524,   // door mouldings, frames, furniture edges
-    woodF:      0x6b4525,   // balcony furniture tops
-    oak:        0x7a5c42,
-    oakDark:    0x7d5f45,
+    walnut:     0x3f2616,   // GF / FF / terrace door leaves — teak
+    woodD:      0x3f2616,   // door mouldings, frames, furniture edges
+    woodF:      0x3f2616,   // balcony furniture tops
+    oak:        0x3f2616,
+    oakDark:    0x3f2616,
+    walnutI:    0x3f2616,
     skirt:      0x4a4e51,   // skirting stays grey — it is not joinery
     // and the brass line becomes a satin grey, so nothing gold remains
     brass:      0x8d9295,
     accentWarm: 0x93989b,
     ms:         0x212224,   // Black Mild Steel (MS) railings & security grilles
-    frame:      0x8e6035,   // Golden Oak / Teak Wood-Laminate UPVC window frames
+    frame:      0x3f2616,   // Golden Oak / Teak Wood-Laminate UPVC window frames
     steel:      0x44484c,
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,

@@ -187,12 +187,12 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261107_flush_skirting6"></script>
+<script src="lib/interiorKit.js?v=20261107_one_wood2"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20261107_flush_skirting6"></script>
+<script src="houseScene.js?v=20261107_one_wood2"></script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
@@ -1005,16 +1005,17 @@ if(!window.THREE || !window.HouseScene){
     plinth:     0x9fa1a1,
     charDark:   0x76797a,   // slab fascias + soffits
     charcoal:   0x6a6d6e,   // compound wall + site masonry
-    walnut:     0x8a5c31,   // door leaves — teak, the one warm accent
-    woodD:      0x6b4524,
-    woodF:      0x6b4525,
-    oak:        0x7a5c42,
-    oakDark:    0x7d5f45,
+    walnut:     0x3f2616,   // door leaves — teak, the one warm accent
+    woodD:      0x3f2616,
+    woodF:      0x3f2616,
+    oak:        0x3f2616,
+    oakDark:    0x3f2616,
+    walnutI:    0x3f2616,
     skirt:      0x4a4e51,
     brass:      0x8d9295,
     accentWarm: 0x93989b,
     ms:         0x212224,   // Black Mild Steel (MS) railings & security grilles
-    frame:      0x8e6035,   // Golden Oak / Teak Wood-Laminate UPVC window frames
+    frame:      0x3f2616,   // Golden Oak / Teak Wood-Laminate UPVC window frames
     steel:      0x44484c,
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
