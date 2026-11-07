@@ -7836,14 +7836,14 @@ window.HouseScene = (function () {
         for (const o of [{ c: 4300, w: 900 }, { c: 6800, w: 1800 }, { c: 11000, w: 1500 }]) {
           for (const cx of flankCenters(o.c, o.w, 160)) northWallLamp(cx, L.f0);
         }
-        // FF / SF north windows (no door on upper north)
-        for (const fl of [L.f1, L.f2]) {
+        // FF north windows (SF north wall kept clean of wall lamps)
+        for (const fl of [L.f1]) {
           for (const o of [{ c: 5500, w: 1000 }, { c: 8760, w: 1000 }]) {
             for (const cx of flankCenters(o.c, o.w, 160)) {
               // The north wall between these two windows is the double-height
               // TV feature wall (x 6020..8241, FF floor to SF soffit). The inner
               // flanks at 6160 and 8100 would sit on the pier beside the painted
-              // arch, so they are skipped on both storeys to keep it clean.
+              // arch, so they are skipped to keep it clean.
               if (cx > 6020 && cx < 8241) continue;
               northWallLamp(cx, fl);
             }
@@ -8778,7 +8778,6 @@ window.HouseScene = (function () {
         Lum.fan(10700, 6580);                         // over the coffee table, centre of the two facing sofas
         Lum.downlight(10700, 8200);                   // reading light over the north sofa
         Lum.downlight(10700, 4900);                   // and the south one (was a 4-can grid)
-        Lum.sconce(10800, 8641, 1.85, 'x', 'S');      // solid north wall
         Lum.floorLamp(9300, 5200, 1.55);              // freestanding floor lamp
         // Corner line. North wall to the void edge; the south one is a single
         // run along bed03's north wall, from the lounge passage to the east
