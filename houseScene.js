@@ -1988,7 +1988,7 @@ window.HouseScene = (function () {
      dir/a/b as wallRun. faces: for dir 'x', 'lo' = y<b0 side, 'hi' = y>b1
      side (for dir 'y' read x for y). Board is buried 2mm into the wall and
      5mm into the floor so no face is coplanar with a parent face. */
-  function skirtRun(bag, dir, a0, a1, b0, b1, floorY, openings, faces, onFloor, mat) {
+  function skirtRun(bag, dir, a0, a1, b0, b1, floorY, openings, faces, onFloor, mat, freeEnds) {
     mat = mat || 'skirtTile';
     const ops = (openings || []).filter(o => (o.sill || 0) < 100).slice().sort((p, q) => p.c - q.c);
     const segs = []; let cur = a0;
@@ -2022,6 +2022,28 @@ window.HouseScene = (function () {
           else pb(bag, mat, c0, c1, r0, r1, h0, h1);
         }
       }
+    }
+    /* Returns: the board wraps the END of the wall wherever the wall does not run
+       into another wall — beside a doorway, or at a free-standing end — so the
+       end face does not stand bare to the floor beside a skirted face. One 12 mm
+       board across the end, flush with the face boards at both corners.
+       freeEnds = [start, end]: the wall's own ends stop in the room. */
+    const free = freeEnds || [false, false];
+    const wrap = (e, side) => {
+      const ok = faces.some(f => {
+        if (!onFloor) return true;
+        const off = f === 'lo' ? b0 - 60 : b1 + 60;
+        return dir === 'x' ? onFloor(e, off) : onFloor(off, e);
+      });
+      if (!ok) return;
+      const l0 = faces.includes('lo') ? b0 - 12 : b0, l1 = faces.includes('hi') ? b1 + 12 : b1;
+      const r0 = side < 0 ? e - 12 : e, r1 = side < 0 ? e : e + 12;
+      if (dir === 'x') pb(bag, mat, r0, r1, l0, l1, h0, h1);
+      else pb(bag, mat, l0, l1, r0, r1, h0, h1);
+    };
+    for (const s of segs) {
+      if (s[0] > a0 + 1 || free[0]) wrap(s[0], -1);
+      if (s[1] < a1 - 1 || free[1]) wrap(s[1], 1);
     }
   }
 
@@ -8406,8 +8428,10 @@ window.HouseScene = (function () {
                     fi + 1 < 2 ? uCut + L.slabT : uCut, uY, opsOf(up), 'copingLight', w.faces);
           }
         }
-        skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onFloor);
-        if (deckRects.length) skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onDeck, 'balcTile');
+        // a wall end that stops in the room (not in another wall) gets its skirting wrapped round it
+        const freeE = [joinEnd(w, w.a[0]) === w.a[0], joinEnd(w, w.a[1]) === w.a[1]];
+        skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onFloor, undefined, freeE);
+        if (deckRects.length) skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onDeck, 'balcTile', freeE);
         // walnut casing on every room opening — not windows/hatches (sill),
         // shell walls (mat), or openings with joinery of their own (noFrame)
         if (!w.mat) for (const o of w.ops) {
