@@ -219,7 +219,7 @@ window.HouseScene = (function () {
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
     skirtTile: 0xfdfcf8,  // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
-    skirtGap:  0x3b3834   // flush-skirting shadow gap: the recessed reveal between skirting and plaster
+    skirtGap:  0xc4c0b9   // flush-skirting shadow gap. Deliberately LIGHT (near the plaster): the gap is 10 mm, ~1-2 px at walking distance and the render has no MSAA before FXAA, so a dark strip that thin steps into black dashes. The recess + its lighting give the shadow line
   };
 
   /* materials: key -> spec; emissive optional */
