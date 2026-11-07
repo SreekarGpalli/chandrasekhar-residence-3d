@@ -8597,7 +8597,16 @@ window.HouseScene = (function () {
         Fur.side(bag, 3550, 3950, 232, 732, fY);                      // east side table, under the window
         Fur.bench(bag, 2150, 3250, 2190, 2590, fY);                   // bench at the foot of the bed
         Fur.fullHeightWardrobe(bag, 230, 830, 232, 2470, fY, fY + 3.203);   // west wall, short of the window
-        Fur.art(bag, 'y', 4805, 'W', 1850, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
+        if (fi === 1) {
+          // Three small frames on the east wall, south of the bedroom door.
+          [
+            [1250, ['artD', 'artB', 'artC']],
+            [1850, ['artB', 'artC', 'artA']],
+            [2450, ['artC', 'artA', 'artD']]
+          ].forEach(([c, scheme]) => Fur.art(bag, 'y', 4805, 'W', c, fY, 1.62, 420, 520, scheme));
+        } else {
+          Fur.art(bag, 'y', 4805, 'W', 1850, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);
+        }
         Fur.standingDesk(bag, 420, 1820, 3730, 4412, fY, 'N');        // NW corner, on the north wall, clear of the curtain
         Fur.ergoChair(bag, 1120, 3330, fY, 'N');
         // walk-in (x 3216..4805, y 4547..6381)
@@ -8614,14 +8623,18 @@ window.HouseScene = (function () {
       }
       function westSuiteLights(Lum, fY) {
         Lum.fan(2700, 1182);                          // centred on the queen bed (1950..3450 x 232..2132)
-        Lum.ac('x', 4432, 2250, 3200, 'S');           // north wall, between the desk and the walk-in door
+        if (fi === 1) {
+          Lum.ac('y', 4805, 1375, 2325, 'W');        // first floor: east wall, centred above the three small frames
+        } else {
+          Lum.ac('x', 4432, 2250, 3200, 'S');        // second floor: north wall, between the desk and the walk-in door
+        }
         Lum.downlight(1120, 3800);                    // over the desk top, in front of the chair's head
         Lum.downlight(1250, 1350);                    // in front of the wardrobe (face x 830, y 232..2470)
         // corner line round the room; the wardrobe runs to the slab, so the
         // south run starts at its face and the west run starts north of it
         Lum.corner('x', 830, 4805, 230, 'N')          // south wall (over the window)
            .corner('y', 230, 4432, 4805, 'W')         // east wall
-           .corner('x', 230, 4805, 4432, 'S')         // north wall (desk, AC, walk-in door)
+           .corner('x', 230, 4805, 4432, 'S')         // north wall (desk, walk-in door)
            .corner('y', 2470, 4432, 230, 'E');        // west wall, over the desk window
         Lum.raw(1700, 482, fY + 0.86, 'bedside');
         Lum.raw(3750, 482, fY + 0.86, 'bedside');
