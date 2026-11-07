@@ -215,7 +215,8 @@ window.HouseScene = (function () {
     artD:      0x899985,  // canvas — sage
     mirrorI:   0xdee2e4,  // silvered mirror
     wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
-    tileBath:  0xdbd5cb   // large-format bath wall tile
+    tileBath:  0xdbd5cb,  // large-format bath wall tile
+    tileShower:0x6f8b78   // handmade eucalyptus-green zellige, vertical stack: shower walls
   };
 
   /* materials: key -> spec; emissive optional */
@@ -436,7 +437,7 @@ window.HouseScene = (function () {
     fluted: 1, quartz: 1, marbleV: 1, travertine: 1, stoneDk: 1, boucle: 1,
     linen: 1, linenDk: 1, velvet: 1, terra: 1, rugW: 1, rugD: 1, leather: 1,
     blackM: 1, brassI: 1, ceramic: 1, sheet: 1, duvet: 1, artA: 1, artB: 1,
-    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
+    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
   };
 
   /* Building footprint in plan-mm (main block + upper-floor south service). */
@@ -3596,8 +3597,18 @@ window.HouseScene = (function () {
       part('whiteG', half, 0, 32, mountY - 0.018, mountY + 0.018);
       part('lamp', half - 15, 32, 38, mountY - 0.012, mountY + 0.012);
     },
-    exhaustFan(bag, x, y, mountY) {
-      // West bathroom wall, face into the room. A compact louvred exhaust unit.
+    exhaustFan(bag, x, y, mountY, face) {
+      // A compact louvred exhaust unit on an outer wall. Default: the west
+      // wall (x = wall face), looking east into the room. face 'S': the north
+      // wall (y = wall face), looking south.
+      if (face === 'S') {
+        prb(bag, 'whiteG', x - 125, x + 125, y - 55, y, mountY - 0.125, mountY + 0.125, 8);
+        pb(bag, 'charDark', x - 105, x + 105, y - 57, y - 55, mountY - 0.105, mountY + 0.105);
+        for (let z = -0.09; z <= 0.09; z += 0.03) {
+          pb(bag, 'whiteG', x - 105, x + 105, y - 67, y - 57, mountY + z, mountY + z + 0.012);
+        }
+        return;
+      }
       prb(bag, 'whiteG', x, x + 55, y - 125, y + 125, mountY - 0.125, mountY + 0.125, 8);
       pb(bag, 'charDark', x + 55, x + 57, y - 105, y + 105, mountY - 0.105, mountY + 0.105);
       for (let z = -0.09; z <= 0.09; z += 0.03) {
@@ -4488,13 +4499,18 @@ window.HouseScene = (function () {
        - Vitreous glazed ceramic designer vessel basin with polished chrome pop-up clicker stopper
        - Sleek architectural mixer (deck-mounted for window walls, wall-mounted for solid walls)
        - Hotel-suite styling accessories: ceramic soap pump & folded guest towel */
-    basin(bag, x0, x1, y0, y1, fY, back) {
+    /* opts.flat: no vessel bowl. A flat quartz deck all round (stuff can
+       stand on it, nothing rolls off) with a shallow rectangular well
+       sunk flush into it, ceramic-lined, drain in the floor, and the
+       wall mixer's spout reaching over the well. */
+    basin(bag, x0, x1, y0, y1, fY, back, opts) {
       back = back || 'N';
+      opts = opts || {};
       const F = frameOf(x0, x1, y0, y1, back);
       const W = F.W, D = F.D;
 
       // 1. Determine Wall Adjacencies (prevent clipping into side walls)
-      const leftIsWall = (back === 'N' && x0 <= 4920) || (back === 'S' && x0 <= 4920);
+      const leftIsWall = opts.flat ? !!opts.leftWall : ((back === 'N' && x0 <= 4920) || (back === 'S' && x0 <= 4920));
       const rightIsWall = (x1 >= 3105 && x1 <= 3216) || (x1 >= 7620);
       const u0 = leftIsWall ? 0 : -6;
       const u1 = rightIsWall ? W : W + 6;
@@ -4505,7 +4521,19 @@ window.HouseScene = (function () {
 
       // Main floating cabinet carcass in warm architectural oak
       const cabU0 = leftIsWall ? 0 : 8, cabU1 = rightIsWall ? W : W - 8;
-      F.rb(bag, 'oak', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+      // flat basin well: 440 wide x 290 deep, centred on the width, 150 off the wall
+      const wU0 = W / 2 - 220, wU1 = W / 2 + 220, wV0 = 150, wV1 = 440;
+      if (opts.flat) {
+        // carcass is hollow under the well: a low base, the two end blocks
+        // full height, and short back / front blocks closing the well
+        F.rb(bag, 'oak', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.64, 6);
+        F.rb(bag, 'oak', cabU0, wU0, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+        F.rb(bag, 'oak', wU1, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+        F.box(bag, 'oak', wU0, wU1, 24, wV0, fY + 0.64, fY + 0.81);
+        F.box(bag, 'oak', wU0, wU1, wV1, D - 18, fY + 0.64, fY + 0.81);
+      } else {
+        F.rb(bag, 'oak', cabU0, cabU1, 24, D - 18, fY + 0.38, fY + 0.81, 6);
+      }
 
       // Dual-tier floating drawer system with recessed Gola finger-pull channel
       const isWide = W >= 760;
@@ -4535,7 +4563,16 @@ window.HouseScene = (function () {
 
       // 3. Polished Quartz Countertop & Sealed Splashback
       // Countertop slab (strictly v=0 at back wall, zero penetration)
-      F.rb(bag, 'quartz', u0, u1, 0, D + 8, fY + 0.81, fY + 0.84, 4);
+      if (opts.flat) {
+        // one continuous flat deck, cut round the well (plain boxes so the
+        // joints are invisible and the stone texture runs on)
+        F.box(bag, 'quartz', u0, u1, 0, wV0, fY + 0.81, fY + 0.84);
+        F.box(bag, 'quartz', u0, u1, wV1, D + 8, fY + 0.81, fY + 0.84);
+        F.box(bag, 'quartz', u0, wU0, wV0, wV1, fY + 0.81, fY + 0.84);
+        F.box(bag, 'quartz', wU1, u1, wV0, wV1, fY + 0.81, fY + 0.84);
+      } else {
+        F.rb(bag, 'quartz', u0, u1, 0, D + 8, fY + 0.81, fY + 0.84, 4);
+      }
 
       // Matching 50mm quartz upstand / splashback against the back wall
       F.box(bag, 'quartz', u0, u1, 0, 12, fY + 0.84, fY + 0.89);
@@ -4543,15 +4580,26 @@ window.HouseScene = (function () {
       if (rightIsWall) F.box(bag, 'quartz', W - 12, W, 12, D + 6, fY + 0.84, fY + 0.89);
 
       // 4. Designer Vitreous Ceramic Vessel Basin
-      const bRad = Math.min(185, Math.min(W * 0.24, (D - 70) / 2));
-      const bCenterV = Math.min(D * 0.55, D - bRad - 20);
+      const bRad = opts.flat ? 0 : Math.min(185, Math.min(W * 0.24, (D - 70) / 2));
+      const bCenterV = opts.flat ? (wV0 + wV1) / 2 : Math.min(D * 0.55, D - bRad - 20);
       const c = F.pt(W / 2, bCenterV);
       const cX = c[0] / 1000, cZ = -c[1] / 1000;
       const vBase = fY + 0.84, vH = 0.11; // 110mm height vessel
 
       // Lathe profile for gently curved ceramic vessel with thin rolled rim and deep bowl cavity
       const rM = bRad / 1000;
-      bag.lathe('ceramic', cX, vBase, cZ, [
+      if (opts.flat) {
+        // ceramic liner: floor and four 14 mm walls, top 2 mm under the deck
+        const lT = 14, lTop = fY + 0.838;
+        F.box(bag, 'ceramic', wU0 + lT, wU1 - lT, wV0 + lT, wV1 - lT, fY + 0.65, fY + 0.668);
+        F.box(bag, 'ceramic', wU0, wU0 + lT, wV0, wV1, fY + 0.65, lTop);
+        F.box(bag, 'ceramic', wU1 - lT, wU1, wV0, wV1, fY + 0.65, lTop);
+        F.box(bag, 'ceramic', wU0 + lT, wU1 - lT, wV0, wV0 + lT, fY + 0.65, lTop);
+        F.box(bag, 'ceramic', wU0 + lT, wU1 - lT, wV1 - lT, wV1, fY + 0.65, lTop);
+        // drain: chrome grid disc in the floor
+        bag.cyl('chrome', cX, fY + 0.671, cZ, 0.034, 0.004);
+        bag.cyl('dark',   cX, fY + 0.674, cZ, 0.022, 0.003);
+      } else bag.lathe('ceramic', cX, vBase, cZ, [
         [0, 0],
         [rM * 0.65, 0],
         [rM * 0.88, vH * 0.25],
@@ -4564,10 +4612,12 @@ window.HouseScene = (function () {
         [0, 0.015]
       ], 40);
 
-      // Polished Chrome Pop-Up Clicker Drain Stopper
-      bag.cyl('chrome', cX, vBase + 0.016, cZ, 0.035, 0.003); // outer chrome bezel
-      bag.cyl('dark',   cX, vBase + 0.018, cZ, 0.030, 0.004); // silicone seal groove
-      bag.cyl('chrome', cX, vBase + 0.024, cZ, 0.024, 0.006); // domed pop-up stopper cap
+      if (!opts.flat) {
+        // Polished Chrome Pop-Up Clicker Drain Stopper
+        bag.cyl('chrome', cX, vBase + 0.016, cZ, 0.035, 0.003); // outer chrome bezel
+        bag.cyl('dark',   cX, vBase + 0.018, cZ, 0.030, 0.004); // silicone seal groove
+        bag.cyl('chrome', cX, vBase + 0.024, cZ, 0.024, 0.006); // domed pop-up stopper cap
+      }
 
       // 5. Architectural Luxury Mixer
       // If vanity is on South wall in Utility (under grilled window, y0 < 0), use deck-mounted mixer!
@@ -4619,16 +4669,17 @@ window.HouseScene = (function () {
 
       // 6. Hotel-Suite Styling Accessories
       // Ceramic liquid soap dispenser on left side
-      const sPos = F.pt(Math.max(u0 + 60, W / 2 - bRad - 65), D * 0.42);
+      const sU = opts.flat ? (u0 + wU0) / 2 : Math.max(u0 + 60, W / 2 - bRad - 65);
+      const sPos = F.pt(sU, D * 0.42);
       const sX = sPos[0] / 1000, sZ = -sPos[1] / 1000;
       bag.cyl('ceramic', sX, fY + 0.88, sZ, 0.026, 0.080); // ceramic bottle
       bag.cyl('brassI',  sX, fY + 0.925, sZ, 0.010, 0.012); // brass pump collar
       bag.cyl('brassI',  sX, fY + 0.938, sZ, 0.014, 0.012); // pump head
-      const sSp = F.pt(Math.max(u0 + 60, W / 2 - bRad - 65), D * 0.42 + 25);
+      const sSp = F.pt(sU, D * 0.42 + 25);
       bag.branch('brassI', sX, fY + 0.940, sZ, sSp[0] / 1000, fY + 0.935, -sSp[1] / 1000, 0.003, 0.002);
 
       // Folded luxury Egyptian cotton guest hand-towel on right side
-      const tPosU = Math.min(u1 - 80, W / 2 + bRad + 65);
+      const tPosU = opts.flat ? (wU1 + u1) / 2 : Math.min(u1 - 80, W / 2 + bRad + 65);
       F.rb(bag, 'sheet', tPosU - 50, tPosU + 50, D * 0.30, D * 0.70, fY + 0.84, fY + 0.87, 8);
       F.rb(bag, 'sheet', tPosU - 45, tPosU + 45, D * 0.32, D * 0.68, fY + 0.87, fY + 0.895, 6);
     },
@@ -4690,7 +4741,25 @@ window.HouseScene = (function () {
       }
     },
     /* Fixed glass screen in a slim matte-black profile */
-    shower(bag, x0, x1, y0, y1, fY) {
+    /* `half` (m) turns the screen into a half-height tiled wall with glass
+       above it. Runs along y; x0 is the shower-side face and the wall is
+       100 thick toward the room, so the wet side stays x0 and below. */
+    shower(bag, x0, x1, y0, y1, fY, half) {
+      if (half) {
+        const T = 100, top = fY + half;
+        pb(bag, 'tileShower', x0, x0 + T, y0, y1, fY, top);                    // wet-side face reads as shower tile
+        pb(bag, 'tileBath', x0 + T, x0 + T + 2, y0, y1, fY, top);              // room-side veneer in the bath tile
+        pb(bag, 'tileShower', x0 - 2, x0, y0, y1, fY, top);
+        pb(bag, 'tileShower', x0, x0 + T, y0 - 2, y0, fY, top);                // free end of the wall
+        pb(bag, 'quartz', x0 - 10, x0 + T + 10, y0 - 8, y1, top, top + 0.025);  // quartz coping, 10 mm overhang
+        const gx0 = x0 + T / 2 - 6, gx1 = x0 + T / 2 + 6, gTop = fY + 2.05;
+        pb(bag, 'blackM', gx0 - 8, gx1 + 8, y0, y1, top + 0.025, top + 0.045);  // bottom channel
+        pb(bag, 'glass', gx0, gx1, y0 + 16, y1 - 20, top + 0.045, gTop);
+        pb(bag, 'blackM', gx0 - 8, gx1 + 8, y0, y0 + 16, top + 0.025, gTop + 0.03); // free-edge post
+        pb(bag, 'blackM', gx0 - 8, gx1 + 8, y0, y1, gTop, gTop + 0.03);           // head rail
+        pb(bag, 'blackM', gx0 - 8, gx1 + 8, y1 - 20, y1, top + 0.025, gTop + 0.03);  // wall-side post
+        return;
+      }
       pb(bag, 'glass', x0, x1, y0, y1, fY + 0.03, fY + 2.05);
       pb(bag, 'blackM', x0 - 6, x1 + 6, y0 - 6, y1 + 6, fY, fY + 0.03);
       pb(bag, 'blackM', x0 - 6, x1 + 6, y0 - 6, y1 + 6, fY + 2.05, fY + 2.08);
@@ -4699,7 +4768,7 @@ window.HouseScene = (function () {
       else pb(bag, 'blackM', x1 - 20, x1, y0 - 6, y1 + 6, fY, fY + 2.08);
     },
     /* Rain shower + hand shower + thermostatic mixer, matte black */
-    showerHead(bag, cx, cy, fY, facing) {
+    showerHead(bag, cx, cy, fY, facing, noTile) {
       const s = facing === 'N' ? 1 : -1;            // direction away from the wall
       const arm = (d) => cy + s * d;
       bag.branch('blackM', cx / 1000, fY + 2.15, -arm(0) / 1000, cx / 1000, fY + 2.15, -arm(380) / 1000, 0.011, 0.011);
@@ -4709,8 +4778,8 @@ window.HouseScene = (function () {
       bag.cyl('blackM', (cx + 40) / 1000, fY + 1.14, -arm(30) / 1000, 0.022, 0.03, Math.PI / 2, 0, 0);
       pb(bag, 'blackM', cx + 200, cx + 215, Math.min(arm(0), arm(25)), Math.max(arm(0), arm(25)), fY + 0.95, fY + 1.85);
       bag.branch('blackM', (cx + 207) / 1000, fY + 1.55, -arm(30) / 1000, (cx + 207) / 1000, fY + 1.80, -arm(60) / 1000, 0.014, 0.018);
-      // tiled wet wall behind the shower
-      prb(bag, 'tileBath', cx - 650, cx + 650, Math.min(arm(-6), arm(4)), Math.max(arm(-6), arm(4)), fY, fY + 2.40, 2);
+      // tiled wet wall behind the shower (the caller tiles it itself when noTile)
+      if (!noTile) prb(bag, 'tileBath', cx - 650, cx + 650, Math.min(arm(-6), arm(4)), Math.max(arm(-6), arm(4)), fY, fY + 2.40, 2);
     },
 
     /* ---------------- WALK-IN / OPEN WARDROBE ---------------- */
@@ -4831,11 +4900,12 @@ window.HouseScene = (function () {
       this.kitWallRun(bag, x0, x1, y0, y1, fY, face || ((x1 - x0) >= (y1 - y0) ? 'S' : 'W'));
     },
     /* bath wall cladding panel (large-format tile) on a wall face */
-    clad(bag, dir, at, face, a0, a1, fY, h) {
+    clad(bag, dir, at, face, a0, a1, fY, h, mat) {
+      mat = mat || 'tileBath';
       const out = face === 'N' || face === 'E' ? 1 : -1;
       const lo = Math.min(at, at + out * 10), hi = Math.max(at, at + out * 10);
-      if (dir === 'x') pb(bag, 'tileBath', a0, a1, lo, hi, fY, fY + h);
-      else pb(bag, 'tileBath', lo, hi, a0, a1, fY, fY + h);
+      if (dir === 'x') pb(bag, mat, a0, a1, lo, hi, fY, fY + h);
+      else pb(bag, mat, lo, hi, a0, a1, fY, fY + h);
     },
 
     /* ---------------- FOYER ----------------
@@ -5135,7 +5205,7 @@ window.HouseScene = (function () {
       ],
       W: [
         { c: 3450, w: 1800, sill: 900, h: 1500, type: 'win', chajja: true },     // master bedroom west window (enlarged, lights the NW desk)
-        { c: 5000, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },      // master bath vent
+        { c: 4850, w: 500, sill: 1700, h: 600, type: 'win', chajja: true },      // master bath vent: dry end of the wall, clear of the shower (y 4600..5100)
         { c: 7568.5, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }   // staircase landing, centred on the landing wall (y 6496..8641)
       ]
     },
@@ -5156,7 +5226,7 @@ window.HouseScene = (function () {
       ],
       W: [
         { c: 3450, w: 1800, sill: 900, h: 1500, type: 'win', chajja: true },     // bedroom 02 west window (enlarged, lights the NW desk)
-        { c: 5000, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },      // bath vent
+        { c: 4850, w: 500, sill: 1700, h: 600, type: 'win', chajja: true },      // bath vent: dry end of the wall, clear of the shower (y 4600..5100)
         { c: 7568.5, w: 1200, sill: 2080, h: 1100, type: 'win', chajja: true }   // staircase landing, centred on the landing wall (y 6496..8641)
       ]
     }
@@ -6164,8 +6234,8 @@ window.HouseScene = (function () {
           return this;
         },
         /* --- bathroom exhaust fan on the west wall (no light source) --- */
-        exhaust(x, y, h) {
-          Fur.exhaustFan(bag, x, y, fY + h);
+        exhaust(x, y, h, face) {
+          Fur.exhaustFan(bag, x, y, fY + h, face);
           return this;
         },
         wallBracket(x, y, h, dir, face) {
@@ -8784,13 +8854,22 @@ window.HouseScene = (function () {
         Fur.fullHeightWardrobe(bag, 4205, 4805, 4547, 6381, fY, fY + 3.203, 'W', { mirror: true });
         Fur.dressingMirror(bag, 3236, 4185, 6381, fY, 'S');
         // bath (x 230..3105, y 4547..6381)
-        Fur.shower(bag, 1130, 1160, 5127, 6381, fY); Fur.showerHead(bag, 680, 6381, fY, 'S');
+        /* shower x 230..1130 x y 5127..6371: a 1.05 m tiled half wall with glass
+           above it (x 1130..1230), the three wet walls in green zellige from the
+           floor to the slab, and a matching pan with a square drain */
+        Fur.shower(bag, 1130, 1230, 5127, 6371, fY, 1.05); Fur.showerHead(bag, 680, 6381, fY, 'S', true);
+        // the laid floor tops out at fY + 0.014, so the pan stands 6 mm proud of it
+        pb(bag, 'tileShower', 230, 1130, 5127, 6371, fY + 0.012, fY + 0.020);
+        pb(bag, 'blackM', 625, 735, 5695, 5805, fY + 0.020, fY + 0.023);
+        pb(bag, 'tileShower', 640, 720, 5710, 5790, fY + 0.023, fY + 0.0235);
         Fur.wc(bag, 1700, 6096, fY, 'S');
-        Fur.basin(bag, 2300, 3105, 5881, 6381, fY, 'N'); Fur.mirror(bag, 2330, 3075, 6369, 6381, fY, 'S');
-        Fur.clad(bag, 'x', 6381, 'S', 230, 3105, fY, 2.40);
+        Fur.basin(bag, 2300, 3105, 5881, 6381, fY, 'N', { flat: true }); Fur.mirror(bag, 2330, 3075, 6369, 6381, fY, 'S');
+        Fur.clad(bag, 'x', 6381, 'S', 230, 1130, fY, 3.203, 'tileShower');   // shower back wall, floor to slab
+        Fur.clad(bag, 'x', 6381, 'S', 1130, 3105, fY, 2.40);
         Fur.clad(bag, 'x', 4547, 'N', 230, 3105, fY, 2.40);
-        Fur.clad(bag, 'y', 230, 'E', 4547, 6381, fY, 1.65);           // west (vent above)
-        Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 2.40);          // east, beside the door
+        Fur.clad(bag, 'y', 230, 'E', 4547, 5127, fY, 1.65);                  // west, dry end (vent above)
+        Fur.clad(bag, 'y', 230, 'E', 5127, 6371, fY, 3.203, 'tileShower');   // west, shower: floor to slab
+        Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 2.40);                 // east, beside the door
       }
       function westSuiteLights(Lum, fY) {
         if (fi === 1) {
@@ -8801,7 +8880,7 @@ window.HouseScene = (function () {
           Lum.ac('y', 4805, 1375, 2325, 'W');        // east wall, centred above the gallery
           Lum.downlight(1380, 820).downlight(3770, 820);
           Lum.downlight(1380, 2890).downlight(3770, 2890);
-          Lum.tube('x', 230, 2700, 'N', 2.35);        // head wall, centred on the bed, well above the headboard
+          Lum.tube('x', 230, 2700, 'N', 2.80);        // head wall, centred on the bed, up under the ceiling line
         } else {
           Lum.fan(2700, 1182);                        // centred on the queen bed (1950..3450 x 232..2132)
           Lum.ac('x', 4432, 2250, 3200, 'S');        // second floor: north wall, between the desk and the walk-in door
@@ -8821,10 +8900,12 @@ window.HouseScene = (function () {
         // bath
         if (fi === 1) {
           Lum.downlight(680, 5130).downlight(1910, 5130);   // FF plan: two surface lights
-          Lum.exhaust(230, 4720, 2.10);                      // FF plan: F on the west wall's south end
         } else {
           Lum.downlight(1700, 5300);
         }
+        // F on the west wall, high over the shower (steam rises); the plan's
+        // spot (y 4720) now holds the window, so the fan moved south of it
+        Lum.exhaust(240, 5750, 2.70);
         Lum.vanity('x', 2330, 3075, 6381, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2702.5)
       }
 
