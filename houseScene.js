@@ -2033,7 +2033,8 @@ window.HouseScene = (function () {
       const ok = faces.some(f => {
         if (!onFloor) return true;
         const off = f === 'lo' ? b0 - 60 : b1 + 60;
-        return dir === 'x' ? onFloor(e, off) : onFloor(off, e);
+        const ee = e + side * 6;     // test where the return board stands, not on the wall end line (a room rect's edge is exclusive)
+        return dir === 'x' ? onFloor(ee, off) : onFloor(off, ee);
       });
       if (!ok) return;
       const l0 = faces.includes('lo') ? b0 - 12 : b0, l1 = faces.includes('hi') ? b1 + 12 : b1;
