@@ -5599,7 +5599,7 @@ window.HouseScene = (function () {
     [ // SF
       { dir: 'y', b: [4805, 4920], a: [232, 4432], ops: [{ c: 3850, w: 1000 }] },      // master02 east (same as the FF master)
       { dir: 'x', b: [4432, 4547], a: [230, 3105], ops: [] },                           // master|mbath
-      { dir: 'x', b: [4432, 4547], a: [3216, 4805], ops: [{ c: 3700, w: 800 }] },      // master|walkin (casing ends 4150, clear of the wardrobe front 4183)
+      { dir: 'x', b: [4432, 4547], a: [3216, 4805], ops: [{ c: 3740, w: 900 }] },      // master|walkin (SF: hard against the bath partition, casing 3240..4240, clear of the bath door architrave at 3231, clear of the wardrobe front 4305)
       { dir: 'y', b: [3105, 3216], a: [4432, 6381], ops: [{ c: 5025, w: 850 }] },       // mbath|walkin (bath widened 400 into the walk-in)
       { dir: 'x', b: [6381, 6496], a: [230, 4805], ops: [] },                           // stair south
       { dir: 'y', b: [4805, 4920], a: [4432, 6496], ops: [] },                          // spine filler
@@ -8815,7 +8815,7 @@ window.HouseScene = (function () {
 
       if (fi === 2) {
         /* --- WEST BEDROOM (230..4805, 232..4432) --- */
-        westSuiteLights(Lum, fY);
+        westSuiteLights(Lum, fY, true);
 
         /* --- EAST BEDROOM (7736..12421, 232..4432) --- */
         Lum.fan(10050, 2332);                         // on the bed axis (9100..11000), room-centre depth
@@ -9123,7 +9123,11 @@ window.HouseScene = (function () {
          walk-in (partition x 3105..3216); the walk-in is a closed
          mirror-shutter wardrobe on the east wall plus a full-length mirror
          on the north wall. */
-      function westSuite(bag, fY) {
+      function westSuite(bag, fY, sf) {
+        /* sf (the second floor only): the walk-in's wardrobe is a slimmer 500 deep run (x 4305..4805) over
+           the whole east wall, wall to wall, the dressing table fills the aisle up to its flank, and the
+           entrance (see IW) sits hard against the bath partition. The FF keeps its 600 deep wardrobe. */
+        const WX = sf ? 4305 : 4205;                                       // wardrobe front
         Fur.rug(bag, 1500, 3900, 400, 2800, fY);
         Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S');                // queen, headboard on the south wall, 50 short of the window jamb
         Fur.side(bag, 1500, 1900, 232, 732, fY);                      // west side table
@@ -9145,11 +9149,11 @@ window.HouseScene = (function () {
         Fur.standingDesk(bag, 420, 1820, 3730, 4412, fY, 'N');        // NW corner, on the north wall, clear of the curtain
         Fur.ergoChair(bag, 1120, 3330, fY, 'N');
         // walk-in (x 3216..4805, y 4547..6381)
-        Fur.fullHeightWardrobe(bag, 4205, 4805, 4547, 6381, fY, fY + 3.203, 'W', { mirror: true });
+        Fur.fullHeightWardrobe(bag, WX, 4805, 4547, 6381, fY, fY + 3.203, 'W', { mirror: true });
         // the north end of the aisle is the dressing table the SF east suite has: the entry
         // door faces it, the wardrobe's mirror shutters are the full-length mirror
-        Fur.rug(bag, 3370, 4050, 4660, 5700, fY);                          // runner down the aisle
-        Fur.dressingTable(bag, 3250, 4170, 5931, 6381, fY, 'N');
+        Fur.rug(bag, sf ? 3420 : 3370, sf ? 4100 : 4050, 4660, 5700, fY);   // runner down the aisle
+        Fur.dressingTable(bag, 3250, sf ? 4270 : 4170, 5931, 6381, fY, 'N');   // SF: up to the slim wardrobe's flank
         // bath (x 230..3105, y 4547..6381)
         /* shower x 230..1130 x y 5127..6371: a 1.05 m tiled half wall with glass
            above it (x 1130..1230), the three wet walls in green zellige from the
@@ -9183,7 +9187,7 @@ window.HouseScene = (function () {
         }
         Fur.clad(bag, 'y', 3105, 'W', 5450, 6381, fY, 3.203);               // east, beside the door
       }
-      function westSuiteLights(Lum, fY) {
+      function westSuiteLights(Lum, fY, sf) {
         /* The FF master and the SF bedroom are one plan, lit identically: the
            architect's first-floor electrical plan (1.1.2 FF ELEC A3): fan on the
            bed, four surface lights on a 2390 x 2070 grid and a tube light on the
@@ -9200,9 +9204,15 @@ window.HouseScene = (function () {
         Lum.raw(1700, 482, fY + 0.86, 'bedside');
         Lum.raw(3750, 482, fY + 0.86, 'bedside');
         // walk-in
-        Lum.downlight(3490, 5180);                    // FF plan position
-        Lum.task(3290, 4130, 6300, 6370, 2.38);       // wash over the dressing table's mirror
-        Lum.vanity('x', 3380, 4040, 6381, 2.0, 'S');  // bar over its halo mirror
+        if (sf) {
+          Lum.downlight(3760, 4900).downlight(3760, 5650);   // down the middle of the 1089 aisle
+          Lum.task(3310, 4210, 6300, 6370, 2.38);            // wash over the dressing table's mirror
+          Lum.vanity('x', 3340, 4180, 6381, 2.0, 'S');       // bar over its halo mirror
+        } else {
+          Lum.downlight(3490, 5180);                  // FF plan position
+          Lum.task(3290, 4130, 6300, 6370, 2.38);     // wash over the dressing table's mirror
+          Lum.vanity('x', 3380, 4040, 6381, 2.0, 'S'); // bar over its halo mirror
+        }
         // bath
         Lum.downlight(680, 5130).downlight(1910, 5130);     // FF plan: two surface lights
         // F: the exhaust fan is fitted in the bath window's top light (see OPEN.f1/f2 W)
@@ -9669,7 +9679,7 @@ window.HouseScene = (function () {
         /* Mumty arrival pad (void stays open for the climb) — the stair's
            own top landing, so the same tile as the flights. */
         stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, FLOOR_TILE);
-        westSuite(bag, fY);
+        westSuite(bag, fY, true);
         /* SF west bedroom only: limewash on the four room-side wall faces and the ceiling (the
            FF master keeps its white). A 3 mm skin on the faces, starting on top of the flush
            skirting band (fY + 70 mm) so the skirting stays
@@ -9682,7 +9692,7 @@ window.HouseScene = (function () {
           wallRun(bag, 'limeWash', 'y', 230, 4432, 230, 230 + T, lw0, top, fY, wW);                               // west
           wallRun(bag, 'limeWash', 'y', 230, 4432, 4805 - T, 4805, lw0, top, fY, [{ c: 3850, w: 1000, sill: 0, h: 2100 }]); // east (door)
           wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 230, 230 + T, lw0, top, fY, wS);                       // south
-          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 4432 - T, 4432, lw0, top, fY, [{ c: 3700, w: 800, sill: 0, h: 2100 }]); // north (walk-in door)
+          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 4432 - T, 4432, lw0, top, fY, [{ c: 3740, w: 900, sill: 0, h: 2100 }]); // north (walk-in door)
           const liner = (dir, o) => {          // reveal liner, room face back to the frame (74 mm)
             const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2, z0 = fY + o.sill / 1000, z1 = z0 + o.h / 1000;
             const p = (a, b, z, zz) => dir === 'y' ? pb(bag, 'limeWash', 156, 230, a, b, z, zz) : pb(bag, 'limeWash', a, b, 156, 230, z, zz);
