@@ -5261,6 +5261,45 @@ window.HouseScene = (function () {
       drum(bag, 'oakDark', cx, cy, fY, fY + 0.04, 0.20, 0.005);
       drum(bag, 'boucle', cx, cy, fY + 0.04, fY + 0.44, 0.19, 0.02);
     },
+    /* Dressing table for the suites' walk-ins: a floating dark-oak console
+       against a wall (shadow plinth, two tiers of oak drawer fronts 14 mm proud
+       with brass bar pulls, quartz top), a backlit halo mirror above it and a
+       bouclé stool pulled up in front. x0..x1 x y0..y1 is the footprint, `back`
+       the wall it stands against (frameOf's convention: 'W' = west wall). */
+    dressingTable(bag, x0, x1, y0, y1, fY, back, o) {
+      o = o || {};
+      const F = frameOf(x0, x1, y0, y1, back), W = F.W, D = F.D;
+      const TOP = fY + 0.75, Z = h => fY + h;
+      F.box(bag, 'aluDark', 25, W - 25, 25, D - 45, fY, Z(0.09));
+      F.box(bag, 'oakDark', 0, W, 0, D, Z(0.09), TOP - 0.03);
+      const n = Math.max(2, Math.round(W / 430)), dw = W / n;
+      for (let i = 0; i < n; i++) {
+        const u0 = i * dw + 3, u1 = (i + 1) * dw - 3, uc = (u0 + u1) / 2;
+        for (const [h0, h1] of [[0.12, 0.40], [0.43, 0.71]]) {
+          F.box(bag, 'oak', u0, u1, D, D + 14, Z(h0), Z(h1));
+          F.box(bag, 'brass', uc - 70, uc + 70, D + 14, D + 26, Z(h1 - 0.075), Z(h1 - 0.063));
+        }
+      }
+      F.rb(bag, 'quartz', -15, W + 15, -5, D + 25, TOP - 0.03, TOP, 4);
+      // on the top: valet tray, two flacons, a bud vase
+      const at = (u, v) => F.pt(u, v);
+      F.rb(bag, 'charDark', 70, 250, 90, 280, TOP, TOP + 0.02, 2);
+      F.box(bag, 'brassI', 100, 220, 120, 250, TOP + 0.02, TOP + 0.025);
+      let p = at(W * 0.46, 150);
+      bag.cyl('glass', p[0] / 1000, TOP + 0.045, -p[1] / 1000, 0.024, 0.09);
+      bag.cyl('brassI', p[0] / 1000, TOP + 0.10, -p[1] / 1000, 0.012, 0.02);
+      p = at(W * 0.46 + 90, 220);
+      bag.cyl('glass', p[0] / 1000, TOP + 0.035, -p[1] / 1000, 0.020, 0.07);
+      bag.cyl('charDark', p[0] / 1000, TOP + 0.08, -p[1] / 1000, 0.010, 0.02);
+      p = at(W - 110, 170);
+      bag.cyl('ceramic', p[0] / 1000, TOP + 0.055, -p[1] / 1000, 0.025, 0.11);
+      // halo mirror: glow plate, aluminium frame, silvered pane
+      const Wm = Math.min(W - 120, o.mirrorW || 1100), m0 = (W - Wm) / 2, m1 = m0 + Wm;
+      F.box(bag, 'lamp', m0 - 10, m1 + 10, 2, 6, Z(0.97), Z(1.93));
+      F.box(bag, 'alu', m0, m1, 4, 16, Z(0.98), Z(1.92));
+      F.box(bag, 'mirrorI', m0 + 20, m1 - 20, 16, 20, Z(1.00), Z(1.90));
+      if (o.stool !== false) { const s = at(W / 2, D + 250); this.pouf(bag, s[0], s[1], fY); }
+    },
 
     /* ---------------- SLIDING DOOR ----------------
        Two-leaf bypass slider in a wall running along x (wall faces y0/y1),
@@ -5400,8 +5439,8 @@ window.HouseScene = (function () {
       R('BATH', '2875 × 1835', 230, 3105, 4546, 6381, 'bath'),
       R('WALK-IN', '1589 × 1950', 3216, 4805, 4432, 6382, 'walk'),
       R('BEDROOM', '4685 × 4200', 7736, 12421, 232, 4432, 'bed'),
-      R('BATH', '2700 × 1525', 4920, 7620, 233, 1758, 'bath'),
-      R('WALK-IN', '2700 × 1280', 4920, 7620, 1871, 3151, 'walk'),
+      R('BATH', '2700 × 1407', 4920, 7620, 233, 1640, 'bath'),
+      R('WALK-IN', '2700 × 1396', 4920, 7620, 1755, 3151, 'walk'),
       R('FAMILY ROOM', '3161 × 4095', 9260, 12421, 4546, 8641, 'living'),
       R('LOUNGE', '4340 × 2450', 4920, 9260, 4546, 6996, 'living'),
       // the passage from the lounge to the bedrooms: it was in no room, so it
@@ -5564,9 +5603,9 @@ window.HouseScene = (function () {
       { dir: 'y', b: [3105, 3216], a: [4432, 6381], ops: [{ c: 5025, w: 850 }] },       // mbath|walkin (bath widened 400 into the walk-in)
       { dir: 'x', b: [6381, 6496], a: [230, 4805], ops: [] },                           // stair south
       { dir: 'y', b: [4805, 4920], a: [4432, 6496], ops: [] },                          // spine filler
-      { dir: 'x', b: [1758, 1871], a: [4920, 7620], ops: [{ c: 6900, w: 800 }] },      // bath03|walkin03
+      { dir: 'x', b: [1640, 1755], a: [4920, 7620], ops: [{ c: 7100, w: 800 }] },      // bath03|walkin03 (1407 / 1396 split; the door faces the basin, the WC sits behind the jamb)
       { dir: 'x', b: [3151, 3266], a: [4920, 7620], ops: [] },                          // walkin03 north
-      { dir: 'y', b: [7620, 7736], a: [232, 4432], ops: [{ c: 2511, w: 950 }, { c: 3800, w: 1000 }] }, // bed03 west
+      { dir: 'y', b: [7620, 7736], a: [232, 4432], ops: [{ c: 2453, w: 950 }, { c: 3800, w: 1000 }] }, // bed03 west (the first is centred on the walk-in)
       { dir: 'x', b: [4432, 4546], a: [7620, 9260], ops: [] },                          // bed03 north (door)
       { dir: 'x', b: [4432, 4546], a: [9260, 12421], ops: [] }                          // bed03|family
     ]
@@ -8791,12 +8830,13 @@ window.HouseScene = (function () {
         Lum.raw(8810, 442, fY + 0.86, 'bedside');
         Lum.raw(11310, 442, fY + 0.86, 'bedside');
 
-        /* --- EAST WALK-IN (4920..7620, 1871..3151) --- */
-        Lum.downlight(5800, 2240);                    // wardrobe & vanity aisle downlight
-        Lum.downlight(6900, 2240);                    // dressing mirror & bath approach downlight
-        Lum.task(6550, 7550, 3070, 3140, 2.38);       // wash over the dressing mirror
+        /* --- EAST WALK-IN (4920..7620, 1755..3151) --- */
+        Lum.downlight(5950, 2153);                    // down the middle of the wardrobe aisle
+        Lum.downlight(7250, 2453);                    // lobby: bedroom door, bath door, full-length mirror
+        Lum.task(6960, 7580, 3070, 3140, 2.38);       // wash over the dressing mirror
+        Lum.vanity('y', 1900, 2456, 4920, 2.0, 'E');  // bar over the dressing table's halo mirror
 
-        /* --- EAST BATH (4920..7620, 233..1758) --- */
+        /* --- EAST BATH (4920..7620, 233..1640) --- */
         Lum.downlight(5370, 900);                     // over the shower
         Lum.downlight(6700, 1000);                    // over the WC / basin
         Lum.vanity('x', 6830, 7590, 230, 2.08, 'N');  // mirror vanity on south wall (centered at x = 7210)
@@ -9106,7 +9146,10 @@ window.HouseScene = (function () {
         Fur.ergoChair(bag, 1120, 3330, fY, 'N');
         // walk-in (x 3216..4805, y 4547..6381)
         Fur.fullHeightWardrobe(bag, 4205, 4805, 4547, 6381, fY, fY + 3.203, 'W', { mirror: true });
-        Fur.dressingMirror(bag, 3236, 4185, 6381, fY, 'S');
+        // the north end of the aisle is the dressing table the SF east suite has: the entry
+        // door faces it, the wardrobe's mirror shutters are the full-length mirror
+        Fur.rug(bag, 3370, 4050, 4660, 5700, fY);                          // runner down the aisle
+        Fur.dressingTable(bag, 3250, 4170, 5931, 6381, fY, 'N');
         // bath (x 230..3105, y 4547..6381)
         /* shower x 230..1130 x y 5127..6371: a 1.05 m tiled half wall with glass
            above it (x 1130..1230), the three wet walls in green zellige from the
@@ -9158,14 +9201,15 @@ window.HouseScene = (function () {
         Lum.raw(3750, 482, fY + 0.86, 'bedside');
         // walk-in
         Lum.downlight(3490, 5180);                    // FF plan position
-        Lum.task(3260, 4160, 6300, 6370, 2.38);       // wash over the dressing mirror
+        Lum.task(3290, 4130, 6300, 6370, 2.38);       // wash over the dressing table's mirror
+        Lum.vanity('x', 3380, 4040, 6381, 2.0, 'S');  // bar over its halo mirror
         // bath
         Lum.downlight(680, 5130).downlight(1910, 5130);     // FF plan: two surface lights
         // F: the exhaust fan is fitted in the bath window's top light (see OPEN.f1/f2 W)
         Lum.vanity('x', 2330, 3075, 6381, 2.08, 'S'); // mirror vanity on north wall (centered at x = 2702.5)
       }
 
-      /* SF east bath (x 4920..7620, y 230..1758), done in the language of the west
+      /* SF east bath (x 4920..7620, y 230..1640), done in the language of the west
          suite's: a 900 x 900 corner shower in green zellige (west + south walls
          floor to slab, pan with square drain), a 1.05 m tiled half wall with glass
          above it on its east side, cream large-format tile to the slab on the other
@@ -9199,11 +9243,11 @@ window.HouseScene = (function () {
         }
         Fur.clad(bag, 'y', 4920, 'E', 230, 1130, fY, 3.203, 'tileShower');         // shower west, floor to slab
         // dry walls: cream tile to the slab
-        Fur.clad(bag, 'y', 4920, 'E', 1130, 1758, fY, 3.203);
+        Fur.clad(bag, 'y', 4920, 'E', 1130, 1640, fY, 3.203);
         Fur.clad(bag, 'x', 230, 'N', 5820, 7620, fY, 3.203);                       // solid cream tile across WC & basin
-        Fur.clad(bag, 'x', 1758, 'S', 4920, 6500, fY, 3.203);                      // north, beside the door
-        Fur.clad(bag, 'x', 1758, 'S', 7300, 7620, fY, 3.203);
-        Fur.clad(bag, 'y', 7620, 'W', 230, 1758, fY, 3.203);                       // east
+        Fur.clad(bag, 'x', 1640, 'S', 4920, 6700, fY, 3.203);                      // north, west of the door
+        Fur.clad(bag, 'x', 1640, 'S', 7500, 7620, fY, 3.203);                      // north, east of the door
+        Fur.clad(bag, 'y', 7620, 'W', 230, 1640, fY, 3.203);                       // east
         // shower shelf on the west wall (zellige face x 4935) with four bottles, south of showerSet
         pb(bag, 'quartz', 4935, 5055, 260, 560, Y(1.0), Y(1.016));
         pb(bag, 'quartz', 5041, 5055, 260, 560, Y(1.016), Y(1.03));
@@ -9659,50 +9703,21 @@ window.HouseScene = (function () {
         Fur.art(bag, 'y', 7736, 'E', 1150, fY, 1.6, 900, 1100, ['artC', 'artA', 'artB']);
         Fur.side(bag, 8600, 9020, 232, 652, fY); Fur.side(bag, 11100, 11520, 232, 652, fY);
         Fur.fullHeightWardrobe(bag, 11820, 12420, 232, 3250, fY, fY + 3.203); // East wall full-height wardrobe up to window
-        /* --- EAST WALK-IN DRESSING (4920..7620, 1871..3151) ---
-           Inspired by the west master suites: full-height mirror-shuttered wardrobe on
-           the north wall, full-length illuminated dressing mirror facing south towards
-           the bath access, dedicated dressing vanity counter with drawer, grooming
-           mirror, valet accessories, and upholstered pouf on the west wall. */
-        // 1. Full-height wardrobe along north wall (short of mirror & bath door line)
-        Fur.fullHeightWardrobe(bag, 4920, 6500, 2601, 3151, fY, fY + 3.203, 'S', { mirror: true });
-        // Finished dark oak return end panel on wardrobe east flank (facing aisle)
-        pb(bag, 'oakDark', 6485, 6500, 2601, 3151, fY, fY + 3.203);
-
-        // 2. Dedicated full-length illuminated dressing mirror on North wall
-        Fur.dressingMirror(bag, 6550, 7550, 3151, fY, 'S');
-
-        // 3. West wall dressing vanity console & grooming counter (x 4920..5370, y 1880..2580)
-        // Toe-kick shadow base
-        pb(bag, 'aluDark', 4930, 5350, 1900, 2560, fY, fY + 0.08);
-        // Vanity carcass in dark oak
-        pb(bag, 'oakDark', 4920, 5370, 1880, 2580, fY + 0.08, fY + 0.73);
-        // Open lower display recess
-        pb(bag, 'oak', 4930, 5360, 1890, 2570, fY + 0.10, fY + 0.48);
-        // Soft-close vanity drawer with brass handle
-        pb(bag, 'oak', 5365, 5376, 1900, 2560, fY + 0.50, fY + 0.71);
-        bag.cyl('brass', 5382 / 1000, fY + 0.605, -2230 / 1000, 0.007, 0.18, Math.PI / 2);
-        // Beveled quartz vanity countertop
-        prb(bag, 'quartz', 4910, 5390, 1865, 2595, fY + 0.73, fY + 0.76, 4);
-
-        // 4. Vanity styling accessories on desktop
-        // Leather watch / jewelry valet tray
-        prb(bag, 'charDark', 4980, 5140, 2360, 2530, fY + 0.76, fY + 0.78, 2);
-        pb(bag, 'brassI', 5010, 5110, 2390, 2500, fY + 0.78, fY + 0.785);
-        // Glass perfume flacons with brass & dark caps
-        bag.cyl('glass', 5080 / 1000, fY + 0.81, -2160 / 1000, 0.024, 0.09);
-        bag.cyl('brassI', 5080 / 1000, fY + 0.865, -2160 / 1000, 0.012, 0.02);
-        bag.cyl('glass', 5160 / 1000, fY + 0.80, -2100 / 1000, 0.020, 0.07);
-        bag.cyl('charDark', 5160 / 1000, fY + 0.845, -2100 / 1000, 0.010, 0.02);
-        bag.cyl('ceramic', 5230 / 1000, fY + 0.82, -2220 / 1000, 0.025, 0.11); // ceramic bud vase
-
-        // 5. Backlit halo grooming mirror on West wall above vanity (centered at y = 2230)
-        pb(bag, 'lamp', 4922, 4926, 1980, 2480, fY + 0.94, fY + 1.86);
-        pb(bag, 'alu', 4924, 4936, 1990, 2470, fY + 0.95, fY + 1.85);
-        pb(bag, 'mirrorI', 4936, 4940, 2010, 2450, fY + 0.97, fY + 1.83);
-
-        // 6. Low bouclé upholstered dressing pouf
-        Fur.pouf(bag, 5620, 2230, fY);
+        /* --- EAST WALK-IN DRESSING (4920..7620, 1755..3151) ---
+           The bath and the dressing room split the 2.9 m between them evenly (1407 /
+           1396). Entered from the bedroom at the east end, which is a small lobby
+           (x 7000..7620) with the bath door on its left and the full-length mirror
+           ahead on the north wall. West of it the aisle runs 846 mm clear between
+           the full-height mirror-shutter wardrobe (550 deep, north wall) and the
+           bath partition, and ends in a dressing table (736 wide, as wide as the
+           aisle) with a halo mirror and a stool. Nothing else stands in the aisle. */
+        Fur.rug(bag, 5450, 6850, 1880, 2476, fY);                                // runner down the aisle
+        Fur.fullHeightWardrobe(bag, 5420, 6900, 2601, 3151, fY, fY + 3.203, 'S', { mirror: true });
+        pb(bag, 'oakDark', 4920, 5420, 2601, 3151, fY, fY + 3.203);              // dark-oak pilaster closing the corner behind the dressing table
+        pb(bag, 'oakDark', 6885, 6900, 2601, 3151, fY, fY + 3.203);              // return facing the lobby
+        Fur.dressingMirror(bag, 6960, 7580, 3151, fY, 'S');                      // full length, in the lobby
+        Fur.dressingTable(bag, 4920, 5370, 1810, 2546, fY, 'W');                 // closes the aisle, centred on it (aisle centre y 2178)
+        Fur.art(bag, 'x', 1755, 'N', 5900, fY, 1.55, 800, 1100, ['artD', 'artB', 'artC']);   // on the bath partition
         // --- Second Floor Family Room & Entertainment Lounge ---
         Fur.rug(bag, 9400, 11950, 5350, 7850, fY);
         // The east wall is a 3.16 m glass door (y 5470-8630): sofas stop at

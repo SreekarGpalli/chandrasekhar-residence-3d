@@ -244,7 +244,7 @@ window.HouseAudit = (function () {
     }
     report.items = items.filter(i => i.fi >= 0).map(i => ({ fi: i.fi, name: i.name, args: i.args.slice(0, 9), box: [i.x0, i.x1, i.y0, i.y1].map(Math.round), z: [+(i.zr0).toFixed(2), +(i.zr1).toFixed(2)] }));
     if (opts.post) await fetch(opts.post + 'audit.json', { method: 'POST', body: JSON.stringify(report, null, 1) });
-    return { counts: { clashes: report.clashes.length, intoWalls: report.intoWalls.length, doors: report.doors.length, unreachable: report.unreachable.length } };
+    return { counts: { clashes: report.clashes.length, intoWalls: report.intoWalls.length, doors: report.doors.length, unreachable: report.unreachable.length }, report };
   }
   return { run };
 })();
