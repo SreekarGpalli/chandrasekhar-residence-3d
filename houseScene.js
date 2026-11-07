@@ -218,7 +218,8 @@ window.HouseScene = (function () {
     limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
-    skirtTile: 0xfdfcf8   // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
+    skirtTile: 0xfdfcf8,  // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
+    skirtGap:  0x3b3834   // flush-skirting shadow gap: the recessed reveal between skirting and plaster
   };
 
   /* materials: key -> spec; emissive optional */
@@ -421,7 +422,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, skirtGap: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -597,6 +598,13 @@ window.HouseScene = (function () {
   }
 
   /* ---------------- geometry bag (merged per material) ---------------- */
+  /* Flush skirting. Not a board stuck on the plaster: the room-side face of the
+     wall is cut as a 70 mm skirting band IN the plaster plane, a 10 mm shadow
+     gap recessed 8 mm above it, then plaster flush again. Built in
+     flushWalls() from the `base` a wall rect carries (see wall()). */
+  // heights in metres, recess depth in plan mm
+  const SKIRT_H = 0.070, SKIRT_GAP_H = 0.010, SKIRT_GAP_D = 8, SKIRT_GAP_MAT = 'skirtGap';
+
   function makeBag(THREE) {
     const buckets = {};
     const tmp = { v: new THREE.Vector3(), n: new THREE.Vector3(), nm: new THREE.Matrix3() };
@@ -641,12 +649,15 @@ window.HouseScene = (function () {
        wallRun()/bag.wall(), never pb(). */
     const walls = {};
     const IDENT = new THREE.Matrix4();
-    function wall(mat, dir, b0, b1, a0, a1, z0, z1, holes, faces) {
+    // base {lo, hi}: skirting material for that big face (null = plain wall to
+    // the floor). z0 must be the floor: the band stands on it, the gap above.
+    function wall(mat, dir, b0, b1, a0, a1, z0, z1, holes, faces, base) {
       if (a1 - a0 < 0.5 || b1 - b0 < 0.5 || z1 - z0 < 0.0005) return;
       const lo = (faces && faces.lo) || mat, hi = (faces && faces.hi) || mat;
       const key = [mat, lo, hi, dir, b0.toFixed(1), b1.toFixed(1)].join('|');
       const w = walls[key] || (walls[key] = { mat, lo, hi, dir, b0, b1, rects: [] });
-      w.rects.push({ a0, a1, z0, z1, holes: holes || [] });
+      const bs = base && (base.lo || base.hi) ? base : null;
+      w.rects.push({ a0, a1, z0, z1, holes: holes || [], base: bs });
     }
     /* ---- seamless floor plates ----
        plate(mat, x0, x1, y0, y1, z0, z1): plan rects on the same level and
@@ -801,6 +812,7 @@ window.HouseScene = (function () {
         const A = [], Z = [];
         for (const r of W.rects) {
           A.push(r.a0, r.a1); Z.push(r.z0, r.z1);
+          if (r.base) Z.push(r.z0 + SKIRT_H, r.z0 + SKIRT_H + SKIRT_GAP_H);
           for (const h of r.holes) { A.push(h.a0, h.a1); Z.push(h.z0, h.z1); }
         }
         // Cells no bigger than ~1 m: huge triangles beside the camera get
@@ -810,17 +822,28 @@ window.HouseScene = (function () {
         const as = fine(uniq(A, 0.05), 1000), zs = fine(uniq(Z, 0.00005), 1.0);
         const NA = as.length - 1, NZ = zs.length - 1;
         if (NA < 1 || NZ < 1) continue;
-        const solid = new Uint8Array(NA * NZ);
+        const solid = new Uint8Array(NA * NZ), owner = new Int16Array(NA * NZ).fill(-1);
         for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) {
           const ac = (as[i] + as[i + 1]) / 2, zc = (zs[j] + zs[j + 1]) / 2;
-          for (const r of W.rects) {
+          for (let ri = 0; ri < W.rects.length; ri++) {
+            const r = W.rects[ri];
             if (ac < r.a0 || ac > r.a1 || zc < r.z0 || zc > r.z1) continue;
             let inHole = false;
             for (const h of r.holes) if (ac > h.a0 && ac < h.a1 && zc > h.z0 && zc < h.z1) { inHole = true; break; }
-            if (!inHole) { solid[i * NZ + j] = 1; break; }
+            if (!inHole) { solid[i * NZ + j] = 1; owner[i * NZ + j] = ri; break; }
           }
         }
         const S = (i, j) => i >= 0 && j >= 0 && i < NA && j < NZ && solid[i * NZ + j] === 1;
+        // flush skirting: what a cell of the lo/hi big face is — 0 plain wall,
+        // 1 skirting band (same plane), 2 shadow gap (recessed)
+        const kindOf = (side, i, j) => {
+          if (!S(i, j)) return 0;
+          const r = W.rects[owner[i * NZ + j]];
+          if (!r.base || !r.base[side]) return 0;
+          const zc = (zs[j] + zs[j + 1]) / 2 - r.z0;
+          return zc < SKIRT_H ? 1 : zc < SKIRT_H + SKIRT_GAP_H ? 2 : 0;
+        };
+        const baseMat = (side, i, j) => W.rects[owner[i * NZ + j]].base[side];
         const P = (a, b, z) => W.dir === 'x' ? [a / 1000, z, -b / 1000] : [b / 1000, z, -a / 1000];
         const nA = W.dir === 'x' ? [1, 0, 0] : [0, 0, -1];      // world normal of +a
         const nB = W.dir === 'x' ? [0, 0, -1] : [1, 0, 0];      // world normal of +b
@@ -840,24 +863,44 @@ window.HouseScene = (function () {
           tri(g, a, b, c, n); tri(g, a, c, d, n);
         };
         // the two big faces, on shared grid vertices
-        for (const [bb, m, n] of [[W.b0, W.lo, neg(nB)], [W.b1, W.hi, nB]]) {
-          const g = G(m), map = new Map();
-          const V = (i, j) => {
-            const k = i * (NZ + 1) + j; let v = map.get(k);
-            if (v === undefined) { v = vert(g, P(as[i], bb, zs[j]), n); map.set(k, v); }
+        // Flush skirting (cells with a `base`): the band stays in the plaster
+        // plane in the skirting material; the gap row is the same face pushed
+        // SKIRT_GAP_D back in a dark material, closed by a downward step under
+        // the plaster, an upward step on top of the band, and a step at either
+        // end of the run. Everything else is the plain wall as before.
+        for (const [sn, bb, defM, n, sg] of [['lo', W.b0, W.lo, neg(nB), 1], ['hi', W.b1, W.hi, nB, -1]]) {
+          const maps = {}, rd = bb + sg * SKIRT_GAP_D;
+          const V = (g, mk, i, j, plane) => {
+            const mp = maps[mk] || (maps[mk] = new Map());
+            const k = i * (NZ + 1) + j; let v = mp.get(k);
+            if (v === undefined) { v = vert(g, P(as[i], plane, zs[j]), n); mp.set(k, v); }
             return v;
           };
           for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) if (S(i, j)) {
-            const a = V(i, j), b = V(i + 1, j), c = V(i + 1, j + 1), d = V(i, j + 1);
+            const kd = kindOf(sn, i, j);
+            const m = kd === 1 ? baseMat(sn, i, j) : kd === 2 ? SKIRT_GAP_MAT : defM;
+            const plane = kd === 2 ? rd : bb, mk = m + (kd === 2 ? 'r' : ''), g = G(m);
+            const a = V(g, mk, i, j, plane), b = V(g, mk, i + 1, j, plane), c = V(g, mk, i + 1, j + 1, plane), d = V(g, mk, i, j + 1, plane);
             tri(g, a, b, c, n); tri(g, a, c, d, n);
+            if (kd !== 2) continue;
+            const z0 = zs[j], z1 = zs[j + 1], gg = G(SKIRT_GAP_MAT);
+            quad(G(baseMat(sn, i, j)), P(as[i], bb, z0), P(as[i + 1], bb, z0), P(as[i + 1], rd, z0), P(as[i], rd, z0), [0, 1, 0]);   // top of the band
+            if (S(i, j + 1)) quad(G(defM), P(as[i], bb, z1), P(as[i + 1], bb, z1), P(as[i + 1], rd, z1), P(as[i], rd, z1), [0, -1, 0]); // underside of the plaster
+            if (S(i - 1, j) && kindOf(sn, i - 1, j) !== 2) quad(gg, P(as[i], bb, z0), P(as[i], rd, z0), P(as[i], rd, z1), P(as[i], bb, z1), nA);
+            if (S(i + 1, j) && kindOf(sn, i + 1, j) !== 2) quad(gg, P(as[i + 1], bb, z0), P(as[i + 1], rd, z0), P(as[i + 1], rd, z1), P(as[i + 1], bb, z1), neg(nA));
           }
         }
-        // thickness faces only where solid meets void (ends, reveals, top, bottom)
+        // thickness faces only where solid meets void (ends, reveals, top, bottom).
+        // Where the big face is recessed (gap row) the face is narrower by the
+        // recess; a skirted row's ends and reveals are skirting material.
         const g = G(W.mat);
         for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) if (S(i, j)) {
-          const a0 = as[i], a1 = as[i + 1], z0 = zs[j], z1 = zs[j + 1], b0 = W.b0, b1 = W.b1;
-          if (!S(i - 1, j)) quad(g, P(a0, b0, z0), P(a0, b1, z0), P(a0, b1, z1), P(a0, b0, z1), neg(nA));
-          if (!S(i + 1, j)) quad(g, P(a1, b0, z0), P(a1, b1, z0), P(a1, b1, z1), P(a1, b0, z1), nA);
+          const a0 = as[i], a1 = as[i + 1], z0 = zs[j], z1 = zs[j + 1];
+          const kl = kindOf('lo', i, j), kh = kindOf('hi', i, j);
+          const b0 = W.b0 + (kl === 2 ? SKIRT_GAP_D : 0), b1 = W.b1 - (kh === 2 ? SKIRT_GAP_D : 0);
+          const ge = kl === 1 ? G(baseMat('lo', i, j)) : kh === 1 ? G(baseMat('hi', i, j)) : g;
+          if (!S(i - 1, j)) quad(ge, P(a0, b0, z0), P(a0, b1, z0), P(a0, b1, z1), P(a0, b0, z1), neg(nA));
+          if (!S(i + 1, j)) quad(ge, P(a1, b0, z0), P(a1, b1, z0), P(a1, b1, z1), P(a1, b0, z1), nA);
           if (!S(i, j - 1)) quad(g, P(a0, b0, z0), P(a1, b0, z0), P(a1, b1, z0), P(a0, b1, z0), [0, -1, 0]);
           if (!S(i, j + 1)) quad(g, P(a0, b0, z1), P(a1, b0, z1), P(a1, b1, z1), P(a0, b1, z1), [0, 1, 0]);
         }
@@ -1124,7 +1167,37 @@ window.HouseScene = (function () {
      wall on the same line (see makeBag). `faces` {lo, hi} gives the two
      big faces their own finish — shell walls are exterior plaster outside
      and interior paint inside. `capMat`: the dollhouse coping on the cut. */
-  function wallRun(bag, mat, dir, a0, a1, b0, b1, h0, h1, floorY, openings, capMat, faces) {
+  /* `skirt` {faces: ['lo','hi'], at(x, y) -> material|null} turns on flush
+     skirting (see SKIRT_H): h0 must be the floor. at() is asked, 60 mm in front
+     of each listed face, what stands there — the floor finish (skirting in the
+     floor's own tile), a deck (the deck's tile) or nothing (stairwell,
+     double-height void: the wall runs plain, no skirting hanging in mid-air). */
+  function skirtSpans(dir, a0, a1, b0, b1, skirt) {
+    const at = (face, a) => {
+      if (!skirt.faces.includes(face)) return null;
+      const off = face === 'lo' ? b0 - 60 : b1 + 60;
+      return (dir === 'x' ? skirt.at(a, off) : skirt.at(off, a)) || null;
+    };
+    const pair = a => { const q = Math.min(Math.max(a, a0 + 0.5), a1 - 0.5); return [at('lo', q), at('hi', q)]; };
+    const eq = (p, q) => p[0] === q[0] && p[1] === q[1];
+    const out = [];
+    let cur = pair(a0), s = a0, last = a0;
+    for (let a = a0 + 20; ; a += 20) {
+      const aa = Math.min(a, a1), p = pair(aa);
+      if (!eq(p, cur)) {
+        let lo = last, hi = aa;
+        while (hi - lo > 1) { const m = (lo + hi) / 2; if (eq(pair(m), cur)) lo = m; else hi = m; }
+        const edge = Math.round((lo + hi) / 2);
+        out.push([s, edge, cur]); s = edge; cur = p;
+      }
+      last = aa;
+      if (aa >= a1) break;
+    }
+    out.push([s, a1, cur]);
+    return out.map(([r0, r1, p]) => [r0, r1, (r1 - r0 < 30 || (!p[0] && !p[1])) ? null : { lo: p[0], hi: p[1] }]);
+  }
+
+  function wallRun(bag, mat, dir, a0, a1, b0, b1, h0, h1, floorY, openings, capMat, faces, skirt) {
     const holes = [], capGaps = [];
     for (const o of (openings || [])) {
       const w0 = Math.max(a0, o.c - o.w / 2), w1 = Math.min(a1, o.c + o.w / 2);
@@ -1135,7 +1208,8 @@ window.HouseScene = (function () {
       holes.push({ a0: w0, a1: w1, z0: bot <= h0 + 0.004 ? h0 - 0.001 : bot, z1: top >= h1 - 0.004 ? h1 + 0.001 : top });
       if (top >= h1 - 0.003) capGaps.push([w0, w1]);
     }
-    bag.wall(mat, dir, b0, b1, a0, a1, h0, h1, holes, faces);
+    if (skirt) for (const [r0, r1, base] of skirtSpans(dir, a0, a1, b0, b1, skirt)) bag.wall(mat, dir, b0, b1, r0, r1, h0, h1, holes, faces, base);
+    else bag.wall(mat, dir, b0, b1, a0, a1, h0, h1, holes, faces);
     if (capMat) {
       // one cap per uninterrupted top edge — caps never overlap each other,
       // and crossing walls' caps sit 0.6 mm apart so they cannot z-fight
@@ -1882,7 +1956,7 @@ window.HouseScene = (function () {
     // slab, so the landing edge reads as one plain face (no tile/slab lines)
     if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 }, finish === FLOOR_TILE ? 'room' : null);
     // skirting on the landing's wall sides ('W' x0, 'E' x1, 'S' y0, 'N' y1): a
-    // landing is a floor of its own, so skirtRun (which works at storey level) never reaches it
+    // landing is a floor of its own, so the flush skirting of wallRun (storey level) never reaches it
     if (finish && skirtSides) {
       const sb = top - 0.005, st = top + 0.07;
       if (skirtSides.includes('W')) pb(bag, 'skirtTile', x0, x0 + 12, y0, y1, sb, st);
@@ -2007,69 +2081,31 @@ window.HouseScene = (function () {
     }
   }
 
-  /* skirting board run: 70mm tall, 12mm proud of the wall face, breaks at
-     door openings (sill < 100mm) but continues under windows.
-     dir/a/b as wallRun. faces: for dir 'x', 'lo' = y<b0 side, 'hi' = y>b1
-     side (for dir 'y' read x for y). Board is buried 2mm into the wall and
-     5mm into the floor so no face is coplanar with a parent face. */
-  function skirtRun(bag, dir, a0, a1, b0, b1, floorY, openings, faces, onFloor, mat, freeEnds) {
-    mat = mat || 'skirtTile';
-    const ops = (openings || []).filter(o => (o.sill || 0) < 100).slice().sort((p, q) => p.c - q.c);
-    const segs = []; let cur = a0;
-    for (const o of ops) {
-      const w0 = Math.max(a0, o.c - o.w / 2), w1 = Math.min(a1, o.c + o.w / 2);
-      if (w1 <= cur + 1) continue;
-      if (w0 > cur + 1) segs.push([cur, w0]);
-      cur = Math.max(cur, w1);
+  /* What stands in front of a wall base, for flush skirting (wallRun's `skirt`):
+     the storey's interior floor (skirting cut from the floor marble) or its
+     outdoor deck (the deck's own tile). Built from the same ROOMS / IW the
+     floor plates use, so skirting exists exactly where the floor does. */
+  function floorRectsOf(fi) {
+    const rects = [], lay = [];
+    for (const r of ROOMS[fi]) {
+      if (r.type === 'out' || r.name === 'LIFT' || r.name === 'PORTICO' || r.name.includes('TERRACE') || r.name.includes('BALCONY')) continue;
+      // SF only: the stairwell is a void from x 230 to 4630 (the FF->SF
+      // flight rises through it); just the walkway strip is floor.
+      rects.push([fi === 2 && r.name === 'STAIRCASE' ? 4630 : r.x0, r.x1, r.y0, r.y1]);
+      lay.push('room');
     }
-    if (cur < a1 - 1) segs.push([cur, a1]);
-    const h0 = floorY - 0.005, h1 = floorY + 0.07;
-    // only where there is floor in front of the wall (onFloor), so no
-    // skirting ever hangs over a stairwell or a double-height void
-    const runs = (s0, s1, f) => {
-      if (!onFloor) return [[s0, s1]];
-      const off = f === 'lo' ? b0 - 60 : b1 + 60, out = [];
-      let st = null;
-      for (let a = s0; ; a += 20) {
-        const aa = Math.min(a, s1), ok = dir === 'x' ? onFloor(aa, off) : onFloor(off, aa);
-        if (ok && st === null) st = aa;
-        if ((!ok || aa >= s1) && st !== null) { if (aa - st > 30) out.push([st, aa]); st = null; }
-        if (aa >= s1) break;
-      }
-      return out;
-    };
-    for (const s of segs) {
-      for (const f of faces) {
-        const [c0, c1] = f === 'lo' ? [b0 - 12, b0 + 2] : [b1 - 2, b1 + 12];
-        for (const [r0, r1] of runs(s[0], s[1], f)) {
-          if (dir === 'x') pb(bag, mat, r0, r1, c0, c1, h0, h1);
-          else pb(bag, mat, c0, c1, r0, r1, h0, h1);
-        }
-      }
+    for (const w of IW[fi]) for (const o of w.ops) {
+      if ((o.sill || 0) > 0) continue;
+      const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2;
+      rects.push(w.dir === 'x' ? [a0, a1, w.b[0], w.b[1]] : [w.b[0], w.b[1], a0, a1]);
+      lay.push('piece');
     }
-    /* Returns: the board wraps the END of the wall wherever the wall does not run
-       into another wall — beside a doorway, or at a free-standing end — so the
-       end face does not stand bare to the floor beside a skirted face. One 12 mm
-       board across the end, flush with the face boards at both corners.
-       freeEnds = [start, end]: the wall's own ends stop in the room. */
-    const free = freeEnds || [false, false];
-    const wrap = (e, side) => {
-      const ok = faces.some(f => {
-        if (!onFloor) return true;
-        const off = f === 'lo' ? b0 - 60 : b1 + 60;
-        const ee = e + side * 6;     // test where the return board stands, not on the wall end line (a room rect's edge is exclusive)
-        return dir === 'x' ? onFloor(ee, off) : onFloor(off, ee);
-      });
-      if (!ok) return;
-      const l0 = faces.includes('lo') ? b0 - 12 : b0, l1 = faces.includes('hi') ? b1 + 12 : b1;
-      const r0 = side < 0 ? e - 12 : e, r1 = side < 0 ? e : e + 12;
-      if (dir === 'x') pb(bag, mat, r0, r1, l0, l1, h0, h1);
-      else pb(bag, mat, l0, l1, r0, r1, h0, h1);
-    };
-    for (const s of segs) {
-      if (s[0] > a0 + 1 || free[0]) wrap(s[0], -1);
-      if (s[1] < a1 - 1 || free[1]) wrap(s[1], 1);
-    }
+    return { rects, lay };
+  }
+  function skirtProbe(fi, floorRects) {
+    const deck = fi === 0 ? [] : ROOMS[fi].filter(r => r.type === 'out').map(r => [r.x0, r.x1, r.y0, r.y1]);
+    const inAny = (rs, x, y) => rs.some(r => x > r[0] && x < r[1] && y > r[2] && y < r[3]);
+    return (x, y) => inAny(floorRects, x, y) ? 'skirtTile' : inAny(deck, x, y) ? 'balcTile' : null;
   }
 
   /* Backdrop neighbour house: simple plaster mass with parapet, slab bands.
@@ -7553,16 +7589,22 @@ window.HouseScene = (function () {
 
     /* ======== EXTERIOR group ======== */
     const eBag = makeBag(THREE);
+    // flush skirting: what stands in front of a wall base on each storey
+    const skirtAtFi = [0, 1, 2].map(i => skirtProbe(i, floorRectsOf(i).rects));
+    const SK_BOTH = ['lo', 'hi'];
     (function exterior() {
       // Kadapa sock — the lime box stands on stone, not pale plaster.
       pb(eBag, 'charDark', X0 - 45, X1 + 45, Y0n - 45, Y1n + 45, 0, L.f0);
       // Plinth cap as a perimeter band only. It used to be one slab over the
       // whole footprint, 22 mm above the ground-floor finish — every GF room
       // floor rendered as this grey concrete.
-      pb(eBag, 'concrete', X0 - 52, X1 + 52, Y0n - 52, Y0n + 230, L.f0, L.f0 + 0.022);
-      pb(eBag, 'concrete', X0 - 52, X1 + 52, Y1n - 230, Y1n + 52, L.f0, L.f0 + 0.022);
-      pb(eBag, 'concrete', X0 - 52, X0 + 230, Y0n + 230, Y1n - 230, L.f0, L.f0 + 0.022);
-      pb(eBag, 'concrete', X1 - 230, X1 + 52, Y0n + 230, Y1n - 230, L.f0, L.f0 + 0.022);
+      // The inner edge stops 15 mm inside the wall: the room-side wall face carries
+      // the flush skirting band down to the floor, and a cap edge coplanar with it
+      // would z-fight the band for its 22 mm.
+      pb(eBag, 'concrete', X0 - 52, X1 + 52, Y0n - 52, Y0n + 215, L.f0, L.f0 + 0.022);
+      pb(eBag, 'concrete', X0 - 52, X1 + 52, Y1n - 215, Y1n + 52, L.f0, L.f0 + 0.022);
+      pb(eBag, 'concrete', X0 - 52, X0 + 215, Y0n + 230, Y1n - 230, L.f0, L.f0 + 0.022);
+      pb(eBag, 'concrete', X1 - 215, X1 + 52, Y0n + 230, Y1n - 230, L.f0, L.f0 + 0.022);
       // exterior shell walls per floor
       const floors = [
         { fY: L.f0, h1: L.f1, sch: OPEN.f0 },
@@ -7579,10 +7621,11 @@ window.HouseScene = (function () {
         const ff = fl.sch === OPEN.f1;
         const sX1 = ff ? 4805 : X1 - 230, eY0 = ff ? 1411 : Y0n;
         // outside: exterior plaster; inside: the same paint as every room
-        wallRun(eBag, 'eastPlaster', 'y', eY0, Y1n, EB[0], EB[1], fl.fY, fl.h1, fl.fY, Eops, null, { lo: 'white2' });
-        wallRun(eBag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fl.fY, fl.h1, fl.fY, Nops, null, { lo: 'white2' });
-        wallRun(eBag, 'white', 'x', X0 + 230, sX1, SB[0], SB[1], fl.fY, fl.h1, fl.fY, Sops, null, { hi: 'white2' });
-        wallRun(eBag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fl.fY, fl.h1, fl.fY, Wops, null, { hi: 'white2' });
+        const sk = { faces: SK_BOTH, at: skirtAtFi[floors.indexOf(fl)] };
+        wallRun(eBag, 'eastPlaster', 'y', eY0, Y1n, EB[0], EB[1], fl.fY, fl.h1, fl.fY, Eops, null, { lo: 'white2' }, sk);
+        wallRun(eBag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fl.fY, fl.h1, fl.fY, Nops, null, { lo: 'white2' }, sk);
+        wallRun(eBag, 'white', 'x', X0 + 230, sX1, SB[0], SB[1], fl.fY, fl.h1, fl.fY, Sops, null, { hi: 'white2' }, sk);
+        wallRun(eBag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fl.fY, fl.h1, fl.fY, Wops, null, { hi: 'white2' }, sk);
         for (const o of fl.sch.E) glazing(eBag, Object.assign({ face: 'E', band: EB, floorY: fl.fY }, o));
         for (const o of fl.sch.N) glazing(eBag, Object.assign({ face: 'N', band: NB, floorY: fl.fY }, o));
         for (const o of fl.sch.S) glazing(eBag, Object.assign({ face: 'S', band: SB, floorY: fl.fY }, o));
@@ -8480,22 +8523,9 @@ window.HouseScene = (function () {
       // opening added to IW is picked up here, and skirting only runs
       // where this floor exists.
       const FZ0 = fY, FZ1 = fY + 0.014;   // above the deck tile (+0.012), under the rugs (+0.016)
-      const floorRects = [], floorLay = [];
-      for (const r of ROOMS[fi]) {
-        if (r.type === 'out' || r.name === 'LIFT' || r.name === 'PORTICO' || r.name.includes('TERRACE') || r.name.includes('BALCONY')) continue;
-        // SF only: the stairwell is a void from x 230 to 4630 (the FF->SF
-        // flight rises through it); just the walkway strip is floor.
-        floorRects.push([fi === 2 && r.name === 'STAIRCASE' ? 4630 : r.x0, r.x1, r.y0, r.y1]);
-        floorLay.push('room');
-      }
-      for (const w of IW[fi]) for (const o of w.ops) {
-        if ((o.sill || 0) > 0) continue;
-        const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2;
-        floorRects.push(w.dir === 'x' ? [a0, a1, w.b[0], w.b[1]] : [w.b[0], w.b[1], a0, a1]);
-        floorLay.push('piece');
-      }
+      const { rects: floorRects, lay: floorLay } = floorRectsOf(fi);
       floorRects.forEach((r, i) => bag.plate(FLOOR_TILE, r[0], r[1], r[2], r[3], FZ0, FZ1, fi ? { mat: 'white2', down: L.slabT, out: 2 } : null, floorLay[i]));
-      const onFloor = (x, y) => floorRects.some(r => x > r[0] && x < r[1] && y > r[2] && y < r[3]);
+      const skirtAt = skirtAtFi[fi];
 
       // exterior walls (cut) — door openings become gaps; windows leave sill stubs
       const dollOps = sch => sch.map(o => ({ c: o.c, w: o.w, sill: o.sill, h: o.h }));
@@ -8514,28 +8544,12 @@ window.HouseScene = (function () {
       // cut view, so it skips them (window.__HOUSE_WALK) — two coincident
       // copies of one wall is where floor-line hairlines come from.
       if (!(typeof window !== 'undefined' && window.__HOUSE_WALK)) {
-        wallRun(bag, 'eastPlaster', 'y', eY0d, Y1n, EB[0], EB[1], fY, cut, fY, Eo, 'copingLight', { lo: 'white2' });
-        wallRun(bag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, cut, fY, No, 'copingLight', { lo: 'white2' });
-        wallRun(bag, 'white', 'x', X0 + 230, sX1d, SB[0], SB[1], fY, cut, fY, So, 'copingLight', { hi: 'white2' });
-        wallRun(bag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fY, cut, fY, Wo, 'copingLight', { hi: 'white2' });
+        wallRun(bag, 'eastPlaster', 'y', eY0d, Y1n, EB[0], EB[1], fY, cut, fY, Eo, 'copingLight', { lo: 'white2' }, { faces: ['lo', 'hi'], at: skirtAt });
+        wallRun(bag, 'white', 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, cut, fY, No, 'copingLight', { lo: 'white2' }, { faces: ['lo', 'hi'], at: skirtAt });
+        wallRun(bag, 'white', 'x', X0 + 230, sX1d, SB[0], SB[1], fY, cut, fY, So, 'copingLight', { hi: 'white2' }, { faces: ['lo', 'hi'], at: skirtAt });
+        wallRun(bag, 'white', 'y', Y0n, Y1n, WB[0], WB[1], fY, cut, fY, Wo, 'copingLight', { hi: 'white2' }, { faces: ['lo', 'hi'], at: skirtAt });
       }
-      // skirting boards on the room-side faces of the shell walls
-      skirtRun(bag, 'y', eY0d, Y1n, EB[0], EB[1], fY, Eo, ['lo'], onFloor);
-      // SF: no floor over the double-height void (x 6020..9260), so no
-      // skirting there — it hung in mid-air across the media wall.
-      skirtRun(bag, 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, No, ['lo'], onFloor);
-      skirtRun(bag, 'x', X0 + 230, sX1d, SB[0], SB[1], fY, So, ['hi'], onFloor);
-      skirtRun(bag, 'y', Y0n, Y1n, WB[0], WB[1], fY, Wo, ['hi'], onFloor);
-      // balconies / decks: the same skirting in the deck's own tile wherever a
-      // wall stands on a deck (outside faces of the shell, balcony-side faces
-      // of the service-band walls)
-      const deckRects = fi === 0 ? [] : ROOMS[fi].filter(r => r.type === 'out').map(r => [r.x0, r.x1, r.y0, r.y1]);
-      const onDeck = (x, y) => deckRects.some(r => x > r[0] && x < r[1] && y > r[2] && y < r[3]);
-      if (deckRects.length) {
-        skirtRun(bag, 'y', eY0d, Y1n, EB[0], EB[1], fY, Eo, ['hi'], onDeck, 'balcTile');
-        skirtRun(bag, 'x', X0 + 230, X1 - 230, NB[0], NB[1], fY, No, ['hi'], onDeck, 'balcTile');
-        skirtRun(bag, 'x', X0 + 230, sX1d, SB[0], SB[1], fY, So, ['lo'], onDeck, 'balcTile');
-      }
+
 
       // Render any custom grills or railings in the dollhouse floor group
       for (const face of ['E', 'N', 'S', 'W']) {
@@ -8585,18 +8599,14 @@ window.HouseScene = (function () {
         const drawnBelow = WALK && fi > 0 && IW[fi - 1].some(sameWall);
         if (!drawnBelow) {
           wallRun(bag, w.mat || 'white2', w.dir, ja0, ja1, w.b[0], w.b[1], fY,
-                  fi < 2 ? cut + L.slabT : cut, fY, ops, 'copingLight', w.faces);
+                  fi < 2 ? cut + L.slabT : cut, fY, ops, 'copingLight', w.faces, { faces: SK_BOTH, at: skirtAt });
           const up = WALK && fi < 2 ? IW[fi + 1].find(sameWall) : null;
           if (up) {
             const uY = FLOOR_DEFS[fi + 1].fY, uCut = uY + L.f2f - L.slabT;
             wallRun(bag, w.mat || 'white2', w.dir, ja0, ja1, w.b[0], w.b[1], uY,
-                    fi + 1 < 2 ? uCut + L.slabT : uCut, uY, opsOf(up), 'copingLight', w.faces);
+                    fi + 1 < 2 ? uCut + L.slabT : uCut, uY, opsOf(up), 'copingLight', w.faces, { faces: SK_BOTH, at: skirtAtFi[fi + 1] });
           }
         }
-        // a wall end that stops in the room (not in another wall) gets its skirting wrapped round it
-        const freeE = [joinEnd(w, w.a[0]) === w.a[0], joinEnd(w, w.a[1]) === w.a[1]];
-        skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onFloor, undefined, freeE);
-        if (deckRects.length) skirtRun(bag, w.dir, w.a[0], w.a[1], w.b[0], w.b[1], fY, ops, ['lo', 'hi'], onDeck, 'balcTile', freeE);
         // walnut casing on every room opening — not windows/hatches (sill),
         // shell walls (mat), or openings with joinery of their own (noFrame)
         if (!w.mat) for (const o of w.ops) {
@@ -9618,17 +9628,18 @@ window.HouseScene = (function () {
         stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, FLOOR_TILE);
         westSuite(bag, fY);
         /* SF west bedroom only: limewash on the four room-side wall faces and the ceiling (the
-           FF master keeps its white). A 3 mm skin on the faces — skirting stands
-           12 mm proud and covers its foot — with the windows' and doors' holes,
+           FF master keeps its white). A 3 mm skin on the faces, starting above the flush
+           skirting's shadow gap (fY + 80 mm) so the skirting and its reveal stay
+           clean — with the windows' and doors' holes,
            and the window reveals lined so they are not left white. */
         {
-          const T = 3, top = fY + 3.203;
+          const T = 3, top = fY + 3.203, lw0 = fY + SKIRT_H + SKIRT_GAP_H;
           const win = o => ({ c: o.c, w: o.w, sill: o.sill, h: o.h });
           const wW = fd.sch.W.filter(o => o.c < 4432).map(win), wS = fd.sch.S.filter(o => o.c < 4805).map(win);
-          wallRun(bag, 'limeWash', 'y', 230, 4432, 230, 230 + T, fY, top, fY, wW);                               // west
-          wallRun(bag, 'limeWash', 'y', 230, 4432, 4805 - T, 4805, fY, top, fY, [{ c: 3850, w: 1000, sill: 0, h: 2100 }]); // east (door)
-          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 230, 230 + T, fY, top, fY, wS);                       // south
-          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 4432 - T, 4432, fY, top, fY, [{ c: 3700, w: 800, sill: 0, h: 2100 }]); // north (walk-in door)
+          wallRun(bag, 'limeWash', 'y', 230, 4432, 230, 230 + T, lw0, top, fY, wW);                               // west
+          wallRun(bag, 'limeWash', 'y', 230, 4432, 4805 - T, 4805, lw0, top, fY, [{ c: 3850, w: 1000, sill: 0, h: 2100 }]); // east (door)
+          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 230, 230 + T, lw0, top, fY, wS);                       // south
+          wallRun(bag, 'limeWash', 'x', 230 + T, 4805 - T, 4432 - T, 4432, lw0, top, fY, [{ c: 3700, w: 800, sill: 0, h: 2100 }]); // north (walk-in door)
           const liner = (dir, o) => {          // reveal liner, room face back to the frame (74 mm)
             const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2, z0 = fY + o.sill / 1000, z1 = z0 + o.h / 1000;
             const p = (a, b, z, zz) => dir === 'y' ? pb(bag, 'limeWash', 156, 230, a, b, z, zz) : pb(bag, 'limeWash', a, b, 156, 230, z, zz);
