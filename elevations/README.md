@@ -3,14 +3,29 @@
 Exterior-only variants of the Chandrasekhar Residence (G+2, Anantapur).
 **No interiors** — partitions, furniture, and dollhouse floors removed.
 
-Nav is two active versions: **V41 · V43**. V49 / V50 / V51 (SF pulled in, NE room) were deleted; they remain in git history before the commit that removed them.
+Nav is three active versions: **V52 · V41 · V43**. V49 / V50 / V51 (SF pulled in, NE room) were deleted; they remain in git history before the commit that removed them.
 
 | Code | Name | Folder | Key Facade Concept |
 |------|------|--------|---------------------|
+| **V52** | **Teak & Charcoal** | `version-fifty-two/` | V41's structure refined on a budget: three materials only (white plaster, charcoal paint, teak finish) |
 | **V43** | **Continuous Rods** | `version-forty-three/` | Continuous unbroken vertical rods (~4.87 m) from ground ceiling beam soffit to second-floor balustrade + recessed floor slabs |
 | **V41** | **Clover Jali** | `version-forty-one/` | Bespoke 4-leaf clover heart breeze block screen on East facade + South solid wall with 3 slit windows |
 
 Each version has one viewer — the photoreal pipeline.
+
+## Version Fifty-Two
+
+Copied from V41 with the massing untouched; every change is a cheap finish or a small RCC/plaster element a local contractor already builds. The facade is held to three materials: white plaster, one charcoal paint, one teak finish (matching the door leaves).
+
+| # | Move | Replaces |
+|---|---|---|
+| 1 | Teak-finish aluminium louvres in the SE box | Graphite rods |
+| 2 | 100 mm charcoal box frame, 200 mm deep, round every N/S/W/E window and the stair ribbon. The three south slits share one box | Loose grey chajja slabs and stone sill ledges |
+| 3 | Teak-finish WPC soffit under the east decks and portico | Grey soffit |
+| 4 | One white 60 mm band per slab on N/S | Grey + metal double ribbon |
+| 5 | Charcoal planter trough with shrubs behind the FF and SF east rails | Bare railings |
+| 6 | Tanks lowered to 300 mm stands inside a charcoal batten screen | Tanks on 900 mm stands in the skyline |
+| 7 | Charcoal plinth | Grey concrete sock |
 
 ## Version Forty-Three
 

@@ -263,6 +263,7 @@
    at the end of <body> has run. */
 window.DESIGNS = {
   full: { dir: null,                   code: 'FULL', title: 'FULL HOUSE',       sub: 'With Interiors · V43 Rods', interiors: true  },
+  v52:  { dir: 'version-fifty-two',    code: 'V52',  title: 'TEAK & CHARCOAL',  sub: 'Teak Louvres · Charcoal Window Boxes', interiors: false },
   v43:  { dir: 'version-forty-three',  code: 'V43',  title: 'CONTINUOUS RODS',  sub: 'Unbroken Rods · Recessed Slabs', interiors: false },
   v41:  { dir: 'version-forty-one',    code: 'V41',  title: 'GRAPHITE ROD BOX', sub: 'Splayed Frame · Satin Warm Graphite Rods', interiors: false }
 };
@@ -1311,6 +1312,11 @@ window.DESIGNS = {
          the palette has it. */
       case 'fin':
         return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
+      // V52 elevation: charcoal emulsion on plaster + teak-finish louvres/soffits
+      case 'charPaint':
+        return { tex: 'plaster', tile: 2.2, rough: 0.90, metal: 0, env: 0.40, grime: 0.4 };
+      case 'teak':
+        return { tex: 'wood', tile: 0.9, rough: 0.55, metal: 0, env: 0.6, reflect: 0.15 };
       case 'fin2':
         if (window.DESIGN === 'v41') {
           return { rough: 0.62, metal: 0.08, env: 0.55, reflect: 0.10 };
@@ -1393,6 +1399,8 @@ window.DESIGNS = {
     white2:     0xfbfaf9,
     fin:        0xf1f0ee,
     fin2:       (C && C.fin2 && C.fin2 !== 0xded2b8) ? C.fin2 : 0xf7f6f5,
+    charPaint:  0x3a3c3e,
+    teak:       0x75502f,
     // East face: a light NEUTRAL grey, half a step off the body, so the
     // sand-float has something to sit on and the plane reads as its own.
     eastPlaster:0xd9dad9,
