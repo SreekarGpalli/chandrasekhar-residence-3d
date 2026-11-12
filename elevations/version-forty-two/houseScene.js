@@ -45,6 +45,7 @@ window.HouseScene = (function () {
     charDark:0x8f8e8b,  // SOFT — slightly deeper cool gray, fascias / soffits
     plinth:  0xb7ae9d,  // SOFT — plinth course
     frame:   0x585349,  // PUNCT — soft charcoal openings
+    upvcWhite: 0xf2f1ee, // V42: white UPVC window frames (GF windows)
     glass:   0x8ea3af,  // light blue-grey glazing
     walnut:  0x9c7748,  // warm timber doors
     ms:      0x8a8986,  // railing bars — cool grey line
@@ -637,19 +638,20 @@ window.HouseScene = (function () {
       // out of the middle of the wall). spec.flush === false keeps the old
       // centred position. No projecting sill ledge on a flush window.
       const flushW = spec.flush !== false;
+      const fm = spec.frameMat || 'frame';   // V42: GF windows take white UPVC
       const wO = outSign > 0 ? bb1 : bb0, wI = -outSign;
       const D = (d0, d1) => { const p = wO + wI * d0, q = wO + wI * d1; return [Math.min(p, q), Math.max(p, q)]; };
       const [wf0, wf1] = flushW ? D(0, 90) : [fd0, fd1];
       const [wg0, wg1] = flushW ? D(26, 42) : [gd0, gd1];
-      put('frame', a0, a0 + F, wf0, wf1, b, t);
-      put('frame', a1 - F, a1, wf0, wf1, b, t);
-      put('frame', a0, a1, wf0, wf1, t - F / 1000, t);
-      put('frame', a0, a1, wf0, wf1, b, b + F / 1000);
+      put(fm, a0, a0 + F, wf0, wf1, b, t);
+      put(fm, a1 - F, a1, wf0, wf1, b, t);
+      put(fm, a0, a1, wf0, wf1, t - F / 1000, t);
+      put(fm, a0, a1, wf0, wf1, b, b + F / 1000);
       const panes = spec.panes != null ? spec.panes : (spec.w >= 1050 ? 2 : 1);
-      if (panes === 2) put('frame', spec.c - 22, spec.c + 22, wf0 + 4, wf1 - 4, b + F / 1000, t - F / 1000);
+      if (panes === 2) put(fm, spec.c - 22, spec.c + 22, wf0 + 4, wf1 - 4, b + F / 1000, t - F / 1000);
       if (panes === 3) {
-        put('frame', a0 + (a1 - a0) / 3 - 20, a0 + (a1 - a0) / 3 + 20, wf0 + 4, wf1 - 4, b + 0.06, t - 0.06);
-        put('frame', a1 - (a1 - a0) / 3 - 20, a1 - (a1 - a0) / 3 + 20, wf0 + 4, wf1 - 4, b + 0.06, t - 0.06);
+        put(fm, a0 + (a1 - a0) / 3 - 20, a0 + (a1 - a0) / 3 + 20, wf0 + 4, wf1 - 4, b + 0.06, t - 0.06);
+        put(fm, a1 - (a1 - a0) / 3 - 20, a1 - (a1 - a0) / 3 + 20, wf0 + 4, wf1 - 4, b + 0.06, t - 0.06);
       }
       put('glass', a0 + 30, a1 - 30, wg0, wg1, b + 0.03, t - 0.03);
       if (!flushW && (spec.sill || 0) > 250 && spec.type !== 'fixed') { // sill ledge + warm nose
@@ -1300,26 +1302,26 @@ window.HouseScene = (function () {
     // floor 0
     f0: {
       E: [
-        { c: 2700, w: 1200, sill: 1100, h: 900, type: 'win' },                    // kitchen sink (south)
-        { c: 6150, w: 1500, sill: 900, h: 1500, type: 'win', panes: 2 }, // office window (slightly left of door)
+        { c: 2700, w: 1200, sill: 1100, h: 900, type: 'win', frameMat: 'upvcWhite' },                    // kitchen sink (south)
+        { c: 6150, w: 1500, sill: 900, h: 1500, type: 'win', frameMat: 'upvcWhite', panes: 2 }, // office window (slightly left of door)
         { c: 8000, w: 1200, sill: 0, h: 2400, type: 'door' }                   // office door (near north)
       ],
       N: [
-        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win' },                    // bed02
-        { c: 6800, w: 1800, sill: 900, h: 1400, type: 'win' },                   // hall
+        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win', frameMat: 'upvcWhite' },                    // bed02
+        { c: 6800, w: 1800, sill: 900, h: 1400, type: 'win', frameMat: 'upvcWhite' },                   // hall
         { c: 8650, w: 1200, sill: 0, h: 2400, type: 'door' },                    // main door
-        { c: 11000, w: 1500, sill: 900, h: 1400, type: 'win' }                    // office
+        { c: 11000, w: 1500, sill: 900, h: 1400, type: 'win', frameMat: 'upvcWhite' }                    // office
       ],
       S: [
-        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win', chajja: true },
-        { c: 5800, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
-        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'win', panes: 2, chajja: true }, // V42: normal window (was the utility security grill)
-        { c: 11000, w: 1200, sill: 1100, h: 900, type: 'win', chajja: true }
+        { c: 4300, w: 900, sill: 900, h: 1400, type: 'win', frameMat: 'upvcWhite', chajja: true },
+        { c: 5800, w: 600, sill: 1700, h: 600, type: 'win', frameMat: 'upvcWhite', chajja: true },
+        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'win', frameMat: 'upvcWhite', panes: 2, chajja: true }, // V42: normal window (was the utility security grill)
+        { c: 11000, w: 1200, sill: 1100, h: 900, type: 'win', frameMat: 'upvcWhite', chajja: true }
       ],
       W: [
-        { c: 3200, w: 1200, sill: 1100, h: 1200, type: 'win', chajja: true },
-        { c: 5000, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
-        { c: 7200, w: 1200, sill: 1100, h: 1200, type: 'win', chajja: true }
+        { c: 3200, w: 1200, sill: 1100, h: 1200, type: 'win', frameMat: 'upvcWhite', chajja: true },
+        { c: 5000, w: 600, sill: 1700, h: 600, type: 'win', frameMat: 'upvcWhite', chajja: true },
+        { c: 7200, w: 1200, sill: 1100, h: 1200, type: 'win', frameMat: 'upvcWhite', chajja: true }
       ]
     },
     f1: {

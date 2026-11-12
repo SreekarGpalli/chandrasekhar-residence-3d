@@ -146,7 +146,7 @@
     return;
   }
 
-  var STAMP = 'V42_SLEEK_20261112_m';
+  var STAMP = 'V42_SLEEK_20261112_n';
 
   function say(msg) {
     var ls = document.querySelector('#loading .ls');
@@ -926,6 +926,7 @@ function boot() {
       case 'ms':         return { tex: 'metal', tile: 0.8, rough: 0.42, metal: 0.30, env: 1.0, reflect: 0.35 };
       case 'msWhite':    return { tex: 'metal', tile: 0.8, rough: 0.55, metal: 0.10, env: 0.7, reflect: 0.15 };   // V42 painted grille
       case 'frame':      return { tex: 'metal', tile: 0.6, rough: 0.36, metal: 0.65, env: 1.05, reflect: 0.5 };
+      case 'upvcWhite':  return { tex: 'metal', tile: 0.6, rough: 0.38, metal: 0.0, env: 0.6, reflect: 0.12 };   // V42 white UPVC frames
       /* Balustrades and the gate. The palette calls these stainless and at
          metalness 1.0 with a light base they behave like one: a mirror pointed
          at a bright sky, which renders as a pale washed-out line exactly where
@@ -1023,6 +1024,7 @@ function boot() {
     ms:         0x3c4043,
     msWhite:    0xeeebe5,   // MS grille painted the house off-white (V42 FF south)
     frame:      0x26292c,
+    upvcWhite:  0xf2f1ee,   // V42 white UPVC window frames (GF)
     steel:      0x44484c,
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
