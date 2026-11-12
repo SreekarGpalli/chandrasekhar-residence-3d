@@ -3,11 +3,12 @@
 Exterior-only variants of the Chandrasekhar Residence (G+2, Anantapur).
 **No interiors** — partitions, furniture, and dollhouse floors removed.
 
-Nav is two active versions: **V41 · V43**. V49 / V50 / V51 (SF pulled in, NE room) were deleted; they remain in git history before the commit that removed them.
+Nav is three active versions: **V42 · V41 · V43**. V52 (Teak & Charcoal) was deleted 2026-11-12. V49 / V50 / V51 (SF pulled in, NE room) were deleted; they remain in git history before the commit that removed them.
 
 | Code | Name | Folder | Key Facade Concept |
 |------|------|--------|---------------------|
 | **V43** | **Continuous Rods** | `version-forty-three/` | Continuous unbroken vertical rods (~4.87 m) from ground ceiling beam soffit to second-floor balustrade + recessed floor slabs |
+| **V42** | **Sleek Corners** | `version-forty-two/` | V41 copy: continuous SF south parapet, pillar-free MS rail corners at SW (FF + SF) and NE (FF + SF) |
 | **V41** | **Clover Jali** | `version-forty-one/` | Bespoke 4-leaf clover heart breeze block screen on East facade + South solid wall with 3 slit windows |
 
 Each version has one viewer — the photoreal pipeline.
@@ -15,6 +16,10 @@ Each version has one viewer — the photoreal pipeline.
 ## Version Forty-Three
 
 The vertical rods on the East facade are extended down past the first-floor slab drop all the way to the ground-floor ceiling beam soffit (`L.f1 - 0.45 = 3.653 m`), running continuously up to the second-floor balustrade cap (`8.543 m`) as a single unbroken vertical field (~4.87 m height). Both the first-floor and second-floor slab edges and drop beams are recessed neatly behind the rods, allowing the rod screen to float cleanly with full shadow depth. On the South facade, the solid white plaster wall with 3 vertical slit windows extends continuously from the lower beam soffit to the second-floor railing line. The terrace mumty features the laminated architectural safety glass skylight roof.
+
+## Version Forty-Two
+
+Copy of V41 with three guard changes. (1) Second floor south: the short MS rail piece beside the pergola (x 12650..14270) and the pillars at x 4805 / 12650 are gone — one continuous plaster parapet runs from x 4805 to the L-box. (2) First floor SW balcony: the plaster pillar at the corner is removed and the south and west MS runs meet in one clean L (`railing(..., { corner0, noPost0 })` — each bar stops on the other run's outer face). The same pillar-free MS corner replaces the second floor's SW bedroom parapet (x 80..4805 + west return). (3) NE corner on both floors: the corner pillar is removed and the east and north MS runs close into one L the same way.
 
 ## Version Forty-One
 
