@@ -632,18 +632,27 @@ window.HouseScene = (function () {
         drawPanel(a0 + 3 * pW - 20, a1 - 15, mid - 20, false);
       }
     } else { // window / glassdoor / fixed
-      put('frame', a0, a0 + F, fd0, fd1, b, t);
-      put('frame', a1 - F, a1, fd0, fd1, b, t);
-      put('frame', a0, a1, fd0, fd1, t - F / 1000, t);
-      put('frame', a0, a1, fd0, fd1, b, b + F / 1000);
+      // V42: windows sit FLUSH — the frame's outer face is the wall's outer
+      // plane, glass 26-42 mm behind it (same section as before, just moved
+      // out of the middle of the wall). spec.flush === false keeps the old
+      // centred position. No projecting sill ledge on a flush window.
+      const flushW = spec.flush !== false;
+      const wO = outSign > 0 ? bb1 : bb0, wI = -outSign;
+      const D = (d0, d1) => { const p = wO + wI * d0, q = wO + wI * d1; return [Math.min(p, q), Math.max(p, q)]; };
+      const [wf0, wf1] = flushW ? D(0, 90) : [fd0, fd1];
+      const [wg0, wg1] = flushW ? D(26, 42) : [gd0, gd1];
+      put('frame', a0, a0 + F, wf0, wf1, b, t);
+      put('frame', a1 - F, a1, wf0, wf1, b, t);
+      put('frame', a0, a1, wf0, wf1, t - F / 1000, t);
+      put('frame', a0, a1, wf0, wf1, b, b + F / 1000);
       const panes = spec.panes != null ? spec.panes : (spec.w >= 1050 ? 2 : 1);
-      if (panes === 2) put('frame', spec.c - 22, spec.c + 22, fd0 + 4, fd1 - 4, b + F / 1000, t - F / 1000);
+      if (panes === 2) put('frame', spec.c - 22, spec.c + 22, wf0 + 4, wf1 - 4, b + F / 1000, t - F / 1000);
       if (panes === 3) {
-        put('frame', a0 + (a1 - a0) / 3 - 20, a0 + (a1 - a0) / 3 + 20, fd0 + 4, fd1 - 4, b + 0.06, t - 0.06);
-        put('frame', a1 - (a1 - a0) / 3 - 20, a1 - (a1 - a0) / 3 + 20, fd0 + 4, fd1 - 4, b + 0.06, t - 0.06);
+        put('frame', a0 + (a1 - a0) / 3 - 20, a0 + (a1 - a0) / 3 + 20, wf0 + 4, wf1 - 4, b + 0.06, t - 0.06);
+        put('frame', a1 - (a1 - a0) / 3 - 20, a1 - (a1 - a0) / 3 + 20, wf0 + 4, wf1 - 4, b + 0.06, t - 0.06);
       }
-      put('glass', a0 + 30, a1 - 30, gd0, gd1, b + 0.03, t - 0.03);
-      if ((spec.sill || 0) > 250 && spec.type !== 'fixed') { // sill ledge + warm nose
+      put('glass', a0 + 30, a1 - 30, wg0, wg1, b + 0.03, t - 0.03);
+      if (!flushW && (spec.sill || 0) > 250 && spec.type !== 'fixed') { // sill ledge + warm nose
         const sb = outSign > 0 ? [bb1, bb1 + 55] : [bb0 - 55, bb0];
         put('charDark', a0 - 30, a1 + 30, sb[0], sb[1], b - 0.045, b);
         put('copingLight', a0 - 20, a1 + 20, sb[0], sb[1], b - 0.01, b + 0.008);
@@ -3101,8 +3110,8 @@ window.HouseScene = (function () {
 
         // Frame and glazing for each of the three vertical windows
         const WIN_J = 40; // 40 mm frame profile
-        const yFf = yFace - 18, yFb = yFace + 42;
-        const zHf0 = zWs - 0.040, zHf1 = zWh + 0.040;
+        const yFf = yFace, yFb = yFace + 60;          // V42: frame flush with the wall face
+        const zHf0 = zWs, zHf1 = zWh;                 // V42: frame stays inside the opening (flush face)
 
         for (let i = 0; i < wins.length; i++) {
           const w = wins[i];
@@ -3110,12 +3119,11 @@ window.HouseScene = (function () {
           // Perimeter frame (left jamb, right jamb, sill, head)
           pb(eBag, 'frame', xf0, xf0 + WIN_J, yFf, yFb, zHf0, zHf1);
           pb(eBag, 'frame', xf1 - WIN_J, xf1, yFf, yFb, zHf0, zHf1);
-          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zHf0, zWs);
-          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zWh, zHf1);
+          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zWs, zWs + WIN_J / 1000);
+          pb(eBag, 'frame', xf0, xf1, yFf, yFb, zWh - WIN_J / 1000, zWh);
           // Glazing
-          pb(eBag, 'glass', xf0 + WIN_J, xf1 - WIN_J, yFace - 6, yFace + 24, zWs, zWh);
-          // Projecting stone sill ledge
-          pb(eBag, 'stone', xf0 - 8, xf1 + 8, yFace - 30, yFace + 52, zHf0 - 0.028, zHf0);
+          pb(eBag, 'glass', xf0 + WIN_J, xf1 - WIN_J, yFace + 26, yFace + 42, zWs + WIN_J / 1000, zWh - WIN_J / 1000);
+          // V42: no projecting sill ledge — the window is flush
         }
 
         // --- east splays. Outer surface lies exactly on the splay plane; PT
