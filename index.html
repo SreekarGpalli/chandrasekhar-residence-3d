@@ -398,7 +398,7 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261112_v42_nozfight'
+  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261112_v42_whitegrill'
                   : 'houseScene.js?v=20261107_walkin_sf';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
@@ -1280,6 +1280,7 @@ window.DESIGNS = {
       case 'walnut': case 'woodF': case 'woodD': case 'skirt':
         return { tex: 'wood', tile: 1.0, rough: 0.46, metal: 0, env: 0.62, reflect: 0.22 };
       case 'ms':         return { tex: 'metal', tile: 0.8, rough: 0.42, metal: 0.30, env: 1.0, reflect: 0.35 };
+      case 'msWhite':    return { tex: 'metal', tile: 0.8, rough: 0.55, metal: 0.10, env: 0.7, reflect: 0.15 };   // V42 painted grille
       case 'frame':      return { tex: 'metal', tile: 0.6, rough: 0.36, metal: 0.65, env: 1.05, reflect: 0.5 };
       /* Balustrades and the gate. The palette calls these stainless and at
          metalness 1.0 with a light base they behave like one: a mirror pointed
@@ -1422,6 +1423,7 @@ window.DESIGNS = {
     brass:      0x8d9295,
     accentWarm: 0x93989b,
     ms:         0x212224,   // Black Mild Steel (MS) railings & security grilles
+    msWhite:    0xeeebe5,   // MS grille painted the house off-white (V42 FF south)
     frame:      0x3f2616,   // Golden Oak / Teak Wood-Laminate UPVC window frames
     steel:      0x44484c,
     chrome:     0x9aa1a7,

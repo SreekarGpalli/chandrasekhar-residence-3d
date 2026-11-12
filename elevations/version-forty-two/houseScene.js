@@ -48,6 +48,7 @@ window.HouseScene = (function () {
     glass:   0x8ea3af,  // light blue-grey glazing
     walnut:  0x9c7748,  // warm timber doors
     ms:      0x8a8986,  // railing bars — cool grey line
+    msWhite: 0xeeebe5,  // V42: MS grille painted the house off-white
     brass:   0xc0a06a,  // LINE
     steel:   0xd2d6da,  // brushed stainless
     paver:   0x878178,  // driveway — V6
@@ -236,6 +237,7 @@ window.HouseScene = (function () {
     M.charcoal.roughness = 0.93; M.charDark.roughness = 0.86; M.charDark.metalness = 0.0;
     M.plinth.roughness = 0.82; M.concrete.roughness = 0.92;
     M.ms.roughness = 0.45; M.ms.metalness = 0.45;
+    if (M.msWhite) { M.msWhite.roughness = 0.55; M.msWhite.metalness = 0.1; }
     M.steel.roughness = 0.3; M.steel.metalness = 0.8;
     M.brass.roughness = 0.34; M.brass.metalness = 0.72;
     M.frame.roughness = 0.5; M.frame.metalness = 0.35;
@@ -560,15 +562,16 @@ window.HouseScene = (function () {
         put('steel', hx0, hx1, fD0 - 45, fD0, b + 1.16, b + 1.20);
       } else {
         // Top rail (mild steel)
-        put('ms', a0, a1, mid - 15, mid + 15, t - 0.045, t);
+        const gm = spec.grillMat || 'ms';   // V42: per-opening paint (FF south grilles off-white)
+        put(gm, a0, a1, mid - 15, mid + 15, t - 0.045, t);
         // Bottom rail (mild steel)
-        put('ms', a0, a1, mid - 15, mid + 15, b, b + 0.045);
+        put(gm, a0, a1, mid - 15, mid + 15, b, b + 0.045);
         // Vertical bars (mild steel)
         const len = a1 - a0;
         const n = Math.max(2, Math.round(len / 120));
         for (let i = 0; i <= n; i++) {
           const a = a0 + (len * i) / n;
-          put('ms', a - 10, a + 10, mid - 10, mid + 10, b + 0.045, t - 0.045);
+          put(gm, a - 10, a + 10, mid - 10, mid + 10, b + 0.045, t - 0.045);
         }
       }
     } else if (spec.type === 'slider') { // Sliding glass door system
@@ -2673,9 +2676,9 @@ window.HouseScene = (function () {
       glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
       wallRun(eBag, 'white', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,
               [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11910, w: 3840, sill: 900, h: 1400 }]);
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
       // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // Terrace edge: NO solid parapet wall — open metal railings like FF/SF balconies.
       // Thin slab fascia (same language as outdoor decks) + railing @ L.roof.
