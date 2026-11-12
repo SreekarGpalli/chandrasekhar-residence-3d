@@ -398,7 +398,7 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261112_v42_pergclear'
+  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261112_v42_nozfight'
                   : 'houseScene.js?v=20261107_walkin_sf';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
@@ -1800,6 +1800,7 @@ window.DESIGNS = {
      arbitrary answer from every camera angle on every device, and that is the
      entire problem being solved here. A stable wrong answer is invisible; an
      unstable right one flickers. */
+  const ELEV_ONLY = !!(window.DESIGNS && window.DESIGNS[window.DESIGN] && !window.DESIGNS[window.DESIGN].interiors);
   function depthOffset(key) {
     const layer = DEPTH_LAYER[key] || 0;
     let h = 0;
@@ -1903,7 +1904,17 @@ window.DESIGNS = {
         if (t.grime) addGrime(m, t.grime);
         if (key) {
           m.polygonOffset = true;
-          m.polygonOffsetFactor = m.polygonOffsetUnits = depthOffset(key);
+          /* Exterior-only designs: UNITS only. A polygon-offset FACTOR is
+             multiplied by the surface's depth slope, which explodes on a floor
+             seen nearly edge-on — from the street the terrace tile (factor
+             -1.4) was pulled forward through the 150 mm flush parapet and drew
+             a dashed dark line along it (V42 east lip). Units are a constant
+             few depth steps: still enough to order truly coincident planes,
+             never enough to cross a wall. The full house keeps the factor its
+             interiors were tuned with. */
+          const off = depthOffset(key);
+          if (ELEV_ONLY) { m.polygonOffsetFactor = 0; m.polygonOffsetUnits = off * 4; }
+          else m.polygonOffsetFactor = m.polygonOffsetUnits = off;
         }
         // Indoor surfaces reflect the room, not the sky (see buildInteriorEnv)
         if (t.interior) {

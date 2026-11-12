@@ -2435,7 +2435,9 @@ window.HouseScene = (function () {
       if (botH === undefined || botH === null) botH = 0;
       // Entrances are bright stainless portals so they read clearly on every landing.
       pb(bag, 'white', liftOX[0], liftOX[1], liftOY[0], liftOY[0] + 230, botH, topH); // south
-      pb(bag, 'eastPlaster', 14040, 14270, 230, liftOY[1], botH, topH);               // east
+      // V42: stops under the flush terrace parapet (bottom L.roof - 0.45) — its
+      // face is only 10 mm behind the parapet's and would depth-fight through it.
+      pb(bag, 'eastPlaster', 14040, 14270, 230, liftOY[1], botH, Math.min(topH, L.roof - 0.45)); // east
 
       const nY0 = 1805, nY1 = 2035;                 // north wall thickness band
       const midX = 13345;
@@ -2717,16 +2719,19 @@ window.HouseScene = (function () {
          is decided by draw order, which flips as the camera orbits — the deck
          swapped between limestone and white plaster mid-turn. Matches the fix in
          the root houseScene.js; see the longer note there. */
-      pb(eBag, 'terraceF', 150, SHELTER_X, 150, 230, L.roof - 0.055, L.roof + 0.005);
+      // V42: every terrace tile stops on the flush parapet's INNER face (east
+      // 14130). Ending 10 mm behind the outer face (old SHELTER_X) let the dark
+      // tile depth-fight through the white parapet at distance — a dashed line.
+      pb(eBag, 'terraceF', 150, SHELTER_X - 140, 150, 230, L.roof - 0.055, L.roof + 0.005);
       pb(eBag, 'terraceF', 150, 12650, 230, 1805, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 14040, SHELTER_X, 230, 1805, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 150, SHELTER_X, 1805, EAST_RAFTER_YE, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 150, SHELTER_X, EAST_RAFTER_YE, 6496, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 14040, SHELTER_X - 140, 230, 1805, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, SHELTER_X - 140, 1805, EAST_RAFTER_YE, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, SHELTER_X - 140, EAST_RAFTER_YE, 6496, L.roof - 0.055, L.roof + 0.005);
       pb(eBag, 'terraceF', 150, 230, 6496, 8641, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 5600, SHELTER_X, 6496, 8641, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 150, SHELTER_X, 8641, Y1n, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 150, SHELTER_X, Y1n, 9720, L.roof - 0.055, L.roof + 0.005);
-      pb(eBag, 'terraceF', 150, SHELTER_X, -612, 150, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 5600, SHELTER_X - 140, 6496, 8641, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, SHELTER_X - 140, 8641, Y1n, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, SHELTER_X - 140, Y1n, 9720, L.roof - 0.055, L.roof + 0.005);
+      pb(eBag, 'terraceF', 150, SHELTER_X - 140, -612, 150, L.roof - 0.055, L.roof + 0.005);
       pb(eBag, 'terraceF', 12650, 14040, 230, 1805, L.roof - 0.055, L.roof + 0.005);
       // mumty (stair head, expanded to x=5600 and aligned with walls below)
       const mx = [230, 5600], my = [6496, 8641];
@@ -2845,17 +2850,17 @@ window.HouseScene = (function () {
       // also just short of the SF kitchen window (y 2600..3800), so it screens
       // the lift landing from rain without cutting into the window.
       const PERG_LAST_RAF_N = EAST_RAIL_YS + 100 + (EAST_RAFTER_YE - EAST_RAIL_YS - 200) * 4 / 5 + 36;
-      pb(eBag, 'eastPlaster', 14040, 14270, liftOY[1], PERG_LAST_RAF_N, L.f2, L.roof);
+      pb(eBag, 'eastPlaster', 14040, 14270, liftOY[1], PERG_LAST_RAF_N, L.f2, L.roof - 0.45);
       externalStair(eBag, true);
       columnsEast(eBag, L.roof - L.slabT);
 
       // Terrace slab stops at the lift east face on every bay.
       // East of SHELTER_X is pergola only — no plate.
-      pb(eBag, 'white', 20, SHELTER_X, -762, EAST_RAFTER_YE, L.roof - L.slabT, L.roof);
+      pb(eBag, 'white', 100, SHELTER_X - 90, -672, EAST_RAFTER_YE, L.roof - L.slabT, L.roof); // V42: 90-100 mm inside the parapet faces
       pb(eBag, 'charDark', 60, SHELTER_X - 60, -702, EAST_RAFTER_YE - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      pb(eBag, 'white', 20, SHELTER_X, EAST_RAFTER_YE, Y1n, L.roof - L.slabT, L.roof);
+      pb(eBag, 'white', 100, SHELTER_X - 90, EAST_RAFTER_YE, Y1n, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, SHELTER_X - 60, EAST_RAFTER_YE, Y1n - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      pb(eBag, 'white', 20, SHELTER_X, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
+      pb(eBag, 'white', 100, SHELTER_X - 90, Y1n, Y1n + 910, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, SHELTER_X - 60, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
       // Wall lamps — dark body + steel bezel + warm lens.
       // Flank centers sit OUTSIDE the opening leaf + accent surround (~130 mm),
@@ -3244,7 +3249,7 @@ window.HouseScene = (function () {
       // East deck north of stair arrival → building NE
       outdoorDeck(o1, EX0, EX1, 3890, Y1n, f1);
       // North balcony (outside main north wall)
-      outdoorDeck(o1, 0, EX1, NBY0, NBY1 - 30, f1);
+      outdoorDeck(o1, 100, EX1, NBY0, NBY1 - 90, f1);   // V42: 100+ mm inside the flush parapet faces
       // Service-band floors (south of main block, FF only)
       outdoorDeck(o1, 4965, 8085, -596, 1360, f1);
       outdoorDeck(o1, 8300, 9320, -596, 1360, f1);
@@ -3292,7 +3297,7 @@ window.HouseScene = (function () {
       outdoorDeck(o2, EX0, BOX_X, 1805, EAST_RAFTER_YE, f2);
       // SF living deck — full east lip, under the terrace slab
       outdoorDeck(o2, EX0, EX1, EAST_RAFTER_YE, Y1n, f2);
-      outdoorDeck(o2, 0, EX1, NBY0, NBY1 - 30, f2);
+      outdoorDeck(o2, 100, EX1, NBY0, NBY1 - 90, f2);   // V42: 100+ mm inside the flush parapet faces
       pb(o2, 'white', EX1 - 90, EX1 + 10, EAST_RAFTER_YE, NBY1, f2 - 0.45, f2 + 0.012);
       // V42: north fascia only under the rail bay — the plaster run west of
       // N_BAY0 and the NW return are flush slabParapet blocks (see guards).
