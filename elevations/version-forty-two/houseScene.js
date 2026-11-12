@@ -2849,6 +2849,10 @@ window.HouseScene = (function () {
       // *decks* live in separate outdoor0/1/2 groups so floor cutaways can show
       // them without revealing the whole multi-storey shell.
       liftTower(eBag, L.liftTop, [L.porticoFl, L.f1, L.f2]);
+      // V42: SF only — the lift's east wall runs on north to the pergola's
+      // north beam (EAST_RAFTER_YE), screening the lift landing from rain
+      // driven through the open pergola. Same plane and plaster as the shaft.
+      pb(eBag, 'eastPlaster', 14040, 14270, liftOY[1], EAST_RAFTER_YE, L.f2, L.roof);
       externalStair(eBag, true);
       columnsEast(eBag, L.roof - L.slabT);
 
