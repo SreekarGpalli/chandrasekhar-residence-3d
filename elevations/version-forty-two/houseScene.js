@@ -3045,8 +3045,15 @@ window.HouseScene = (function () {
         const zF1 = zIn1 + SR / 1000;          //  8.235 face head (313 mm flat face, matching bottom)
         const yNF = yN1 - FB, xWF = xW0 + FB;  // face-opening free edges
 
-        // --- corner column: solid, square, no splay. East leg and South wall die on it ---
-        pb(eBag, 'white', xBack, xFace, yFace, yBack, zOut0, zOut1);
+        // --- corner column. East leg and South wall die on it. V42: its east
+        //     face carries the same splay as the north jamb, so the opening's
+        //     four sides match — the front layer (xSl..xFace) keeps a 120 mm
+        //     flat face and the splay box fills the cut. ---
+        const ySF = yFace + FB;                // -652 south face-opening edge
+        pb(eBag, 'white', xBack, xSl, yFace, yBack, zOut0, zOut1);
+        pb(eBag, 'white', xSl, xFace, yFace, yBack, zOut0, zF0);
+        pb(eBag, 'white', xSl, xFace, yFace, yBack, zF1, zOut1);
+        pb(eBag, 'white', xSl, xFace, yFace, ySF, zF0, zF1);
 
         // --- east leg: extended splayed box frame and vertical rods up to SF rail height ---
         pb(eBag, 'white', xBack, xSl, yBack, yN1, zOut0, zIn0);   // sill
@@ -3112,7 +3119,7 @@ window.HouseScene = (function () {
         const ND = Math.sin(ANG), NF = Math.cos(ANG);   // depth / in-face parts
         const PT = 0.13, E = 3;
         const xMid = (xSl + xFace) / 2000 - ND * PT / 2;
-        const eA = yBack - 20, eB = yN1 - E;            // east leg run
+        const eA = ySF - E, eB = yN1 - E;               // east leg run (through the south splay)
 
         function eastSplayH(zEdge, sign) {              // sill +1 / head -1
           eBag.box('white',
@@ -3127,6 +3134,10 @@ window.HouseScene = (function () {
         eBag.box('white',
           xMid, zJambMid, -(yN0 + SR / 2) / 1000 - NF * PT / 2,
           HYP, zJambSpan, PT, 0, ANG, 0);
+        // south jamb: mirror of the north one, splaying into the corner column
+        eBag.box('white',
+          xMid, zJambMid, -(yBack - SR / 2) / 1000 + NF * PT / 2,
+          HYP, zJambSpan, PT, 0, -ANG, 0);
 
         // --- east rod field: sill to head, identical rods, 24 mm slot off jamb ---
         // V42: between V41 (38 mm east face, 135 deep, 100 pitch) and the
