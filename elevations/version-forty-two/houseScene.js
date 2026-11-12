@@ -563,15 +563,20 @@ window.HouseScene = (function () {
       } else {
         // Top rail (mild steel)
         const gm = spec.grillMat || 'ms';   // V42: per-opening paint (FF south grilles off-white)
-        put(gm, a0, a1, mid - 15, mid + 15, t - 0.045, t);
+        // V42 spec.flush: rails and bars sit with their outer face ON the wall's
+        // outer plane instead of centred in the wall thickness.
+        const oF = outSign > 0 ? bb1 : bb0, iS = -outSign;            // outer face, inward sign
+        const dep = (w) => spec.flush ? [Math.min(oF, oF + iS * w), Math.max(oF, oF + iS * w)] : [mid - w / 2, mid + w / 2];
+        const rD = dep(30), bD = dep(20);
+        put(gm, a0, a1, rD[0], rD[1], t - 0.045, t);
         // Bottom rail (mild steel)
-        put(gm, a0, a1, mid - 15, mid + 15, b, b + 0.045);
+        put(gm, a0, a1, rD[0], rD[1], b, b + 0.045);
         // Vertical bars (mild steel)
         const len = a1 - a0;
         const n = Math.max(2, Math.round(len / 120));
         for (let i = 0; i <= n; i++) {
           const a = a0 + (len * i) / n;
-          put(gm, a - 10, a + 10, mid - 10, mid + 10, b + 0.045, t - 0.045);
+          put(gm, a - 10, a + 10, bD[0], bD[1], b + 0.045, t - 0.045);
         }
       }
     } else if (spec.type === 'slider') { // Sliding glass door system
@@ -1299,7 +1304,7 @@ window.HouseScene = (function () {
       S: [
         { c: 4300, w: 900, sill: 900, h: 1400, type: 'win', chajja: true },
         { c: 5800, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
-        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'grill', chajja: true }, // utility south security grill
+        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'win', panes: 2, chajja: true }, // V42: normal window (was the utility security grill)
         { c: 11000, w: 1200, sill: 1100, h: 900, type: 'win', chajja: true }
       ],
       W: [
@@ -2676,9 +2681,9 @@ window.HouseScene = (function () {
       glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
       wallRun(eBag, 'white', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,
               [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11910, w: 3840, sill: 900, h: 1400 }]);
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite', flush: true });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite', flush: true });
       // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // Terrace edge: NO solid parapet wall — open metal railings like FF/SF balconies.
       // Thin slab fascia (same language as outdoor decks) + railing @ L.roof.
