@@ -719,6 +719,15 @@ window.HouseScene = (function () {
     }
   }
 
+  /** V42 flush parapet: ONE plaster block from the slab-edge fascia bottom
+   *  (base - 0.45) to the parapet top (base + 1.112, the old coping top).
+   *  Its outer face IS the slab edge — no coping, no band, no seam between
+   *  slab and wall. Plan rectangle given directly; callers make sure each
+   *  corner square belongs to one block only (no coplanar end faces). */
+  function slabParapet(bag, x0, x1, y0, y1, base) {
+    pb(bag, 'white', x0, x1, y0, y1, base - 0.45, base + 1.112);
+  }
+
   function lastBayStart(a0, a1) {
     const len = a1 - a0;
     if (len < 80) return a0;
@@ -2687,16 +2696,15 @@ window.HouseScene = (function () {
         const yN = 9870;
         const xW = 80;
         const xE = eastX[1] - 80;
-        // Edge fascia. Every terrace lip stops at the lift east face.
-        // East of SHELTER_X is pergola, not slab.
-        pb(eBag, 'white', 0, SHELTER_X + 10, yN - 90, yN + 10, rt - 0.45, rt + 0.012);
-        pb(eBag, 'white', 0, SHELTER_X, yS - 10, yS + 90, rt - 0.45, rt + 0.012);
-        pb(eBag, 'white', 0, 100, yS, yN, rt - 0.45, rt + 0.012);
-        pb(eBag, 'white', SHELTER_X - 90, SHELTER_X + 10, EAST_RAFTER_YE, yN, rt - 0.45, rt + 0.012);
-        pb(eBag, 'charDark', 0, SHELTER_X + 12, yN - 96, yN + 14, rt - 0.24, rt - 0.18);
-        pb(eBag, 'charDark', 0, SHELTER_X, yS - 14, yS + 96, rt - 0.24, rt - 0.18);
-        pb(eBag, 'charDark', -6, 106, yS, yN, rt - 0.24, rt - 0.18);
-        pb(eBag, 'charDark', SHELTER_X - 96, SHELTER_X + 14, EAST_RAFTER_YE, yN, rt - 0.24, rt - 0.18);
+        // V42: no separate fascia / charcoal band / coping — the parapet and
+        // the slab edge are one block per side (slabParapet), outer faces on
+        // the old fascia planes: S -772, W 0, N 9880, E 14280. South and
+        // north runs own the four corners; west and east butt into them.
+        const TF = { S: yS - 10, W: 0, N: yN + 10, E: SHELTER_X + 10 }, PT = 150;
+        slabParapet(eBag, TF.W, TF.E, TF.S, TF.S + PT, rt);              // south
+        slabParapet(eBag, TF.W, TF.E, TF.N - PT, TF.N, rt);              // north
+        slabParapet(eBag, TF.W, TF.W + PT, TF.S + PT, TF.N - PT, rt);    // west
+        slabParapet(eBag, TF.E - PT, TF.E, TF.S + PT, TF.N - PT, rt);    // east lip = lift face
         // Terrace parapet sits ON the deck — same L as V25.
         // Everything below the terrace was flushed to the fascia lip (east
         // 17372, south -772), but the parapet kept the old projecting lines:
@@ -2711,14 +2719,7 @@ window.HouseScene = (function () {
         const PARA_XIN = PARA_XOUT - 230;   // 17140
         const PARA_SFC = yS + 65;           // -697 → 150 wall face lands on -772
         const PARA_YS = yS - 10;            //  -772 flushed south plane
-        const CUT_X = SHELTER_X;
-        edgeWall(eBag, 'x', PARA_SFC, 0, CUT_X - 80, rt, 1.08);       // south
-        edgeWall(eBag, 'y', CUT_X - 80, PARA_YS, yN - 80, rt, 1.08);  // east lip = lift face
-        edgeWall(eBag, 'x', yN - 80, xW, CUT_X - 80, rt, 1.08);       // north, only on remaining slab
-        edgeWall(eBag, 'y', xW, PARA_YS, yN - 80, rt, 1.08);          // west
-        // East parapet stays one flat run end to end — no pillars on it (as V49).
-        railPillar(eBag, xW, PARA_SFC, rt, 1.08);
-        railPillar(eBag, xW, yN - 80, rt, 1.08);
+        // (V41's edgeWall runs + corner railPillars replaced by the flush blocks above.)
       })();
 
       // terrace floor with cutouts for stairwell and lift shaft
@@ -2861,11 +2862,11 @@ window.HouseScene = (function () {
 
       // Terrace slab stops at the lift east face on every bay.
       // East of SHELTER_X is pergola only — no plate.
-      pb(eBag, 'white', 0, SHELTER_X, -762, EAST_RAFTER_YE, L.roof - L.slabT, L.roof);
+      pb(eBag, 'white', 20, SHELTER_X, -762, EAST_RAFTER_YE, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, SHELTER_X - 60, -702, EAST_RAFTER_YE - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      pb(eBag, 'white', 0, SHELTER_X, EAST_RAFTER_YE, Y1n, L.roof - L.slabT, L.roof);
+      pb(eBag, 'white', 20, SHELTER_X, EAST_RAFTER_YE, Y1n, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, SHELTER_X - 60, EAST_RAFTER_YE, Y1n - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
-      pb(eBag, 'white', 0, SHELTER_X, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
+      pb(eBag, 'white', 20, SHELTER_X, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
       pb(eBag, 'charDark', 60, SHELTER_X - 60, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
       // Wall lamps — dark body + steel bezel + warm lens.
       // Flank centers sit OUTSIDE the opening leaf + accent surround (~130 mm),
@@ -2976,7 +2977,7 @@ window.HouseScene = (function () {
         // Same language as the east elevation: a thin charcoal + light
         // coping ON each slab, not a 160 mm gray ribbon at a different
         // height every floor.
-        for (const z of [L.f0, L.f1, L.f2, L.roof]) {
+        for (const z of [L.f0, L.f1, L.f2]) {   // V42: no roof line — the terrace parapet is flush
           pb(eBag, 'charDark', -6, 72, 0, Y1n, z - 0.055, z - 0.008);
           pb(eBag, 'copingLight', -8, 78, -8, Y1n + 8, z - 0.008, z + 0.012);
         }
@@ -3189,6 +3190,13 @@ window.HouseScene = (function () {
       const NORTH_PIL_Y = NBY1 - 100;
       const DECK_SE = EAST_RAIL_YS - 10 + 275; // -497, inside the L-box
       const BOX_X = eastX[1] + 10 - 275;       // 17097, inner face of the box
+      // V42 flush balcony parapets: outer faces on the fascia planes.
+      const N_BAY0 = lastBayStart(80, EX1 - 80);   // plaster | rail joint on the north run
+      const BF = { N: NBY1 + 10, W: -10, S: -772 }, BPT = 150;
+      function northParapets(bag, f) {
+        slabParapet(bag, BF.W, N_BAY0, BF.N - BPT, BF.N, f);          // north run, owns NW corner
+        slabParapet(bag, BF.W, BF.W + BPT, Y1n, BF.N - BPT, f);       // NW return to the house wall
+      }
 
       /** Structural deck + tile + thin soffit for an outdoor rectangle */
       function outdoorDeck(bag, x0, x1, y0, y1, fY, tileMat) {
@@ -3236,7 +3244,6 @@ window.HouseScene = (function () {
       // South bedroom balcony — deck meets the south fascia and the west rail
       outdoorDeck(o1, 0, 4805, -762, 0, f1);
       pb(o1, 'white', -10, 90, -762, 0, f1 - 0.45, f1 + 0.012);
-      pb(o1, 'charDark', -10, 90, -762, 0, f1 - 0.24, f1 - 0.18);
       // Portico-top / south-east deck
       outdoorDeck(o1, EX0, eastX[1] + 10 - 275, EAST_RAIL_YS - 10 + 275, 230, f1);
       // Lift roof only — not over the landing (headroom)
@@ -3264,15 +3271,12 @@ window.HouseScene = (function () {
       outdoorDeck(o1, 12650, 14040, -596, -497, f1);
       // Edge fascia — full north + south lips, matching SF
       pb(o1, 'white', EX1 - 90, EX1 + 10, EAST_RAFTER_YE, NBY1, f1 - 0.45, f1 + 0.012);
-      pb(o1, 'charDark', EX1 - 96, EX1 + 14, EAST_RAFTER_YE, NBY1, f1 - 0.24, f1 - 0.18);
-      pb(o1, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
-      pb(o1, 'white', -10, 90, Y1n, NBY1 + 10, f1 - 0.45, f1 + 0.012);
+      // V42: north fascia only under the rail bay — the plaster run west of
+      // N_BAY0 and the NW return are flush slabParapet blocks (see guards).
+      pb(o1, 'white', N_BAY0, EX1 + 10, NBY1 - 90, NBY1 + 10, f1 - 0.45, f1 + 0.012);
       // South fascia: 10 mm out / 90 mm in, matching the east lip. Stops at
       // the L-box so it does not stand in front of the south screen.
       pb(o1, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f1 - 0.45, f1 + 0.012);
-      pb(o1, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f1 - 0.24, f1 - 0.18);
-      pb(o1, 'charDark', -10, 90, Y1n, NBY1 + 14, f1 - 0.24, f1 - 0.18);
-      pb(o1, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f1 - 0.24, f1 - 0.18);
       // Metal on east + NE/SE bays and the SW balcony. North run + NW return stay plaster.
       // SW corner: the two MS runs meet in one clean L — no plaster pillar (V42).
       railing(o1, 'x', SOUTH_FC, 80, 4805, f1, 1.0, { corner0: true });
@@ -3284,12 +3288,9 @@ window.HouseScene = (function () {
       (function ffNorthGuard() {
         const nX0 = 80, nX1 = EX1 - 80;
         const bay0 = lastBayStart(nX0, nX1);
-        edgeWall(o1, 'x', NORTH_FC, nX0, bay0, f1, 1.08, { plain: true });
+        northParapets(o1, f1);   // V42: flush blocks, no NW / joint pillars
         railing(o1, 'x', NORTH_FC, bay0, nX1, f1, 1.0, { corner1: true });
-        railPillar(o1, nX0, NORTH_PIL_Y, f1, 1.08);
-        railPillar(o1, bay0, NORTH_PIL_Y, f1, 1.08);
       })();
-      edgeWall(o1, 'y', 80, Y1n, NORTH_FC, f1, 1.08, { plain: true });
       const g1 = o1.build(THREE, materials); g1.name = 'outdoor1'; root.add(g1); outdoors.push(g1);
 
       // --- outdoor2: SF outdoor decks ONLY ---
@@ -3300,7 +3301,6 @@ window.HouseScene = (function () {
       outdoorDeck(o2, 0, 4805, -762, 230, f2);
       outdoorDeck(o2, 4805, BOX_X, DECK_SE, 230, f2);
       pb(o2, 'white', -10, 90, -762, 0, f2 - 0.45, f2 + 0.012);
-      pb(o2, 'charDark', -10, 90, -762, 0, f2 - 0.24, f2 - 0.18);
       // East of lift shaft only (lift cutout 12650..14040 × 230..1805)
       outdoorDeck(o2, 14040, BOX_X, 230, 1805, f2);
       // East sit-out north of lift — stops at the L-box, same as FF
@@ -3309,13 +3309,10 @@ window.HouseScene = (function () {
       outdoorDeck(o2, EX0, EX1, EAST_RAFTER_YE, Y1n, f2);
       outdoorDeck(o2, 0, EX1, NBY0, NBY1 - 30, f2);
       pb(o2, 'white', EX1 - 90, EX1 + 10, EAST_RAFTER_YE, NBY1, f2 - 0.45, f2 + 0.012);
-      pb(o2, 'charDark', EX1 - 96, EX1 + 14, EAST_RAFTER_YE, NBY1, f2 - 0.24, f2 - 0.18);
-      pb(o2, 'white', 0, EX1 + 10, NBY1 - 90, NBY1 + 10, f2 - 0.45, f2 + 0.012);
-      pb(o2, 'white', -10, 90, Y1n, NBY1 + 10, f2 - 0.45, f2 + 0.012);
-      pb(o2, 'white', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f2 - 0.45, f2 + 0.012);
-      pb(o2, 'charDark', 0, EX1 + 12, NBY1 - 96, NBY1 + 14, f2 - 0.24, f2 - 0.18);
-      pb(o2, 'charDark', -10, 90, Y1n, NBY1 + 14, f2 - 0.24, f2 - 0.18);
-      pb(o2, 'charDark', 0, EAST_SOUTH_RET_XW, -762 - 10, -762 + 90, f2 - 0.24, f2 - 0.18);
+      // V42: north fascia only under the rail bay — the plaster run west of
+      // N_BAY0 and the NW return are flush slabParapet blocks (see guards).
+      pb(o2, 'white', N_BAY0, EX1 + 10, NBY1 - 90, NBY1 + 10, f2 - 0.45, f2 + 0.012);
+      pb(o2, 'white', 0, 4805, -762 - 10, -762 + 90, f2 - 0.45, f2 + 0.012); // V42: east of 4805 the parapet block is the fascia
       // South — same runs as FF: plaster 0–4805, metal EX0–lift,
       // then the extended L-box rods wrap the SE corner up to rail height.
       // V42: the SW bedroom bay takes the FF's pillar-free MS rail corner
@@ -3324,7 +3321,7 @@ window.HouseScene = (function () {
       (function sfSouthSERail() {
         railing(o2, 'x', SOUTH_FC, 80, 4805, f2, 1.0, { corner0: true });
         railing(o2, 'y', 80, SOUTH_FC, 0, f2, 1.0, { corner0: true, noPost0: true });
-        edgeWall(o2, 'x', SOUTH_FC, 4805, EAST_SOUTH_RET_XW, f2, 1.08, { plain: true });
+        slabParapet(o2, 4805, EAST_SOUTH_RET_XW, BF.S, BF.S + BPT, f2);   // flush with the slab edge
       })();
       (function sfEastGuard() {
         // Pergola bay: the extended L-box rods continue up to the rail height and are the guard.
@@ -3380,12 +3377,9 @@ window.HouseScene = (function () {
       (function sfNorthNERail() {
         const nX0 = 80, nX1 = EX1 - 80;
         const bay0 = lastBayStart(nX0, nX1);
-        edgeWall(o2, 'x', NORTH_FC, nX0, bay0, f2, 1.08, { plain: true });
+        northParapets(o2, f2);   // V42: flush blocks, no NW / joint pillars
         railing(o2, 'x', NORTH_FC, bay0, nX1, f2, 1.0, { corner1: true });
-        railPillar(o2, nX0, NORTH_PIL_Y, f2, 1.08);
-        railPillar(o2, bay0, NORTH_PIL_Y, f2, 1.08);
       })();
-      edgeWall(o2, 'y', 80, Y1n, NORTH_FC, f2, 1.08, { plain: true });
       Fur.lounger(o2, 14800, 16200, 600, 1400, f2);
       Fur.lounger(o2, 14800, 16200, 1900, 2700, f2);
       Fur.table(o2, 15050, 15850, 1480, 1820, f2, 0.40);
