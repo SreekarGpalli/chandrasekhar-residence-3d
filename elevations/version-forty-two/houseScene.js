@@ -3339,16 +3339,19 @@ window.HouseScene = (function () {
         post(xPE, yPS);
         post(xPE, yPN);
 
-        pb(o2, 'dark', xW - 14, xW + 36, y0 - 8, y1 + 8, L.roof - 0.46, L.roof + 0.014);
-        pb(o2, 'dark', xW - 8, xW + BEAM, y0, y1, zB0, zB1);
-        pb(o2, 'dark', xW, xE + OVER, y0, y0 + BEAM, zB0, zB1);
-        pb(o2, 'dark', xW, xE + OVER, y1 - BEAM, y1, zB0, zB1);
+        // V42: no charcoal ledger on the terrace edge and nothing cut into the
+        // flush parapet — the west beam rides its own posts, 26 mm clear of
+        // the parapet face (x 14280), so the wall reads as one white plane.
+        const xB = xPW;                                   // 14306
+        pb(o2, 'dark', xB, xB + BEAM, y0, y1, zB0, zB1);
+        pb(o2, 'dark', xB, xE + OVER, y0, y0 + BEAM, zB0, zB1);
+        pb(o2, 'dark', xB, xE + OVER, y1 - BEAM, y1, zB0, zB1);
         pb(o2, 'dark', xE - 70, xE + 24, y0, y1, zB0, zB1);
 
         const nRaf = 4;
         for (let i = 1; i <= nRaf; i++) {
           const y = y0 + BEAM + ((y1 - y0 - 2 * BEAM) * i) / (nRaf + 1);
-          pb(o2, 'dark', xW + 20, xE + 8, y - 36, y + 36, zB0, zB1);
+          pb(o2, 'dark', xB + 20, xE + 8, y - 36, y + 36, zB0, zB1);
         }
 
         const slatY0 = y0 + BEAM + 12;
@@ -3356,7 +3359,7 @@ window.HouseScene = (function () {
         const nSlat = Math.max(4, Math.round((slatY1 - slatY0 - SLAT) / (SLAT + GAP)));
         for (let i = 0; i <= nSlat; i++) {
           const y = slatY0 + ((slatY1 - slatY0 - SLAT) * i) / nSlat;
-          pb(o2, 'dark', xW + 28, xE + OVER, y, y + SLAT, zS0, zS1);
+          pb(o2, 'dark', xB + 28, xE + OVER, y, y + SLAT, zS0, zS1);
         }
       })();
       (function sfNorthNERail() {
