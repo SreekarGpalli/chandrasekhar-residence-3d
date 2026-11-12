@@ -3129,8 +3129,11 @@ window.HouseScene = (function () {
           HYP, zJambSpan, PT, 0, ANG, 0);
 
         // --- east rod field: sill to head, identical rods, 24 mm slot off jamb ---
-        const FACE = 38, PITCH = 100, GAP = 24, o = 0.006;
-        const xFin0 = xBack + 20, xFin1 = xSl - 10;
+        // V42: the rods are turned 90° — the broad 135 mm side now faces east
+        // and the 38 mm edge goes into depth, set just behind the box face.
+        // Pitch opens to ~200 so the blades keep a ~65 mm slot between them.
+        const FACE = 135, DEPTH = 38, PITCH = 200, GAP = 24, o = 0.006;
+        const xFin1 = xSl - 10, xFin0 = xFin1 - DEPTH;
         function rods(a0, a1, place) {
           const b0 = a0 + GAP + FACE / 2, b1 = a1 - GAP - FACE / 2;
           const n = Math.max(2, Math.round((b1 - b0) / PITCH));
