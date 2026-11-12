@@ -2522,21 +2522,10 @@ window.HouseScene = (function () {
         // is cut for the pergola; nothing stands through that sit-out.
         const colTop = Math.min(topH, L.f2 - L.slabT);
         const shaftTop = Math.max(shaftBot + 0.08, colTop - capH);
-        pb(bag, 'charDark', 16315, 16585, cy - 135, cy + 135, botH, botH + gap);
-        pb(bag, 'charcoal', 16300, 16600, cy - 150, cy + 150, botH + gap, shaftBot - 0.018);
-        pb(bag, 'charDark', 16288, 16612, cy - 162, cy + 162, shaftBot - 0.018, shaftBot);
-        // gray E–W arm — the street face (slimmer ribbon)
-        pb(bag, 'charcoal', 16320, 16580, cy - 44, cy + 44, shaftBot, shaftTop);
-        // ivory N–S wings — set 12 mm behind so they read as plus arms
-        pb(bag, 'white2', 16332, 16568, cy - 168, cy + 168, shaftBot, shaftTop);
-        for (const z of collars) {
-          if (z <= shaftBot + 0.05 || z >= shaftTop - 0.05) continue;
-          pb(bag, 'charDark', 16310, 16590, cy - 162, cy + 162, z - 0.030, z + 0.008);
-          pb(bag, 'steel', 16304, 16596, cy - 166, cy + 166, z + 0.008, z + 0.020);
-        }
-        pb(bag, 'charDark', 16288, 16612, cy - 162, cy + 162, shaftTop, shaftTop + 0.018);
-        pb(bag, 'charcoal', 16300, 16600, cy - 150, cy + 150, shaftTop + 0.018, colTop - 0.022);
-        pb(bag, 'copingLight', 16278, 16622, cy - 172, cy + 172, colTop - 0.022, colTop);
+        // V42: one plain white 300 x 300 shaft, ground to slab — no plus
+        // profile, plinth, collars or cap, so no lines run up the column.
+        void shaftTop; void collars;
+        pb(bag, 'white', 16300, 16600, cy - 150, cy + 150, botH, colTop);
       }
     }
 
@@ -2901,11 +2890,8 @@ window.HouseScene = (function () {
         const ey0 = 0, ey1 = 8870;
 
         // Thin storey datums — 70 mm proud, lime-capped, not 250 mm charcoal bars.
-        const datums = [L.f0, L.f1, L.f2, L.roof];
-        for (const z of datums) {
-          pb(eBag, 'charDark', EF - 6, EF + 72, ey0, ey1, z - 0.055, z - 0.008);
-          pb(eBag, 'copingLight', EF - 8, EF + 78, ey0 - 8, ey1 + 8, z - 0.008, z + 0.012);
-        }
+        // V42: no storey datum lines — the wall reads as one plain plane.
+        void ey0; void ey1;
 
         // Door portal cheeks — per storey, only in the solid strip beside each door.
         // GF office window ends y 6900; door starts 7400.
@@ -2915,8 +2901,7 @@ window.HouseScene = (function () {
         // North: GF/FF doors end 8600; wall ends 8870.
         function cheek(y0, y1, z0, z1, innerSouth) {
           pb(eBag, 'eastPlaster', EF - 4, EF + 88, y0, y1, z0, z1);
-          if (innerSouth) pb(eBag, 'charDark', EF + 4, EF + 84, y1 - 16, y1, z0, z1);
-          else pb(eBag, 'charDark', EF + 4, EF + 84, y0, y0 + 16, z0, z1);
+          void innerSouth;   // V42: no charcoal reveal line on the cheek
         }
         cheek(6920, 7380, L.f0, L.f1, true);                 // GF south of door
         cheek(8620, 8870, L.f0, L.f1, false);                // GF north of door
@@ -2945,7 +2930,7 @@ window.HouseScene = (function () {
       })();
 
       // ===== N / S / W facade datum bands (same language as east elevation) =====
-      (function perimeterBands() {
+      false && (function perimeterBands() {   // V42: storey lines removed
         const datums = [
           [L.f0 - 0.02, L.f0 + 0.14, L.f0 + 0.14, L.f0 + 0.18],
           [L.f1 - 0.18, L.f1 - 0.02, L.f1 - 0.02, L.f1 + 0.02],
@@ -2973,7 +2958,7 @@ window.HouseScene = (function () {
           // West storey lines are drawn once below, on the slab.
         }
       })();
-      (function westSlabBands() {
+      false && (function westSlabBands() {    // V42: storey lines removed
         // Same language as the east elevation: a thin charcoal + light
         // coping ON each slab, not a 160 mm gray ribbon at a different
         // height every floor.
