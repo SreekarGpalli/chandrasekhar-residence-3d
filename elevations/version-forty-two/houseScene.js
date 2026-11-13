@@ -3372,9 +3372,14 @@ window.HouseScene = (function () {
         // flush parapet — the west beam rides its own posts, 26 mm clear of
         // the parapet face (x 14280), so the wall reads as one white plane.
         const xB = xPW;                                   // 14306
-        pb(o2, 'gBlue', xB, xB + BEAM, y0, y1, zB0, zB1);
-        pb(o2, 'gBlue', xB, xE + OVER, y0, y0 + BEAM, zB0, zB1);
-        pb(o2, 'gBlue', xB, xE + OVER, y1 - BEAM, y1, zB0, zB1);
+        // V42: a closed perimeter frame — west, south, north AND east edge
+        // beams all run up to the slat tops (zS1), so the slats die into
+        // flat faces on every side; no slat ends show from the street.
+        const xF1 = xE + OVER, xF0 = xF1 - BEAM;          // east edge beam
+        pb(o2, 'gBlue', xB, xB + BEAM, y0 + BEAM, y1 - BEAM, zB0, zS1);   // west
+        pb(o2, 'gBlue', xB, xF1, y0, y0 + BEAM, zB0, zS1);                // south (owns SW/SE corners)
+        pb(o2, 'gBlue', xB, xF1, y1 - BEAM, y1, zB0, zS1);                // north (owns NW/NE corners)
+        pb(o2, 'gBlue', xF0, xF1, y0 + BEAM, y1 - BEAM, zB0, zS1);        // east
         pb(o2, 'gBlue', xE - 70, xE + 24, y0, y1, zB0, zB1);
 
         const nRaf = 4;
@@ -3388,7 +3393,7 @@ window.HouseScene = (function () {
         const nSlat = Math.max(4, Math.round((slatY1 - slatY0 - SLAT) / (SLAT + GAP)));
         for (let i = 0; i <= nSlat; i++) {
           const y = slatY0 + ((slatY1 - slatY0 - SLAT) * i) / nSlat;
-          pb(o2, 'gBlue', xB + 28, xE + OVER, y, y + SLAT, zS0, zS1);
+          pb(o2, 'gBlue', xB + BEAM, xF0, y, y + SLAT, zS0, zS1 - 0.004);   // between the edge beams, tops just under them
         }
       })();
       (function sfNorthNERail() {
