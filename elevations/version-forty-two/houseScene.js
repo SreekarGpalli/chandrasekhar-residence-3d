@@ -16,7 +16,7 @@ window.HouseScene = (function () {
     f0: 0.75, f1: 4.103, f2: 7.456,
     roof: 10.809, parapetTop: 11.709,
     f2f: 3.353, slabT: 0.15, cut: 1.5,
-    porticoFl: 0.15, pathFl: 0.05,
+    porticoFl: 0.045, pathFl: 0.05,   // V42: portico = site paver top (flush), was a 150 mm platform
     liftTop: 10.809
   };
 
@@ -2198,18 +2198,14 @@ window.HouseScene = (function () {
       //    and wraps north to the Main Entrance and Office stoops (7800..12650, 10070..11270),
       //    under the car, before the car, and across the driveway.
       pb(sBag, 'paver', 12650, 22100, S_IN + 25, 11270, 0, 0.045);
-      pb(sBag, 'paver', 7800, 12650, 10070, 11270, 0, 0.045);
+      pb(sBag, 'paver', 7800, 12650, Y1n, 11270, 0, 0.045);   // V42: paved right up to the north wall
 
       // 2) West, South, and North Setbacks: Clean smooth concrete
       pb(sBag, 'concrete', -750, 0, S_IN + 25, 11270, 0, 0.045);           // West setback
       pb(sBag, 'concrete', 0, 12650, S_IN + 25, 0, 0, 0.045);              // South setback
-      pb(sBag, 'concrete', 0, 7800, 10070, 11270, 0, 0.045);               // North-West setback around plinth
+      pb(sBag, 'concrete', 0, 7800, Y1n, 11270, 0, 0.045);   // V42: paved right up to the north wall               // North-West setback around plinth
 
-      // Subtle dividing kerb separating parking tiles from concrete setbacks
-      pb(sBag, 'charDark', 12610, 12650, S_IN + 25, 0, 0, 0.052);
-      pb(sBag, 'copingLight', 12620, 12645, S_IN + 25, 0, 0.045, 0.054);
-      pb(sBag, 'charDark', 7800, 12650, 10040, 10070, 0, 0.052);
-      pb(sBag, 'copingLight', 7800, 12650, 10045, 10065, 0.045, 0.054);
+      // V42: no raised kerbs — paving and concrete meet flush at 0.045.
 
       // 3) North lawn: grass garden north of steps (y = 11270..18620)
       // Trees / hedge / flowering shrubs are photoreal sprites in placeGarden().
@@ -3228,30 +3224,24 @@ window.HouseScene = (function () {
 
       // --- outdoor0: GF portico + stoops (Subtle Indian Parking Tiles) ---
       const o0 = makeBag(THREE);
-      pb(o0, 'concrete', EX0, EX1, portY[0], portY[1], 0, L.porticoFl);
-      pb(o0, 'paver', EX0 + 30, EX1 - 30, portY[0] + 30, portY[1] - 30, L.porticoFl, L.porticoFl + 0.014);
-      // Clean granite perimeter coping
-      pb(o0, 'charDark', EX0 - 20, EX1 + 20, portY[0] - 20, portY[0] + 35, 0, L.porticoFl + 0.035);
-      pb(o0, 'charDark', EX0 - 20, EX1 + 20, portY[1] - 35, portY[1] + 20, 0, L.porticoFl + 0.035);
-      pb(o0, 'charDark', EX1 - 35, EX1 + 20, portY[0], portY[1], 0, L.porticoFl + 0.035);
-      pb(o0, 'copingLight', EX0 - 25, EX1 + 25, portY[0] - 25, portY[0] + 40, L.porticoFl + 0.035, L.porticoFl + 0.05);
-      pb(o0, 'copingLight', EX0 - 25, EX1 + 25, portY[1] - 40, portY[1] + 25, L.porticoFl + 0.035, L.porticoFl + 0.05);
-      pb(o0, 'copingLight', EX1 - 40, EX1 + 25, portY[0], portY[1], L.porticoFl + 0.035, L.porticoFl + 0.05);
+      // V42: no raised portico slab, edge band or coping — the car stands on
+      // the same flush site paving (top 0.045) that runs round the house.
       // North main-door stoop
       pb(o0, 'plinth', 7800, 9500, Y1n, 10070, 0, L.f0);
       pb(o0, 'copingLight', 7820, 9480, Y1n + 20, 10050, L.f0, L.f0 + 0.02);
-      let st = 0.60;
+      // Equal risers from the flush paving (0.045) up to the GF floor.
+      const RN = (L.f0 + 0.02 - L.porticoFl) / 5;
       for (let i = 0; i < 4; i++) {
+        const st = L.f0 + 0.02 - RN * (i + 1) - 0.018;
         pb(o0, 'plinth', 7800, 9500, 10070 + i * 300, 10070 + (i + 1) * 300, 0, st);
         pb(o0, 'copingLight', 7820, 9480, 10080 + i * 300, 10070 + (i + 1) * 300 - 10, st, st + 0.018);
-        st -= 0.15;
       }
       // Office stoop on portico (door c=8000, leaf 7400..8600)
-      st = 0.60;
+      const RO = (L.f0 - L.porticoFl) / 4;          // 4 equal risers to the office door
       for (let i = 0; i < 3; i++) {
-        pb(o0, 'plinth', 12650 + i * 300, 12950 + i * 300, 7400, 8600, L.porticoFl, st);
+        const st = L.f0 - RO * (i + 1) - 0.018;
+        pb(o0, 'plinth', 12650 + i * 300, 12950 + i * 300, 7400, 8600, 0, st);
         pb(o0, 'copingLight', 12660 + i * 300, 12940 + i * 300, 7420, 8580, st, st + 0.018);
-        st -= 0.15;
       }
       const g0 = o0.build(THREE, materials); g0.name = 'outdoor0'; root.add(g0); outdoors.push(g0);
 
