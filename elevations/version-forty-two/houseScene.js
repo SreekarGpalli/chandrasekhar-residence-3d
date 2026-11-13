@@ -664,11 +664,13 @@ window.HouseScene = (function () {
       }
     }
     if (spec.chajja) {
-      // Plain charcoal chajja (no warm surround)
-      const cb = outSign > 0 ? [bb1, bb1 + 500] : [bb0 - 500, bb0];
-      put('charDark', a0 - 150, a1 + 150, cb[0], cb[1], t + 0.05, t + 0.13);
-      const drip = outSign > 0 ? [bb1 + 485, bb1 + 505] : [bb0 - 505, bb0 - 485];
-      put('charDark', a0 - 155, a1 + 155, drip[0], drip[1], t + 0.02, t + 0.14);
+      /* V42 window shade: one slim off-white plane in the wall's own plaster,
+         sitting straight on the window head (no gap), 70 mm thick, 50 mm past
+         each jamb, depth ~0.3 x window height (300..450). No drip lip, no
+         end returns, nothing proud of its own rectangle. */
+      const dep = Math.max(300, Math.min(450, Math.round(spec.h * 0.3 / 10) * 10));
+      const cb = outSign > 0 ? [bb1, bb1 + dep] : [bb0 - dep, bb0];
+      put('white', a0 - 50, a1 + 50, cb[0], cb[1], t, t + 0.07);
     }
   }
 
@@ -2945,8 +2947,9 @@ window.HouseScene = (function () {
           [L.f1 + 2.50, 6760, 8720]
         ];
         for (const [z, y0, y1] of canopies) {
-          pb(eBag, 'white2', EF - 8, EF + 620, y0, y1, z, z + 0.08);
-          pb(eBag, 'charDark', EF + 608, EF + 632, y0 - 8, y1 + 8, z - 0.02, z + 0.09);
+          // V42: same language as the window shades — one plain off-white
+          // plane, no charcoal drip lip proud of its ends.
+          pb(eBag, 'white', EF, EF + 600, y0, y1, z, z + 0.07);
         }
 
         // Flank lamps on the SF glass wall — centred on each jamb pier.
