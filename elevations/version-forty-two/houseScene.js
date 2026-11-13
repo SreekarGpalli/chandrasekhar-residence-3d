@@ -38,7 +38,8 @@ window.HouseScene = (function () {
     white:   0xece7db,  // BODY — inspiration off-white (Upparapalli house)
     white2:  0xf3efe6,  // BODY — same off-white, slightly lighter soffits / reveals
     fin:     0xd6c9ae,  // east verticals only — V6 lime, not chalk
-    gMetal:  0x4a4945,  // V42: ONE warm satin graphite for every exterior metal + frame
+    gMetal:  0x4a4945,  // V42: warm satin graphite — gates only
+    gBlue:   0x46525c,  // V42: slate blue-grey satin — rods, rails, pergola, frames
     fin2:    0x62635e,  // east vertical rods — warm graphite, coordinated with grey frames and stone
     sand:    0xd2cdc4,  // SOFT — cool greige east shell
     stone:   0xd0cbc3,  // SOFT — pale stone
@@ -461,9 +462,9 @@ window.HouseScene = (function () {
     const fd0 = mid - 52, fd1 = mid + 38;          // frame band
 
     if (spec.type === 'door') { // walnut pivot door
-      put('gMetal', a0, a0 + 55, fd0, fd1, b, t);
-      put('gMetal', a1 - 55, a1, fd0, fd1, b, t);
-      put('gMetal', a0, a1, fd0, fd1, t - 0.055, t);
+      put('gBlue', a0, a0 + 55, fd0, fd1, b, t);
+      put('gBlue', a1 - 55, a1, fd0, fd1, b, t);
+      put('gBlue', a0, a1, fd0, fd1, t - 0.055, t);
       put('walnut', a0 + 60, a1 - 60, mid - 32, mid + 28, b + 0.006, t - 0.06);
       // recessed-look panel reveals: darker strips ~10mm proud of each slab
       // face, framing two stacked rectangles (strips buried 2mm into slab)
@@ -483,14 +484,14 @@ window.HouseScene = (function () {
       // interior-side lever handle (outer face already has the pull bar)
       const iv = outSign > 0 ? [mid - 62, mid - 31] : [mid + 31, mid + 62];
       const ia = outSign > 0 ? [mid - 62, mid - 50] : [mid + 50, mid + 62];
-      put('gMetal', hx - 25, hx + 25, iv[0], iv[1], b + 1.02, b + 1.10);   // rosette plate
-      put('gMetal', hx - 110, hx + 15, ia[0], ia[1], b + 1.045, b + 1.075); // lever arm
+      put('gBlue', hx - 25, hx + 25, iv[0], iv[1], b + 1.02, b + 1.10);   // rosette plate
+      put('gBlue', hx - 110, hx + 15, ia[0], ia[1], b + 1.045, b + 1.075); // lever arm
     } else if (spec.type === 'frenchdoor') { // floor-to-head glazed French door
       const nLeaf = spec.panes || 2;
-      put('gMetal', a0, a0 + 52, fd0, fd1, b, t);
-      put('gMetal', a1 - 52, a1, fd0, fd1, b, t);
-      put('gMetal', a0, a1, fd0, fd1, t - 0.052, t);
-      put('gMetal', a0, a1, fd0, fd1, b, b + 0.052);
+      put('gBlue', a0, a0 + 52, fd0, fd1, b, t);
+      put('gBlue', a1 - 52, a1, fd0, fd1, b, t);
+      put('gBlue', a0, a1, fd0, fd1, t - 0.052, t);
+      put('gBlue', a0, a1, fd0, fd1, b, b + 0.052);
       // Stone threshold proud of the outer face
       const th = outSign > 0 ? [bb1 - 8, bb1 + 70] : [bb0 - 70, bb0 + 8];
       put('charDark', a0 - 20, a1 + 20, th[0], th[1], b, b + 0.028);
@@ -500,12 +501,12 @@ window.HouseScene = (function () {
       const lockZ = b + 1.02;
       for (let i = 1; i < nLeaf; i++) {
         const mx = inner0 + i * leafW;
-        put('gMetal', mx - 26, mx + 26, fd0 + 2, fd1 - 2, b + 0.052, t - 0.052);
+        put('gBlue', mx - 26, mx + 26, fd0 + 2, fd1 - 2, b + 0.052, t - 0.052);
       }
       for (let i = 0; i < nLeaf; i++) {
         const l0 = inner0 + i * leafW + (i === 0 ? 0 : 26);
         const l1 = inner0 + (i + 1) * leafW - (i === nLeaf - 1 ? 0 : 26);
-        put('gMetal', l0, l1, mid - 10, mid + 10, lockZ - 0.016, lockZ + 0.016);
+        put('gBlue', l0, l1, mid - 10, mid + 10, lockZ - 0.016, lockZ + 0.016);
         put('glass', l0 + 6, l1 - 6, gd0, gd1, b + 0.055, lockZ - 0.018);
         put('glass', l0 + 6, l1 - 6, gd0, gd1, lockZ + 0.018, t - 0.055);
       }
@@ -524,21 +525,21 @@ window.HouseScene = (function () {
         const gD0 = mid - 12, gD1 = mid + 12;   // grille-bar depth band (mm)
         const i0 = a0 + 55, i1 = a1 - 55;       // leaf clear span
         // Perimeter leaf frame: hinge stile, lock stile, head + sill rails
-        put('gMetal', a0, a0 + 55, fD0, fD1, b, t);
-        put('gMetal', a1 - 55, a1, fD0, fD1, b, t);
-        put('gMetal', a0, a1, fD0, fD1, t - 0.055, t);
-        put('gMetal', a0, a1, fD0, fD1, b, b + 0.055);
+        put('gBlue', a0, a0 + 55, fD0, fD1, b, t);
+        put('gBlue', a1 - 55, a1, fD0, fD1, b, t);
+        put('gBlue', a0, a1, fD0, fD1, t - 0.055, t);
+        put('gBlue', a0, a1, fD0, fD1, b, b + 0.055);
         // Mid (lock) rail
         const mR = b + 1.05;
-        put('gMetal', i0, i1, fD0, fD1, mR - 0.045, mR + 0.045);
+        put('gBlue', i0, i1, fD0, fD1, mR - 0.045, mR + 0.045);
         // Solid MS kick panel at the base
-        put('gMetal', i0, i1, gD0 + 3, gD1 - 3, b + 0.055, b + 0.35);
+        put('gBlue', i0, i1, gD0 + 3, gD1 - 3, b + 0.055, b + 0.35);
         // Vertical grille bars over the glazed portion
         const ulen = i1 - i0;
         const nv = Math.max(3, Math.round(ulen / 110));
         for (let i = 1; i < nv; i++) {
           const a = i0 + (ulen * i) / nv;
-          put('gMetal', a - 8, a + 8, gD0, gD1, b + 0.35, t - 0.055);
+          put('gBlue', a - 8, a + 8, gD0, gD1, b + 0.35, t - 0.055);
         }
         // Horizontal grille bars, split around the lock rail
         for (const seg of [[b + 0.35, mR - 0.045], [mR + 0.045, t - 0.055]]) {
@@ -546,25 +547,25 @@ window.HouseScene = (function () {
           const nh = Math.max(1, Math.round(hs / 0.32));
           for (let i = 1; i < nh; i++) {
             const hh = seg[0] + (hs * i) / nh;
-            put('gMetal', i0, i1, gD0, gD1, hh - 0.008, hh + 0.008);
+            put('gBlue', i0, i1, gD0, gD1, hh - 0.008, hh + 0.008);
           }
         }
         // Butt hinges on the hinge stile
         for (const hz of [b + 0.25, b + 1.20, t - 0.25]) {
-          put('gMetal', a0 + 8, a0 + 46, fD1, fD1 + 22, hz - 0.06, hz + 0.06);
+          put('gBlue', a0 + 8, a0 + 46, fD1, fD1 + 22, hz - 0.06, hz + 0.06);
         }
         // Lock housing + lever pulls on both faces of the lock stile
         const hx0 = i1 - 62, hx1 = i1 - 42;
-        put('gMetal', hx0 - 40, hx1, fD0 - 6, fD1 + 6, mR - 0.085, mR + 0.085);
+        put('gBlue', hx0 - 40, hx1, fD0 - 6, fD1 + 6, mR - 0.085, mR + 0.085);
         put('chrome', hx0, hx1, fD1, fD1 + 45, b + 0.88, b + 1.22);
         put('chrome', hx0, hx1, fD0 - 45, fD0, b + 0.88, b + 1.22);
-        put('gMetal', hx0, hx1, fD1, fD1 + 45, b + 0.90, b + 0.94);
-        put('gMetal', hx0, hx1, fD1, fD1 + 45, b + 1.16, b + 1.20);
-        put('gMetal', hx0, hx1, fD0 - 45, fD0, b + 0.90, b + 0.94);
-        put('gMetal', hx0, hx1, fD0 - 45, fD0, b + 1.16, b + 1.20);
+        put('gBlue', hx0, hx1, fD1, fD1 + 45, b + 0.90, b + 0.94);
+        put('gBlue', hx0, hx1, fD1, fD1 + 45, b + 1.16, b + 1.20);
+        put('gBlue', hx0, hx1, fD0 - 45, fD0, b + 0.90, b + 0.94);
+        put('gBlue', hx0, hx1, fD0 - 45, fD0, b + 1.16, b + 1.20);
       } else {
         // Top rail (mild steel)
-        const gm = spec.grillMat || 'gMetal';   // V42: per-opening paint (FF south grilles off-white)
+        const gm = spec.grillMat || 'gBlue';   // V42: per-opening paint (FF south grilles off-white)
         // V42 spec.flush: rails and bars sit with their outer face ON the wall's
         // outer plane instead of centred in the wall thickness.
         const oF = outSign > 0 ? bb1 : bb0, iS = -outSign;            // outer face, inward sign
@@ -583,20 +584,20 @@ window.HouseScene = (function () {
       }
     } else if (spec.type === 'slider') { // Sliding glass door system
       // Outer frame
-      put('gMetal', a0, a0 + 55, fd0, fd1, b, t);
-      put('gMetal', a1 - 55, a1, fd0, fd1, b, t);
-      put('gMetal', a0, a1, fd0, fd1, t - 0.055, t);
-      put('gMetal', a0, a1, fd0, fd1, b, b + 0.055);
+      put('gBlue', a0, a0 + 55, fd0, fd1, b, t);
+      put('gBlue', a1 - 55, a1, fd0, fd1, b, t);
+      put('gBlue', a0, a1, fd0, fd1, t - 0.055, t);
+      put('gBlue', a0, a1, fd0, fd1, b, b + 0.055);
 
       const panes = spec.panes || 3;
       const pW = (a1 - a0) / panes; // panel width
       
       const drawPanel = (xStart, xEnd, trackZ, hasHandle, handleSide) => {
         // Panel frame
-        put('gMetal', xStart, xStart + 45, trackZ - 12, trackZ + 12, b + 0.02, t - 0.02);
-        put('gMetal', xEnd - 45, xEnd, trackZ - 12, trackZ + 12, b + 0.02, t - 0.02);
-        put('gMetal', xStart, xEnd, trackZ - 12, trackZ + 12, t - 0.065, t - 0.02);
-        put('gMetal', xStart, xEnd, trackZ - 12, trackZ + 12, b + 0.02, b + 0.065);
+        put('gBlue', xStart, xStart + 45, trackZ - 12, trackZ + 12, b + 0.02, t - 0.02);
+        put('gBlue', xEnd - 45, xEnd, trackZ - 12, trackZ + 12, b + 0.02, t - 0.02);
+        put('gBlue', xStart, xEnd, trackZ - 12, trackZ + 12, t - 0.065, t - 0.02);
+        put('gBlue', xStart, xEnd, trackZ - 12, trackZ + 12, b + 0.02, b + 0.065);
         // Glass pane
         put('glass', xStart + 40, xEnd - 40, trackZ - 4, trackZ + 4, b + 0.06, t - 0.06);
         // Brass pull handle on both sides
@@ -639,7 +640,7 @@ window.HouseScene = (function () {
       // out of the middle of the wall). spec.flush === false keeps the old
       // centred position. No projecting sill ledge on a flush window.
       const flushW = spec.flush !== false;
-      const fm = spec.frameMat || 'gMetal';   // V42: GF windows take white UPVC
+      const fm = spec.frameMat || 'gBlue';   // V42: GF windows take white UPVC
       const wO = outSign > 0 ? bb1 : bb0, wI = -outSign;
       const D = (d0, d1) => { const p = wO + wI * d0, q = wO + wI * d1; return [Math.min(p, q), Math.max(p, q)]; };
       const [wf0, wf1] = flushW ? D(0, 90) : [fd0, fd1];
@@ -686,14 +687,14 @@ window.HouseScene = (function () {
       if (i === 0 && opts.noPost0) continue;
       if (i === n && opts.noPost1) continue;
       const a = a0 + (len * i) / n;
-      if (dir === 'x') pb(bag, 'gMetal', a - 9, a + 9, fc - 9, fc + 9, sit, sit + h - 0.04);
-      else pb(bag, 'gMetal', fc - 9, fc + 9, a - 9, a + 9, sit, sit + h - 0.04);
+      if (dir === 'x') pb(bag, 'gBlue', a - 9, a + 9, fc - 9, fc + 9, sit, sit + h - 0.04);
+      else pb(bag, 'gBlue', fc - 9, fc + 9, a - 9, a + 9, sit, sit + h - 0.04);
     }
     // [material, end overhang, half width, z0, z1]
     const bars = [
-      ['gMetal', 14, 22, sit + h - 0.04, sit + h],
-      ['gMetal', 8, 12, sit + h - 0.01, sit + h + 0.012],
-      ['gMetal', 10, 15, sit + 0.09, sit + 0.125]
+      ['gBlue', 14, 22, sit + h - 0.04, sit + h],
+      ['gBlue', 8, 12, sit + h - 0.01, sit + h + 0.012],
+      ['gBlue', 10, 15, sit + 0.09, sit + 0.125]
     ];
     for (const [mat, over, half, z0, z1] of bars) {
       const s0 = a0 - (opts.corner0 ? half : over), s1 = a1 + (opts.corner1 ? half : over);
@@ -2156,11 +2157,11 @@ window.HouseScene = (function () {
         const p = (y1 - y0 - RF) / n;
         for (let i = 0; i <= n; i++) {
           const y = y0 + i * p;
-          pb(sBag, 'gMetal', EXm - RD / 2, EXm + RD / 2, y, y + RF, z0, z1);
+          pb(sBag, 'gBlue', EXm - RD / 2, EXm + RD / 2, y, y + RF, z0, z1);
         }
       }
       rodField(SCR_S + 30, SCR_N - 30, SCR_Z, WH);                      // fixed screen
-      pb(sBag, 'gMetal', EXm - RD / 2 - 5, EXm + RD / 2 + 5, SCR_S, SCR_N, WH - 0.03, WH);   // tie bar on the top line
+      pb(sBag, 'gBlue', EXm - RD / 2 - 5, EXm + RD / 2 + 5, SCR_S, SCR_N, WH - 0.03, WH);   // tie bar on the top line
       /* Louvre gates (V42 rev): horizontal blades in the rod colour, 100 mm
          deep, tilted 45° with the street edge DOWN, 70 mm pitch — each blade
          overlaps the one below, so from the street you see metal, not the
@@ -2335,7 +2336,7 @@ window.HouseScene = (function () {
     const STAIR_IN = { tread: 'woodF', riser: 'white2' };
     const RAIL_IN = { post: 'charDark', spindle: 'steel', rail: 'brass' };
     // Exterior stair handrail — dark posts, stainless rail (matches balcony rails)
-    const RAIL_OUT = { post: 'gMetal', spindle: 'gMetal', rail: 'gMetal' };   // V42 one graphite
+    const RAIL_OUT = { post: 'gBlue', spindle: 'gBlue', rail: 'gBlue' };   // V42 one graphite
 
     /* helpers reused by exterior + floors */
     /** East wall + middle wall stair geometry under flight 1 */
@@ -2360,14 +2361,14 @@ window.HouseScene = (function () {
       pb(bag, 'white', 16292, 16608, y0 - 8, y1 + 8, LAND_E - 0.018, LAND_E + 0.006);
       const f0 = a0 - jamb, f1 = a1 + jamb;
       const hz0 = z0 - 0.045, hz1 = z1 + 0.045;
-      pb(bag, 'gMetal', 16515, 16610, f0, a0, hz0, hz1);
-      pb(bag, 'gMetal', 16515, 16610, a1, f1, hz0, hz1);
-      pb(bag, 'gMetal', 16515, 16610, f0, f1, hz0, z0);
-      pb(bag, 'gMetal', 16515, 16610, f0, f1, z1, hz1);
+      pb(bag, 'gBlue', 16515, 16610, f0, a0, hz0, hz1);
+      pb(bag, 'gBlue', 16515, 16610, a1, f1, hz0, hz1);
+      pb(bag, 'gBlue', 16515, 16610, f0, f1, hz0, z0);
+      pb(bag, 'gBlue', 16515, 16610, f0, f1, z1, hz1);
       const inner = a1 - a0;
       for (let k = 1; k <= 2; k++) {
         const c = a0 + (inner * k) / 3;
-        pb(bag, 'gMetal', 16522, 16602, c - mull / 2, c + mull / 2, z0, z1);
+        pb(bag, 'gBlue', 16522, 16602, c - mull / 2, c + mull / 2, z0, z1);
       }
       pb(bag, 'glass', 16335, 16582, a0, a1, z0, z1);
       pb(bag, 'stone', 16505, 16628, f0 - 8, f1 + 8, hz0 - 0.028, hz0);
@@ -3123,10 +3124,10 @@ window.HouseScene = (function () {
           const w = wins[i];
           const xf0 = w.x0, xf1 = w.x1;
           // Perimeter frame (left jamb, right jamb, sill, head)
-          pb(eBag, 'gMetal', xf0, xf0 + WIN_J, yFf, yFb, zHf0, zHf1);
-          pb(eBag, 'gMetal', xf1 - WIN_J, xf1, yFf, yFb, zHf0, zHf1);
-          pb(eBag, 'gMetal', xf0, xf1, yFf, yFb, zWs, zWs + WIN_J / 1000);
-          pb(eBag, 'gMetal', xf0, xf1, yFf, yFb, zWh - WIN_J / 1000, zWh);
+          pb(eBag, 'gBlue', xf0, xf0 + WIN_J, yFf, yFb, zHf0, zHf1);
+          pb(eBag, 'gBlue', xf1 - WIN_J, xf1, yFf, yFb, zHf0, zHf1);
+          pb(eBag, 'gBlue', xf0, xf1, yFf, yFb, zWs, zWs + WIN_J / 1000);
+          pb(eBag, 'gBlue', xf0, xf1, yFf, yFb, zWh - WIN_J / 1000, zWh);
           // Glazing
           pb(eBag, 'glass', xf0 + WIN_J, xf1 - WIN_J, yFace + 26, yFace + 42, zWs + WIN_J / 1000, zWh - WIN_J / 1000);
           // V42: no projecting sill ledge — the window is flush
@@ -3172,7 +3173,7 @@ window.HouseScene = (function () {
           for (let i = 0; i <= n; i++) place(b0 + i * p);
         }
         rods(yBack, yN0, (c) =>
-          pb(eBag, 'gMetal', xFin0, xFin1, c - FACE / 2, c + FACE / 2, zIn0 - o, zIn1 + o));
+          pb(eBag, 'gBlue', xFin0, xFin1, c - FACE / 2, c + FACE / 2, zIn0 - o, zIn1 + o));
 
         // --- slab-edge wall under the flushed L ---
         pb(eBag, 'white', xBack, xFace, yFace, yN1, L.f1 - 0.45, zOut0);
@@ -3353,9 +3354,9 @@ window.HouseScene = (function () {
         const zS0 = zB1 - 0.018, zS1 = zS0 + 0.052;
 
         function post(x, y) {
-          pb(o2, 'gMetal', x - 28, x + POST + 28, y - 28, y + POST + 28, f2, f2 + 0.018);
-          pb(o2, 'gMetal', x, x + POST, y, y + POST, f2 + 0.018, zB0);
-          pb(o2, 'gMetal', x - 16, x + POST + 16, y - 16, y + POST + 16, zB0 - 0.018, zB0);
+          pb(o2, 'gBlue', x - 28, x + POST + 28, y - 28, y + POST + 28, f2, f2 + 0.018);
+          pb(o2, 'gBlue', x, x + POST, y, y + POST, f2 + 0.018, zB0);
+          pb(o2, 'gBlue', x - 16, x + POST + 16, y - 16, y + POST + 16, zB0 - 0.018, zB0);
         }
         const xPW = xW + 36;
         const xPE = xE - POST - 90;
@@ -3370,15 +3371,15 @@ window.HouseScene = (function () {
         // flush parapet — the west beam rides its own posts, 26 mm clear of
         // the parapet face (x 14280), so the wall reads as one white plane.
         const xB = xPW;                                   // 14306
-        pb(o2, 'gMetal', xB, xB + BEAM, y0, y1, zB0, zB1);
-        pb(o2, 'gMetal', xB, xE + OVER, y0, y0 + BEAM, zB0, zB1);
-        pb(o2, 'gMetal', xB, xE + OVER, y1 - BEAM, y1, zB0, zB1);
-        pb(o2, 'gMetal', xE - 70, xE + 24, y0, y1, zB0, zB1);
+        pb(o2, 'gBlue', xB, xB + BEAM, y0, y1, zB0, zB1);
+        pb(o2, 'gBlue', xB, xE + OVER, y0, y0 + BEAM, zB0, zB1);
+        pb(o2, 'gBlue', xB, xE + OVER, y1 - BEAM, y1, zB0, zB1);
+        pb(o2, 'gBlue', xE - 70, xE + 24, y0, y1, zB0, zB1);
 
         const nRaf = 4;
         for (let i = 1; i <= nRaf; i++) {
           const y = y0 + BEAM + ((y1 - y0 - 2 * BEAM) * i) / (nRaf + 1);
-          pb(o2, 'gMetal', xB + 20, xE + 8, y - 36, y + 36, zB0, zB1);
+          pb(o2, 'gBlue', xB + 20, xE + 8, y - 36, y + 36, zB0, zB1);
         }
 
         const slatY0 = y0 + BEAM + 12;
@@ -3386,7 +3387,7 @@ window.HouseScene = (function () {
         const nSlat = Math.max(4, Math.round((slatY1 - slatY0 - SLAT) / (SLAT + GAP)));
         for (let i = 0; i <= nSlat; i++) {
           const y = slatY0 + ((slatY1 - slatY0 - SLAT) * i) / nSlat;
-          pb(o2, 'gMetal', xB + 28, xE + OVER, y, y + SLAT, zS0, zS1);
+          pb(o2, 'gBlue', xB + 28, xE + OVER, y, y + SLAT, zS0, zS1);
         }
       })();
       (function sfNorthNERail() {
