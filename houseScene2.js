@@ -9322,7 +9322,7 @@ window.HouseScene = (function () {
 
         /* --- EAST BEDROOM (7736..12421, 232..4432) --- */
         Lum.fan(10050, 2332);                         // on the bed axis (9100..11000), room-centre depth
-        Lum.ac('x', 4432, 9550, 10500, 'S');          // north wall, facing the bed (the east wall is full-height wardrobe)
+        Lum.ac('y', 7736, 1650, 2600, 'E');           // west wall, above the dressing entrance (c 2453), nudged south; faces the bed
         Lum.downlight(11320, 1740);                   // in front of the wardrobe (face x 11820, y 232..2500)
         Lum.downlight(10950, 3800);                   // over the reading chair in the NE corner
         // (the old east-wall sconce at y 2300 sat behind the wardrobe: removed)
