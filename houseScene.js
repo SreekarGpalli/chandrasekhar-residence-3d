@@ -5490,7 +5490,7 @@ window.HouseScene = (function () {
     },
     f1: {
       E: [
-        { c: 3350, w: 1500, sill: 1100, h: 1200, type: 'win' },                  // kitchen, big (y 2600..4100, sink centred on it)
+        { c: 3575, w: 1950, sill: 1100, h: 1200, type: 'win' },                  // kitchen, big (y 2600..4550, sink centred on it; east wall unit removed)
         { c: 5880, w: 1000, sill: 2150, h: 550, type: 'fixed', panes: 2 },       // pooja clerestory light (centered on pooja/mandir axis)
         { c: 7100, w: 450, sill: 0, h: 2400, type: 'fixed', panes: 1 },          // entry sidelite
         { c: 8000, w: 1200, sill: 0, h: 2400, type: 'door' }                     // duplex entry pivot (north end)
@@ -9363,8 +9363,8 @@ window.HouseScene = (function () {
         // The SE return stops at x 11414 so both sides end 664 from the
         // wet-kitchen doorway's centre (c 10750), base and wall units alike.
         // Uppers everywhere there is solid wall; none on the east window
-        // (y 2600..4100) or over the breakfast counter.
-        const K = { s: 1077, sF: 1677, hob: 2100, sink: 3350 };   // worktop south edge / run front / appliance centres
+        // (y 2600..4550) or over the breakfast counter.
+        const K = { s: 1077, sF: 1677, hob: 2100, sink: 3575 };   // worktop south edge / run front / appliance centres
 
         // Base counters
         Fur.counterX(bag, 9486, 10086, K.s, K.sF - 28, fY);         // west run, south wall end (tops butt at y 1663, no overlap)
@@ -9377,9 +9377,9 @@ window.HouseScene = (function () {
         Fur.kitBaseDoors(bag, 'E', 10086, 1090, 2690, fY, null);    // west run, one door line wall to end
         Fur.kitBaseDoors(bag, 'N', K.sF, 11422, 11790, fY, null);   // SE south leg
         Fur.kitBaseDrawers(bag, 'W', 11800, 1690, 2510, fY);        // under the hob
-        Fur.kitBaseDoors(bag, 'W', 11800, 2530, 3070, fY, null);
-        Fur.kitBaseDoors(bag, 'W', 11800, 3090, 3630, fY, null);    // under the sink
-        Fur.kitBaseDoors(bag, 'W', 11800, 3650, 4325, fY, null);    // up to the north run's blind corner
+        Fur.kitBaseDoors(bag, 'W', 11800, 2530, 3285, fY, null);
+        Fur.kitBaseDoors(bag, 'W', 11800, 3305, 3845, fY, null);    // under the sink
+        Fur.kitBaseDoors(bag, 'W', 11800, 3865, 4325, fY, null);    // up to the north run's blind corner
         Fur.kitBaseDoors(bag, 'S', 4345, 10370, 11770, fY, null);
 
         // Hob / sink / hood (hood 900 along the wall: y 1650..2550, clear of the window)
@@ -9390,15 +9390,15 @@ window.HouseScene = (function () {
         // Wall units (z 1.45..2.30, 320 deep)
         Fur.kitWallRun(bag, 9486, 10086, 1065, 1385, fY, 'N', 2);   // over the west run's south end, flush with its front
         Fur.kitWallRun(bag, 11414, 12100, 1065, 1385, fY, 'N', 2);  // over the SE leg, into the corner
-        Fur.kitWallRun(bag, 12100, 12420, 4130, 4600, fY, 'W', 1);  // east wall, north of the window (y 2600..4100) (stops at the north run's door line)
+        // east wall: no wall unit, the window runs y 2600..4550
         Fur.kitWallRun(bag, 10350, 12100, 4625, 4945, fY, 'S', 4);  // north wall, into the corner
 
         // Fridge (NW) — doors into the kitchen, not into the counter end
         Fur.fridge(bag, 9486, 10350, 4245, 4945, fY, 'S');
         // quartz backsplash, worktop to wall units
         pb(bag, 'quartz', 12408, 12420, K.s, 2600, fY + 0.88, fY + 1.45);
-        pb(bag, 'quartz', 12408, 12420, 2600, 4100, fY + 0.88, fY + 1.10);   // under the window sill
-        pb(bag, 'quartz', 12408, 12420, 4100, 4933, fY + 0.88, fY + 1.45);
+        pb(bag, 'quartz', 12408, 12420, 2600, 4550, fY + 0.88, fY + 1.10);   // under the window sill
+        pb(bag, 'quartz', 12408, 12420, 4550, 4933, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 10350, 11800, 4933, 4945, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 9486, 10086, 1065, 1077, fY + 0.88, fY + 1.45);
         pb(bag, 'quartz', 11414, 11800, 1065, 1077, fY + 0.88, fY + 1.45);
