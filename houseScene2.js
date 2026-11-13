@@ -10237,6 +10237,7 @@ window.HouseScene = (function () {
             pb(bag, 'white2', r.x0, r.x1, r.y0, r.y1, top - 0.010, top - 0.008);
           }
           pb(bag, 'white2', 6020, 9260, 6996, 8641, top - 0.010, top - 0.008);   // the double-height void's top: same plate, same skin
+          pb(bag, 'white2', 4630, 4920, 6496, 8641, top - 0.010, top - 0.008);   // stair walkway strip beside the gallery
         }
         eastBath(bag, fY);                                            // zellige shower, tile to the slab, flat-deck basin
         // --- Bedroom 03 ---
