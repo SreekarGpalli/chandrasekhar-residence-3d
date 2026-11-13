@@ -610,6 +610,7 @@ window.HouseScene = (function () {
     const tmp = { v: new THREE.Vector3(), n: new THREE.Vector3(), nm: new THREE.Matrix3() };
     const boxG = new THREE.BoxGeometry(1, 1, 1);
     const cylG = new THREE.CylinderGeometry(1, 1, 1, 14);
+    const discG = new THREE.CylinderGeometry(1, 1, 1, 72);   // smooth round mirrors / plates
     const trunkG = new THREE.CylinderGeometry(0.52, 1, 1, 10);
     const sphG = new THREE.IcosahedronGeometry(1, 1);
     const sph0G = new THREE.IcosahedronGeometry(1, 0); // low-poly blob for foliage
@@ -1060,6 +1061,7 @@ window.HouseScene = (function () {
       box: (mat, cx, cy, cz, sx, sy, sz, rx, ry, rz) => place(mat, boxG, cx, cy, cz, sx, sy, sz, rx, ry, rz),
       step: (mat, cx, cy, cz, sx, sy, sz, rx, ry, rz) => place(mat, stepG, cx, cy, cz, sx, sy, sz, rx, ry, rz),
       cyl: (mat, cx, cy, cz, r, h, rx, ry, rz) => place(mat, cylG, cx, cy, cz, r, h, r, rx, ry, rz),
+      disc: (mat, cx, cy, cz, r, h, rx, ry, rz) => place(mat, discG, cx, cy, cz, r, h, r, rx, ry, rz),
       trunk: (mat, cx, cy, cz, rBot, h) => place(mat, trunkG, cx, cy, cz, rBot, h, rBot),
       sph: (mat, cx, cy, cz, r, sy) => place(mat, sphG, cx, cy, cz, r, sy || r, r),
       // irregular foliage blob: independent xyz scale + yaw; low=true uses
@@ -8848,7 +8850,7 @@ window.HouseScene = (function () {
         /* --- EAST WALK-IN (4920..7620, 1755..3151) --- */
         Lum.downlight(5950, 2153);                    // down the middle of the wardrobe aisle
         Lum.downlight(7250, 2453);                    // lobby: bedroom door, bath door, full-length mirror
-        Lum.vanity('y', 2101, 2601, 5470, 2.38, 'E'); // bar over the mirror leaf of the west run
+        Lum.task(5350, 5440, 1840, 2516, 2.04);       // under-cabinet wash over the make-up desk
 
         /* --- EAST BATH (4920..7620, 233..1640) --- */
         Lum.downlight(5370, 900);                     // over the shower
@@ -9750,8 +9752,41 @@ window.HouseScene = (function () {
            x 5450); the west run stops at y 2601 so no leaf or pull touches the north
            run's front. */
         Fur.rug(bag, 5700, 7200, 1880, 2476, fY);                                // runner down the aisle into the changing area
-        Fur.fullHeightWardrobe(bag, 4920, 6500, 2601, 3151, fY, fY + 3.203, 'S');          // north run (owns the corner)
-        Fur.fullHeightWardrobe(bag, 4920, 5470, 1755, 2601, fY, fY + 3.203, 'E', { doorW: [346, null], mirrorAt: [1] }); // west run, mirror leaf
+        Fur.fullHeightWardrobe(bag, 4920, 6500, 2601, 3151, fY, fY + 3.203, 'S', { mirrorAt: [2] });   // north run (owns the corner); its last leaf is the full-length mirror
+        /* WEST ARM = MAKE-UP NOOK built into the wardrobe (x 4920..5470, y 1755..2601).
+           Two slim fins (70) frame a 706 mm niche (y 1825..2531) under a full-width
+           overhead cabinet (z 2.05..slab, two leaves). Niche: oak back panel, a
+           round backlit brass-framed mirror (dia 600), a floating quartz desk
+           (z 0.75, one drawer under it, knee space clear) and a pouf tucked in.
+           Disc stack on the back panel (x): panel 4920..4930, halo 4930..4936,
+           brass plate 4936..4942, silvered glass 4942..4948 - each disc only
+           touches the one behind it, nothing shares a plane in view. */
+        {
+          const Z = h => fY + h, SL = fY + 3.203, yc = 2178;
+          pb(bag, 'lacq', 4895, 5470, 1755, 1825, fY + 0.08, Z(2.05));                 // south fin
+          pb(bag, 'lacq', 4895, 5470, 2531, 2601, fY + 0.08, Z(2.05));                 // north fin
+          pb(bag, 'aluDark', 4920, 5430, 1755, 1825, fY, fY + 0.08);                   // plinths, 40 back
+          pb(bag, 'aluDark', 4920, 5430, 2531, 2601, fY, fY + 0.08);
+          pb(bag, 'lacq', 4895, 5448, 1755, 2601, Z(2.05), SL);                        // overhead cabinet carcass
+          [[1757, 2176, 'end'], [2180, 2599, 'start']].forEach(l =>
+            aluShutter(bag, 'y', 5470, 1, l[0], l[1], Z(2.07), SL - 0.025, 'lacq', { pull: [Z(2.12), Z(2.40)], pullSide: l[2] }));
+          pb(bag, 'aluDark', 4920, 5448, 1755, 2601, SL - 0.025, SL);                  // soffit shadow gap
+          pb(bag, 'oakDark', 4920, 4930, 1825, 2531, fY + 0.08, Z(2.05));             // niche back panel
+          prb(bag, 'quartz', 4930, 5440, 1825, 2531, Z(0.72), Z(0.75), 4);            // desk top
+          pb(bag, 'oakDark', 4930, 5424, 1830, 2526, Z(0.60), Z(0.72));               // slim drawer under it
+          pb(bag, 'brass', 5424, 5436, yc - 60, yc + 60, Z(0.655), Z(0.667));         // bar pull
+          bag.disc('lamp', 4.933, Z(1.45), -yc / 1000, 0.335, 0.006, 0, 0, Math.PI / 2);   // halo glow ring
+          bag.disc('brassI', 4.939, Z(1.45), -yc / 1000, 0.318, 0.006, 0, 0, Math.PI / 2); // brass frame plate
+          bag.disc('mirrorI', 4.945, Z(1.45), -yc / 1000, 0.300, 0.006, 0, 0, Math.PI / 2); // round mirror
+          // on the desk: valet tray with a small bowl, two flacons, brush cup, organiser
+          pb(bag, 'charDark', 5030, 5230, 1900, 2080, Z(0.75), Z(0.77));
+          pb(bag, 'brassI', 5050, 5210, 1920, 2060, Z(0.77), Z(0.775));
+          bag.cyl('glass', 5.12, Z(0.795), -2.30, 0.024, 0.09);  bag.cyl('brassI', 5.12, Z(0.85), -2.30, 0.012, 0.02);
+          bag.cyl('glass', 5.19, Z(0.785), -2.38, 0.020, 0.07);  bag.cyl('charDark', 5.19, Z(0.83), -2.38, 0.010, 0.02);
+          bag.cyl('ceramic', 5.30, Z(0.805), -2.42, 0.032, 0.11);                       // brush cup
+          pb(bag, 'oakDark', 5260, 5400, 1920, 2040, Z(0.75), Z(0.80));                 // makeup organiser tray
+          Fur.pouf(bag, 5600, yc, fY);                                                  // stool tucked under the desk
+        }
         Fur.art(bag, 'x', 1755, 'N', 5900, fY, 1.55, 800, 1100, ['artD', 'artB', 'artC']);   // on the bath partition
         // --- Second Floor Family Room & Entertainment Lounge ---
         Fur.rug(bag, 9400, 11950, 5350, 7850, fY);
