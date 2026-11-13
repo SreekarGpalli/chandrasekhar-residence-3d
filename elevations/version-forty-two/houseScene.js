@@ -2121,6 +2121,7 @@ window.HouseScene = (function () {
 
     const lights = [];
 
+    const GP_SLABS = [];   // V42 grass-paver slab rects (mm), filled by grassPavers()
     /* -------- site (always visible) -------- */
     const sBag = makeBag(THREE);
     (function site() {
@@ -2226,12 +2227,85 @@ window.HouseScene = (function () {
             const a0 = Math.max(x, X0 + M), a1 = Math.min(x + SW, X1 - M);
             if (a1 - a0 < 300) continue;
             pb(sBag, 'concrete', a0, a1, y, y + SD, 0, 0.045);
+            GP_SLABS.push([a0, a1, y, y + SD]);
           }
         }
       })();
 
     })();
     const site = sBag.build(THREE, materials); site.name = 'site'; root.add(site);
+    /* V42 real grass in the paver joints: the grass bed gets a painted turf
+       texture (world-projected so it does not smear) and the joints are
+       planted with instanced crossed blade tufts, dense, short (35..85 mm
+       above the slab tops), spilling a little over the slab edges — so the
+       joints read as living grass, not a green stripe. */
+    (function jointGrass() {
+      if (typeof document === 'undefined') return;
+      const R = rng(4242);
+      const YX0 = -750, YX1 = 22100, YY0 = 11270, YY1 = 18620, BED = 0.035;
+      // turf on the bed
+      const ts = 512, tc = document.createElement('canvas'); tc.width = tc.height = ts;
+      const tx = tc.getContext('2d');
+      tx.fillStyle = '#5d7740'; tx.fillRect(0, 0, ts, ts);
+      for (let i = 0; i < 46000; i++) {
+        const gg = 0.6 + R() * 0.45, dry = R() < 0.06;
+        tx.fillStyle = dry ? 'rgba(' + ((146 * gg) | 0) + ',' + ((136 * gg) | 0) + ',' + ((72 * gg) | 0) + ',0.8)'
+                           : 'rgba(' + ((80 * gg) | 0) + ',' + ((122 * gg) | 0) + ',' + ((52 * gg) | 0) + ',0.8)';
+        tx.fillRect(R() * ts, R() * ts, 1.5, 3 + R() * 4);
+      }
+      const turf = new THREE.CanvasTexture(tc);
+      if (THREE.sRGBEncoding !== undefined) turf.encoding = THREE.sRGBEncoding;
+      turf.wrapS = turf.wrapT = THREE.RepeatWrapping; turf.anisotropy = 8;
+      site.traverse(function (o) {
+        if (!o.isMesh || o.userData.matKey !== 'grass') return;
+        const p = o.geometry.attributes.position, uv = new Float32Array(p.count * 2);
+        for (let i = 0; i < p.count; i++) { uv[2 * i] = p.getX(i) / 1.2; uv[2 * i + 1] = p.getZ(i) / 1.2; }
+        o.geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+        o.material = o.material.clone(); o.material.map = turf; o.material.color.setRGB(1, 1, 1);
+        o.userData.keepMap = true; o.material.needsUpdate = true;
+      });
+      // blade tuft card
+      const bs = 64, bc = document.createElement('canvas'); bc.width = bc.height = bs;
+      const bx = bc.getContext('2d');
+      // Subtle: fine blades, a lighter natural green with a little dry straw.
+      for (let i = 0; i < 46; i++) {
+        const gg = 0.75 + R() * 0.35, dry = R() < 0.12;
+        bx.strokeStyle = dry ? 'rgba(' + ((150 * gg) | 0) + ',' + ((146 * gg) | 0) + ',' + ((92 * gg) | 0) + ',1)'
+                             : 'rgba(' + ((104 * gg) | 0) + ',' + ((146 * gg) | 0) + ',' + ((70 * gg) | 0) + ',1)';
+        bx.lineWidth = 0.9 + R() * 1.0;
+        const x0 = 6 + R() * (bs - 12);
+        bx.beginPath(); bx.moveTo(x0, bs);
+        bx.quadraticCurveTo(x0 + (R() - 0.5) * 18, bs * 0.45, x0 + (R() - 0.5) * 24, 4 + R() * 16);
+        bx.stroke();
+      }
+      const blade = new THREE.CanvasTexture(bc);
+      if (THREE.sRGBEncoding !== undefined) blade.encoding = THREE.sRGBEncoding;
+      const bmat = new THREE.MeshStandardMaterial({ map: blade, alphaTest: 0.45, roughness: 0.95, metalness: 0, side: THREE.DoubleSide });
+      const CARD = new THREE.PlaneGeometry(1, 1);
+      const inSlab = (x, y, pad) => GP_SLABS.some(r => x > r[0] + pad && x < r[1] - pad && y > r[2] + pad && y < r[3] - pad);
+      const N = 14000;
+      const inst = new THREE.InstancedMesh(CARD, bmat, N * 2);
+      inst.castShadow = false; inst.receiveShadow = true; inst.frustumCulled = false;
+      const e = new THREE.Euler(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), m4 = new THREE.Matrix4();
+      let k = 0, tries = 0;
+      while (k < N * 2 && tries < N * 40) {
+        tries++;
+        const x = YX0 + R() * (YX1 - YX0), y = YY0 + R() * (YY1 - YY0);
+        if (inSlab(x, y, 5)) continue;               // joints + margin only, 5 mm spill onto slab edges
+        const hh = 0.025 + R() * 0.025, yaw = R() * Math.PI;   // 25..50 mm, a trimmed joint
+        for (let t = 0; t < 2; t++) {
+          e.set(0, yaw + t * Math.PI / 2, (R() - 0.5) * 0.35); q.setFromEuler(e);
+          v.set(x / 1000, BED + hh * 0.46, -y / 1000); sc.set(hh * 1.6, hh, hh);
+          inst.setMatrixAt(k++, m4.compose(v, q, sc));
+        }
+      }
+      inst.count = k; inst.instanceMatrix.needsUpdate = true;
+      inst.name = 'jointGrass';
+      // The viewers re-skin every mesh they do not recognise, which strips the
+      // blade cut-out (white quads). They leave a group named 'garden' alone
+      // and give its alphaTest cards a proper normal-buffer mask.
+      const gg = new THREE.Group(); gg.name = 'garden'; gg.add(inst); root.add(gg);
+    })();
     placeCar();
     // V42: no garden (trees, hedges, shrubs, grass tufts) — the north yard is paved.
     void placeGarden;
