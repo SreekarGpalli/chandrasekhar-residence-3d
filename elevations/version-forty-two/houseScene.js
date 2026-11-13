@@ -3350,17 +3350,21 @@ window.HouseScene = (function () {
         const xW = SHELTER_X, xE = EX1;
         const POST = 110, BEAM = 100;
         const SLAT = 50, GAP = 130;
-        const OVER = 180;
         const zB0 = L.roof - 0.05, zB1 = zB0 + 0.15;
         const zS0 = zB1 - 0.018, zS1 = zS0 + 0.052;
 
+        // V42: the frame stops ON the building's east face (17372). The east
+        // posts move out so their outer face is that plane and the east edge
+        // beam sits exactly on them; plates/caps never cross the face.
+        const XFACE = eastX[1] + 10;                      // 17372 building east face
         function post(x, y) {
-          pb(o2, 'gBlue', x - 28, x + POST + 28, y - 28, y + POST + 28, f2, f2 + 0.018);
+          const cx = (v) => Math.min(v, XFACE);
+          pb(o2, 'gBlue', x - 28, cx(x + POST + 28), y - 28, y + POST + 28, f2, f2 + 0.018);
           pb(o2, 'gBlue', x, x + POST, y, y + POST, f2 + 0.018, zB0);
-          pb(o2, 'gBlue', x - 16, x + POST + 16, y - 16, y + POST + 16, zB0 - 0.018, zB0);
+          pb(o2, 'gBlue', x - 16, cx(x + POST + 16), y - 16, y + POST + 16, zB0 - 0.018, zB0);
         }
         const xPW = xW + 36;
-        const xPE = xE - POST - 90;
+        const xPE = XFACE - POST;                         // 17262..17372, flush with the facade
         const yPS = y0 + 70;
         const yPN = y1 - POST - 70;
         post(xPW, yPS);
@@ -3375,12 +3379,11 @@ window.HouseScene = (function () {
         // V42: a closed perimeter frame — west, south, north AND east edge
         // beams all run up to the slat tops (zS1), so the slats die into
         // flat faces on every side; no slat ends show from the street.
-        const xF1 = xE + OVER, xF0 = xF1 - BEAM;          // east edge beam
+        const xF1 = XFACE, xF0 = xF1 - POST;              // east edge beam = post width, right on the posts
         pb(o2, 'gBlue', xB, xB + BEAM, y0 + BEAM, y1 - BEAM, zB0, zS1);   // west
         pb(o2, 'gBlue', xB, xF1, y0, y0 + BEAM, zB0, zS1);                // south (owns SW/SE corners)
         pb(o2, 'gBlue', xB, xF1, y1 - BEAM, y1, zB0, zS1);                // north (owns NW/NE corners)
         pb(o2, 'gBlue', xF0, xF1, y0 + BEAM, y1 - BEAM, zB0, zS1);        // east
-        pb(o2, 'gBlue', xE - 70, xE + 24, y0, y1, zB0, zB1);
 
         const nRaf = 4;
         for (let i = 1; i <= nRaf; i++) {
