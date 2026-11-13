@@ -38,7 +38,7 @@ window.HouseScene = (function () {
     white:   0xece7db,  // BODY — inspiration off-white (Upparapalli house)
     white2:  0xf3efe6,  // BODY — same off-white, slightly lighter soffits / reveals
     fin:     0xd6c9ae,  // east verticals only — V6 lime, not chalk
-    rodWood: 0xa09583,  // V42: box rods — smooth matte warm sand, close to the walls (wood tones all read too loud)
+    rodWood: 0x6d757c,  // V42: box rods — mid blue-grey, smooth matte (owner picked B of 3 cool candidates)
     gMetal:  0x4a4945,  // V42: warm satin graphite — gates only
     gBlue:   0x48525a,  // V42: blue-grey, measured middle on screen (0x46525c too blue, 0x4a5056 neutral) — rods, rails, pergola, frames
     fin2:    0x62635e,  // east vertical rods — warm graphite, coordinated with grey frames and stone
