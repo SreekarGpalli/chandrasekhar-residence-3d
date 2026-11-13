@@ -108,7 +108,7 @@ window.HouseScene = (function () {
     nbr2:    0xc7bfb3,
     nbr3:    0xb8b3a8,
     nbrWin:  0x20272e,
-    soil:    0x4a3b2d,
+    soil:    0x7d6046,  // V42: warm red-brown garden earth (0x4a3b2d read black in the wall shade)
     murtiGold: 0xd4ad55,
     murtiDark: 0x2c2e32,
     murtiBlue: 0x4568a8,
@@ -1532,9 +1532,10 @@ window.HouseScene = (function () {
     /* Photoreal garden sprites (crossed billboards). Magenta/cyan keyed
        at load. Procedural umbrella trees are the fallback. */
     function placeGarden() {
-      const g = new THREE.Group();
-      g.name = 'garden';
-      root.add(g);
+      // One 'garden' group for everything alphaTest (joint grass + plants):
+      // the viewers protect only the FIRST group of that name from re-skinning.
+      let g = root.getObjectByName('garden');
+      if (!g) { g = new THREE.Group(); g.name = 'garden'; root.add(g); }
 
       function notifyGarden() {
         try {
@@ -1952,119 +1953,57 @@ window.HouseScene = (function () {
            restraint as the facade. */
         // A real north lawn: open grass in the middle, trees staggered
         // (not a parade), flowering shrubs in beds, hedge on three sides.
-        makeTree('neem',  3600, 15800, 3.40, { spread: 0.31 });
-        makeTree('neem',  10800, 16600, 2.95, { spread: 0.28 });
-        makeTree('mango', 16800, 15000, 3.70, { spread: 0.36 });
-        makeTree('mango', 19800, 16400, 3.50, { spread: 0.34 });
-        makeShrub('boug', 18800, 12850, 0.92, { cards: 78, flowers: 0.32, leaf: 'hedge' });
-        makeShrub('boug', 20200, 13400, 0.80, { cards: 68, flowers: 0.36, leaf: 'hedge' });
-        makeShrub('boug', 19400, 14100, 0.74, { cards: 62, flowers: 0.28, leaf: 'hedge' });
-        makeShrub('boug', 15600, 13200, 0.78, { cards: 66, flowers: 0.30, leaf: 'hedge' });
-        makeShrub('boug',  1600, 13000, 0.88, { cards: 72, flowers: 0.30, leaf: 'hedge' });
-        makeShrub('boug',  2600, 13800, 0.76, { cards: 60, flowers: 0.28, leaf: 'hedge' });
-        makeShrub('boug',  2200, 15200, 0.64, { cards: 52, flowers: 0.18, leaf: 'hedge' });
-        makeShrub('boug', 18400, 17000, 0.70, { cards: 56, flowers: 0.26, leaf: 'hedge' });
-        makeShrub('boug',  5400, 12550, 0.70, { cards: 58, flowers: 0.30, leaf: 'hedge' });
-        makeShrub('boug', 11800, 12680, 0.68, { cards: 56, flowers: 0.28, leaf: 'hedge' });
-        makeShrub('hedge', 5000, 17200, 0.55, { cards: 44, flowers: 0 });
-        makeShrub('hedge', 14000, 17300, 0.52, { cards: 42, flowers: 0 });
-        makeShrub('hedge', 19000, 17150, 0.56, { cards: 44, flowers: 0 });
-        makeHedge('hedge', 700, 21200, 17900, 1.05, 0.90);
-        makeHedgeNS('hedge', 900, 12600, 17400, 0.88, 0.52);
-        makeHedgeNS('hedge', 20900, 12600, 17400, 0.88, 0.52);
-
-        /* Real grass. The lawn was one flat green box — a colour, not a
-           surface. Now it gets a painted turf texture on the slab itself
-           (world-projected, because the merged geometry's UVs are planar and
-           smear on anything horizontal) plus ~7000 instanced blade tufts, which
-           is what actually catches the light and gives the lawn a nap. Tufts
-           thin out under the canopies where grass really is sparser. */
-        (function realGrass() {
-          const GX0 = -0.75, GX1 = 22.10, GY0 = -18.620, GY1 = -11.270;  // world x, z
-          const TOP = 0.045;
-          // --- turf texture on the slab
-          const s = 512, c = document.createElement('canvas');
-          c.width = c.height = s;
-          const x = c.getContext('2d');
-          x.fillStyle = '#5c7a3c'; x.fillRect(0, 0, s, s);
-          for (let i = 0; i < 42000; i++) {
-            const g = 0.62 + rnd3() * 0.42, dry = rnd3() < 0.07;
-            x.fillStyle = dry
-              ? 'rgba(' + ((150 * g) | 0) + ',' + ((140 * g) | 0) + ',' + ((74 * g) | 0) + ',0.8)'
-              : 'rgba(' + ((84 * g) | 0) + ',' + ((124 * g) | 0) + ',' + ((56 * g) | 0) + ',0.8)';
-            x.fillRect(rnd3() * s, rnd3() * s, 1.5, 3 + rnd3() * 4);
+        /* V42 Indian-style garden: planting lives in 1.2 m soil beds against
+           the compound wall (north, west, east), the middle stays paved.
+             · back row — tall narrow Ashoka (Polyalthia longifolia) columns,
+               the classic compound-wall tree, ~2.4 m apart on the north bed
+               and at the ends of the side beds
+             · one mango per side bed for shade
+             · front row — low shrubs: green clipped mounds and bougainvillea
+               with only a few flowers, spaced so the bed breathes.
+           Every canopy stays inside its bed or leans over the wall, never
+           over the paving more than a little. */
+        function makeAshoka(xmm, ymm, height, rBase) {
+          const cx = xmm / 1000, cz = -ymm / 1000;
+          woodBag.trunk('bark', cx, 0.02 + 0.35, cz, 0.055, 0.70);
+          // Dense, dark, softly tapering column (mango leaves: the deep glossy
+          // green of a real Ashoka), full almost to the ground.
+          const bucket = leafBucket('mango', null, true);
+          const z0 = 0.30, z1 = height, nS = 10;
+          for (let k = 0; k < nS; k++) {
+            const t = k / (nS - 1);
+            const r = rBase * (1 - Math.pow(t, 1.3) * 0.82) * (0.94 + rnd3() * 0.12);
+            const cy = z0 + (z1 - z0) * t;
+            canopyVolume(bucket, cx, cy, cz, r, (z1 - z0) / (nS * 0.9), Math.round(78 * (1 - t * 0.5)), height * 0.085);
           }
-          const turf = new THREE.CanvasTexture(c);
-          if (THREE.sRGBEncoding !== undefined) turf.encoding = THREE.sRGBEncoding;
-          turf.wrapS = turf.wrapT = THREE.RepeatWrapping;
-          turf.minFilter = THREE.LinearMipmapLinearFilter;
-          turf.anisotropy = 8;
-          const site = root.getObjectByName('site');
-          if (site) site.traverse(function (o) {
-            if (!o.isMesh || o.userData.matKey !== 'grass') return;
-            const p = o.geometry.attributes.position, nn = o.geometry.attributes.normal;
-            const uv = new Float32Array(p.count * 2);
-            for (let i = 0; i < p.count; i++) {
-              const ax = Math.abs(nn.getX(i)), ay = Math.abs(nn.getY(i)), az = Math.abs(nn.getZ(i));
-              let u, v;
-              if (ay >= ax && ay >= az) { u = p.getX(i); v = p.getZ(i); }
-              else if (ax >= az) { u = p.getZ(i); v = p.getY(i); }
-              else { u = p.getX(i); v = p.getY(i); }
-              uv[2 * i] = u / 1.6; uv[2 * i + 1] = v / 1.6;
-            }
-            o.geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-            o.material.map = turf;
-            o.material.color.setRGB(1, 1, 1);
-            o.material.needsUpdate = true;
-          });
-          // --- blade tufts
-          const bs = 64, bc = document.createElement('canvas');
-          bc.width = bc.height = bs;
-          const bx = bc.getContext('2d');
-          for (let i = 0; i < 34; i++) {
-            const g = 0.5 + rnd3() * 0.5;
-            bx.strokeStyle = 'rgba(' + ((80 * g) | 0) + ',' + ((126 * g) | 0) + ',' + ((50 * g) | 0) + ',1)';
-            bx.lineWidth = 1.6 + rnd3() * 1.6;
-            const x0 = 8 + rnd3() * (bs - 16);
-            bx.beginPath(); bx.moveTo(x0, bs);
-            bx.quadraticCurveTo(x0 + (rnd3() - 0.5) * 18, bs * 0.45, x0 + (rnd3() - 0.5) * 26, 4 + rnd3() * 14);
-            bx.stroke();
+        }
+        const NB_Y = 18020, WB_X = -150, EB_X = 21500;      // bed centre lines
+        for (let i = 0; i < 9; i++) {
+          const x = 1300 + i * 2400;
+          makeAshoka(x, NB_Y + ((i % 2) ? 60 : -60), (i % 2) ? 4.7 : 5.1, 0.55);
+          if (i < 8) {
+            const sx = x + 1200;
+            if (i % 3 === 1) makeShrub('boug', sx, 17760, 0.78, { cards: 120, flowers: 0.12, leaf: 'mango' });
+            else makeShrub('mango', sx, 17760, 0.62 + (i % 2) * 0.08, { cards: 110, flowers: 0 });
           }
-          const blade = new THREE.CanvasTexture(bc);
-          if (THREE.sRGBEncoding !== undefined) blade.encoding = THREE.sRGBEncoding;
-          blade.minFilter = THREE.LinearMipmapLinearFilter;
-          blade.generateMipmaps = true;
-          const bmat = new THREE.MeshStandardMaterial({
-            map: blade, transparent: false, alphaTest: 0.45,
-            roughness: 0.95, metalness: 0, side: THREE.DoubleSide
-          });
-          const N = 7000;
-          const inst = new THREE.InstancedMesh(CARD, bmat, N * 2);
-          inst.castShadow = false; inst.receiveShadow = true; inst.frustumCulled = false;
-          let k = 0;
-          for (let i = 0; i < N; i++) {
-            const px = GX0 + rnd3() * (GX1 - GX0);
-            const pz = GY0 + rnd3() * (GY1 - GY0);
-            const hh = 0.075 + rnd3() * 0.075;
-            const yaw = rnd3() * Math.PI;
-            for (let q = 0; q < 2; q++) {          // crossed, so a tuft has volume
-              _e.set(0, yaw + q * Math.PI / 2, (rnd3() - 0.5) * 0.30);
-              _q.setFromEuler(_e);
-              _v.set(px, TOP + hh * 0.48, pz);
-              _s.set(hh * 1.5, hh, hh);
-              inst.setMatrixAt(k++, _m4.compose(_v, _q, _s));
-            }
-          }
-          inst.count = k;
-          inst.instanceMatrix.needsUpdate = true;
-          g.add(inst);
-        })();
+        }
+        for (const bx of [WB_X, EB_X]) {
+          makeAshoka(bx, 11950, 4.4, 0.50);
+          makeTree('mango', bx, 15100, 3.4, { spread: 0.28 });
+          makeShrub('mango', bx, 13350, 0.66, { cards: 110, flowers: 0 });
+          makeShrub('boug', bx, 16650, 0.74, { cards: 120, flowers: 0.12, leaf: 'mango' });
+          makeShrub('mango', bx, 12750, 0.52, { cards: 90, flowers: 0 });
+        }
 
         // --- one InstancedMesh per leaf species
         Object.keys(leafSets).forEach(function (name) {
           const set = leafSets[name];
           if (!set.tex || !set.m.length) return;
-          const im = new THREE.InstancedMesh(CARD, leafMaterial(set.tex), set.m.length);
+          const lm = leafMaterial(set.tex);
+          // V42: the photo leaf cards glow lime in full sun; a gentle tint
+          // brings them to a deep natural green so the planting stays subtle.
+          if (name === 'mango' || name === 'hedge') lm.color.setRGB(0.74, 0.80, 0.70);
+          const im = new THREE.InstancedMesh(CARD, lm, set.m.length);
           set.m.forEach(function (mm, i) { im.setMatrixAt(i, mm); });
           im.instanceMatrix.needsUpdate = true;
           im.castShadow = set.shadow; im.receiveShadow = true;
@@ -2217,7 +2156,21 @@ window.HouseScene = (function () {
          rows offset half a slab. Slabs are clipped to the yard; a slab cut
          below 300 mm is left as grass rather than a sliver. */
       (function grassPavers() {
-        const X0 = -750, X1 = 22100, Y0 = 11270, Y1 = 18620;
+        // V42 Indian layout: 1.2 m soil beds against the N / W / E compound
+        // walls; the grass pavers fill the middle only.
+        const BD = 1200;
+        // Raised beds: soil at 0.12, held by a slim 75 mm stone kerb (top
+        // 0.15) on every open edge; the compound wall is the back edge.
+        const KB = 75, KT = 0.15;
+        pb(sBag, 'soil', -750, 22100, 18620 - BD + KB, 18620, 0, 0.12);                 // north bed
+        pb(sBag, 'soil', -750, -750 + BD - KB, 11270 + KB, 18620 - BD + KB, 0, 0.12);    // west bed
+        pb(sBag, 'soil', 22100 - BD + KB, 22100, 11270 + KB, 18620 - BD + KB, 0, 0.12);  // east bed
+        pb(sBag, 'copingLight', -750 + BD - KB, 22100 - BD + KB, 18620 - BD, 18620 - BD + KB, 0, KT);   // N bed front
+        pb(sBag, 'copingLight', -750 + BD - KB, -750 + BD, 11270, 18620 - BD, 0, KT);                   // W bed front
+        pb(sBag, 'copingLight', 22100 - BD, 22100 - BD + KB, 11270, 18620 - BD, 0, KT);                 // E bed front
+        pb(sBag, 'copingLight', -750, -750 + BD - KB, 11270, 11270 + KB, 0, KT);                        // W bed south end
+        pb(sBag, 'copingLight', 22100 - BD + KB, 22100, 11270, 11270 + KB, 0, KT);                      // E bed south end
+        const X0 = -750 + BD, X1 = 22100 - BD, Y0 = 11270, Y1 = 18620 - BD;
         const SW = 1200, SD = 600, J = 100, M = 100;     // slab, joint, edge margin
         pb(sBag, 'grass', X0, X1, Y0, Y1, 0, 0.035);
         let row = 0;
@@ -2242,7 +2195,7 @@ window.HouseScene = (function () {
     (function jointGrass() {
       if (typeof document === 'undefined') return;
       const R = rng(4242);
-      const YX0 = -750, YX1 = 22100, YY0 = 11270, YY1 = 18620, BED = 0.035;
+      const YX0 = -750 + 1200, YX1 = 22100 - 1200, YY0 = 11270, YY1 = 18620 - 1200, BED = 0.035;   // paver field only
       // turf on the bed
       const ts = 512, tc = document.createElement('canvas'); tc.width = tc.height = ts;
       const tx = tc.getContext('2d');
@@ -2307,8 +2260,437 @@ window.HouseScene = (function () {
       const gg = new THREE.Group(); gg.name = 'garden'; gg.add(inst); root.add(gg);
     })();
     placeCar();
-    // V42: no garden (trees, hedges, shrubs, grass tufts) — the north yard is paved.
-    void placeGarden;
+    void placeGarden;   // V42: the photo-sprite garden is not used — see indianGarden()
+    /* ================= V42 garden — built from scratch =================
+       Indian compound planting: everything lives in raised soil beds against
+       the N / W / E walls. No photo sprites, no shared tree code: branches are
+       tapered cylinders merged per material, foliage is instanced cards whose
+       leaf / leaflet / flower textures are drawn here on canvas. Ten species,
+       each with its own structure, set at irregular spacings and sizes. */
+    (function indianGarden() {
+      if (typeof document === 'undefined') return;
+      let G = root.getObjectByName('garden');
+      if (!G) { G = new THREE.Group(); G.name = 'garden'; root.add(G); }
+      const R = rng(9112026);
+      const rr = (a, b) => a + (b - a) * R();
+      const V = (x, y, z) => new THREE.Vector3(x, y, z);
+      const UP = V(0, 1, 0);
+      const SOIL = 0.12;                                   // raised bed top
+      const W = (xmm, ymm, h) => V(xmm / 1000, h, -ymm / 1000);
+
+      /* ---------- textures ---------- */
+      function canvasTex(w, h, draw) {
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const x = c.getContext('2d'); draw(x, w, h);
+        const t = new THREE.CanvasTexture(c);
+        if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+        t.anisotropy = 4;
+        return t;
+      }
+      const rgb = (r, g, b, a) => 'rgba(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ',' + (a == null ? 1 : a) + ')';
+      // one leaf: base at (bx,by), pointing at angle ang (0 = up), with shape k
+      function leaf(x, bx, by, len, wid, ang, col, opt) {
+        opt = opt || {};
+        x.save(); x.translate(bx, by); x.rotate(ang);
+        const wv = opt.wave || 0, tipW = opt.obovate ? 0.62 : 0.42;
+        x.beginPath(); x.moveTo(0, 0);
+        const n = 10;
+        for (let i = 1; i <= n; i++) {           // right edge
+          const t = i / n, yy = -len * t;
+          let w = wid * Math.sin(Math.PI * Math.pow(t, opt.obovate ? 0.7 : 0.5)) * (t < tipW ? 1 : 1);
+          w += wv * Math.sin(t * 18) * wid * 0.25;
+          x.lineTo(w * 0.5, yy);
+        }
+        for (let i = n; i >= 0; i--) {           // left edge
+          const t = i / n, yy = -len * t;
+          let w = wid * Math.sin(Math.PI * Math.pow(t, opt.obovate ? 0.7 : 0.5));
+          w += wv * Math.sin(t * 18 + 1.3) * wid * 0.25;
+          x.lineTo(-w * 0.5, yy);
+        }
+        x.closePath();
+        const gr = x.createLinearGradient(-wid / 2, 0, wid / 2, 0);
+        gr.addColorStop(0, col[0]); gr.addColorStop(0.5, col[1]); gr.addColorStop(1, col[0]);
+        x.fillStyle = gr; x.fill();
+        if (opt.variegate) {                      // croton: coloured veins
+          x.strokeStyle = opt.variegate; x.lineWidth = Math.max(1, wid * 0.08);
+          for (let i = 1; i < 6; i++) { const t = i / 6; x.beginPath(); x.moveTo(0, -len * t); x.lineTo(wid * 0.38, -len * (t + 0.08)); x.moveTo(0, -len * t); x.lineTo(-wid * 0.38, -len * (t + 0.08)); x.stroke(); }
+        }
+        x.strokeStyle = col[2] || 'rgba(190,210,150,0.55)'; x.lineWidth = Math.max(1, wid * 0.05);
+        x.beginPath(); x.moveTo(0, 0); x.lineTo(0, -len * 0.97); x.stroke();      // midrib
+        if (opt.veins) {
+          x.lineWidth = Math.max(0.7, wid * 0.02);
+          for (let i = 1; i < 9; i++) { const t = i / 9; x.beginPath(); x.moveTo(0, -len * t); x.lineTo(wid * 0.42, -len * (t + 0.06)); x.moveTo(0, -len * t); x.lineTo(-wid * 0.42, -len * (t + 0.06)); x.stroke(); }
+        }
+        x.restore();
+      }
+      const DG = ['rgb(46,74,34)', 'rgb(70,104,46)', 'rgba(130,160,96,0.6)'];      // deep green
+      const MG = ['rgb(52,82,36)', 'rgb(78,112,50)', 'rgba(150,175,110,0.6)'];    // mid green
+      const LG = ['rgb(84,120,52)', 'rgb(118,156,70)', 'rgba(190,210,140,0.7)'];  // light green
+      const TX = {
+        // Ashoka: one long narrow wavy drooping leaf
+        // hanging cluster: a short twig with 6 long wavy leaves drooping off it
+        ashoka: canvasTex(192, 320, (x, w, h) => {
+          // twig at the TOP edge, leaves hanging down to the bottom edge
+          x.strokeStyle = 'rgb(80,70,52)'; x.lineWidth = 3; x.beginPath(); x.moveTo(w / 2, 0); x.lineTo(w / 2, h * 0.08); x.stroke();
+          for (let i = 0; i < 6; i++) leaf(x, w / 2 + (i - 2.5) * 6, h * (0.06 + 0.02 * (i % 2)), h * rr(0.72, 0.9), w * 0.13, Math.PI + (i - 2.5) * 0.14, i % 2 ? DG : MG, { wave: 1 });
+        }),
+        // mango: a whorl of 7 oblong leaves
+        mango: canvasTex(256, 256, (x, w, h) => {
+          for (let i = 0; i < 7; i++) leaf(x, w / 2, h - 6, h * (0.66 + R() * 0.24), w * 0.17, (i - 3) * 0.32 + rr(-0.08, 0.08), i % 3 ? DG : MG);
+        }),
+        mangoNew: canvasTex(256, 256, (x, w, h) => {
+          const cu = ['rgb(92,74,46)', 'rgb(118,96,58)', 'rgba(170,150,110,0.6)'];
+          for (let i = 0; i < 6; i++) leaf(x, w / 2, h - 6, h * (0.6 + R() * 0.25), w * 0.15, (i - 2.5) * 0.3, cu);
+        }),
+        // frangipani: one big obovate veined leaf
+        frangiLeaf: canvasTex(128, 320, (x, w, h) => leaf(x, w / 2, h - 2, h - 6, w * 0.86, 0, MG, { obovate: true, veins: true })),
+        frangiFlower: canvasTex(128, 128, (x, w, h) => {
+          for (let f = 0; f < 4; f++) {
+            const cx = w * (0.3 + 0.4 * (f % 2)) + rr(-6, 6), cy = h * (0.3 + 0.4 * (f >> 1)) + rr(-6, 6), r = w * 0.17;
+            for (let p = 0; p < 5; p++) {
+              x.save(); x.translate(cx, cy); x.rotate(p * 1.2566 + f);
+              x.beginPath(); x.ellipse(r * 0.5, 0, r * 0.55, r * 0.3, 0.4, 0, 6.283);
+              x.fillStyle = 'rgb(250,248,240)'; x.fill(); x.restore();
+            }
+            x.beginPath(); x.arc(cx, cy, r * 0.32, 0, 6.283); x.fillStyle = 'rgb(246,206,92)'; x.fill();
+          }
+        }),
+        // palm leaflet (pinna): long, thin, tapering
+        pinna: canvasTex(32, 384, (x, w, h) => leaf(x, w / 2, h - 2, h - 4, w * 0.8, 0, ['rgb(70,100,40)', 'rgb(104,138,56)', 'rgba(170,190,110,0.6)'])),
+        pinnaAreca: canvasTex(32, 256, (x, w, h) => leaf(x, w / 2, h - 2, h - 4, w * 0.8, 0, ['rgb(96,128,46)', 'rgb(132,166,66)', 'rgba(200,214,130,0.6)'])),
+        // banana: base half and tip half of one big paddle leaf, with splits
+        bananaA: canvasTex(192, 256, (x, w, h) => {
+          x.fillStyle = 'rgb(98,140,58)'; x.beginPath(); x.moveTo(w * 0.5, h); x.quadraticCurveTo(w * 0.02, h * 0.6, w * 0.06, 0); x.lineTo(w * 0.94, 0); x.quadraticCurveTo(w * 0.98, h * 0.6, w * 0.5, h); x.fill();
+          x.strokeStyle = 'rgba(70,104,40,0.5)'; x.lineWidth = 1.2; for (let i = 0; i < 26; i++) { const yy = h * i / 26; x.beginPath(); x.moveTo(w / 2, yy + 6); x.lineTo(w * 0.06, yy - 4); x.moveTo(w / 2, yy + 6); x.lineTo(w * 0.94, yy - 4); x.stroke(); }
+          x.strokeStyle = 'rgb(176,190,120)'; x.lineWidth = 6; x.beginPath(); x.moveTo(w / 2, h); x.lineTo(w / 2, 0); x.stroke();
+        }),
+        bananaB: canvasTex(192, 256, (x, w, h) => {
+          x.fillStyle = 'rgb(104,146,62)'; x.beginPath(); x.moveTo(w * 0.06, h); x.lineTo(w * 0.94, h); x.quadraticCurveTo(w * 0.9, h * 0.25, w * 0.5, 0); x.quadraticCurveTo(w * 0.1, h * 0.25, w * 0.06, h); x.fill();
+          x.globalCompositeOperation = 'destination-out';                  // wind tears
+          for (let i = 0; i < 4; i++) { const yy = h * rr(0.2, 0.9), side = R() < 0.5; x.fillRect(side ? 0 : w * 0.62, yy, w * 0.38, 2); }
+          x.globalCompositeOperation = 'source-over';
+          x.strokeStyle = 'rgba(70,104,40,0.5)'; x.lineWidth = 1.2; for (let i = 0; i < 26; i++) { const yy = h * i / 26; x.beginPath(); x.moveTo(w / 2, yy + 6); x.lineTo(w * 0.08, yy - 4); x.moveTo(w / 2, yy + 6); x.lineTo(w * 0.92, yy - 4); x.stroke(); }
+          x.strokeStyle = 'rgb(176,190,120)'; x.lineWidth = 5; x.beginPath(); x.moveTo(w / 2, h); x.lineTo(w / 2, 4); x.stroke();
+        }),
+        // hibiscus: serrated ovate leaves + red flower
+        hibLeaf: canvasTex(192, 192, (x, w, h) => { for (let i = 0; i < 5; i++) leaf(x, w / 2, h - 4, h * 0.5, w * 0.34, (i - 2) * 0.55, MG, { wave: 0.6, veins: true }); }),
+        hibFlower: canvasTex(128, 128, (x, w, h) => {
+          const cx = w / 2, cy = h / 2, r = w * 0.46;
+          for (let p = 0; p < 5; p++) { x.save(); x.translate(cx, cy); x.rotate(p * 1.2566); x.beginPath(); x.ellipse(r * 0.5, 0, r * 0.52, r * 0.36, 0, 0, 6.283); x.fillStyle = 'rgb(196,32,44)'; x.fill(); x.restore(); }
+          x.beginPath(); x.arc(cx, cy, r * 0.14, 0, 6.283); x.fillStyle = 'rgb(120,10,24)'; x.fill();
+          x.strokeStyle = 'rgb(240,200,90)'; x.lineWidth = 3; x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + r * 0.6, cy - r * 0.4); x.stroke();
+        }),
+        // ixora: small glossy leaves + round red-orange flower heads
+        ixLeaf: canvasTex(160, 160, (x, w, h) => { for (let i = 0; i < 8; i++) leaf(x, w / 2, h - 4, h * 0.45, w * 0.16, (i - 3.5) * 0.4, DG); }),
+        ixFlower: canvasTex(96, 96, (x, w, h) => {
+          for (let i = 0; i < 40; i++) { const a = R() * 6.283, d = Math.sqrt(R()) * w * 0.38; const cx = w / 2 + Math.cos(a) * d, cy = h / 2 + Math.sin(a) * d;
+            x.fillStyle = R() < 0.5 ? 'rgb(222,64,36)' : 'rgb(236,96,40)'; for (let p = 0; p < 4; p++) { x.beginPath(); x.ellipse(cx + Math.cos(p * 1.57) * 3, cy + Math.sin(p * 1.57) * 3, 3, 2, p * 1.57, 0, 6.283); x.fill(); } }
+        }),
+        // croton: variegated broad leaves
+        croton: canvasTex(192, 192, (x, w, h) => { const cols = [['rgb(56,82,36)', 'rgb(84,110,46)'], ['rgb(64,88,38)', 'rgb(96,116,48)'], ['rgb(118,104,46)', 'rgb(146,130,58)']];
+          for (let i = 0; i < 6; i++) { const c = cols[i % 3]; leaf(x, w / 2, h - 4, h * rr(0.5, 0.62), w * 0.2, (i - 2.5) * 0.42, [c[0], c[1], 'rgba(230,200,90,0.8)'], { variegate: 'rgba(200,180,90,0.45)' }); } }),
+        // curry leaf: pinnate sprig of small leaflets
+        curry: canvasTex(128, 256, (x, w, h) => {
+          x.strokeStyle = 'rgb(70,96,40)'; x.lineWidth = 2; x.beginPath(); x.moveTo(w / 2, h); x.lineTo(w / 2, 6); x.stroke();
+          for (let i = 0; i < 9; i++) { const yy = h - 18 - i * (h - 30) / 9; leaf(x, w / 2, yy, w * 0.36, w * 0.14, 1.2, DG); leaf(x, w / 2, yy, w * 0.36, w * 0.14, -1.2, DG); }
+          leaf(x, w / 2, 20, 20, w * 0.14, 0, DG);
+        })
+      };
+
+      /* ---------- instanced cards ---------- */
+      const SETS = {};
+      function set(name) { return SETS[name] || (SETS[name] = []); }
+      const _m = new THREE.Matrix4(), _x = V(0, 0, 0), _z = V(0, 0, 0);
+      // card from base point p, long axis yDir (unit), width direction hint xh
+      /* Compound wall clearance: below the wall top nothing may enter the
+         wall (W inner face x -0.75, E inner face x 22.10, N inner face
+         z -18.62). Above the coping, canopies may overhang it like real trees. */
+      const WALL_TOP = 1.524 + 0.04, XI0 = -0.75 + 0.012, XI1 = 22.10 - 0.012, ZI0 = -18.62 + 0.012;
+      function wallPush(pts) {                  // returns [dx, dz] that keeps every low point inside
+        let dx = 0, dz = 0;
+        for (const q of pts) {
+          if (q.y > WALL_TOP) continue;
+          if (q.x < XI0) dx = Math.max(dx, XI0 - q.x);
+          if (q.x > XI1) dx = Math.min(dx, XI1 - q.x);
+          if (q.z < ZI0) dz = Math.max(dz, ZI0 - q.z);
+        }
+        return [dx, dz];
+      }
+      function card(name, p, yDir, xh, len, wid) {
+        _x.copy(xh).addScaledVector(yDir, -xh.dot(yDir));
+        if (_x.lengthSq() < 1e-6) _x.set(1, 0, 0).addScaledVector(yDir, -yDir.x);
+        _x.normalize(); _z.crossVectors(_x, yDir).normalize();
+        {
+          const hw = wid / 2, tip = p.clone().addScaledVector(yDir, len);
+          const [dx, dz] = wallPush([
+            p.clone().addScaledVector(_x, hw), p.clone().addScaledVector(_x, -hw),
+            tip.clone().addScaledVector(_x, hw), tip.clone().addScaledVector(_x, -hw)]);
+          if (dx || dz) p = p.clone().add(V(dx, 0, dz));
+        }
+        _m.makeBasis(_x.clone().multiplyScalar(wid), yDir.clone().multiplyScalar(len), _z);
+        _m.setPosition(p.x + yDir.x * len * 0.5, p.y + yDir.y * len * 0.5, p.z + yDir.z * len * 0.5);
+        set(name).push(_m.clone());
+      }
+      const rndDir = () => V(rr(-1, 1), rr(-1, 1), rr(-1, 1)).normalize();
+
+      /* ---------- branches (tapered cylinders, merged per material) ---------- */
+      const WOOD = {};
+      function limb(mat, a, b, r0, r1, seg) {
+        {
+          const [dxa, dza] = wallPush([a.clone().add(V(-r0, 0, -r0)), a.clone().add(V(r0, 0, r0))]);
+          const [dxb, dzb] = wallPush([b.clone().add(V(-r1, 0, -r1)), b.clone().add(V(r1, 0, r1))]);
+          if (dxa || dza) a = a.clone().add(V(dxa, 0, dza));
+          if (dxb || dzb) b = b.clone().add(V(dxb, 0, dzb));
+        }
+        const d = V(0, 0, 0).subVectors(b, a), len = d.length(); if (len < 1e-4) return;
+        const g = new THREE.CylinderGeometry(r1, r0, len, seg || 7, 1, false);
+        g.translate(0, len / 2, 0);
+        const q = new THREE.Quaternion().setFromUnitVectors(UP, d.normalize());
+        g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(q)); g.translate(a.x, a.y, a.z);
+        (WOOD[mat] || (WOOD[mat] = [])).push(g);
+      }
+      const WOOD_COL = {
+        bark: 0x5b4a3c, barkGrey: 0x7d776c, coco: 0x8a7f6c, cocoRing: 0x6d6354,
+        frangi: 0x8c8a78, banana: 0x6f7d44, areca: 0x8c9a52, rachis: 0x8a9a4e, nut: 0x6f7a32
+      };
+
+      /* ---------- species ---------- */
+      // Ashoka (Polyalthia longifolia 'pendula'): straight trunk, short
+      // drooping branches all the way up, long wavy leaves hanging down.
+      function ashoka(xmm, ymm, H) {
+        const b = W(xmm, ymm, SOIL), top = b.clone().add(V(rr(-0.04, 0.04), H, rr(-0.04, 0.04)));
+        limb('bark', b, top, 0.085, 0.025, 8);
+        let k = 0;
+        for (let z = 0.65; z < H - 0.15; z += 0.075, k++) {
+          const t = (z - 0.75) / (H - 0.9), a = k * 2.39996 + rr(-0.2, 0.2);
+          const L = (0.72 * Math.pow(1 - t, 0.9) + 0.12) * rr(0.85, 1.15);
+          const s = b.clone().lerp(top, z / H);
+          const dir = V(Math.cos(a) * 0.9, -0.28 - 0.25 * R(), Math.sin(a) * 0.9).normalize();
+          const e = s.clone().addScaledVector(dir, L);
+          limb('bark', s, e, 0.016 * (1 - t) + 0.006, 0.004, 5);
+          const nl = 5 + Math.round(L * 16);
+          for (let i = 0; i < nl; i++) {
+            const p = s.clone().lerp(e, 0.25 + 0.75 * R());
+            // texture is drawn hanging from its top edge: card points UP from p
+            // and the leaves fall back down past the twig
+            const yd = V(dir.x * rr(0.2, 0.6) + rr(-0.2, 0.2), rr(0.6, 1), dir.z * rr(0.2, 0.6) + rr(-0.2, 0.2)).normalize();
+            const ln = rr(0.36, 0.46);
+            card('ashoka', p.clone().addScaledVector(yd, -ln * 0.97), yd, rndDir(), ln, rr(0.24, 0.30));   // card top = twig
+          }
+        }
+        for (let i = 0; i < 10; i++) { const yd = V(rr(-0.3, 0.3), 1, rr(-0.3, 0.3)).normalize(); card('ashoka', top.clone().add(V(rr(-0.08, 0.08), -0.36 + rr(-0.1, 0.12), rr(-0.08, 0.08))), yd, rndDir(), rr(0.30, 0.36), 0.2); }
+      }
+      // generic palm frond: rachis arching from p along dir, pinnae both sides
+      function frond(p, dir, L, pinTex, pinLen, droop, segs, rachMat, rr0) {
+        let d = dir.clone(), q = p.clone();
+        const seg = L / segs;
+        for (let i = 0; i < segs; i++) {
+          const t = i / segs;
+          const nq = q.clone().addScaledVector(d, seg);
+          limb(rachMat, q, nq, (rr0 || 0.022) * (1 - t) + 0.006, (rr0 || 0.022) * (1 - (i + 1) / segs) + 0.005, 4);
+          if (i >= 1) {
+            const side = V(0, 0, 0).crossVectors(d, UP).normalize();
+            const pl = pinLen * Math.sin(Math.PI * Math.min(1, (t + 0.08) * 1.05)) + pinLen * 0.25;
+            for (const sgn of [-1, 1]) for (let j = 0; j < 2; j++) {
+              const base = q.clone().lerp(nq, j * 0.5);
+              const yd = V(0, 0, 0).addScaledVector(side, sgn * 0.85).addScaledVector(d, 0.45).add(V(0, -0.30 - 0.3 * t, 0)).normalize();
+              card(pinTex, base, yd, d, pl * rr(0.88, 1.08), pl * 0.075);
+            }
+          }
+          d.add(V(0, -droop, 0)).normalize(); q = nq;
+        }
+      }
+      // Coconut: tall curved ringed trunk, crown of drooping pinnate fronds.
+      function coconut(xmm, ymm, H, leanAz) {
+        const b = W(xmm, ymm, SOIL), lean = V(Math.cos(leanAz), 0, Math.sin(leanAz));
+        let prev = b.clone(); const n = 12;
+        limb('coco', b, b.clone().add(V(0, 0.35, 0)), 0.22, 0.16, 10);
+        prev = b.clone().add(V(0, 0.35, 0));
+        for (let i = 1; i <= n; i++) {
+          const t = i / n, p = b.clone().add(V(0, 0.35 + (H - 0.35) * t, 0)).addScaledVector(lean, H * 0.13 * Math.pow(t, 1.6));
+          limb('coco', prev, p, 0.16 - 0.04 * (t - 1 / n), 0.16 - 0.04 * t, 10);
+          for (let rg = 0.2; rg < 1; rg += 0.33) { const rp = prev.clone().lerp(p, rg); limb('cocoRing', rp, rp.clone().add(V(0, 0.018, 0)), 0.172 - 0.04 * t, 0.172 - 0.04 * t, 10); }
+          prev = p;
+        }
+        const crown = prev.clone();
+        limb('rachis', crown, crown.clone().add(V(0, 0.32, 0)), 0.13, 0.08, 8);
+        for (let i = 0; i < 6; i++) { const a = i * 1.05; const np = crown.clone().add(V(Math.cos(a) * 0.15, rr(-0.05, 0.05), Math.sin(a) * 0.15)); limb('nut', np, np.clone().add(V(0, 0.16, 0)), 0.085, 0.07, 7); }
+        const NF = 15;
+        for (let f = 0; f < NF; f++) {
+          const az = f * 2.39996 + rr(-0.15, 0.15), el = 0.95 - (f / NF) * 1.35 + rr(-0.1, 0.1);
+          const dir = V(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).normalize();
+          frond(crown.clone().add(V(0, 0.22, 0)), dir, rr(2.6, 3.3), 'pinna', 0.72, 0.075, 12, 'rachis', 0.03);
+        }
+      }
+      // Mango: short stout trunk, limbs into a broad dense dome.
+      function mango(xmm, ymm, H) {
+        const b = W(xmm, ymm, SOIL), t1 = b.clone().add(V(rr(-0.05, 0.05), H * 0.30, rr(-0.05, 0.05)));
+        limb('bark', b, t1, 0.16, 0.12, 9);
+        const cC = b.clone().add(V(0, H * 0.62, 0)), rx = H * rr(0.40, 0.46), ry = H * 0.32;
+        for (let i = 0; i < 5; i++) {
+          const a = i * 1.257 + rr(-0.3, 0.3);
+          const m = t1.clone().add(V(Math.cos(a) * rx * 0.45, H * rr(0.18, 0.28), Math.sin(a) * rx * 0.45));
+          limb('bark', t1, m, 0.09, 0.055, 7);
+          for (let j = 0; j < 3; j++) {
+            const a2 = a + rr(-0.7, 0.7);
+            const e = m.clone().add(V(Math.cos(a2) * rx * 0.4, H * rr(0.12, 0.25), Math.sin(a2) * rx * 0.4));
+            limb('bark', m, e, 0.05, 0.018, 6);
+          }
+        }
+        const N = Math.round(950 * (H / 4.2));
+        for (let i = 0; i < N; i++) {
+          const u = R() * 6.283, v = Math.acos(rr(-0.55, 1)), r = Math.pow(R(), 0.6);
+          const n = V(Math.sin(v) * Math.cos(u), Math.cos(v), Math.sin(v) * Math.sin(u));
+          const p = cC.clone().add(V(n.x * rx * r, n.y * ry * r, n.z * rx * r));
+          const yd = n.clone().add(V(rr(-0.5, 0.5), rr(0.1, 0.6), rr(-0.5, 0.5))).normalize();
+          card(R() < 0.03 ? 'mangoNew' : 'mango', p, yd, rndDir(), rr(0.28, 0.4), rr(0.28, 0.4));
+        }
+      }
+      // Frangipani: candelabra forks, leaf rosettes and flowers at the tips.
+      function frangipani(xmm, ymm, H) {
+        const b = W(xmm, ymm, SOIL), t0 = b.clone().add(V(0, H * 0.22, 0));
+        limb('frangi', b, t0, 0.08, 0.07, 8);
+        const tips = [];
+        (function fork(p, dir, len, r, lvl) {
+          const e = p.clone().addScaledVector(dir, len);
+          limb('frangi', p, e, r, r * 0.82, 7);
+          if (lvl === 0) { tips.push([e, dir]); return; }
+          const nb = lvl === 3 ? 3 : 2;
+          for (let i = 0; i < nb; i++) {
+            const a = (i / nb) * 6.283 + rr(-0.4, 0.4) + lvl;
+            const nd = dir.clone().add(V(Math.cos(a) * 0.55, 0.15, Math.sin(a) * 0.55)).normalize();
+            fork(e, nd, len * 0.82, r * 0.78, lvl - 1);
+          }
+        })(t0, V(0, 1, 0), H * 0.24, 0.065, 3);
+        for (const [e, dir] of tips) {
+          for (let i = 0; i < 9; i++) {
+            const a = i * 0.698 + rr(-0.1, 0.1);
+            const yd = V(Math.cos(a), rr(0.35, 0.9), Math.sin(a)).normalize();
+            card('frangiLeaf', e, yd, V(-Math.sin(a), 0, Math.cos(a)), rr(0.28, 0.36), rr(0.10, 0.12));
+          }
+          if (R() < 0.8) card('frangiFlower', e.clone().add(V(0, 0.03, 0)), V(rr(-0.2, 0.2), 1, rr(-0.2, 0.2)).normalize(), rndDir(), 0.17, 0.17);
+        }
+      }
+      // Banana: green pseudostem, big arching leaves made of two cards each.
+      function banana(xmm, ymm, H) {
+        const b = W(xmm, ymm, SOIL), top = b.clone().add(V(rr(-0.05, 0.05), H * 0.62, rr(-0.05, 0.05)));
+        limb('banana', b, top, 0.11, 0.075, 9);
+        const n = 7;
+        for (let i = 0; i < n; i++) {
+          const az = i * 2.39996 + rr(-0.2, 0.2), age = i / (n - 1);          // 0 young/upright .. 1 old/drooping
+          const d1 = V(Math.cos(az) * (0.35 + 0.5 * age), 1 - 0.65 * age, Math.sin(az) * (0.35 + 0.5 * age)).normalize();
+          const side = V(-Math.sin(az), 0, Math.cos(az));
+          const L = H * rr(0.30, 0.36);
+          const p0 = top.clone().add(V(0, rr(-0.05, 0.1), 0));
+          const pet = p0.clone().addScaledVector(d1, 0.18);
+          limb('banana', p0, pet, 0.03, 0.022, 5);
+          card('bananaA', pet, d1, side, L, L * 0.55);
+          const d2 = d1.clone().add(V(0, -0.55 - 0.5 * age, 0)).normalize();
+          card('bananaB', pet.clone().addScaledVector(d1, L * 0.98), d2, side, L, L * 0.55);
+        }
+      }
+      // Areca palm clump: several slim ringed stems, small arching fronds.
+      function areca(xmm, ymm, H) {
+        const b = W(xmm, ymm, SOIL);
+        for (let s = 0; s < 6; s++) {
+          const a = s * 1.047 + rr(-0.3, 0.3), off = V(Math.cos(a) * rr(0.05, 0.16), 0, Math.sin(a) * rr(0.05, 0.16));
+          const h = H * rr(0.55, 1.0), lean = V(Math.cos(a) * 0.14, 1, Math.sin(a) * 0.14).normalize();
+          const s0 = b.clone().add(off), s1 = s0.clone().addScaledVector(lean, h);
+          limb('areca', s0, s1, 0.032, 0.022, 7);
+          for (let r = 0.25; r < h; r += 0.22) { const rp = s0.clone().addScaledVector(lean, r); limb('cocoRing', rp, rp.clone().addScaledVector(lean, 0.012), 0.035, 0.035, 7); }
+          const nf = 4 + (R() < 0.5 ? 1 : 0);
+          for (let f = 0; f < nf; f++) {
+            const az = f * 2.39996 + s, el = 0.9 - f * 0.25;
+            frond(s1, V(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).normalize(), rr(0.9, 1.25), 'pinnaAreca', 0.32, 0.11, 8, 'areca', 0.012);
+          }
+        }
+      }
+      // Shrubs: a few woody stems, a dense irregular mound of leaf cards,
+      // flowers riding the outside.
+      function shrub(xmm, ymm, h, leafT, flowerT, nLeaf, cardSz, nFlower, flowerSz) {
+        const b = W(xmm, ymm, SOIL);
+        const cC = b.clone().add(V(0, h * 0.52, 0)), rx = h * rr(0.5, 0.62), ry = h * 0.48;
+        for (let i = 0; i < 4; i++) { const a = R() * 6.283; limb('bark', b, cC.clone().add(V(Math.cos(a) * rx * 0.4, rr(-0.1, 0.1), Math.sin(a) * rx * 0.4)), 0.018, 0.008, 5); }
+        for (let i = 0; i < nLeaf; i++) {
+          const u = R() * 6.283, v = Math.acos(rr(-0.75, 1)), r = Math.pow(R(), 0.4);
+          const n = V(Math.sin(v) * Math.cos(u), Math.cos(v), Math.sin(v) * Math.sin(u));
+          const p = cC.clone().add(V(n.x * rx * r * rr(0.85, 1.15), n.y * ry * r, n.z * rx * r * rr(0.85, 1.15)));
+          card(leafT, p, n.clone().add(V(0, 0.5, 0)).normalize(), rndDir(), cardSz * rr(0.8, 1.2), cardSz * rr(0.8, 1.2));
+        }
+        for (let i = 0; i < (nFlower || 0); i++) {
+          const u = R() * 6.283, v = Math.acos(rr(-0.2, 1));
+          const n = V(Math.sin(v) * Math.cos(u), Math.cos(v), Math.sin(v) * Math.sin(u));
+          const p = cC.clone().add(V(n.x * rx * 0.95, n.y * ry * 0.95, n.z * rx * 0.95));
+          card(flowerT, p, n, rndDir(), flowerSz, flowerSz);
+        }
+      }
+      const hibiscus = (x, y, h) => shrub(x, y, h, 'hibLeaf', 'hibFlower', Math.round(170 * h), 0.24, Math.round(9 * h), 0.12);
+      const ixora    = (x, y, h) => shrub(x, y, h, 'ixLeaf', 'ixFlower', Math.round(190 * h), 0.18, Math.round(16 * h), 0.09);
+      const croton   = (x, y, h) => shrub(x, y, h, 'croton', null, Math.round(150 * h), 0.22, 0, 0);
+      const curry    = (x, y, h) => shrub(x, y, h, 'curry', null, Math.round(120 * h), 0.30, 0, 0);
+
+      /* ---------- planting: irregular, mixed, different sizes ---------- */
+      // north bed (x -750..22100, y 17420..18620): centre line ~18020
+      coconut(-120, 18120, 6.9, -0.5);
+      ixora(950, 17760, 0.72);
+      ashoka(1900, 18080, 5.4);
+      hibiscus(3150, 17820, 1.35);
+      frangipani(4550, 18000, 2.6);
+      croton(5650, 17740, 0.62);
+      mango(7350, 18050, 4.5);
+      curry(8950, 17820, 1.5);
+      ixora(9900, 17760, 0.62);
+      areca(11050, 18030, 2.5);
+      ashoka(12350, 18120, 5.0);
+      hibiscus(13450, 17800, 1.15);
+      banana(14650, 18000, 2.7);
+      banana(15250, 18180, 2.1);
+      croton(16150, 17760, 0.55);
+      mango(17350, 18050, 3.9);            // east coconut replaced (owner)
+      frangipani(18750, 17980, 2.3);
+      ixora(19800, 17780, 0.8);
+      ashoka(20950, 18120, 5.7);
+      // west bed (x -750..450, y 11270..17420)
+      ashoka(-160, 12150, 4.7);
+      ixora(-120, 13050, 0.65);
+      frangipani(-150, 14250, 2.2);
+      croton(-90, 15200, 0.58);
+      hibiscus(-170, 16200, 1.25);
+      // east bed (x 20900..22100, y 11270..17420)
+      areca(21480, 12250, 2.2);
+      curry(21450, 13350, 1.3);
+      mango(21500, 15050, 3.8);
+      ixora(21470, 16650, 0.7);
+
+      /* ---------- build ---------- */
+      Object.keys(WOOD).forEach(function (mat) {
+        const parts = WOOD[mat], pos = [], nor = [];
+        for (const g0 of parts) {
+          const g = g0.index ? g0.toNonIndexed() : g0;
+          pos.push(...g.attributes.position.array); nor.push(...g.attributes.normal.array);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(WOOD_COL[mat]).convertSRGBToLinear(), roughness: 0.9, metalness: 0 });
+        const mesh = new THREE.Mesh(geo, m); mesh.castShadow = true; mesh.receiveShadow = true; mesh.name = 'g42_' + mat;
+        G.add(mesh);
+      });
+      const PLANE = new THREE.PlaneGeometry(1, 1);
+      Object.keys(SETS).forEach(function (name) {
+        const list = SETS[name];
+        const m = new THREE.MeshStandardMaterial({ map: TX[name], alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.78, metalness: 0 });
+        const im = new THREE.InstancedMesh(PLANE, m, list.length);
+        list.forEach((mm, i) => im.setMatrixAt(i, mm));
+        im.instanceMatrix.needsUpdate = true;
+        im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false; im.name = 'g42_' + name;
+        G.add(im);
+      });
+      try {
+        window.__HOUSE3D_GARDEN__ = 'v42-procedural';
+        if (window.dispatchEvent) window.dispatchEvent(new CustomEvent('houseGardenReady'));
+      } catch (_) { /* non-DOM */ }
+    })();
 
     /* -------- exterior context (own group so viewers can hide it) --------
        Outside compound: x -900..22250, y S_OUT(-1205)..18770 mm. */

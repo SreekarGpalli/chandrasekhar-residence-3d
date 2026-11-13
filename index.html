@@ -398,7 +398,7 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_jointgrass3'
+  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42g'
                   : 'houseScene.js?v=20261107_walkin_sf';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
@@ -1480,7 +1480,8 @@ window.DESIGNS = {
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
 
-    ground:  0x9c9078, plotPad: 0xa3977d, soil: 0x5d4b34,
+    ground:  0x9c9078, plotPad: 0xa3977d, soil: (window.DESIGN === 'v42' || /version-forty-two/.test(location.pathname)) ? 0x8f6d4f : 0x5d4b34,   // V42: lighter red-brown bed earth
+   
     grass:   0x66794a, road: 0x494b4f,
     leafDark: 0x34492a, leafLight: 0x5d7838,
     green: 0x4a5f34, green2: 0x5a7239,
