@@ -56,6 +56,7 @@ window.HouseScene = (function () {
     brass:   0xc0a06a,  // LINE
     steel:   0xd2d6da,  // brushed stainless
     paver:   0x878178,  // driveway — V6
+    paverRect: 0x8a847b, // V42: north garden paved in 600x300 running-bond pavers
     paver2:  0x777168,
     concrete:0x706d68,  // stair / yard — V6 warm concrete
     terraceF:0x706d68,  // terrace — V6 limestone
@@ -2209,12 +2210,14 @@ window.HouseScene = (function () {
 
       // 3) North lawn: grass garden north of steps (y = 11270..18620)
       // Trees / hedge / flowering shrubs are photoreal sprites in placeGarden().
-      pb(sBag, 'grass', -750, 22100, 11270, 18620, 0.012, 0.045);
+      // V42: the garden is gone — the north yard is rectangular pavers, flush (top 0.045).
+      pb(sBag, 'paverRect', -750, 22100, 11270, 18620, 0, 0.045);
 
     })();
     const site = sBag.build(THREE, materials); site.name = 'site'; root.add(site);
     placeCar();
-    placeGarden();
+    // V42: no garden (trees, hedges, shrubs, grass tufts) — the north yard is paved.
+    void placeGarden;
 
     /* -------- exterior context (own group so viewers can hide it) --------
        Outside compound: x -900..22250, y S_OUT(-1205)..18770 mm. */

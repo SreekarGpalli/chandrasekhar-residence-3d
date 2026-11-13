@@ -146,7 +146,7 @@
     return;
   }
 
-  var STAMP = 'V42_SLEEK_20261113_h';
+  var STAMP = 'V42_SLEEK_20261113_i';
 
   function say(msg) {
     var ls = document.querySelector('#loading .ls');
@@ -590,6 +590,48 @@ function boot() {
     if (TIER !== 'potato' && TIER !== 'low') kit.normalMap = asTex(normalFromHeight(hgt, 1.6), false);
     return texCache.tile = kit;
   }
+  /* V42: rectangular pavers — 600 x 300 mm in running bond (one texture
+     repeat = 1.2 m = 2 pavers x 4 courses, alternate courses offset half a
+     paver). Same tone family and joint depth as kitPaver. */
+  function kitPaverRect() {
+    if (texCache.paverRect) return texCache.paverRect;
+    const s = TEX_S, cols = 2, rows = 4, pw = s / cols, ph = s / rows, c = cv(s), x = c.getContext('2d');
+    const hgt = cv(s), hx = hgt.getContext('2d');
+    hx.fillStyle = '#d8d8d8'; hx.fillRect(0, 0, s, s);
+    x.strokeStyle = 'rgba(105,101,94,0.9)'; x.lineWidth = 6;
+    hx.strokeStyle = '#3c3c3c'; hx.lineWidth = 12;
+    for (let r = 0; r < rows; r++) {
+      const off = (r % 2) ? pw / 2 : 0;
+      for (let k = -1; k <= cols; k++) {
+        const x0 = k * pw + off;
+        const tone = 224 + ((Math.random() * 20) | 0) - 10;
+        x.fillStyle = 'rgb(' + tone + ',' + (tone - 1) + ',' + (tone - 4) + ')';
+        x.fillRect(x0, r * ph, pw, ph);
+      }
+    }
+    speckle(x, s, s, 24);
+    x.globalAlpha = 0.10;
+    for (let i = 0; i < 18; i++) { x.fillStyle = '#6b675f'; x.beginPath(); x.arc(Math.random() * s, Math.random() * s, 16 + Math.random() * 60, 0, 7); x.fill(); }
+    x.globalAlpha = 1;
+    for (let r = 0; r <= rows; r++) {
+      const q = clamp(r * ph, 3, s - 3);
+      x.beginPath(); x.moveTo(0, q); x.lineTo(s, q); x.stroke();
+      hx.beginPath(); hx.moveTo(0, q); hx.lineTo(s, q); hx.stroke();
+    }
+    for (let r = 0; r < rows; r++) {
+      const off = (r % 2) ? pw / 2 : 0;
+      for (let k = 0; k <= cols; k++) {
+        const q = clamp(k * pw + off, 3, s - 3);
+        x.beginPath(); x.moveTo(q, r * ph); x.lineTo(q, (r + 1) * ph); x.stroke();
+        hx.beginPath(); hx.moveTo(q, r * ph); hx.lineTo(q, (r + 1) * ph); hx.stroke();
+      }
+    }
+    speckle(hx, s, s, 16);
+    const kit = { map: asTex(c, true), ns: 0.6,
+                  roughnessMap: asTex(roughCanvas(TEX_S_SM, 0.85, 22, 0.72, false), false) };
+    if (TIER !== 'potato' && TIER !== 'low') kit.normalMap = asTex(normalFromHeight(hgt, 1.4), false);
+    return texCache.paverRect = kit;
+  }
   function kitPaver() {
     if (texCache.paver) return texCache.paver;
     const s = TEX_S, n = 3, ts = s / n, c = cv(s), x = c.getContext('2d');
@@ -865,7 +907,7 @@ function boot() {
 
   const TEX = {
     plaster: kitPlaster, sandfloat: kitSandFloat, stone: kitStone, concrete: kitConcrete, wood: kitWood,
-    tile: kitTile, paver: kitPaver, asphalt: kitAsphalt, grass: kitGrass,
+    tile: kitTile, paver: kitPaver, paverRect: kitPaverRect, asphalt: kitAsphalt, grass: kitGrass,
     dirt: kitDirt, leaf: kitLeaf, bark: kitBark, metal: kitMetal,
     carPaint: kitCarPaint, field: kitField
   };
@@ -905,6 +947,7 @@ function boot() {
       // Dry paving is not a mirror — it only reflects at grazing angles, and
       // the SSR pass already applies Fresnel on top of these. Anything above
       // ~0.1 here and the street reads as wet.
+      case 'paverRect':  return { tex: 'paverRect', tile: 1.2, rough: 0.90, metal: 0, env: 0.36, reflect: 0.05 };   // V42 rectangular pavers
       case 'pave': case 'paver': case 'paver2':
         return { tex: 'paver', tile: 1.4, rough: 0.90, metal: 0, env: 0.36, reflect: 0.05 };
       case 'road':        return { tex: 'asphalt', tile: 7.0, rough: 0.96, metal: 0, env: 0.24, reflect: 0.05 };
