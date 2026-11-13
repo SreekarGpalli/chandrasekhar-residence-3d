@@ -9726,6 +9726,20 @@ window.HouseScene = (function () {
           pb(bag, 'limeWash', 230, 3216, 230, 4432, top - 0.010, top - 0.008);
           pb(bag, 'limeWash', 3216, 4805, 230, 4272, top - 0.010, top - 0.008);
         }
+        /* Every other SF ceiling: the roof's charDark soffit plate is all they showed (a flat
+           grey, nothing like the FF's warm white), so each room gets the same 2 mm skin as the
+           west bedroom's, in the house's warm off-white. The west bedroom keeps its limewash;
+           outdoor decks, the lift and the stairwell void are skipped. */
+        {
+          const top = fY + 3.203;
+          for (const r of ROOMS[2]) {
+            if (r.type === 'out' || r.name === 'LIFT' || r.name === 'STAIRCASE' || r.name === 'PORTICO' ||
+                r.name.includes('BALCONY') || r.name.includes('TERRACE')) continue;
+            if (r.name === 'BEDROOM' && r.x0 === 230) continue;       // west bedroom (limewash above)
+            pb(bag, 'white2', r.x0, r.x1, r.y0, r.y1, top - 0.010, top - 0.008);
+          }
+          pb(bag, 'white2', 6020, 9260, 6996, 8641, top - 0.010, top - 0.008);   // the double-height void's top: same plate, same skin
+        }
         eastBath(bag, fY);                                            // zellige shower, tile to the slab, flat-deck basin
         // --- Bedroom 03 ---
         Fur.rug(bag, 8650, 11450, 850, 2900, fY);
