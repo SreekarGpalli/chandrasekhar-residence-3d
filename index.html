@@ -398,7 +398,7 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261112_v42_rodtaupe'
+  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_rodsand'
                   : 'houseScene.js?v=20261107_walkin_sf';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
@@ -1282,7 +1282,7 @@ window.DESIGNS = {
       case 'ms':         return { tex: 'metal', tile: 0.8, rough: 0.42, metal: 0.30, env: 1.0, reflect: 0.35 };
       case 'msWhite':    return { tex: 'metal', tile: 0.8, rough: 0.55, metal: 0.10, env: 0.7, reflect: 0.15 };   // V42 painted grille
       case 'frame':      return { tex: 'metal', tile: 0.6, rough: 0.36, metal: 0.65, env: 1.05, reflect: 0.5 };
-      case 'rodWood':    return { tex: 'wood', tile: 1.0, rough: 0.52, metal: 0, env: 0.55, reflect: 0.15 };   // V42 wood-finish box rods
+      case 'rodWood':    return { rough: 0.60, metal: 0.05, env: 0.50, reflect: 0.08 };   // V42 box rods: smooth matte, no grain
       case 'gBlue':      return { tex: 'metal', tile: 0.8, rough: 0.50, metal: 0.28, env: 0.80, reflect: 0.18 };    // V42 soft blue-grey satin
       case 'gMetal':     return { tex: 'metal', tile: 0.8, rough: 0.50, metal: 0.25, env: 0.75, reflect: 0.18 };   // V42 one satin graphite
       case 'upvcWhite':  return { tex: 'metal', tile: 0.6, rough: 0.38, metal: 0.0, env: 0.6, reflect: 0.12 };   // V42 white UPVC frames
@@ -1432,7 +1432,7 @@ window.DESIGNS = {
     upvcWhite:  0xf2f1ee,   // V42 white UPVC window frames (GF)
     gMetal:     0x4a4945,   // V42 exterior metal: rails, rods, gates, pergola, frames
     gBlue:      0x48525a,   // V42 blue-grey (measured middle): rods, rails, pergola, frames
-    rodWood:    0x857666,   // V42 box rods: muted weathered-wood taupe
+    rodWood:    0xa09583,   // V42 box rods: smooth matte warm sand
     steel:      0x44484c,
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
