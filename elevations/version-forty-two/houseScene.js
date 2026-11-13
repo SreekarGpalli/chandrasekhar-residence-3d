@@ -3357,10 +3357,15 @@ window.HouseScene = (function () {
         // posts move out so their outer face is that plane and the east edge
         // beam sits exactly on them; plates/caps never cross the face.
         const XFACE = eastX[1] + 10;                      // 17372 building east face
-        function post(x, y) {
+        // East posts stand on the SE rod box, whose top (SF rail height,
+        // 8.548) is solid; below that the box is hollow behind the rods, so
+        // a post started at f2 would hang inside the box in front of the rods.
+        const BOX_TOP = L.f2 + 0.012 + 1.08;
+        function post(x, y, zBase) {
           const cx = (v) => Math.min(v, XFACE);
-          pb(o2, 'gBlue', x - 28, cx(x + POST + 28), y - 28, y + POST + 28, f2, f2 + 0.018);
-          pb(o2, 'gBlue', x, x + POST, y, y + POST, f2 + 0.018, zB0);
+          const zb = zBase != null ? zBase : f2;
+          pb(o2, 'gBlue', x - 28, cx(x + POST + 28), y - 28, y + POST + 28, zb, zb + 0.018);
+          pb(o2, 'gBlue', x, x + POST, y, y + POST, zb + 0.018, zB0);
           pb(o2, 'gBlue', x - 16, cx(x + POST + 16), y - 16, y + POST + 16, zB0 - 0.018, zB0);
         }
         const xPW = xW + 36;
@@ -3369,8 +3374,8 @@ window.HouseScene = (function () {
         const yPN = y1 - POST - 70;
         post(xPW, yPS);
         post(xPW, yPN);
-        post(xPE, yPS);
-        post(xPE, yPN);
+        post(xPE, yPS, BOX_TOP);
+        post(xPE, yPN, BOX_TOP);
 
         // V42: no charcoal ledger on the terrace edge and nothing cut into the
         // flush parapet — the west beam rides its own posts, 26 mm clear of
