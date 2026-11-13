@@ -38,6 +38,7 @@ window.HouseScene = (function () {
     white:   0xece7db,  // BODY — inspiration off-white (Upparapalli house)
     white2:  0xf3efe6,  // BODY — same off-white, slightly lighter soffits / reveals
     fin:     0xd6c9ae,  // east verticals only — V6 lime, not chalk
+    rodWood: 0x4c3324,  // V42: box rods — teak-walnut wood-finish aluminium (doors' family, less orange)
     gMetal:  0x4a4945,  // V42: warm satin graphite — gates only
     gBlue:   0x48525a,  // V42: blue-grey, measured middle on screen (0x46525c too blue, 0x4a5056 neutral) — rods, rails, pergola, frames
     fin2:    0x62635e,  // east vertical rods — warm graphite, coordinated with grey frames and stone
@@ -3173,7 +3174,7 @@ window.HouseScene = (function () {
           for (let i = 0; i <= n; i++) place(b0 + i * p);
         }
         rods(yBack, yN0, (c) =>
-          pb(eBag, 'gBlue', xFin0, xFin1, c - FACE / 2, c + FACE / 2, zIn0 - o, zIn1 + o));
+          pb(eBag, 'rodWood', xFin0, xFin1, c - FACE / 2, c + FACE / 2, zIn0 - o, zIn1 + o));   // V42: box rods in teak-walnut wood finish
 
         // --- slab-edge wall under the flushed L ---
         pb(eBag, 'white', xBack, xFace, yFace, yN1, L.f1 - 0.45, zOut0);
