@@ -2126,64 +2126,52 @@ window.HouseScene = (function () {
       sBag.box('ground', 10.5, -0.09, -9.0, 230, 0.18, 230);
       // plot pad: compound interior (south edge just inside S_IN)
       pb(sBag, 'plotPad', -880, 22100, S_IN + 25, 18750, -0.002, 0.012);
-      // Compound: cool-gray plaster + one coping — same triad as the house
-      // (ivory piers, gray wall, steel gate). No brass, spikes, or plaques.
+      /* V42 compound — same language as the house: flush off-white blocks,
+         no plinth band, no coping, no piers, no lines. Each corner square
+         belongs to one block (no coplanar end faces). The street (east) face
+         picks up the SE box: a fixed panel of the box's 65 mm rods sits
+         directly under the box opening (y -497..3184), and both gates are
+         flush panels of the same rods at the same 125 mm pitch. Slim warm
+         LED strips are let into the gate jambs. */
       const WH = 1.524;
-      // Car leaf centred on the drive (y 6400). Pedestrian leaf to the north.
-      const CAR_S = 4300, CAR_N = 8500;   // 4.2 m — car in/out
+      const CAR_S = 4300, CAR_N = 8500;   // 4.2 m — car in/out (drive centred y 6400)
       const PED_S = 8760, PED_N = 9860;   // 1.1 m — walk / bike
-      const PIER = 260;
-      const cw = (x0, x1, y0, y1) => {
-        pb(sBag, 'white2', x0, x1, y0, y1, 0.10, WH);
-        pb(sBag, 'charDark', x0 - 6, x1 + 6, y0 - 6, y1 + 6, 0, 0.10);
-        pb(sBag, 'charDark', x0 - 8, x1 + 8, y0 - 8, y1 + 8, WH - 0.026, WH);
-        pb(sBag, 'charcoal', x0 - 18, x1 + 18, y0 - 18, y1 + 18, WH, WH + 0.040);
-      };
-      cw(-900, -750, S_OUT, 18770);
-      cw(-900, 22250, S_OUT, S_IN);
-      cw(-900, 22250, 18620, 18770);
-      cw(22100, 22250, S_OUT, CAR_S);
-      cw(22100, 22250, PED_N, 18770);
-      function cornerPier(x0, x1, y0, y1) {
-        pb(sBag, 'white2', x0 - 16, x1 + 16, y0 - 16, y1 + 16, 0, WH + 0.16);
-        pb(sBag, 'charcoal', x0 - 24, x1 + 24, y0 - 24, y1 + 24, WH + 0.16, WH + 0.20);
-      }
-      cornerPier(-900, -750, S_OUT, S_IN);
-      cornerPier(22100, 22250, S_OUT, S_IN);
-      cornerPier(-900, -750, 18620, 18770);
-      cornerPier(22100, 22250, 18620, 18770);
-      function pier(y0, y1, lamp) {
-        const mid = (y0 + y1) / 2;
-        pb(sBag, 'white2', 22082, 22268, y0, y1, 0, WH + 0.20);
-        pb(sBag, 'white2', 22098, 22252, y0 - 14, y1 + 14, 0.05, WH + 0.16);
-        pb(sBag, 'charcoal', 22070, 22280, y0 - 18, y1 + 18, WH + 0.20, WH + 0.24);
-        if (lamp) {
-          pb(sBag, 'steel', 22258, 22274, mid - 32, mid + 32, 1.12, 1.38);
-          pb(sBag, 'lamp', 22268, 22286, mid - 22, mid + 22, 1.16, 1.34);
-        }
-      }
-      pier(CAR_S - PIER, CAR_S, true);
-      pier(CAR_N, PED_S, true);
-      pier(PED_N, PED_N + PIER, true);
-      // Middle post between the two leaves — carry the gate rails across
-      // the street face so the bars do not die on a blank pier.
-      pb(sBag, 'steel', 22258, 22282, CAR_N - 4, PED_S + 4, 1.42, 1.51);
-      pb(sBag, 'steel', 22258, 22282, CAR_N - 4, PED_S + 4, 0.76, 0.81);
-      pb(sBag, 'steel', 22258, 22282, CAR_N - 4, PED_S + 4, 0.08, 0.13);
-      function leaf(y0, y1) {
-        pb(sBag, 'steel', 22118, 22232, y0, y1, 0.08, 0.13);
-        pb(sBag, 'steel', 22110, 22240, y0, y1, 1.42, 1.50);
-        pb(sBag, 'chrome', 22116, 22234, y0, y1, 1.48, 1.51);
-        pb(sBag, 'steel', 22116, 22234, y0, y1, 0.76, 0.81);
-        const n = Math.max(2, Math.round((y1 - y0) / 120));
+      const EXo = 22250, EXi = 22100, EXm = (EXo + EXi) / 2;   // east wall band
+      const SCR_S = -497, SCR_N = 3184;   // = SE box rod opening above
+      const block = (x0, x1, y0, y1, z0, z1) => pb(sBag, 'white', x0, x1, y0, y1, z0 || 0, z1 || WH);
+      block(-900, EXo, S_OUT, S_IN);                 // south, owns both south corners
+      block(-900, EXo, 18620, 18770);                // north, owns both north corners
+      block(-900, -750, S_IN, 18620);                // west
+      block(EXi, EXo, S_IN, SCR_S);                  // east: corner .. rod screen
+      block(EXi, EXo, SCR_S, SCR_N, 0, 0.30);        //   screen sill
+      block(EXi, EXo, SCR_N, CAR_S);                 //   screen .. car gate
+      block(EXi, EXo, CAR_N, PED_S);                 //   between the gates
+      block(EXi, EXo, PED_N, 18620);                 //   ped gate .. north
+      // Rod field: 65 mm face to the street, 40 mm deep, 125 pitch (as the box).
+      const RF = 65, RD = 40, RP = 125;
+      function rodField(y0, y1, z0, z1) {
+        const n = Math.max(2, Math.round((y1 - y0 - RF) / RP));
+        const p = (y1 - y0 - RF) / n;
         for (let i = 0; i <= n; i++) {
-          const gy = y0 + ((y1 - y0) * i) / n;
-          pb(sBag, 'ms', 22126, 22224, gy - 8, gy + 8, 0.13, 1.42);
+          const y = y0 + i * p;
+          pb(sBag, 'fin2', EXm - RD / 2, EXm + RD / 2, y, y + RF, z0, z1);
         }
-        pb(sBag, 'charDark', 22096, 22254, y0, y1, 0, 0.028);
       }
-      leaf(CAR_S, CAR_N);
-      leaf(PED_S, PED_N);
+      rodField(SCR_S + 30, SCR_N - 30, 0.30, WH);                       // fixed screen
+      pb(sBag, 'fin2', EXm - RD / 2 - 5, EXm + RD / 2 + 5, SCR_S, SCR_N, WH - 0.03, WH);   // tie bar on the top line
+      function gate(y0, y1) {
+        rodField(y0 + 20, y1 - 20, 0.06, WH - 0.03);
+        pb(sBag, 'fin2', EXm - RD / 2 - 5, EXm + RD / 2 + 5, y0 + 10, y1 - 10, WH - 0.03, WH);       // top rail on the wall line
+        pb(sBag, 'fin2', EXm - RD / 2 - 5, EXm + RD / 2 + 5, y0 + 10, y1 - 10, 0.025, 0.06);         // bottom rail
+        pb(sBag, 'charDark', EXm - 40, EXm + 40, y0, y1, 0, 0.004);                                   // flush floor track
+      }
+      gate(CAR_S, CAR_N);
+      gate(PED_S, PED_N);
+      // Warm jamb strips — 20 mm, let 4 mm out of each gate jamb face.
+      for (const [y, d] of [[CAR_S, 1], [CAR_N, -1], [PED_S, 1], [PED_N, -1]]) {
+        const ya = y - (d > 0 ? 0 : 4), yb = y + (d > 0 ? 4 : 0);
+        pb(sBag, 'lamp', EXo - 60, EXo - 40, ya, yb, 0.35, 1.30);
+      }
       // Ground Flooring:
       // 1) East Front Courtyard & Car Driveway: Subtle Indian exterior parking tiles
       //    Spans full East side from compound gate/wall (22100) to the building line (12650),
@@ -3439,8 +3427,8 @@ window.HouseScene = (function () {
       warmFix(16625, cy, L.porticoFl + 0.28, -1);
     }
     for (const ly of [1200, 3000, 9800, 14000]) warmFix(22030, ly, 1.25, -1);
-    warmFix(22160, 4422, 2.18, -1);
-    warmFix(22160, 8422, 2.18, -1);
+    warmFix(22200, 4330, 0.85, -1);   // V42 gate-jamb strips
+    warmFix(22200, 8470, 0.85, -1);
     // SF east French glass flanks
     warmFix(12720, 5360, L.f2 + 1.88, 2);
     warmFix(12720, 8760, L.f2 + 1.88, 2);
