@@ -5565,7 +5565,7 @@ window.HouseScene = (function () {
     },
     f2: {
       E: [
-        { c: 3800, w: 1000, sill: 1100, h: 1200, type: 'win', chajja: true },    // Bedroom 03 north-edge window
+        { c: 3450, w: 1700, sill: 900, h: 1500, type: 'win', chajja: true },     // Bedroom 03 east window, big (y 2600..4300, north jamb kept; wardrobe shortened to y 2500)
         // Family room glass wall
         { c: 7050, w: 3160, sill: 0, h: 2700, type: 'frenchdoor', panes: 3, frameMat: 'ms' }   // black MS-finish frame, like the rods and rails outside
       ],
@@ -6787,7 +6787,7 @@ window.HouseScene = (function () {
       [ { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // FF master south
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ], // FF master west
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
-        { f: 'E', c: 3800, w: 1000, sill: 1100, h: 1200, m: 'curtain2', zebra: true },  // SF bed03 E: zebra shade matching master suites
+        { f: 'E', c: 3450, w: 1700, sill: 900, h: 1500, m: 'curtain2', zebra: true },  // SF bed03 E: zebra shade matching master suites
         { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF master02 S: same zebra shade as the FF master
         { f: 'S', c: 8450, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF bed03 S: zebra shade matching master suites
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ]// SF master02 W: same zebra shade as the FF master
@@ -9323,13 +9323,13 @@ window.HouseScene = (function () {
         /* --- EAST BEDROOM (7736..12421, 232..4432) --- */
         Lum.fan(10050, 2332);                         // on the bed axis (9100..11000), room-centre depth
         Lum.ac('x', 4432, 9550, 10500, 'S');          // north wall, facing the bed (the east wall is full-height wardrobe)
-        Lum.downlight(11320, 1740);                   // in front of the wardrobe (face x 11820, y 232..3250)
+        Lum.downlight(11320, 1740);                   // in front of the wardrobe (face x 11820, y 232..2500)
         Lum.downlight(10950, 3800);                   // over the reading chair in the NE corner
         // (the old east-wall sconce at y 2300 sat behind the wardrobe: removed)
         // one mitred path: east wall north of the wardrobe (corner window) ->
         // north wall (AC) -> west wall (both doors) -> south wall over the bed
         // head, ending flush on the wardrobe face
-        Lum.cornerPath([[12420, 3250], [12420, 4432], [7736, 4432], [7736, 230], [11820, 230]], true);
+        Lum.cornerPath([[12420, 2500], [12420, 4432], [7736, 4432], [7736, 230], [11820, 230]], true);
         Lum.raw(8810, 442, fY + 0.86, 'bedside');
         Lum.raw(11310, 442, fY + 0.86, 'bedside');
 
@@ -10220,7 +10220,7 @@ window.HouseScene = (function () {
         Fur.bench(bag, 9500, 10600, 1950, 2350, fY);
         Fur.art(bag, 'y', 7736, 'E', 1150, fY, 1.6, 900, 1100, ['artC', 'artA', 'artB']);
         Fur.side(bag, 8600, 9020, 232, 652, fY); Fur.side(bag, 11100, 11520, 232, 652, fY);
-        Fur.fullHeightWardrobe(bag, 11820, 12420, 232, 3250, fY, fY + 3.203); // East wall full-height wardrobe up to window
+        Fur.fullHeightWardrobe(bag, 11820, 12420, 232, 2500, fY, fY + 3.203); // East wall full-height wardrobe, short of the big window (y 2600..4300)
         /* --- EAST WALK-IN DRESSING (4920..7620, 1755..3151) ---
            The bath and the dressing room split the 2.9 m between them evenly (1407 /
            1396). Entered from the bedroom at the east end, which is a small lobby
