@@ -2210,8 +2210,25 @@ window.HouseScene = (function () {
 
       // 3) North lawn: grass garden north of steps (y = 11270..18620)
       // Trees / hedge / flowering shrubs are photoreal sprites in placeGarden().
-      // V42: the garden is gone — the north yard is rectangular pavers, flush (top 0.045).
-      pb(sBag, 'paverRect', -750, 22100, 11270, 18620, 0, 0.045);
+      /* V42: north yard = rectangular GRASS PAVERS. A grass bed (top 0.035)
+         with 1200 x 600 smooth concrete slabs (top 0.045, flush with all the
+         other paving) on 100 mm grass joints, long side east-west, alternate
+         rows offset half a slab. Slabs are clipped to the yard; a slab cut
+         below 300 mm is left as grass rather than a sliver. */
+      (function grassPavers() {
+        const X0 = -750, X1 = 22100, Y0 = 11270, Y1 = 18620;
+        const SW = 1200, SD = 600, J = 100, M = 100;     // slab, joint, edge margin
+        pb(sBag, 'grass', X0, X1, Y0, Y1, 0, 0.035);
+        let row = 0;
+        for (let y = Y0 + M; y + SD <= Y1 - M + 1; y += SD + J, row++) {
+          const off = (row % 2) ? (SW + J) / 2 : 0;
+          for (let x = X0 + M - off; x < X1 - M; x += SW + J) {
+            const a0 = Math.max(x, X0 + M), a1 = Math.min(x + SW, X1 - M);
+            if (a1 - a0 < 300) continue;
+            pb(sBag, 'concrete', a0, a1, y, y + SD, 0, 0.045);
+          }
+        }
+      })();
 
     })();
     const site = sBag.build(THREE, materials); site.name = 'site'; root.add(site);
