@@ -581,7 +581,8 @@ window.HouseScene = (function () {
         const n = Math.max(2, Math.round(len / 120));
         for (let i = 0; i <= n; i++) {
           const a = a0 + (len * i) / n;
-          put(gm, a - 10, a + 10, bD[0], bD[1], b + 0.045, t - 0.045);
+          // end bars stay inside the opening — a flush bar proud of the jamb z-fights the wall face
+          put(gm, Math.max(a - 10, a0), Math.min(a + 10, a1), bD[0], bD[1], b + 0.045, t - 0.045);
         }
       }
     } else if (spec.type === 'slider') { // Sliding glass door system
@@ -3167,7 +3168,7 @@ window.HouseScene = (function () {
               []); // SE corner east wall — solid; south of y 0 it is open into the service lobby
       // Service lobby: the wet kitchen runs on east under the lift's back wall (x 12650..14270)
       // to a grill door in the end wall, flush with the lift's east face.
-      wallRun(eBag, 'eastPlaster', 'y', -762, 0, 14040, 14270, L.f1, L.f2, L.f1,
+      wallRun(eBag, 'eastPlaster', 'y', -646, 0, 14040, 14270, L.f1, L.f2, L.f1,   // south wall owns the SE corner
               [{ c: -300, w: 600, sill: 0, h: 2400 }]);
       glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
       wallRun(eBag, 'white', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,

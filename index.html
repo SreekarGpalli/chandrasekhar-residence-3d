@@ -263,6 +263,7 @@
    at the end of <body> has run. */
 window.DESIGNS = {
   full: { dir: null,                   code: 'FULL', title: 'FULL HOUSE',       sub: 'With Interiors · V43 Rods', interiors: true  },
+  full2: { dir: null, file: 'houseScene2.js', code: 'FULL 2', title: 'FULL HOUSE 2', sub: 'With Interiors · V42 Exterior', interiors: true },
   v43:  { dir: 'version-forty-three',  code: 'V43',  title: 'CONTINUOUS RODS',  sub: 'Unbroken Rods · Recessed Slabs', interiors: false },
   v42:  { dir: 'version-forty-two',    code: 'V42',  title: 'SLEEK CORNERS',    sub: 'V41 · Pillar-free Rail Corners · Continuous SF Parapet', interiors: false },
   v41:  { dir: 'version-forty-one',    code: 'V41',  title: 'GRAPHITE ROD BOX', sub: 'Splayed Frame · Satin Warm Graphite Rods', interiors: false }
@@ -354,7 +355,7 @@ window.DESIGNS = {
 
   <div class="dock-divider"></div>
 
-  <a href="walkthrough.html" class="wt-link" title="First-person walkthrough">
+  <a href="walkthrough.html" class="wt-link" title="First-person walkthrough" onclick="if (window.DESIGN === 'full2') this.href = 'walkthrough.html?v=full2';">
     <svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
     <span>WALKTHROUGH</span>
   </a>
@@ -398,7 +399,8 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42g'
+  var src = d.file ? d.file + '?v=20261113_full2_c'
+          : d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42i'
                   : 'houseScene.js?v=20261107_walkin_sf';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
@@ -432,7 +434,7 @@ window.DESIGNS = {
     /* The elevation scenes live under elevations/, which is a separate set of
        files from the main viewer — name the one that is missing rather than
        showing a generic failure, and offer the way back. */
-    if (window.DESIGN && window.DESIGN !== 'full') {
+    if (window.DESIGN && window.DESIGN !== 'full' && !window.DESIGNS[window.DESIGN].file) {
       bootFail('COULD NOT LOAD ' + window.DESIGNS[window.DESIGN].name +
                ' — elevations/' + window.DESIGNS[window.DESIGN].dir + '/houseScene.js IS MISSING. ' +
                'OPEN THE PAGE WITHOUT ?v= FOR THE FULL HOUSE.');
@@ -1480,7 +1482,7 @@ window.DESIGNS = {
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
 
-    ground:  0x9c9078, plotPad: 0xa3977d, soil: (window.DESIGN === 'v42' || /version-forty-two/.test(location.pathname)) ? 0x8f6d4f : 0x5d4b34,   // V42: lighter red-brown bed earth
+    ground:  0x9c9078, plotPad: 0xa3977d, soil: (window.DESIGN === 'v42' || window.DESIGN === 'full2' || /version-forty-two/.test(location.pathname)) ? 0x8f6d4f : 0x5d4b34,   // V42: lighter red-brown bed earth
    
     grass:   0x66794a, road: 0x494b4f,
     leafDark: 0x34492a, leafLight: 0x5d7838,
@@ -1855,6 +1857,9 @@ window.DESIGNS = {
      entire problem being solved here. A stable wrong answer is invisible; an
      unstable right one flickers. */
   const ELEV_ONLY = !!(window.DESIGNS && window.DESIGNS[window.DESIGN] && !window.DESIGNS[window.DESIGN].interiors);
+  // FULL 2 carries the V42 exterior (grass-paver court, flush parapets), whose
+  // floors sit a few mm behind other faces — it needs the same units-only offset.
+  const UNITS_ONLY = ELEV_ONLY || window.DESIGN === 'full2';
   function depthOffset(key) {
     const layer = DEPTH_LAYER[key] || 0;
     let h = 0;
@@ -1967,7 +1972,7 @@ window.DESIGNS = {
              never enough to cross a wall. The full house keeps the factor its
              interiors were tuned with. */
           const off = depthOffset(key);
-          if (ELEV_ONLY) { m.polygonOffsetFactor = 0; m.polygonOffsetUnits = off * 4; }
+          if (UNITS_ONLY) { m.polygonOffsetFactor = 0; m.polygonOffsetUnits = off * 4; }
           else m.polygonOffsetFactor = m.polygonOffsetUnits = off;
         }
         // Indoor surfaces reflect the room, not the sky (see buildInteriorEnv)

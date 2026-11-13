@@ -192,7 +192,10 @@
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
-<script src="houseScene.js?v=20261107_walkin_sf"></script>
+<script>
+/* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_full2_c' : 'houseScene.js?v=20261107_walkin_sf') + '"></scr' + 'ipt>');
+</script>
 <script>
 if(!window.THREE || !window.HouseScene){
   bootFail('Could not initialise the scene. Ensure houseScene.js is alongside this file.');
