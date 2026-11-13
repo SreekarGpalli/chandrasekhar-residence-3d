@@ -4270,11 +4270,21 @@ window.HouseScene = (function () {
       if (isX) pb(bag, 'aluDark', x0, x1, out > 0 ? cy0 : at + 40, out > 0 ? at - 40 : cy1, fY, fY + 0.08);
       else pb(bag, 'aluDark', out > 0 ? cx0 : at + 40, out > 0 ? at - 40 : cx1, y0, y1, fY, fY + 0.08);
       const a0 = isX ? x0 : y0;
-      const n = Math.max(2, Math.round(W / 520)), dw = W / n;
+      // opts.doorW: explicit leaf widths in mm (last may be null = the rest);
+      // opts.mirrorAt: leaf indices that carry the full-length mirror panel
+      let edges = [];
+      if (opts.doorW) {
+        let c = a0; edges.push(c);
+        opts.doorW.forEach(w => { c = (w == null) ? a0 + W : c + w; edges.push(c); });
+      } else {
+        const n0 = Math.max(2, Math.round(W / 520));
+        for (let i = 0; i <= n0; i++) edges.push(a0 + i * W / n0);
+      }
+      const n = edges.length - 1;
       const split = fY + 2.30;
       for (let i = 0; i < n; i++) {
-        const s0 = a0 + i * dw + 2, s1 = a0 + (i + 1) * dw - 2;
-        const panel = opts.mirror ? 'mirrorI' : (i % 3 === 1) ? 'fluted' : 'lacq';
+        const s0 = edges[i] + 2, s1 = edges[i + 1] - 2;
+        const panel = (opts.mirror || (opts.mirrorAt && opts.mirrorAt.indexOf(i) >= 0)) ? 'mirrorI' : (i % 3 === 1) ? 'fluted' : 'lacq';
         const side = i % 2 === 0 ? 'end' : 'start';
         aluShutter(bag, dir, at, out, s0, s1, fY + 0.085, split - 0.004, panel,
           { pull: [fY + 0.70, fY + 1.75], pullSide: side });
@@ -8838,8 +8848,7 @@ window.HouseScene = (function () {
         /* --- EAST WALK-IN (4920..7620, 1755..3151) --- */
         Lum.downlight(5950, 2153);                    // down the middle of the wardrobe aisle
         Lum.downlight(7250, 2453);                    // lobby: bedroom door, bath door, full-length mirror
-        Lum.task(6960, 7580, 3070, 3140, 2.38);       // wash over the dressing mirror
-        Lum.vanity('y', 1900, 2456, 4920, 2.0, 'E');  // bar over the dressing table's halo mirror
+        Lum.vanity('y', 2101, 2601, 5470, 2.38, 'E'); // bar over the mirror leaf of the west run
 
         /* --- EAST BATH (4920..7620, 233..1640) --- */
         Lum.downlight(5370, 900);                     // over the shower
@@ -9731,12 +9740,18 @@ window.HouseScene = (function () {
            the full-height mirror-shutter wardrobe (550 deep, north wall) and the
            bath partition, and ends in a dressing table (736 wide, as wide as the
            aisle) with a halo mirror and a stool. Nothing else stands in the aisle. */
-        Fur.rug(bag, 5450, 6850, 1880, 2476, fY);                                // runner down the aisle
-        Fur.fullHeightWardrobe(bag, 5420, 6900, 2601, 3151, fY, fY + 3.203, 'S', { mirror: true });
-        pb(bag, 'oakDark', 4920, 5420, 2601, 3151, fY, fY + 3.203);              // dark-oak pilaster closing the corner behind the dressing table
-        pb(bag, 'oakDark', 6885, 6900, 2601, 3151, fY, fY + 3.203);              // return facing the lobby
-        Fur.dressingMirror(bag, 6960, 7580, 3151, fY, 'S');                      // full length, in the lobby
-        Fur.dressingTable(bag, 4920, 5370, 1810, 2546, fY, 'W');                 // closes the aisle, centred on it (aisle centre y 2178)
+        /* L-shaped wardrobes (rearranged): the north run (x 4920..6500, 550 deep,
+           doors south) turns the NW corner into the west run (y 1755..2601, doors
+           east). The north wall from x 6500 to the bedroom door is left empty - the
+           bath door (x 6700..7500) and the bedroom door open onto that clear
+           1.1 m x 1.4 m changing area. The full-length mirror is one leaf of the west
+           run (y 2101..2601, 500 wide), straight ahead of the bedroom door. Shutter
+           planes: north y 2601 (leaves reach y 2621), west x 5470 (leaves reach
+           x 5450); the west run stops at y 2601 so no leaf or pull touches the north
+           run's front. */
+        Fur.rug(bag, 5700, 7200, 1880, 2476, fY);                                // runner down the aisle into the changing area
+        Fur.fullHeightWardrobe(bag, 4920, 6500, 2601, 3151, fY, fY + 3.203, 'S');          // north run (owns the corner)
+        Fur.fullHeightWardrobe(bag, 4920, 5470, 1755, 2601, fY, fY + 3.203, 'E', { doorW: [346, null], mirrorAt: [1] }); // west run, mirror leaf
         Fur.art(bag, 'x', 1755, 'N', 5900, fY, 1.55, 800, 1100, ['artD', 'artB', 'artC']);   // on the bath partition
         // --- Second Floor Family Room & Entertainment Lounge ---
         Fur.rug(bag, 9400, 11950, 5350, 7850, fY);
