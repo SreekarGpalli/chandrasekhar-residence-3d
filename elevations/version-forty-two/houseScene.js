@@ -39,7 +39,7 @@ window.HouseScene = (function () {
     white2:  0xf3efe6,  // BODY — same off-white, slightly lighter soffits / reveals
     fin:     0xd6c9ae,  // east verticals only — V6 lime, not chalk
     gMetal:  0x4a4945,  // V42: warm satin graphite — gates only
-    gBlue:   0x46525c,  // V42: slate blue-grey satin — rods, rails, pergola, frames
+    gBlue:   0x4a5056,  // V42: graphite with a soft blue cast (was 0x46525c, too blue) — rods, rails, pergola, frames
     fin2:    0x62635e,  // east vertical rods — warm graphite, coordinated with grey frames and stone
     sand:    0xd2cdc4,  // SOFT — cool greige east shell
     stone:   0xd0cbc3,  // SOFT — pale stone

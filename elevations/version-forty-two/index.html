@@ -146,7 +146,7 @@
     return;
   }
 
-  var STAMP = 'V42_SLEEK_20261112_s';
+  var STAMP = 'V42_SLEEK_20261112_t';
 
   function say(msg) {
     var ls = document.querySelector('#loading .ls');
@@ -926,7 +926,7 @@ function boot() {
       case 'ms':         return { tex: 'metal', tile: 0.8, rough: 0.42, metal: 0.30, env: 1.0, reflect: 0.35 };
       case 'msWhite':    return { tex: 'metal', tile: 0.8, rough: 0.55, metal: 0.10, env: 0.7, reflect: 0.15 };   // V42 painted grille
       case 'frame':      return { tex: 'metal', tile: 0.6, rough: 0.36, metal: 0.65, env: 1.05, reflect: 0.5 };
-      case 'gBlue':      return { tex: 'metal', tile: 0.8, rough: 0.46, metal: 0.30, env: 0.85, reflect: 0.2 };    // V42 slate blue-grey satin
+      case 'gBlue':      return { tex: 'metal', tile: 0.8, rough: 0.50, metal: 0.28, env: 0.80, reflect: 0.18 };    // V42 slate blue-grey satin
       case 'gMetal':     return { tex: 'metal', tile: 0.8, rough: 0.50, metal: 0.25, env: 0.75, reflect: 0.18 };   // V42 one satin graphite
       case 'upvcWhite':  return { tex: 'metal', tile: 0.6, rough: 0.38, metal: 0.0, env: 0.6, reflect: 0.12 };   // V42 white UPVC frames
       /* Balustrades and the gate. The palette calls these stainless and at
@@ -1028,7 +1028,7 @@ function boot() {
     frame:      0x26292c,
     upvcWhite:  0xf2f1ee,   // V42 white UPVC window frames (GF)
     gMetal:     0x4a4945,   // V42 exterior metal: rails, rods, gates, pergola, frames
-    gBlue:      0x46525c,   // V42 slate blue-grey: rods, rails, pergola, frames
+    gBlue:      0x4a5056,   // V42 soft blue-grey: rods, rails, pergola, frames
     steel:      0x44484c,
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
