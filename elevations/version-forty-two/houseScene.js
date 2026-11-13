@@ -2138,12 +2138,13 @@ window.HouseScene = (function () {
       const PED_S = 8760, PED_N = 9860;   // 1.1 m — walk / bike
       const EXo = 22250, EXi = 22100, EXm = (EXo + EXi) / 2;   // east wall band
       const SCR_S = -497, SCR_N = 3184;   // = SE box rod opening above
+      const SCR_Z = 0.70;                 // solid wall up to 700, rods 700..1524
       const block = (x0, x1, y0, y1, z0, z1) => pb(sBag, 'white', x0, x1, y0, y1, z0 || 0, z1 || WH);
       block(-900, EXo, S_OUT, S_IN);                 // south, owns both south corners
       block(-900, EXo, 18620, 18770);                // north, owns both north corners
       block(-900, -750, S_IN, 18620);                // west
       block(EXi, EXo, S_IN, SCR_S);                  // east: corner .. rod screen
-      block(EXi, EXo, SCR_S, SCR_N, 0, 0.30);        //   screen sill
+      block(EXi, EXo, SCR_S, SCR_N, 0, SCR_Z);       //   screen sill (raised: more wall, less screen)
       block(EXi, EXo, SCR_N, CAR_S);                 //   screen .. car gate
       block(EXi, EXo, CAR_N, PED_S);                 //   between the gates
       block(EXi, EXo, PED_N, 18620);                 //   ped gate .. north
@@ -2157,13 +2158,23 @@ window.HouseScene = (function () {
           pb(sBag, 'fin2', EXm - RD / 2, EXm + RD / 2, y, y + RF, z0, z1);
         }
       }
-      rodField(SCR_S + 30, SCR_N - 30, 0.30, WH);                       // fixed screen
+      rodField(SCR_S + 30, SCR_N - 30, SCR_Z, WH);                      // fixed screen
       pb(sBag, 'fin2', EXm - RD / 2 - 5, EXm + RD / 2 + 5, SCR_S, SCR_N, WH - 0.03, WH);   // tie bar on the top line
+      /* Louvre gates (V42 rev): horizontal blades in the rod colour, 100 mm
+         deep, tilted 45° with the street edge DOWN, 70 mm pitch — each blade
+         overlaps the one below, so from the street you see metal, not the
+         drive, while air and light still pass. Slim frame on the wall line. */
+      const LB = 100, LT = 5, LP = 70, LANG = -Math.PI / 4;
       function gate(y0, y1) {
-        rodField(y0 + 20, y1 - 20, 0.06, WH - 0.03);
-        pb(sBag, 'fin2', EXm - RD / 2 - 5, EXm + RD / 2 + 5, y0 + 10, y1 - 10, WH - 0.03, WH);       // top rail on the wall line
-        pb(sBag, 'fin2', EXm - RD / 2 - 5, EXm + RD / 2 + 5, y0 + 10, y1 - 10, 0.025, 0.06);         // bottom rail
-        pb(sBag, 'charDark', EXm - 40, EXm + 40, y0, y1, 0, 0.004);                                   // flush floor track
+        const FW = 50, gx0 = EXm - 50, gx1 = EXm + 50;
+        pb(sBag, 'fin2', gx0, gx1, y0 + 6, y0 + 6 + FW, 0.025, WH);        // stiles
+        pb(sBag, 'fin2', gx0, gx1, y1 - 6 - FW, y1 - 6, 0.025, WH);
+        pb(sBag, 'fin2', gx0, gx1, y0 + 6, y1 - 6, WH - 0.05, WH);         // top rail on the wall line
+        pb(sBag, 'fin2', gx0, gx1, y0 + 6, y1 - 6, 0.025, 0.10);           // bottom rail
+        const len = (y1 - y0 - 12 - 2 * FW) / 1000, zc = -(y0 + y1) / 2000;
+        for (let z = 0.10 + LP / 2000; z < WH - 0.05 - 0.02; z += LP / 1000)
+          sBag.box('fin2', EXm / 1000, z, zc, LB / 1000, LT / 1000, len, 0, 0, LANG);
+        pb(sBag, 'charDark', EXm - 40, EXm + 40, y0, y1, 0, 0.004);        // flush floor track
       }
       gate(CAR_S, CAR_N);
       gate(PED_S, PED_N);
