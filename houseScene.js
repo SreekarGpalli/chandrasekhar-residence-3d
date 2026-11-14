@@ -9138,7 +9138,6 @@ window.HouseScene = (function () {
         Lum.fan(10700, 6580);                         // over the coffee table, centre of the two facing sofas
         Lum.downlight(10700, 8200);                   // reading light over the north sofa
         Lum.downlight(10700, 4900);                   // and the south one (was a 4-can grid)
-        Lum.floorLamp(9300, 5200, 1.55);              // freestanding floor lamp
         // Corner line, the common area's north wall in ONE mitred path, east shell to
         // the stair: family room, on over the double-height void, then the gallery,
         // ending square at x 4920 where the stair starts (nothing in the stairwell).
@@ -10095,14 +10094,8 @@ window.HouseScene = (function () {
         }
         Fur.art(bag, 'x', 1755, 'N', 5900, fY, 1.55, 800, 1100, ['artD', 'artB', 'artC']);   // on the bath partition
         // --- Second Floor Family Room & Entertainment Lounge ---
-        Fur.rug(bag, 9400, 11950, 5350, 7850, fY);
-        // The east wall is a 3.16 m glass door (y 5470-8630): sofas stop at
-        // x 11700 so a 0.7 m walkway runs along it to every panel.
-        Fur.sofa(bag, 9700, 11700, 7950, 8600, fY, 'N', false, false, { fab: 'boucle', acc: ['linen', 'velvet', 'terra'] });
-        Fur.sofa(bag, 9700, 11700, 4570, 5220, fY, 'S', false, false, { fab: 'boucle', acc: ['linen', 'velvet', 'terra'] });
-        // west lounge chairs are CC0 scans (placeInteriorModels)
-        Fur.table(bag, 10150, 11250, 6230, 6930, fY, 0.40);          // travertine coffee table
-        Fur.books(bag, 10450, 6620, fY + 0.40, 3, true);
+        // CLEARED (owner): the two sofas, the coffee table + books, the rug, the floor lamp and the
+        // armchair are gone, ready for a new layout. (The east wall is a 3.16 m glass door, y 5470-8630.)
         Fur.art(bag, 'x', 4546, 'N', 10700, fY, 1.62, 1500, 850, ['artB', 'artC', 'artA']);
       }
 
@@ -10152,10 +10145,7 @@ window.HouseScene = (function () {
         { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
         { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
         // ---- SF family room ----
-        { id: 'modern_arm_chair_01', fi: 2, x: 9200, y: 6580, rot: 90 },
         { id: 'potted_plant_01', fi: 2, x: 8650, y: 5000, rot: 120 },
-        { id: 'ceramic_vase_01', fi: 2, x: 10850, y: 6720, z: 0.40 },
-        { id: 'wooden_bowl_01', fi: 2, x: 11000, y: 6400, z: 0.40 }
       ];
       const loader = new THREE.GLTFLoader();
       let pending = 0;
