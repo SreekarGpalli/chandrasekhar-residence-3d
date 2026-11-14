@@ -9522,17 +9522,17 @@ window.HouseScene = (function () {
 
         // --- Hall lounge (east of the wing, south of stair / TV) ---
         Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, true);
-        Fur.rug(bag, 5150, 9110, 4950, 7250, fY);
-        // centred on the TV (x 7130). Two routes depend on it: the 1.24 m gap
-        // to the kitchen wall on its east (hall <-> dining / kitchen) and the
-        // 1.0 m strip behind it (dining -> master bedroom door). Keep both clear.
-        // A real three-seater (2.2 m, three seat cushions) on the TV axis and
-        // two single chairs (CC0 scans, placeInteriorModels) facing in across
-        // it: the west one backs onto the spine wall, the east one mirrors it.
-        // That is all the hall needs.
-        Fur.sofa(bag, 6030, 8230, 4800, 5700, fY, 'S');              // faces TV
-        Fur.table(bag, 6530, 7730, 5950, 6600, fY, 0.40);            // travertine coffee table
-        Fur.books(bag, 6900, 6280, fY + 0.40, 3, true);
+        /* Hall seating, rearranged (owner): the old sofa + armchairs + coffee table + plant
+           are gone. A three-seater stays where it was, nudged 350 mm east (x 6380..8580,
+           y 4800..5700, faces the TV; 790 mm still clear to the kitchen wall for the
+           dining <-> hall route). A compact two-seater of the same make stands against the
+           spine wall (x 4920..5620, y 4700..6250), facing east - its north end stops 246 mm
+           short of the stair mouth (y 6496) so the stairs stay clear. One small side table
+           serves both, in the corner between the three-seater's west arm and the two-seater. */
+        Fur.rug(bag, 5750, 8750, 4950, 6450, fY);
+        Fur.sofa(bag, 6380, 8580, 4800, 5700, fY, 'S');              // three-seater, faces TV
+        Fur.sofa(bag, 4920, 5620, 4700, 6250, fY, 'W');              // two-seater on the west wall
+        Fur.table(bag, 5880, 6310, 4950, 5380, fY, 0.52);            // small side table between them
         // art on the spine wall, facing the seating
         Fur.art(bag, 'y', 4920, 'E', 5500, fY, 1.65, 1300, 950);
 
@@ -10019,17 +10019,12 @@ window.HouseScene = (function () {
       if (typeof window === 'undefined' || !THREE.GLTFLoader) return;
       const FL = [L.f0, L.f1, L.f2];
       const P = [
-        // ---- FF hall ----
+        // ---- FF hall: cleared (no chairs, plant or table decor; see the seating note in the FF hall furniture) ----
         // 986 x 820 scans. West one backs onto the spine wall (x 4940..5926,
         // y 5670..6490 — inside the wall's run, clear of the stair mouth);
         // east one mirrors it about the TV axis but sits 140 further north
         // so 750 mm stays clear between it and the kitchen corner (y 5060):
         // that gap is the route from the dining room to the hall and foyer.
-        { id: 'modern_arm_chair_01', fi: 1, x: 5433, y: 6080, rot: 90 },
-        { id: 'modern_arm_chair_01', fi: 1, x: 8827, y: 6220, rot: 270 },
-        { id: 'potted_plant_01', fi: 1, x: 5250, y: 8040, rot: 30 },
-        { id: 'ceramic_vase_02', fi: 1, x: 7500, y: 6150, z: 0.40 },
-        { id: 'wooden_bowl_01', fi: 1, x: 7300, y: 6430, z: 0.40 },
         // ---- FF dining / kitchen / foyer ----
         { id: 'ceramic_vase_01', fi: 1, x: 7150, y: 3100, z: 0.75 },
         { id: 'wooden_bowl_01', fi: 1, x: 7550, y: 3070, z: 0.75 },
