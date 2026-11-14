@@ -4702,6 +4702,44 @@ window.HouseScene = (function () {
       }
     },
 
+    /* Full-height bookcase on a south wall, with clear framed doors facing north. */
+    glazedBookcase(bag, x0, x1, y0, y1, fY, top) {
+      const edge = 22, plinth = fY + 0.08, sill = plinth + 0.025;
+      const face = y1 - 22, back = y0 + edge, shelfFront = face - 32;
+      pb(bag, 'aluDark', x0 + 18, x1 - 18, y0, face - 40, fY, plinth);
+      pb(bag, 'oakDark', x0, x1, y0, back, plinth, top - 0.025);
+      pb(bag, 'oakDark', x0, x0 + edge, back, face, plinth, top - 0.025);
+      pb(bag, 'oakDark', x1 - edge, x1, back, face, plinth, top - 0.025);
+      pb(bag, 'oakDark', x0, x1, y0, y1, top - 0.025, top);
+
+      const bays = 4, width = (x1 - x0 - 2 * edge) / bays;
+      const levels = [sill, fY + 0.55, fY + 1.00, fY + 1.45, fY + 1.90, fY + 2.35, fY + 2.76];
+      const covers = ['artA', 'linen', 'artC', 'artD', 'linenDk'];
+      for (let i = 0; i < bays; i++) {
+        const lo = x0 + edge + i * width, hi = lo + width;
+        const innerLo = lo + (i === 0 ? 0 : edge / 2), innerHi = hi - (i === bays - 1 ? 0 : edge / 2);
+        if (i > 0) pb(bag, 'oakDark', lo - edge / 2, innerLo, back, shelfFront, plinth, top - 0.025);
+        aluShutter(bag, 'x', y1, 1, lo + 2, hi - 2, plinth + 0.005, top - 0.029, 'glass',
+          { fw: 18, pull: [fY + 0.95, fY + 1.20], pullSide: i % 2 === 0 ? 'end' : 'start' });
+        levels.forEach((z, row) => {
+          pb(bag, 'oakDark', innerLo, innerHi, back, shelfFront, z - 0.025, z);
+          const cx = (innerLo + innerHi) / 2, cy = shelfFront - 160;
+          if ((i + row) % 3 === 0) this.books(bag, cx, cy, z, 3, true);
+          if ((i + row) % 3 === 1) {
+            for (let j = 0; j < 5; j++) {
+              const x = innerLo + 45 + j * 40;
+              pb(bag, covers[(i + row + j) % covers.length], x, x + 27 + j % 3 * 4,
+                cy - 120, cy + j * 6, z, z + 0.20 + ((j + row) % 4) * 0.022);
+            }
+          }
+          if ((i + row) % 6 === 5) {
+            bag.lathe('ceramic', cx / 1000, z, -cy / 1000,
+              [[0, 0], [0.045, 0], [0.068, 0.065], [0.048, 0.14], [0.035, 0.175], [0.028, 0.175], [0.028, 0.145]], 24);
+          }
+        });
+      }
+    },
+
     /* ---------------- BATHROOM ---------------- */
     /* Wall-hung WC on a concealed-cistern panel */
     wc(bag, cx, cy, fY, facing) {
@@ -10104,7 +10142,7 @@ window.HouseScene = (function () {
         // --- Second Floor Family Room & Entertainment Lounge ---
         const south = SF_FAMILY_ROOM.y0;
         const { x1: wardrobeEnd, y1: wardrobeFront } = SF_FAMILY_WARDROBE;
-        Fur.fullHeightWardrobe(bag, SF_FAMILY_SOUTH_WALL_X0, wardrobeEnd, south, wardrobeFront, fY, cut, 'N');
+        Fur.glazedBookcase(bag, SF_FAMILY_SOUTH_WALL_X0, wardrobeEnd, south, wardrobeFront, fY, cut);
         Fur.standingDesk(bag, 10590, 11990, south + 24, south + 706, fY, 'S');
         Fur.ergoChair(bag, 11290, 5652, fY, 'S');
 
