@@ -339,6 +339,7 @@ window.DESIGNS = {
       <button data-view="floor0" aria-pressed="false">GROUND</button>
       <button data-view="floor1" aria-pressed="false">FIRST</button>
       <button data-view="floor2" aria-pressed="false">SECOND</button>
+      <button id="guestLayout" hidden>Lower guest bed</button>
     </nav>
   </div>
 
@@ -399,9 +400,9 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.file ? d.file + '?v=20261114_room_workstations'
+  var src = d.file ? d.file + '?v=20261114_guest_theater'
           : d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42i'
-                  : 'houseScene.js?v=20261114_room_workstations';
+                  : 'houseScene.js?v=20261114_guest_theater';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
 </script>
@@ -1781,6 +1782,15 @@ window.DESIGNS = {
   /* ---------- house ---------- */
   const data = window.HouseScene.build(THREE);
   scene.add(data.root);
+  const guestLayout = document.getElementById('guestLayout');
+  guestLayout.addEventListener('click', () => {
+    const { openBed, foldedBed } = data.guestRoom;
+    openBed.visible = !openBed.visible;
+    foldedBed.visible = !openBed.visible;
+    guestLayout.textContent = openBed.visible ? 'Fold guest bed' : 'Lower guest bed';
+    resetAccum();
+    refreshShadows();
+  });
 
   /* ==========================================================================
      4 · RE-SKIN
@@ -2242,6 +2252,7 @@ window.DESIGNS = {
   function setView(name, instant) {
     activeView = name;
     const fi = VIEW_KEYS.indexOf(name) - 1; // -1 for exterior
+    guestLayout.hidden = fi !== 2 || !data.guestRoom;
     // Exterior = full multi-storey shell + all outdoor decks.
     // Floor buttons = that floor's dollhouse rooms + matching outdoor amenity
     // (portico on G, east/north balconies on 1 & 2). Outdoor decks live in
@@ -2257,7 +2268,7 @@ window.DESIGNS = {
       });
     }
     clearSelection();
-    document.querySelectorAll('#views button').forEach(b => {
+  document.querySelectorAll('#views button[data-view]').forEach(b => {
       b.classList.toggle('on', b.dataset.view === name);
       b.setAttribute('aria-pressed', b.dataset.view === name);
     });
@@ -2268,7 +2279,7 @@ window.DESIGNS = {
     $('hint').dataset.mode = name;
     announce(fi >= 0 ? FLOOR_NAMES[fi] + ' floor view' : 'Exterior view');
   }
-  document.querySelectorAll('#views button').forEach(b =>
+  document.querySelectorAll('#views button[data-view]').forEach(b =>
     b.addEventListener('click', () => { if (!b.disabled) setView(b.dataset.view); }));
 
   /* The elevation versions are exterior shells — data.floors is empty, so the
@@ -2276,7 +2287,7 @@ window.DESIGNS = {
      empty floorsUI. Disable them and stay on the exterior for those scenes. */
   const hasInteriors = data.floors.length > 0;
   if (!hasInteriors) {
-    document.querySelectorAll('#views button').forEach(b => {
+    document.querySelectorAll('#views button[data-view]').forEach(b => {
       if (b.dataset.view !== 'exterior') {
         b.disabled = true;
         b.setAttribute('aria-disabled', 'true');

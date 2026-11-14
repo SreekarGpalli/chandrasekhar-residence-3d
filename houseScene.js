@@ -8851,12 +8851,12 @@ window.HouseScene = (function () {
 
     /* ======== DOLLHOUSE floors ======== */
     const floorsOut = [];
+    let guestRoom;
     const workstationLayouts = [
       [{ x: 11260, deskY: 5650, chairY: 4750, back: 'N', z: 0.004 }], // ground-floor office rug
       [{ x: 1120, deskY: 4071, chairY: 3330, back: 'N' }], // first-floor master
       [
         { x: 1120, deskY: 4071, chairY: 3330, back: 'N' }, // west bedroom
-        { x: 9540, deskY: 4071, chairY: 3330, back: 'N' }, // east bedroom
         { x: 11290, deskY: 4911, chairY: 5652, back: 'S' } // family room
       ]
     ];
@@ -9167,11 +9167,10 @@ window.HouseScene = (function () {
         westSuiteLights(Lum, fY, true);
 
         /* --- EAST BEDROOM (7736..12421, 232..4432) --- */
-        Lum.fan(10050, 2332);                         // on the bed axis (9100..11000), room-centre depth
+        Lum.fan(10050, 1900);                         // south of the projector and its light path
         Lum.ac('y', 7736, 1650, 2600, 'E');           // west wall, above the dressing entrance (c 2453), nudged south; faces the bed
         Lum.downlight(11320, 1740);                   // in front of the wardrobe (face x 11820, y 232..2500)
-        Lum.downlight(10950, 3800);                   // over the reading chair in the NE corner
-        Lum.downlight(9540, 3920);                    // study desk
+        Lum.downlight(11550, 3500);                   // east-side circulation, off the projection axis
         // (the old east-wall sconce at y 2300 sat behind the wardrobe: removed)
         // one mitred path: east wall north of the wardrobe (corner window) ->
         // north wall (AC) -> west wall (both doors) -> south wall over the bed
@@ -10050,10 +10049,56 @@ window.HouseScene = (function () {
           pb(bag, 'white2', 4630, 4920, 6496, 8641, top - 0.010, top - 0.008);   // stair walkway strip beside the gallery
         }
         eastBath(bag, fY);                                            // zellige shower, tile to the slab, flat-deck basin
-        // --- Bedroom 03 ---
+        // --- Guest bedroom / theater ---
         Fur.rug(bag, 8650, 11450, 850, 2900, fY);
-        Fur.bed(bag, 9100, 11000, 232, 1832, fY, 'S');              // bed03
-        Fur.bench(bag, 9500, 10600, 1950, 2350, fY);
+        // Horizontal folding bed, set into the old bed's 1900 × 1600 mm footprint.
+        const bedX0 = 9100, bedX1 = 11000, wallY = 232, cabinetFront = 550, bedY1 = 1832;
+        pb(bag, 'oakDark', bedX0, bedX1, wallY, wallY + 28, fY, fY + 1.73);
+        for (const x of [bedX0, bedX1 - 24]) {
+          prb(bag, 'oakDark', x, x + 24, wallY + 28, cabinetFront, fY, fY + 1.73, 3);
+        }
+        pb(bag, 'oakDark', bedX0 + 24, bedX1 - 24, wallY + 28, cabinetFront, fY + 1.706, fY + 1.73);
+        pb(bag, 'oakDark', bedX0 + 24, bedX1 - 24, wallY + 28, cabinetFront, fY, fY + 0.19);
+        prb(bag, 'linen', bedX0 + 39, bedX1 - 39, wallY + 32, wallY + 85, fY + 0.47, fY + 0.98, 12);
+
+        const folded = makeBag(THREE), unfolded = makeBag(THREE);
+        prb(folded, 'oakDark', bedX0 + 27, bedX1 - 27, cabinetFront - 28, cabinetFront, fY + 0.197, fY + 1.700, 4);
+        pb(folded, 'aluDark', 10047, 10053, cabinetFront, cabinetFront + 1, fY + 0.207, fY + 1.69);
+        for (const x of [9900, 10200]) {
+          prb(folded, 'brassI', x - 54, x + 54, cabinetFront, cabinetFront + 22, fY + 1.42, fY + 1.438, 3);
+        }
+
+        prb(unfolded, 'oakDark', bedX0 + 27, bedX1 - 27, wallY + 48, bedY1, fY + 0.36, fY + 0.45, 7);
+        for (const x of [9180, 10940]) {
+          prb(unfolded, 'aluDark', x - 16, x + 16, bedY1 - 91, bedY1 - 35, fY, fY + 0.37, 7);
+        }
+        prb(unfolded, 'sheet', 9140, 10960, 325, bedY1 - 20, fY + 0.45, fY + 0.64, 30, 8);
+        prb(unfolded, 'duvet', 9540, 10948, 336, bedY1 - 24, fY + 0.62, fY + 0.69, 24, 13);
+        prb(unfolded, 'linenDk', 10580, 10890, 335, bedY1 - 29, fY + 0.681, fY + 0.709, 12);
+        const mattress = frameOf(9140, 10960, 325, bedY1 - 20, 'W');
+        for (const u of [410, 1050]) {
+          mattress.pillow(unfolded, 'sheet', u, 193, fY + 0.705, 545, 360, 128, 0.16);
+        }
+        const foldedBed = folded.build(THREE, materials), openBed = unfolded.build(THREE, materials);
+        foldedBed.name = 'guestMurphyClosed';
+        openBed.name = 'guestMurphyOpen';
+        openBed.visible = false;
+        guestRoom = { foldedBed, openBed, bedX0, bedX1, wallY, bedY1 };
+
+        // Fixed 16:9 screen on the solid north wall. Lens y=2790 is north of the fan's y=2500 sweep limit.
+        const screenY = 4405, imageBottom = fY + 0.72, imageTop = imageBottom + 2.2 * 9 / 16;
+        prb(bag, 'blackM', 8918, 11182, screenY, 4432, imageBottom - 0.032, imageTop + 0.032, 4);
+        pb(bag, 'white2', 8950, 11150, screenY - 3, screenY, imageBottom, imageTop);
+        const lensH = fY + 2.86;
+        prb(bag, 'aluDark', 9990, 10110, 2600, 2700, cut - 0.018, cut, 4);
+        bag.cyl('aluDark', 10.05, cut - 0.145, -2.65, 0.016, 0.26);
+        prb(bag, 'charDark', 9885, 10215, 2535, 2768, lensH - 0.074, lensH + 0.074, 16);
+        bag.cyl('aluDark', 10.05, lensH, -2.772, 0.050, 0.025, Math.PI / 2);
+        bag.cyl('tv', 10.05, lensH, -2.787, 0.039, 0.006, Math.PI / 2);
+        for (let i = 0; i < 12; i++) {
+          const x = 9907 + i * 24;
+          pb(bag, 'blackM', x, x + 10, 2534, 2541, lensH - 0.028, lensH + 0.022);
+        }
         Fur.art(bag, 'y', 7736, 'E', 1150, fY, 1.6, 900, 1100, ['artC', 'artA', 'artB']);
         Fur.side(bag, 8600, 9020, 232, 652, fY); Fur.side(bag, 11100, 11520, 232, 652, fY);
         Fur.fullHeightWardrobe(bag, 11820, 12420, 232, 2500, fY, fY + 3.203); // East wall full-height wardrobe, short of the big window (y 2600..4300)
@@ -10124,6 +10169,7 @@ window.HouseScene = (function () {
 
       const g = bag.build(THREE, materials);
       g.name = 'floor' + fi;
+      if (fi === 2) g.add(guestRoom.foldedBed, guestRoom.openBed);
       for (const { x, deskY, chairY, back, z = 0 } of workstationLayouts[fi]) {
         // The synchronous stand-ins also seed the walkthrough collision grid.
         const deskBag = makeBag(THREE), chairBag = makeBag(THREE);
@@ -10176,9 +10222,6 @@ window.HouseScene = (function () {
         // (sketchfab.com/3d-models/lord-ganesha-1399da994ce54420878133a81f2f8f1e),
         // simplified 900k -> ~90k verts; untextured scan, cast in brass here.
         { id: 'ganesha', file: 'ganesha.glb', fi: 1, x: 10989, y: 7100, z: 1.00, rot: 90, h: 0.42, brass: true },
-        // ---- SF east bedroom ----
-        { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
-        { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
         ...workstationModels
       ];
       const loader = new THREE.GLTFLoader();
@@ -10290,7 +10333,7 @@ window.HouseScene = (function () {
        only exterior / site fixtures. */
 
     return {
-      root, site, exterior, outdoors, floors: floorsOut, views, lights,
+      root, site, exterior, outdoors, floors: floorsOut, views, lights, guestRoom,
       audit: AUD.on ? { items: AUD.items, rooms: ROOMS, iw: IW, open: OPEN, levels: L } : null,
       LEVELS: L, COLORS: C,
       bounds: { minX: -3, maxX: 24.5, minZ: -21, maxZ: 3, minY: 0, maxY: 14 },

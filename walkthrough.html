@@ -47,6 +47,9 @@
   #levels button.on{color:#11140f;background:var(--brass);border-color:var(--brass)}
   #levels button small{display:block;font-size:8px;letter-spacing:.14em;color:inherit;opacity:.8;margin-top:1px}
 
+  #guestLayout{position:fixed;right:72px;top:50%;z-index:5;padding:9px 12px;border-radius:8px;
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);cursor:pointer}
+
   /* bottom controls strip */
   #foot{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
     display:flex;gap:14px;align-items:center;padding:9px 16px;border-radius:11px;
@@ -135,6 +138,8 @@
   <button data-spawn="4">E<small>EXTERIOR</small></button>
 </div>
 
+<button id="guestLayout" hidden>Lower guest bed (B)</button>
+
 <div id="foot">
   <a href="index.html" class="back-link" title="Back to 3D model viewer"><svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>3D MODEL</a><span class="sep"></span>
   <span class="kbd-hint"><b>WASD</b> move</span><span class="sep kbd-hint"></span>
@@ -194,7 +199,7 @@
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_room_workstations' : 'houseScene.js?v=20261114_room_workstations') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_guest_theater' : 'houseScene.js?v=20261114_guest_theater') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1559,7 +1564,10 @@ if(!window.THREE || !window.HouseScene){
       if (!o.isMesh || o === skyDome) return;
       // Skip meshes whose entire ancestor chain is hidden (shouldn't happen now)
       let p = o;
-      while (p) { if (p.visible === false) return; p = p.parent; }
+      while (p) {
+        if (p.visible === false || p === data.guestRoom?.foldedBed) return;
+        p = p.parent;
+      }
       const key = meshMatKey(o);
       // Unknown keys still collide (safe default). Only listed portals/foliage skip.
       if (key && NON_COLLIDE[key]) return;
@@ -1692,6 +1700,13 @@ if(!window.THREE || !window.HouseScene){
     return { cast, tris: t, cells: nx * nz };
   }
   const collisionGrid = buildCollisionGrid(colliders);
+  const guestRoom = data.guestRoom;
+  const guestLayout = $('guestLayout');
+  // Cache each bed position separately so folding never leaves a collision behind.
+  const bedGrids = guestRoom && {
+    open: buildCollisionGrid(guestRoom.openBed.children),
+    folded: buildCollisionGrid(guestRoom.foldedBed.children)
+  };
   // Extra AABB colliders (car, etc.) — cheap, no triangle tests
   const boxColliders = [];
   function registerCarCollider() {
@@ -1760,7 +1775,12 @@ if(!window.THREE || !window.HouseScene){
     if (_d.lengthSq() < 1e-12) return null;
     _d.normalize();
     ray.set(_o, _d);
-    if (collisionGrid) return collisionGrid.cast(_o.x, _o.y, _o.z, _d.x, _d.y, _d.z, maxDist);
+    if (collisionGrid) {
+      const hit = collisionGrid.cast(_o.x, _o.y, _o.z, _d.x, _d.y, _d.z, maxDist);
+      if (!bedGrids) return hit;
+      const bedGrid = guestRoom.openBed.visible ? bedGrids.open : bedGrids.folded;
+      return bedGrid.cast(_o.x, _o.y, _o.z, _d.x, _d.y, _d.z, hit ? hit.distance : maxDist) || hit;
+    }
     ray.far = maxDist;
     ray.near = 0;
     const hit = ray.intersectObjects(colliders, false);
@@ -2027,6 +2047,23 @@ if(!window.THREE || !window.HouseScene){
     syncFlyButton();
   }
 
+  function inGuestRoom() {
+    const { x, y, z } = player.pos;
+    return !!guestRoom && y >= L.f2 - 0.05 && y < L.roof - 0.25 &&
+      x >= 7.736 && x <= 12.421 && z >= -4.432 && z <= -0.232;
+  }
+  function toggleGuestBed() {
+    if (!inGuestRoom()) return;
+    const { openBed, foldedBed, bedX0, bedX1, wallY, bedY1 } = guestRoom;
+    const { x, z } = player.pos, r = player.radius;
+    if (x > bedX0 / 1000 - r && x < bedX1 / 1000 + r &&
+        z > -bedY1 / 1000 - r && z < -wallY / 1000 + r) return;
+    openBed.visible = !openBed.visible;
+    foldedBed.visible = !openBed.visible;
+    refreshShadows();
+  }
+  guestLayout.addEventListener('click', toggleGuestBed);
+
   window.addEventListener('keydown', e => {
     const k = e.key.toLowerCase();
     // Ignore OS key-repeat on toggles — holding F used to flip fly/walk every
@@ -2034,6 +2071,7 @@ if(!window.THREE || !window.HouseScene){
     if (!e.repeat) {
       if (k === 'f') toggleFly();
       if (k === 'n') toggleNight();
+      if (k === 'b') toggleGuestBed();
       if (k >= '1' && k <= '5') spawnTo(+k - 1);
     }
     if (k === ' ' && !e.repeat && !pressed[' '] && !player.fly && player.onGround) {
@@ -2222,6 +2260,10 @@ if(!window.THREE || !window.HouseScene){
   let lastRoom = '', lastFloor = '';
   function updateHUD() {
     const fi = currentFloorIndex();
+    guestLayout.hidden = !inGuestRoom();
+    if (!guestLayout.hidden) {
+      guestLayout.textContent = guestRoom.openBed.visible ? 'Fold guest bed (B)' : 'Lower guest bed (B)';
+    }
     const px = player.pos.x * 1000, py = -player.pos.z * 1000;
 
     // 1. Special areas (balconies, terrace, portico, lift, stairs)
