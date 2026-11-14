@@ -245,8 +245,58 @@ window.HouseScene = (function () {
     M.zebraSheer.opacity = 0.20;
     M.zebraSheer.depthWrite = false;
     M.voile.transparent = true;
-    M.voile.opacity = 0.55;
+    M.voile.opacity = 1;
     M.voile.depthWrite = false;
+    M.voile.side = THREE.DoubleSide;
+    M.drapeDark.roughness = 0.97;
+    /* Curtain cloth. UVs are metres (u along the cloth, v up), so repeat = tiles per metre.
+       Voile: a gauze net - 40 % clear mesh with a 1 px thread every 4 px, so it reads as
+       see-through cloth, not a tinted sheet. Drape: heavy slubby cotton-linen weave with
+       a matching bump. */
+    (function curtainCloth() {
+      if (typeof document === 'undefined') return;
+      const tex = (cnv, rep) => {
+        const t = new THREE.CanvasTexture(cnv);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); t.anisotropy = 4;
+        if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+        return t;
+      };
+      const rnd = (() => { let a = 1234567; return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+      { // voile
+        const N = 128, cnv = document.createElement('canvas'); cnv.width = cnv.height = N;
+        const ctx = cnv.getContext('2d', { willReadFrequently: true }), img = ctx.createImageData(N, N), d = img.data;
+        const rowA = [], colA = [];
+        for (let i = 0; i < N; i++) { rowA.push(rnd() < 0.08 ? 0.22 : 0.0); colA.push(rnd() < 0.08 ? 0.22 : 0.0); }
+        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+          const o = (y * N + x) * 4;
+          let a = 0.40 + (rnd() - 0.5) * 0.10;
+          if (y % 4 === 0) a += 0.36;
+          if (x % 4 === 0) a += 0.30;
+          a += rowA[y] + colA[x];
+          d[o] = 252; d[o + 1] = 249; d[o + 2] = 242; d[o + 3] = Math.max(0, Math.min(255, a * 255));
+        }
+        ctx.putImageData(img, 0, 0);
+        M.voile.map = tex(cnv, 16);
+      }
+      { // drape: colour map + bump
+        const N = 256, mk2 = (grey) => {
+          const cnv = document.createElement('canvas'); cnv.width = cnv.height = N;
+          const ctx = cnv.getContext('2d', { willReadFrequently: true }), img = ctx.createImageData(N, N), d = img.data;
+          const r2 = (() => { let a = 7654321; return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+          const rowN = [], colN = [];
+          for (let i = 0; i < N; i++) { rowN.push(r2() < 0.07 ? (r2() - 0.5) * 22 : (r2() - 0.5) * 4); colN.push(r2() < 0.05 ? (r2() - 0.5) * 16 : (r2() - 0.5) * 3); }
+          for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+            const o = (y * N + x) * 4, tw = (((x >> 1) + (y >> 1)) & 1) ? 7 : -7;
+            const v = (grey ? 128 : 226) + tw * (grey ? 1.5 : 0.5) + rowN[y] * 0.6 + colN[x] * 0.6 + (r2() - 0.5) * 4;
+            d[o] = d[o + 1] = d[o + 2] = Math.max(0, Math.min(255, v)); d[o + 3] = 255;
+          }
+          ctx.putImageData(img, 0, 0); return cnv;
+        };
+        M.drapeDark.map = tex(mk2(false), 4);
+        M.drapeDark.bumpMap = tex(mk2(true), 4);
+        M.drapeDark.bumpScale = 0.35;
+      }
+    })();
     mk('carGlass', 0x1d2429, { roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.85 });
     // Color = C.lamp so walkthrough hex→name resolves 'lamp' for night boost
     mk('lamp', C.lamp, { emissive: srgb(C.lamp), emissiveIntensity: 2.4, roughness: 0.55 });
@@ -1068,6 +1118,7 @@ window.HouseScene = (function () {
       step: (mat, cx, cy, cz, sx, sy, sz, rx, ry, rz) => place(mat, stepG, cx, cy, cz, sx, sy, sz, rx, ry, rz),
       cyl: (mat, cx, cy, cz, r, h, rx, ry, rz) => place(mat, cylG, cx, cy, cz, r, h, r, rx, ry, rz),
       disc: (mat, cx, cy, cz, r, h, rx, ry, rz) => place(mat, discG, cx, cy, cz, r, h, r, rx, ry, rz),
+      fabric: (mat, geom) => add(mat, geom, IDENT, true),   // arbitrary prebuilt geometry (curtains), UVs kept
       trunk: (mat, cx, cy, cz, rBot, h) => place(mat, trunkG, cx, cy, cz, rBot, h, rBot),
       sph: (mat, cx, cy, cz, r, sy) => place(mat, sphG, cx, cy, cz, r, sy || r, r),
       // irregular foliage blob: independent xyz scale + yaw; low=true uses
@@ -6662,6 +6713,7 @@ window.HouseScene = (function () {
       let base;
       if (face === 'E') base = EB[0]; else if (face === 'W') base = WB[1];
       else if (face === 'N') base = NB[0]; else base = SB[1];
+      if (opt.base != null) base = opt.base;          // an interior wall (FF dining's south wall face, y 1065)
       const out = face === 'E' || face === 'N' ? -1 : 1;     // into the room
       const off = (d) => base + out * d;
       const rail = (a0, a1, d0, d1, h0, h1, m, r) => {
@@ -6691,24 +6743,82 @@ window.HouseScene = (function () {
         return;
       }
       if (opt.dual) {
-        /* Whole-wall dressing (the SF family room's glass wall): a double ceiling track
-           the length of the wall and two full curtains drawn back to its two ENDS - a
-           sheer voile nearest the glass and a heavy dark drape in front of it. Closed,
-           the pairs meet and cover the whole wall; drawn, they stack at each end. */
-        const t0 = opt.lo, t1 = opt.hi, zt = top - 0.03;
-        rail(t0, t1, 36, 62, zt, top + 0.012, 'aluDark', 4);        // voile track
-        rail(t0, t1, 108, 142, zt, top + 0.012, 'aluDark', 6);      // drape track
-        const stackRun = (p0, p1, dA, dB, th, m, hem, r) => {
-          const n = Math.max(4, Math.round((p1 - p0) / 75)), fw = (p1 - p0) / n;
-          for (let i = 0; i < n; i++) {
-            const d = i % 2 ? dA : dB;
-            rail(p0 + i * fw - 6, p0 + (i + 1) * fw + 6, d - th, d + th, hem, zt, m, r);
+        /* Whole-wall dressing (SF family-room glass wall, FF dining's south glass door): a
+           double ceiling track the length of the wall carrying two full curtains - a sheer
+           voile nearest the glass, CLOSED across the whole wall, and a heavy dark drape in
+           front of it drawn back to the two ENDS. Both are real cloth: ripple-fold surfaces
+           (irregular wavelength and depth, deeper and looser toward the hem, pinched at the
+           header) on the voile / drapeDark materials, not boxes. opt.dd pushes the whole
+           assembly off the wall where a corner profile runs (FF dining). */
+        const t0 = opt.lo, t1 = opt.hi, dd = opt.dd || 0, zt = top - 0.03;
+        rail(t0, t1, dd + 36, dd + 62, zt, top + 0.012, 'aluDark', 4);        // voile track
+        rail(t0, t1, dd + 108, dd + 142, zt, top + 0.012, 'aluDark', 6);      // drape track
+        const alongY = face === 'E' || face === 'W';
+        const toW = (u, dpt, z) => alongY ? [off(dpt) / 1000, z, -u / 1000] : [u / 1000, z, -off(dpt) / 1000];
+        const into = alongY ? [out, 0, 0] : [0, 0, -out];
+        const cloth = (m, u0, u1, zb, zh, dc, amp, lam, seed, thick) => {
+          const nu = Math.max(10, Math.round((u1 - u0) / 7)), nz = 30, H = zh - zb;
+          const ph = new Float64Array(nu + 1); let p = seed * 1.7;
+          for (let i = 0; i <= nu; i++) {
+            const u = u0 + (u1 - u0) * i / nu;
+            const l = lam * (1 + 0.24 * Math.sin(u / 173 + seed) + 0.14 * Math.sin(u / 59 + 2 * seed));
+            if (i > 0) p += 2 * Math.PI * ((u1 - u0) / nu) / l;
+            ph[i] = p;
           }
+          const wave = t => Math.sin(t) - 0.20 * Math.sin(2 * t + 0.6);
+          const dep = (i, j) => {
+            const u = u0 + (u1 - u0) * i / nu, h = j / nz;                  // h: 0 at the header, 1 at the hem
+            const sm = Math.min(1, h / 0.32), zf = 0.30 + 0.70 * sm * sm * (3 - 2 * sm);
+            const A = amp * zf * (1 + 0.30 * Math.sin(u / 131 + seed * 2)) * (1 + 0.16 * h);
+            return dc + A * wave(ph[i] + 0.55 * Math.sin(h * 3.1 + seed + u / 410));
+          };
+          const pos = [], uv = [], idx = [];
+          const surf = (off2) => {
+            const base = pos.length / 3;
+            for (let i = 0; i <= nu; i++) for (let j = 0; j <= nz; j++) {
+              const u = u0 + (u1 - u0) * i / nu, z = zh - H * j / nz;
+              const w = toW(u, dep(i, j) + off2, z);
+              pos.push(w[0], w[1], w[2]); uv.push(u / 1000, z);
+            }
+            return base;
+          };
+          const V = (b, i, j) => b + i * (nz + 1) + j;
+          const quads = (b, flip) => {
+            for (let i = 0; i < nu; i++) for (let j = 0; j < nz; j++) {
+              const a = V(b, i, j), bb = V(b, i + 1, j), c = V(b, i + 1, j + 1), d = V(b, i, j + 1);
+              if (flip) idx.push(a, c, bb, a, d, c); else idx.push(a, bb, c, a, c, d);
+            }
+          };
+          const f0 = surf(thick ? thick / 2 : 0);
+          // the front must face into the room: test one quad's normal, flip if it does not
+          const P = k => [pos[3 * k], pos[3 * k + 1], pos[3 * k + 2]];
+          const a = P(V(f0, 0, 0)), bq = P(V(f0, 1, 0)), cq = P(V(f0, 1, 1));
+          const e1 = [bq[0] - a[0], bq[1] - a[1], bq[2] - a[2]], e2 = [cq[0] - a[0], cq[1] - a[1], cq[2] - a[2]];
+          const nrm = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+          const flipF = (nrm[0] * into[0] + nrm[1] * into[1] + nrm[2] * into[2]) < 0;
+          quads(f0, flipF);
+          if (thick) {
+            const b0 = surf(-thick / 2); quads(b0, !flipF);
+            const edge = (ia, ib) => { idx.push(ia[0], ib[0], ib[1], ia[0], ib[1], ia[1]); idx.push(ia[1], ib[1], ib[0], ia[1], ib[0], ia[0]); };
+            for (let i = 0; i < nu; i++) {                                  // header and hem strips, both windings
+              edge([V(f0, i, 0), V(b0, i, 0)], [V(f0, i + 1, 0), V(b0, i + 1, 0)]);
+              edge([V(f0, i, nz), V(b0, i, nz)], [V(f0, i + 1, nz), V(b0, i + 1, nz)]);
+            }
+            for (let j = 0; j < nz; j++) {                                  // the two free edges
+              edge([V(f0, 0, j), V(b0, 0, j)], [V(f0, 0, j + 1), V(b0, 0, j + 1)]);
+              edge([V(f0, nu, j), V(b0, nu, j)], [V(f0, nu, j + 1), V(b0, nu, j + 1)]);
+            }
+          }
+          const g = new THREE.BufferGeometry();
+          g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+          g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+          g.setIndex(idx); g.computeVertexNormals();
+          bag.fabric(m, g);
         };
-        for (const [p0, p1] of [[t0 + 20, t0 + 20 + 900], [t1 - 20 - 900, t1 - 20]])
-          stackRun(p0, p1, 42, 58, 7, 'voile', fY + 0.008, 3);
-        for (const [p0, p1] of [[t0 + 20, t0 + 20 + 700], [t1 - 20 - 700, t1 - 20]])
-          stackRun(p0, p1, 118, 152, 21, 'drapeDark', fY + 0.02, 12);
+        const zb = top - 0.035;
+        cloth('voile', t0 + 10, t1 - 10, fY + 0.008, zb, dd + 49, 22, 100, 1.3, 0);                   // closed, wall to wall
+        cloth('drapeDark', t0 + 14, t0 + 14 + 780, fY + 0.02, zb, dd + 125, 44, 120, 4.1, 7);        // drawn back to the south / west end
+        cloth('drapeDark', t1 - 14 - 780, t1 - 14, fY + 0.02, zb, dd + 125, 44, 120, 9.7, 7);        // ... and to the north / east end
         return;
       }
       if (opt.blind) {
@@ -6788,7 +6898,8 @@ window.HouseScene = (function () {
         { f: 'W', c: 8000, w: 1000, sill: 1100, h: 1200, m: 'curtain2', zebra: true } ],// GF bed02 W: zebra shade matching master suites
       // The windows flanking the TV wall (c = 5500 and c = 8760, FF + SF) are full-height double-height architectural glazing
       // kept cleanly unobstructed without fabric bunching to maximize natural daylight flooding the double-height void.
-      [ { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // FF master south
+      [ { f: 'S', c: 6830, w: 2400, sill: 0, h: 2400, m: 'curtain', ceil: true, dual: true, lo: 5040, hi: 9290, base: 1065, dd: 72 }, // FF dining south glass door: double curtains, clear of the corner profile (it runs y 1065..1130)
+        { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // FF master south
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ], // FF master west
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', lo: 4620, hi: 8560, ceil: true, dual: true },   // SF family room glass wall — the only ceiling-to-floor pair
         { f: 'E', c: 3450, w: 1700, sill: 900, h: 1500, m: 'curtain2', zebra: true },  // SF bed03 E: zebra shade matching master suites
@@ -8803,7 +8914,7 @@ window.HouseScene = (function () {
 
         /* --- DINING (4921..9371, 1526..4506) --- */
         Lum.fan(7110, 2440);                          // FF plan position
-        Lum.downlight(5760, 1240).downlight(8450, 1240);
+        Lum.downlight(5760, 1480).downlight(8450, 1480);   // off the curtain track (y 1137..1210)
         Lum.downlight(5760, 3630).downlight(8450, 3630);
         // TL on the spine wall's dining face, above the crockery unit (its crown is at +2.42)
         Lum.tube('y', 4920, 2500, 'E', 2.75);
