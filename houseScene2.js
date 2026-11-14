@@ -7119,9 +7119,7 @@ window.HouseScene = (function () {
         { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // FF master south
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ], // FF master west
       [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', lo: 4620, hi: 8560, ceil: true, dual: true },   // SF family room glass wall — the only ceiling-to-floor pair
-        { f: 'E', c: 3450, w: 1700, sill: 900, h: 1500, m: 'curtain2', zebra: true },  // SF bed03 E: zebra shade matching master suites
         { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF master02 S: same zebra shade as the FF master
-        { f: 'S', c: 8450, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF bed03 S: zebra shade matching master suites
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ]// SF master02 W: same zebra shade as the FF master
     ];
 
@@ -10552,6 +10550,14 @@ window.HouseScene = (function () {
         const bedX0 = 9230, bedX1 = 11070, wallY = 232, hingeY = 680, bedY1 = 2740;
         const hingeH = fY + 0.51, cabinetTop = fY + 2.61;
         pb(bag, 'oakDark', bedX0, bedX1, wallY, wallY + 28, fY, cabinetTop);
+        // Upholster the cabinet liner itself so the headboard stays in place as the bed pivots.
+        const headLeft = bedX0 + 77, headRight = bedX1 - 77;
+        prb(bag, 'walnutI', headLeft - 12, headRight + 12, 260, 282, fY + 0.35, fY + 1.57, 10);
+        const channelWidth = (headRight - headLeft) / 6;
+        for (let i = 0; i < 6; i++) {
+          const x = headLeft + i * channelWidth;
+          prb(bag, 'linenDk', x + 2, x + channelWidth - 2, 280, 313, fY + 0.37, fY + 1.55, 15, 3);
+        }
         for (const x of [bedX0, bedX1 - 26]) {
           prb(bag, 'oakDark', x, x + 26, wallY + 28, 794, fY, cabinetTop, 4);
         }
@@ -10577,22 +10583,24 @@ window.HouseScene = (function () {
           prb(mattressBag, 'oakDark', x, x + 58, hingeY + 5, bedY1 - 8, hingeH - 0.048, hingeH + 0.104, 12);
         }
         prb(mattressBag, 'oakDark', left + 58, right - 58, bedY1 - 48, bedY1, hingeH - 0.048, hingeH + 0.123, 12);
-        prb(mattressBag, 'linen', left + 15, right - 15, hingeY + 5, hingeY + 77, hingeH - 0.043, hingeH + 0.364, 21);
+        prb(mattressBag, 'linenDk', left + 15, right - 15, hingeY + 15, hingeY + 86, hingeH - 0.043, hingeH + 0.352, 22);
         for (const x of [mid - 220, mid + 220]) {
           prb(mattressBag, 'brassI', x - 62, x + 62, bedY1 - 365, bedY1 - 343, hingeH - 0.108, hingeH - 0.086, 4);
         }
         for (const x of [left + 107, right - 107]) {
-          prb(legs, 'aluDark', x - 26, x + 26, bedY1 - 133, bedY1 - 62, fY + 0.014, hingeH - 0.05, 9);
+          prb(legs, 'walnutI', x - 26, x + 26, bedY1 - 133, bedY1 - 62, fY + 0.014, hingeH - 0.05, 9);
           prb(legs, 'blackM', x - 32, x + 32, bedY1 - 141, bedY1 - 54, fY + 0.014, fY + 0.037, 5);
         }
-        prb(legs, 'aluDark', left + 112, right - 112, bedY1 - 121, bedY1 - 74, fY + 0.115, fY + 0.165, 8);
+        prb(legs, 'aluDark', left + 112, right - 112, bedY1 - 131, bedY1 - 84, fY + 0.29, fY + 0.34, 8);
         prb(mattressBag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
         prb(mattressBag, 'duvet', left + 56, right - 56, hingeY + 562, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
-        prb(mattressBag, 'linenDk', left + 62, right - 62, bedY1 - 403, bedY1 - 36, hingeH + 0.238, hingeH + 0.269, 13);
+        prb(mattressBag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
+        prb(mattressBag, 'linenDk', left + 60, right - 60, bedY1 - 35, bedY1 - 14, hingeH + 0.145, hingeH + 0.269, 8);
         const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
         for (const fraction of [0.25, 0.75]) {
           mattress.pillow(mattressBag, 'sheet', mattress.W * fraction, 227, hingeH + 0.269, 650, 429, 124, 0.10, 48);
         }
+        mattress.pillow(mattressBag, 'terra', mattress.W / 2, 410, hingeH + 0.29, 540, 235, 128, 0.27, 42);
         const pivot = new THREE.Group();
         pivot.position.set(0, hingeH, -hingeY / 1000);
         const deck = mattressBag.build(THREE, materials);
@@ -10647,7 +10655,27 @@ window.HouseScene = (function () {
         });
         const moving = new THREE.Group();
         moving.name = 'guestRoomMovingFurniture';
-        moving.add(pivot, sofa, screen, hem, ...chairs);
+        // The guest room uses full-width roller shades for the theater layout.
+        // Keep each cassette fixed while the fabric and weighted lower rail move.
+        const blinds = [
+          { x0: 12355, x1: 12419, y0: 2600, y1: 4300, top: 2.40, east: true },
+          { x0: 7850, x1: 9050, y0: 231, y1: 295, top: 2.30, east: false }
+        ].map(({ x0, x1, y0, y1, top, east }) => {
+          const rollerBag = makeBag(THREE), hemBag = makeBag(THREE);
+          const anchor = fY + top - 0.044, bottom = fY + 0.90;
+          prb(bag, 'whiteG', x0, x1, y0, y1, anchor, anchor + 0.062, 7);
+          const fabric = east ? [x0 + 13, x0 + 17, y0 + 11, y1 - 11] : [x0 + 11, x1 - 11, y1 - 17, y1 - 13];
+          const lowerRail = east ? [x0 + 7, x0 + 24, y0 + 8, y1 - 8] : [x0 + 8, x1 - 8, y1 - 24, y1 - 7];
+          pb(rollerBag, 'linenDk', ...fabric, bottom, anchor);
+          prb(hemBag, 'whiteG', ...lowerRail, anchor - 0.019, anchor, 4);
+          const shade = new THREE.Group(), fabricMesh = rollerBag.build(THREE, materials), rail = hemBag.build(THREE, materials);
+          shade.position.y = anchor;
+          fabricMesh.position.y = -anchor;
+          shade.add(fabricMesh);
+          shade.name = east ? 'guestEastBlind' : 'guestSouthBlind';
+          return { shade, rail, travel: anchor - bottom };
+        });
+        moving.add(pivot, sofa, screen, hem, ...chairs, ...blinds.flatMap(({ shade, rail }) => [shade, rail]));
         const chairStops = [
           { movie: [9.45, -2.23], window: [11.74, -3.02] },
           { movie: [10.95, -2.23], window: [11.74, -3.94] }
@@ -10680,6 +10708,11 @@ window.HouseScene = (function () {
             screen.visible = drop > 0.002;
             screen.scale.y = Math.max(0.002, drop);
             hem.position.y = (dropBottom - dropTop) * drop;
+            for (const { shade, rail, travel } of blinds) {
+              shade.visible = drop > 0.002;
+              shade.scale.y = Math.max(0.002, drop);
+              rail.position.y = -travel * drop;
+            }
             chairs.forEach((chair, i) => {
               const { movie, window } = chairStops[i], t = ease(progress, 0, 0.43);
               chair.position.set(mix(movie[0], window[0], t), 0, mix(movie[1], window[1], t));
