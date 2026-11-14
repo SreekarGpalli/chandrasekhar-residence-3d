@@ -5283,22 +5283,16 @@ window.HouseScene = (function () {
        piece of furniture. y0 stops on a wall; the free end at y1 is a
        full-thickness bullnose, so it ends in a curve, not a cut. */
     foyerPartition(bag, x0, x1, y0, y1, fY, h) {
-      /* Sleek foyer fin (owner: make it sleek like the rest of the house): a 40 mm solid timber
-         blade (20 mm core + 10 mm fine flutes on each face), floor to soffit on hairline shadow
-         reveals, ending in a slim half-round. x0..x1 is the old 89 mm envelope; the blade keeps the
-         east face (x1 - 2) where Ganesha stands and gives the rest of the thickness back. */
+      /* Foyer screen, same language as the hall's slatted screen (owner's pick): a floor-to-soffit
+         run of vertical timber slats, 34 x 52 mm at a 58 mm pitch, between hairline dark head and
+         foot tracks. The east face (x1 - 2, where Ganesha stands) is kept; Ganesha's arched niche
+         panel (ganeshaShrine) is mounted on the slats. */
       h = h || L.f2f - L.slabT;                   // floor -> soffit (3.203)
-      const g = 0.06, gT = 0.02, xe = x1 - 2, xw = xe - 40, c0 = xw + 10, c1 = xe - 10;
-      const rr = 20, yN = y1 - rr;                // half-round end, 40 across
-      const z0 = fY + g, z1 = fY + h - gT;
-      pb(bag, 'woodD', c0, c1, y0, yN, z0, z1);                         // core
-      pb(bag, 'woodD', c0 + 4, c1 - 4, y0, yN, fY, z0);                 // shadow plinth, set back
-      pb(bag, 'woodD', c0 + 4, c1 - 4, y0, yN, z1, fY + h);             // shadow reveal at the soffit
-      bag.cyl('walnutI', (xw + rr) / 1000, (z0 + z1) / 2, -yN / 1000, rr / 1000, z1 - z0);   // slim half-round end
-      for (let y = y0 + 12; y + 14 <= yN - 12; y += 32) {               // fine flutes, 14 wide on a 32 pitch
-        prb(bag, 'walnutI', xw, c0 + 1, y, y + 14, z0, z1, 5);
-        prb(bag, 'walnutI', c1 - 1, xe, y, y + 14, z0, z1, 5);
-      }
+      const xe = x1 - 2, xw = xe - 52, z0 = fY + 0.03, z1 = fY + h - 0.04;
+      const n = Math.floor((y1 - y0 - 6 + 24) / 58), span = n * 58 - 24, ys = y0 + ((y1 - y0) - span) / 2;
+      for (let i = 0; i < n; i++) prb(bag, 'walnutI', xw, xe, ys + i * 58, ys + i * 58 + 34, z0, z1, 4);
+      pb(bag, 'aluDark', xw + 4, xe - 4, y0, y1, z1, fY + h);              // head track
+      pb(bag, 'aluDark', xw + 4, xe - 4, y0, y1, fY, z0);                  // foot track
     },
     /* Rectangular timber casing for a room opening: walnut linings through
        both reveals and the soffit, slim 50 mm architraves 15 proud on both
@@ -5322,17 +5316,20 @@ window.HouseScene = (function () {
     /* Ganesha on a floating ledge against a partition's east face (faceX),
        facing east to the main door: brass prabhavali behind, diya, flowers. */
     ganeshaShrine(bag, faceX, cy, fY) {
-      /* Ganesha on a slim floating ledge on the fin's east face (faceX), facing east to the main
-         door: a 28 mm timber ledge (220 x 380) with a brass edge and a hidden LED under it, a thin
-         brass ring round a dark timber medallion behind the idol (no coloured disc), diya. */
-      const lz = fY + 1.00;
-      prb(bag, 'walnutI', faceX, faceX + 220, cy - 190, cy + 190, lz - 0.028, lz, 4);
+      /* Ganesha in a slim arched niche panel on the slatted fin's east face (faceX), facing east to
+         the main door - the arch echoes the pooja's: a 14 mm dark-timber panel (440 wide, rectangle
+         to 0.95 m, round top) with a brass shadow-line ring around it, a warm glow disc behind the
+         idol, and a 28 mm ledge with a brass edge. Idol: scanned model (placeInteriorModels). */
+      const lz = fY + 1.00, W2 = 220, ar = 0.22, zt = lz + 0.95;
+      pb(bag, 'brassI', faceX + 8, faceX + 12, cy - W2 - 6, cy + W2 + 6, lz, zt);                       // brass reveal behind the panel
+      bag.disc('brassI', (faceX + 10) / 1000, zt, -cy / 1000, ar + 0.006, 0.004, 0, 0, Math.PI / 2);
+      pb(bag, 'woodD', faceX, faceX + 14, cy - W2, cy + W2, lz, zt);                                    // niche panel
+      bag.disc('woodD', (faceX + 7) / 1000, zt, -cy / 1000, ar, 0.014, 0, 0, Math.PI / 2);              // round top
+      bag.disc('coveLED', (faceX + 15) / 1000, lz + 0.32, -cy / 1000, 0.16, 0.003, 0, 0, Math.PI / 2);    // warm glow behind the idol
+      prb(bag, 'walnutI', faceX, faceX + 220, cy - 190, cy + 190, lz - 0.028, lz, 4);                   // ledge
       pb(bag, 'brassI', faceX + 217, faceX + 220, cy - 190, cy + 190, lz - 0.026, lz - 0.002);
-      pb(bag, 'lamp', faceX + 20, faceX + 200, cy - 170, cy + 170, lz - 0.034, lz - 0.028);        // glow under the ledge
-      bag.disc('brassI', (faceX + 3) / 1000, lz + 0.31, -cy / 1000, 0.215, 0.006, 0, 0, Math.PI / 2);   // slim brass ring
-      bag.disc('woodD', (faceX + 7) / 1000, lz + 0.31, -cy / 1000, 0.200, 0.006, 0, 0, Math.PI / 2);    // dark timber medallion
-      // the idol itself is a scanned model (placeInteriorModels: 'ganesha')
-      bag.cyl('brassI', (faceX + 160) / 1000, lz + 0.012, -(cy - 150) / 1000, 0.026, 0.020);
+      pb(bag, 'lamp', faceX + 20, faceX + 200, cy - 170, cy + 170, lz - 0.034, lz - 0.028);             // glow under the ledge
+      bag.cyl('brassI', (faceX + 160) / 1000, lz + 0.012, -(cy - 150) / 1000, 0.026, 0.020);            // diya
       bag.cone('lamp', (faceX + 160) / 1000, lz + 0.036, -(cy - 150) / 1000, 0.008, 0.024);
     },
     /* Tall shoe cabinet on a wall, front at y0 facing south: fluted leaf +
