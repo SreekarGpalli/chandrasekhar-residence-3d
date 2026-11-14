@@ -146,6 +146,9 @@ window.HouseScene = (function () {
     // tTread: honed Kadapa-style stone for interior stair treads + mid-landings (colour is in the texture)
     tTread:  0xfcfbf7,
     limeSand: 0xfcfaf4,     // near-white: the warm limewash shades live in the texture (limewashWarm): SF lounge spine wall
+    paintPeach: 0xe8c3a6,   // passage arch composition: soft peach
+    paintCream: 0xf2eadd,   // passage arch composition: cream
+    paintTan:   0xd9bd96,   // passage arch composition: sand-tan
     paintSand: 0xe3dacb,    // soft sand emulsion for the accent panels / stair band (a touch deeper than the white2 walls, same family)
     skirtTread: 0xfcfbf5,   // stair skirting (raking + landings): the tread stone, cut as skirting
     // furniture
@@ -488,7 +491,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, skirtTread: 1, paintSand: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, skirtTread: 1, paintSand: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -4013,8 +4016,8 @@ window.HouseScene = (function () {
 
     // 6a3. Arched paint panel on a wall along x at y = wallY: a 2 mm skin in `mat`, 2 x halfW mm wide, straight from z0 up to zSpring (m),
     // then a semicircular head (apex zSpring + halfW). Paint only, no joinery.
-    archSkin(bag, mat, cx, halfW, z0, zSpring, wallY, face) {
-      const c0 = face === 'S' ? wallY - 2 : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + 2, N = 20, pts = [[cx - halfW, z0], [cx + halfW, z0]];
+    archSkin(bag, mat, cx, halfW, z0, zSpring, wallY, face, depth) {
+      const d = depth || 2, c0 = face === 'S' ? wallY - d : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + d, N = 20, pts = [[cx - halfW, z0], [cx + halfW, z0]];
       for (let k = 0; k <= N; k++) { const t = Math.PI * k / N; pts.push([cx + halfW * Math.cos(t), zSpring + (halfW / 1000) * Math.sin(t)]); }
       bag.prism(mat, false, pts, c0, c1);
     },
@@ -4031,6 +4034,22 @@ window.HouseScene = (function () {
         pb(bag, 'ms', x - 6, x + 6, yc - 6, yc + 6, zt - 0.06, zt);                     // upright under the rail
         bag.disc('ms', x / 1000, zt - 0.054, -(wallY + s * 3) / 1000, 0.032, 0.006, Math.PI / 2, 0, 0);   // wall rose
       }
+    },
+
+    // 6a7. Low sideboard on tapered legs against a wall along x at y = wallY (room 'N' = +y): x0..x1, depth D mm, top at fY + 0.80.
+    // Three equal bays: door | three drawers | door, fronts 6 mm proud with 4 mm shadow gaps, round brass pulls. Body in `mat` (house wood).
+    sideboard(bag, mat, x0, x1, wallY, D, fY) {
+      const y0 = wallY, y1 = wallY + D, zb = fY + 0.18, zt = fY + 0.80, w = (x1 - x0) / 3;
+      pb(bag, mat, x0, x1, y0 + 20, y1, zb, zt - 0.025);                                   // carcass (20 mm off the wall)
+      pb(bag, mat, x0 - 8, x1 + 8, y0 + 20, y1 + 10, zt - 0.025, zt);                      // top, slight overhang
+      const front = (a0, a1, h0, h1) => pb(bag, mat, a0 + 2, a1 - 2, y1, y1 + 6, h0 + 0.002, h1 - 0.002);
+      const pull = (x, z) => { bag.disc('brassI', x / 1000, z, -(y1 + 6) / 1000 - 0.006, 0.016, 0.012, Math.PI / 2, 0, 0); };
+      front(x0, x0 + w, zb + 0.01, zt - 0.03); pull(x0 + w - 60, (zb + zt) / 2);
+      front(x1 - w, x1, zb + 0.01, zt - 0.03); pull(x1 - w + 60, (zb + zt) / 2);
+      const dh = (zt - 0.03 - zb - 0.01) / 3;
+      for (let k = 0; k < 3; k++) { const h0 = zb + 0.01 + k * dh; front(x0 + w, x1 - w, h0, h0 + dh); pull((x0 + x1) / 2, h0 + dh / 2); }
+      for (const [lx, ly] of [[x0 + 70, y0 + 80], [x1 - 70, y0 + 80], [x0 + 70, y1 - 60], [x1 - 70, y1 - 60]])
+        bag.cyl(mat, lx / 1000, fY + 0.09, -ly / 1000, 0.016, 0.18);                        // tapered-look legs
     },
 
     // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
@@ -10431,11 +10450,22 @@ window.HouseScene = (function () {
         // North wall behind the sofa: the picture is gone; a floor-to-ceiling board-and-batten grid across the WHOLE wall (4 x 4 near-square panels, 80 x 26 mm battens,
         // from the window's east jamb x 9260 to the east wall x 12420, up to the ceiling corner profile; the sofa sits on the wall's centre, x 10840) in the wall's own paint (white2), so the wall colour is unchanged.
         Fur.battenGrid(bag, 'white2', 9260, 12420, 8640, 'S', fY + 0.07, fY + 3.203 - 0.066, 4, 4);
+        // Passage end wall (y 3266, x 4920..7620): four overlapping painted arches in soft tones (owner's reference as seen from the passage: peach on the left, tan on the right), a low
+        // sideboard in the house wood, a ribbed vase with dried grass, a small potted cactus and a globe wall light.
+        Fur.archSkin(bag, 'paintPeach', 7090, 300, fY + 0.07, fY + 1.45, 3266, 'N', 1.5);
+        Fur.archSkin(bag, 'paintSand', 6580, 300, fY + 0.07, fY + 1.95, 3266, 'N', 3);
+        Fur.archSkin(bag, 'paintCream', 6070, 300, fY + 0.07, fY + 1.70, 3266, 'N', 4.5);
+        Fur.archSkin(bag, 'paintTan', 5460, 280, fY + 0.07, fY + 1.30, 3266, 'N', 1.5);
+        Fur.sideboard(bag, 'woodD', 5370, 7170, 3266, 420, fY);
+        for (const [r, z] of [[0.075, 0.03], [0.060, 0.09], [0.068, 0.15], [0.050, 0.21], [0.030, 0.26]]) bag.cyl('ceramic', 6.92, fY + 0.80 + z, -3.47, r, 0.06);   // ribbed vase
+        for (const [dx, dz, a] of [[0, 0, 0], [0.04, 0.02, 0.18], [-0.04, 0.01, -0.2], [0.07, -0.02, 0.35], [-0.07, 0, -0.33]])
+          bag.cyl('accentWarm', 6.92 + dx, fY + 1.40 + dz, -3.47, 0.003, 0.70, 0, 0, a);                                   // dried grass stems
+        bag.cyl('ceramic', 6.49, fY + 0.80 + 0.07, -3.47, 0.06, 0.14);                                                       // white pot
+        for (const [dx, h, a] of [[0, 0.30, 0], [0.03, 0.20, 0.25], [-0.03, 0.22, -0.25]])
+          bag.cyl('green', 6.49 + dx, fY + 0.94 + h / 2, -3.47, 0.012, h, 0, 0, a);                                       // cactus
+        bag.disc('brassI', 6.325, fY + 2.00, -3.268, 0.06, 0.006, Math.PI / 2, 0, 0);                                     // globe light back plate
+        bag.sph('lamp', 6.325, fY + 2.00, -3.36, 0.085);                                                                   // opal globe
         // Budget wall set (paint + thin painted MDF only): passage end wall arch, lounge spine panels, desk-wall arch.
-        Fur.archSkin(bag, 'paintSand', 6270, 650, fY + 0.07, fY + 1.95, 3266, 'N');                                   // passage end wall (y 3266): 1.3 m paint arch
-        Fur.console(bag, 5770, 6770, 3266, 3626, fY, 'N');                                                          // low closed slatted-oak console in the arch (top 0.80 m)
-        bag.cyl('ceramic', 6.50, fY + 0.80 + 0.15, -3.45, 0.075, 0.30); bag.cyl('linen', 6.50, fY + 0.80 + 0.40, -3.45, 0.16, 0.22);   // table lamp
-        bag.cyl('ceramic', 5.98, fY + 0.80 + 0.13, -3.42, 0.05, 0.26);                                                // vase
         // lounge spine wall (x 4920): a cluster of seven small photo frames, four above / three offset below, centred on y 5521
         [
           [5521 - 570, 1.82, 250, 320, ['artD', 'artB', 'artC']], [5521 - 190, 1.82, 310, 240, ['artB', 'artC', 'artA']],
