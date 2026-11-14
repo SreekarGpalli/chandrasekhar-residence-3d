@@ -1235,19 +1235,19 @@ window.HouseScene = (function () {
     const fr = dp(26, 52), br = dp(32, 48), st = dp(42, 54);
     const GF = 24, BAR = 16, STAY = 16;        // frame flat / square bar / back stay (mm)
     const gz0 = b + GF / 1000, gz1 = t - GF / 1000;
-    put('gBlue', a0 - 30, a0 + GF, fr[0], fr[1], b - 0.03, t + 0.03);
-    put('gBlue', a1 - GF, a1 + 30, fr[0], fr[1], b - 0.03, t + 0.03);
-    put('gBlue', a0 + GF, a1 - GF, fr[0], fr[1], b - 0.03, gz0);
-    put('gBlue', a0 + GF, a1 - GF, fr[0], fr[1], gz1, t + 0.03);
+    put('msWhite', a0 - 30, a0 + GF, fr[0], fr[1], b - 0.03, t + 0.03);
+    put('msWhite', a1 - GF, a1 + 30, fr[0], fr[1], b - 0.03, t + 0.03);
+    put('msWhite', a0 + GF, a1 - GF, fr[0], fr[1], b - 0.03, gz0);
+    put('msWhite', a0 + GF, a1 - GF, fr[0], fr[1], gz1, t + 0.03);
     const span = gz1 - gz0, gaps = Math.max(2, Math.round(span / 0.15));
     for (let i = 1; i < gaps; i++) {
       const zc = gz0 + span * i / gaps;
-      put('gBlue', a0 + GF - 2, a1 - GF + 2, br[0], br[1], zc - BAR / 2000, zc + BAR / 2000);
+      put('msWhite', a0 + GF - 2, a1 - GF + 2, br[0], br[1], zc - BAR / 2000, zc + BAR / 2000);
     }
     const wmm = a1 - a0, stays = wmm >= 1100 ? Math.max(1, Math.round(wmm / 750) - 1) : 0;
     for (let k = 1; k <= stays; k++) {
       const sx = a0 + wmm * k / (stays + 1);
-      put('gBlue', sx - STAY / 2, sx + STAY / 2, st[0], st[1], gz0 - 0.002, gz1 + 0.002);
+      put('msWhite', sx - STAY / 2, sx + STAY / 2, st[0], st[1], gz0 - 0.002, gz1 + 0.002);
     }
   }
 
