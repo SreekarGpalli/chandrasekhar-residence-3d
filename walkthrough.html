@@ -187,14 +187,14 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261113_audit2"></script>
+<script src="lib/interiorKit.js?v=20261113_audit6"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_audit2' : 'houseScene.js?v=20261113_audit2') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_audit6' : 'houseScene.js?v=20261113_audit6') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1358,19 +1358,28 @@ if(!window.THREE || !window.HouseScene){
      Floor groups sit at -4 or more, the exterior shell and decks at 0..-3.5, so the per-floor copy of
      a wall still beats the shell's. Units only: a slope factor pulls edge-on surfaces through walls. */
   const WT_LAYER = {
+    // finishes
     terraceF: 1, balcTile: 1, tOut: 1, pave: 1, paver: 1, paver2: 1, roadLine: 1,
     tFloor: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
-    tPooja: 1, tWalk: 1, plinth: 1, soil: 1, grass: 1, rug: 1, tileBath: 1, tileShower: 1,
-    quartz: 1, limeWash: 1, stoneDk: 1, travertine: 1,
+    tPooja: 1, tWalk: 1, plinth: 1, soil: 1, grass: 1, rug: 1, tileBath: 1, stoneDk: 1, travertine: 1,
+    eastPlaster: 1, curtain2: 1,
+    // finishes laid over finishes
+    limeWash: 1, tileShower: 2, quartz: 3,
+    // trims
     skirt: 2, skirtTile: 2, woodD: 2, walnut: 2, walnutI: 2, oakDark: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
     brass: 2, brassI: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,
-    aluDark: 2, alu: 2, counterTop: 2, tv: 2, solar: 2, solarFrm: 2, msWhite: 2, gBlue: 2, lacqSage: 2,
-    lamp: 3, coveLED: 3, fanLED: 3
+    counterTop: 2, tv: 2, solar: 2, solarFrm: 2, msWhite: 2, lacqSage: 2,
+    gBlue: 3, alu: 3, aluDark: 4,
+    // light sources
+    lamp: 5, coveLED: 5, fanLED: 5
   };
+  // the shell (exterior + outdoor decks) has its own, shallower ladder: 2.4 units a rung, topping out
+  // behind the floor groups (which start at -8)
+  const WT_SHELL_LAYER = { white: 0, white2: 1, charDark: 2, terraceF: 2, balcTile: 2, concrete: 1, eastPlaster: 3, ms: 2, steel: 2, plinth: 2, alu: 2, aluDark: 3, charcoal: 2, copingLight: 3, skirtTile: 3, skirt: 3 };
   const wtHash = k => { let h = 0; for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) % 997; return h / 997; };
-  const wtUnits = (key, floor) => floor ? -(4 + 3 * (WT_LAYER[key] || 0) + wtHash(key) * 1.2)
-                                        : -(1.5 * (WT_LAYER[key] || 0) + wtHash(key) * 0.5);
-  const SHELL_GROUPS = new Set(['exterior', 'outdoor0', 'outdoor1', 'outdoor2']);
+  const wtUnits = (key, floor) => floor ? -(8 + 3 * (WT_LAYER[key] || 0) + wtHash(key) * 1.2)
+                                        : -(2.4 * Math.min(3, (key in WT_SHELL_LAYER ? WT_SHELL_LAYER[key] : (WT_LAYER[key] || 0))) + wtHash(key) * 0.4);
+  const SHELL_GROUPS = new Set(['exterior', 'outdoor0', 'outdoor1', 'outdoor2', 'site', 'garden', 'context']);
   data.root.children.forEach(group => {
     const isFloor = FLOOR_GROUPS.has(group.name);
     const matClone = isFloor ? new Map() : null;

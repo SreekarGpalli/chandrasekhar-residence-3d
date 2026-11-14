@@ -30,7 +30,7 @@ window.coplanarAudit = async function (opts) {
     if (!o.isMesh || !o.geometry || !visible(o)) return;
     const mat = o.material; if (mat && (mat.transparent && mat.opacity < 0.99)) return;
     const key = o.userData.matKey || (mat && mat.userData && mat.userData.name) || o.userData.scan || o.name || 'mesh';
-    const mi = metas.length; metas.push({ key, scan: o.userData.scan || null, grp: grpOf(o) });
+    const mi = metas.length; metas.push({ key, scan: o.userData.scan || null, grp: grpOf(o), off: (mat && mat.polygonOffset) ? mat.polygonOffsetUnits : 0 });
     const g = o.geometry, pos = g.attributes.position, idx = g.index, n = (idx ? idx.count : pos.count) / 3, m = o.matrixWorld;
     const W = new Float64Array(pos.count * 3);
     for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m); W[3 * i] = v.x; W[3 * i + 1] = v.y; W[3 * i + 2] = v.z; }
@@ -58,8 +58,8 @@ window.coplanarAudit = async function (opts) {
     const w = axis === 0 ? [co, ox, oy] : axis === 1 ? [ox, co, oy] : [ox, oy, co];
     const plan = [Math.round(w[0] * 1000), Math.round(-w[2] * 1000), Math.round(w[1] * 1000)];
     const ck = ma.grp + ' ' + pair + ' @' + 'xyz'[axis] + sg + ' ' + Math.round(plan[0] / 1500) + ',' + Math.round(plan[1] / 1500) + ',' + Math.round(plan[2] / 700);
-    let e = out.get(ck); if (!e) out.set(ck, e = { pair, face: 'xyz'[axis] + sg, n: 0, d: 1, s: plan, grp: ma.grp });
-    e.n++; e.d = Math.min(e.d, dist);
+    let e = out.get(ck); if (!e) out.set(ck, e = { pair, face: 'xyz'[axis] + sg, n: 0, d: 1, s: plan, grp: ma.grp, dOff: 99 });
+    e.n++; e.d = Math.min(e.d, dist); e.dOff = Math.min(e.dOff, Math.abs(ma.off - mb.off));
   };
   const seen = new Set();
   for (const k of buckets.keys()) {
@@ -69,6 +69,7 @@ window.coplanarAudit = async function (opts) {
     for (const h of hash.values()) { if (h.length < 2) continue;
       for (let x = 0; x < h.length; x++) for (let y = x + 1; y < h.length; y++) {
         const ia = h[x], ib = h[y]; if (P[9 * ia] === P[9 * ib] || P[9 * ia + 1] !== P[9 * ib + 1]) continue;
+        if (P[9 * ia + 1] === 2) continue;                      // y-: bottoms (books on a table, legs on the floor) face a solid, never seen
         const ma = metas[P[9 * ia]], mb = metas[P[9 * ib]]; if (ma.grp !== mb.grp) continue;
         if (ma.key === mb.key && !ma.scan) continue;
         const pk2 = ia < ib ? ia * 4e6 + ib : ib * 4e6 + ia; if (seen.has(pk2)) continue; seen.add(pk2);
@@ -80,7 +81,9 @@ window.coplanarAudit = async function (opts) {
       } }
   }
   // visibility: open air in front (ray from 20 cm out meets the face first) and not inside a solid (crossing parity)
-  const rows = [...out.values()], rc = new THREE.Raycaster(), dirs = { 'x+': [1,0,0], 'x-': [-1,0,0], 'y+': [0,1,0], 'y-': [0,-1,0], 'z+': [0,0,1], 'z-': [0,0,-1] };
+  // pairs whose materials already differ by >= maxDelta polygon-offset units (default 2) have a fixed winner: not reported
+  const maxDelta = opts.maxDelta == null ? 2 : opts.maxDelta;
+  const rows = [...out.values()].filter(r => r.dOff < maxDelta), rc = new THREE.Raycaster(), dirs = { 'x+': [1,0,0], 'x-': [-1,0,0], 'y+': [0,1,0], 'y-': [0,-1,0], 'z+': [0,0,1], 'z-': [0,0,-1] };
   const targets = []; scene.traverse(o => { if (o.isMesh && o.visible) targets.push(o); });
   const saved = new Map(); targets.forEach(o => saved.set(o.material, o.material.side)); for (const m of saved.keys()) m.side = THREE.DoubleSide;
   const keep = [];
@@ -96,6 +99,6 @@ window.coplanarAudit = async function (opts) {
   }
   for (const [m, s] of saved) m.side = s;
   keep.sort((a, b) => b.n - a.n); window.__coplanarRows = keep;
-  const by = {}; for (const r of keep) { const k = r.grp + ' ' + r.pair + ' ' + r.face; (by[k] = by[k] || { n: 0, g: 0, s: [] }); by[k].n += r.n; by[k].g++; if (by[k].s.length < 2) by[k].s.push(r.s.join(',')); }
-  return JSON.stringify({ triangles: N, clusters: rows.length, visible: keep.length, top: Object.entries(by).sort((a, b) => b[1].n - a[1].n).slice(0, opts.top || 40).map(([k, e]) => [k, e.n, e.g, e.s.join(' | ')]) });
+  const by = {}; for (const r of keep) { const k = r.grp + ' ' + r.pair + ' ' + r.face; (by[k] = by[k] || { n: 0, g: 0, s: [], dOff: 99 }); by[k].dOff = Math.min(by[k].dOff, r.dOff); by[k].n += r.n; by[k].g++; if (by[k].s.length < 2) by[k].s.push(r.s.join(',')); }
+  return JSON.stringify({ triangles: N, clusters: rows.length, visible: keep.length, top: Object.entries(by).sort((a, b) => b[1].n - a[1].n).slice(0, opts.top || 40).map(([k, e]) => [k, e.n, e.g, e.s.join(' | '), e.dOff.toFixed(2)]) });
 };
