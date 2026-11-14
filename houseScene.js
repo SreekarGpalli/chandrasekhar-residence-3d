@@ -1384,15 +1384,16 @@ window.HouseScene = (function () {
         put('ms', (i0 + i1) / 2 - 16, (i0 + i1) / 2 + 16, fD0 - 2, fD1 + 2, b + 0.06, b + 0.11);
       } else {
         // Top rail (mild steel)
-        put('ms', a0, a1, mid - 15, mid + 15, t - 0.045, t);
+        const gm = spec.grillMat || 'ms';   // per-opening paint (south service grilles: white)
+        put(gm, a0, a1, mid - 15, mid + 15, t - 0.045, t);
         // Bottom rail (mild steel)
-        put('ms', a0, a1, mid - 15, mid + 15, b, b + 0.045);
+        put(gm, a0, a1, mid - 15, mid + 15, b, b + 0.045);
         // Vertical bars (mild steel)
         const len = a1 - a0;
         const n = Math.max(2, Math.round(len / 120));
         for (let i = 0; i <= n; i++) {
           const a = a0 + (len * i) / n;
-          put('ms', a - 10, a + 10, mid - 10, mid + 10, b + 0.045, t - 0.045);
+          put(gm, a - 10, a + 10, mid - 10, mid + 10, b + 0.045, t - 0.045);
         }
       }
     } else if (spec.type === 'slider') { // UPVC Sliding window & door system
@@ -5492,7 +5493,7 @@ window.HouseScene = (function () {
       S: [
         { c: 4300, w: 900, sill: 900, h: 1400, type: 'win', chajja: true },     // master bedroom (aligned with north door c=4300)
         { c: 5800, w: 600, sill: 1700, h: 600, type: 'win', chajja: true },
-        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'grill', chajja: true }, // utility south security grill
+        { c: 8120, w: 1800, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite', chajja: true }, // utility south security grill
         { c: 11000, w: 1200, sill: 1100, h: 900, type: 'win', chajja: true }
       ],
       W: [
@@ -7707,9 +7708,9 @@ window.HouseScene = (function () {
       glazing(eBag, { face: 'E', band: [14040, 14270], floorY: L.f1, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
       wallRun(eBag, 'white2', 'x', 4805, 14270, -762, -646, L.f1, L.f2, L.f1,
               [{ c: 6527, w: 3215, sill: 900, h: 1400 }, { c: 8810, w: 600, sill: 1700, h: 600 }, { c: 11910, w: 3840, sill: 900, h: 1400 }], null, { lo: 'white' });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
       glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
+      glazing(eBag, { face: 'S', band: [-762, -646], floorY: L.f1, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
       // Service-band floor tiles live on outdoor1 (dollhouse floor amenity group)
       // Terrace edge: NO solid parapet wall — open metal railings like FF/SF balconies.
       // Thin slab fascia (same language as outdoor decks) + railing @ L.roof.
@@ -9308,9 +9309,9 @@ window.HouseScene = (function () {
 
       if (fi === 1) {
         // Service-band openings for dollhouse (also on exterior)
-        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill' });
+        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 6527, w: 3215, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
         glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 8810, w: 600, sill: 1700, h: 600, type: 'win', panes: 1 });
-        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill' });
+        glazing(bag, { face: 'S', band: [-762, -646], floorY: fY, c: 11910, w: 3840, sill: 900, h: 1400, type: 'grill', grillMat: 'msWhite' });
         glazing(bag, { face: 'E', band: [14040, 14270], floorY: fY, c: -300, w: 600, sill: 0, h: 2400, type: 'grill', door: true });
         glazing(bag, { face: 'W', band: [4805, 4920], floorY: fY, c: -207, w: 800, sill: 0, h: 2400, type: 'grill', door: true });
         // This storey only (FF slab → cut). Not the full tower from ground.
