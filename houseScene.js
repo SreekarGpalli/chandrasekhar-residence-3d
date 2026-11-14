@@ -6685,22 +6685,16 @@ window.HouseScene = (function () {
       };
     }
 
-    /* Slim solid privacy screen between the FF hall and the dining bay, beside the master
-       bedroom door (owner: the 150 mm wing was too thick, the perforated jali too revealing).
-       A solid 24 mm dark-oak slab with fine vertical flutes on the hall face only (same
-       language as the TV wall) - about 40 mm overall - floor to soffit between a hairline
-       wall channel and a brass-edged free end. No holes, so it fully breaks the sightline
-       into the bedroom door while taking almost no floor. Runs along x at plan y = yc. */
+    /* Slatted privacy screen between the FF hall and the dining bay, beside the master bedroom
+       door (owner's reference: a floor-to-ceiling run of vertical timber slats). 34 x 52 mm
+       slats at a 58 mm pitch (24 mm gaps, ~40 % open face-on, closed from the angle the door
+       is seen), 18 of them across 1.05 m, floor to soffit, tied by a hairline dark head and
+       foot track; the slats are the house timber. Runs along x at plan y = yc. */
     function slimScreen(bag, xa, xb, yc, fY, slabH) {
-      const z0 = fY, z1 = slabH;
-      pb(bag, 'oakDark', xa, xb, yc - 12, yc + 12, z0, z1);                            // 24 mm core, both faces plain oak
-      for (let x = xa + 36; x + 14 < xb - 24; x += 40) {                               // hall-side flutes, 8 mm proud
-        prb(bag, 'oakDark', x, x + 14, yc + 12, yc + 20, z0 + 0.04, z1 - 0.04, 4);
-      }
-      pb(bag, 'aluDark', xa - 8, xa, yc - 10, yc + 18, z0, z1);                        // hairline wall channel
-      pb(bag, 'brassI', xb, xb + 3, yc - 12, yc + 20, z0 + 0.04, z1 - 0.04);           // brass edge on the free end
-      pb(bag, 'aluDark', xa, xb, yc - 12, yc + 20, z0, z0 + 0.04);                     // shadow-line foot
-      pb(bag, 'aluDark', xa, xb, yc - 12, yc + 20, z1 - 0.04, z1);                     // and head
+      const z0 = fY + 0.03, z1 = slabH - 0.04;
+      for (let x = xa + 4; x + 34 <= xb + 0.5; x += 58) prb(bag, 'oakDark', x, x + 34, yc - 26, yc + 26, z0, z1, 4);
+      pb(bag, 'aluDark', xa, xb, yc - 22, yc + 22, slabH - 0.04, slabH);               // head track
+      pb(bag, 'aluDark', xa, xb, yc - 22, yc + 22, fY, fY + 0.03);                     // foot track
     }
 
     /* curtain rod + two side panels on an exterior-wall window (interior
@@ -9536,7 +9530,7 @@ window.HouseScene = (function () {
         // --- Master bedroom door privacy ---
         // Straight wing-wall just north of the door (y 3350–4350 on wall x≈4920).
         // One job: break hall → bedroom sightline. Door still approached from the east.
-        slimScreen(bag, 4930, 5980, 4440, fY, fY + 3.203);           // slim solid screen, ~40 mm (was a 150 mm wing)
+        slimScreen(bag, 4930, 5980, 4440, fY, fY + 3.203);           // slatted screen, 52 mm deep (was a 150 mm wing)
 
         // --- Hall lounge (east of the wing, south of stair / TV) ---
         Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, true);
@@ -9550,16 +9544,17 @@ window.HouseScene = (function () {
         Fur.rug(bag, 5750, 8750, 5000, 6500, fY);
         Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S');              // three-seater, faces TV (moved back, 220 mm)
         Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W');              // two-seater on the west wall, pushed up to the stair corner (y 6496)
-        /* teapoy (round coffee table, 560 across, 0.45 high) in front of the corner between the two
-           sofas: 190 mm from the three-seater's front and 200 mm from the two-seater's, so both reach it */
-        { const tcx = 6100, tcy = 5950, tr = 0.28;
-          drum(bag, 'woodD', tcx, tcy, fY + 0.41, fY + 0.45, tr, 0.008);                  // top
-          drum(bag, 'brassI', tcx, tcy, fY + 0.405, fY + 0.41, tr - 0.012, 0.002);        // brass underlip
-          drum(bag, 'woodD', tcx, tcy, fY + 0.12, fY + 0.135, 0.22, 0.005);               // low shelf
-          for (let k = 0; k < 3; k++) {                                                   // three turned legs
-            const a = k * 2 * Math.PI / 3 + Math.PI / 6;
-            bag.cyl('woodD', tcx / 1000 + 0.19 * Math.cos(a), fY + 0.205, -(tcy / 1000 + 0.19 * Math.sin(a)), 0.016, 0.41);
-          } }
+        /* coffee table after the owner's reference: a solid timber open box, 1000 x 520 x 0.42 -
+           50 mm top, two 40 mm end slabs, an open lower shelf, open on both long sides. It stands
+           in front of the corner between the sofas: 280 mm off the three-seater's front, 210 mm
+           off the two-seater's, so both reach it and the stair route to the east stays clear. */
+        { const tx0 = 5830, tx1 = 6830, ty0 = 5760, ty1 = 6280;
+          pb(bag, 'woodD', tx0, tx1, ty0, ty1, fY + 0.37, fY + 0.42);                    // top
+          pb(bag, 'woodD', tx0, tx0 + 40, ty0, ty1, fY + 0.02, fY + 0.37);               // end slabs
+          pb(bag, 'woodD', tx1 - 40, tx1, ty0, ty1, fY + 0.02, fY + 0.37);
+          pb(bag, 'woodD', tx0 + 40, tx1 - 40, ty0 + 18, ty1 - 18, fY + 0.09, fY + 0.125); // lower shelf
+          pb(bag, 'aluDark', tx0 + 12, tx1 - 12, ty0 + 14, ty1 - 14, fY, fY + 0.02);     // recessed plinth shadow
+          Fur.books(bag, 6180, 6020, fY + 0.42, 3, true); }
         // art on the spine wall, facing the seating
         Fur.art(bag, 'y', 4920, 'E', 5665, fY, 1.65, 1300, 950);
 
@@ -10053,6 +10048,8 @@ window.HouseScene = (function () {
         // so 750 mm stays clear between it and the kitchen corner (y 5060):
         // that gap is the route from the dining room to the hall and foyer.
         // ---- FF dining / kitchen / foyer ----
+        { id: 'ceramic_vase_02', fi: 1, x: 6560, y: 6090, z: 0.42 },
+        { id: 'wooden_bowl_01', fi: 1, x: 6420, y: 5900, z: 0.42 },
         { id: 'ceramic_vase_01', fi: 1, x: 7150, y: 2850, z: 0.75 },
         { id: 'wooden_bowl_01', fi: 1, x: 7550, y: 2820, z: 0.75 },
         { id: 'potted_plant_04', fi: 1, x: 12150, y: 4650, z: 0.88 },
