@@ -9240,7 +9240,7 @@ window.HouseScene = (function () {
 
         /* --- FAMILY ROOM (9260..12421, 4546..8641) --- */
         Lum.fan(10700, 6580);
-        Lum.downlight(10550, 8200);                   // reading light over the north sofa
+        Lum.downlight(10840, 8200);                   // reading light over the north sofa (centred on the wall, x 10840)
         Lum.downlight(11290, 4970);                   // task light over the desk
         // Corner line, the common area's north wall in ONE mitred path, east shell to
         // the stair: family room, on over the double-height void, then the gallery,
@@ -10347,11 +10347,11 @@ window.HouseScene = (function () {
         Fur.glazedBookcase(bag, SF_FAMILY_SOUTH_WALL_X0, wardrobeEnd, south, wardrobeFront, fY, cut);
 
         // Keep the east side of the seating area clear for the glass doors.
-        Fur.rug(bag, 9470, 11650, 6510, 7990, fY);
-        Fur.sofa(bag, 9440, 11660, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] });
+        Fur.rug(bag, 9750, 11930, 6510, 7990, fY);
+        Fur.sofa(bag, 9730, 11950, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] });
         // North wall behind the sofa: the picture is gone; a floor-to-ceiling board-and-batten grid across the WHOLE wall (4 x 4 near-square panels, 80 x 26 mm battens,
-        // from the window's east jamb x 9260 to the east wall x 12420) in the wall's own paint (white2), so the wall colour is unchanged.
-        Fur.battenGrid(bag, 'white2', 9300, 12420, 8640, 'S', fY + 0.07, fY + 3.10, 4, 4);
+        // from the window's east jamb x 9260 to the east wall x 12420, up to the ceiling corner profile; the sofa sits on the wall's centre, x 10840) in the wall's own paint (white2), so the wall colour is unchanged.
+        Fur.battenGrid(bag, 'white2', 9260, 12420, 8640, 'S', fY + 0.07, fY + 3.203 - 0.066, 4, 4);
       }
 
       const g = bag.build(THREE, materials);
