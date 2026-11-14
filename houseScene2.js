@@ -171,6 +171,8 @@ window.HouseScene = (function () {
     curtain: 0xd4cec2,   // dedupe vs tKitch
     curtain2:0xc4bbaf,   // dedupe vs fabric
     zebraSheer: 0xf0e9dc, // warm-white mesh between the shade bands
+    voile:   0xf3eee3,   // sheer under-curtain (translucent, see M.voile)
+    drapeDark:0x4a4039,  // heavy dark drape
     downlight:0xf4ead2,
     coveLED: 0xffe3b4,   // concealed indirect strip — never seen direct
     road:    0x3f4043,
@@ -254,6 +256,9 @@ window.HouseScene = (function () {
     M.zebraSheer.transparent = true;
     M.zebraSheer.opacity = 0.20;
     M.zebraSheer.depthWrite = false;
+    M.voile.transparent = true;
+    M.voile.opacity = 0.55;
+    M.voile.depthWrite = false;
     mk('carGlass', 0x1d2429, { roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.85 });
     // Color = C.lamp so walkthrough hex→name resolves 'lamp' for night boost
     mk('lamp', C.lamp, { emissive: srgb(C.lamp), emissiveIntensity: 2.4, roughness: 0.55 });
@@ -418,7 +423,7 @@ window.HouseScene = (function () {
      transparent glass). Keeping these out of the shadow map is a large
      first-frame win and avoids muddy noisy shadows. */
   const NO_SHADOW_CAST = {
-    glass: 1, carGlass: 1, zebraSheer: 1, ground: 1, plotPad: 1, grass: 1, soil: 1,
+    glass: 1, carGlass: 1, zebraSheer: 1, voile: 1, ground: 1, plotPad: 1, grass: 1, soil: 1,
     green: 1, green2: 1, leafDark: 1, leafLight: 1, boug: 1, ixora: 1,
     flowerPink: 1, road: 1, roadLine: 1, roadLine2: 1
   };
@@ -429,7 +434,7 @@ window.HouseScene = (function () {
   const NON_COLLIDE_MATERIALS = {
     // openings / portals (doors use walnut; cabinets share wood*)
     glass: 1, carGlass: 1, walnut: 1, liftDoor: 1, frame: 1,
-    brass: 1, chrome: 1, curtain: 1, curtain2: 1, zebraSheer: 1,
+    brass: 1, chrome: 1, curtain: 1, curtain2: 1, zebraSheer: 1, voile: 1, drapeDark: 1,
     woodD: 1, woodF: 1,
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
@@ -1129,7 +1134,7 @@ window.HouseScene = (function () {
             mesh.castShadow = false;
             mesh.renderOrder = 2 + (key === 'carGlass' ? 1 : 0);
           }
-          if (key === 'zebraSheer') mesh.renderOrder = 4; // blend over the glazing
+          if (key === 'zebraSheer' || key === 'voile') mesh.renderOrder = 4; // blend over the glazing
           g.add(mesh);
         }
         // dispose shared unit prototypes once this bag is finished
@@ -6719,6 +6724,27 @@ window.HouseScene = (function () {
         }
         return;
       }
+      if (opt.dual) {
+        /* Whole-wall dressing (the SF family room's glass wall): a double ceiling track
+           the length of the wall and two full curtains drawn back to its two ENDS - a
+           sheer voile nearest the glass and a heavy dark drape in front of it. Closed,
+           the pairs meet and cover the whole wall; drawn, they stack at each end. */
+        const t0 = opt.lo, t1 = opt.hi, zt = top - 0.03;
+        rail(t0, t1, 36, 62, zt, top + 0.012, 'aluDark', 4);        // voile track
+        rail(t0, t1, 108, 142, zt, top + 0.012, 'aluDark', 6);      // drape track
+        const stackRun = (p0, p1, dA, dB, th, m, hem, r) => {
+          const n = Math.max(4, Math.round((p1 - p0) / 75)), fw = (p1 - p0) / n;
+          for (let i = 0; i < n; i++) {
+            const d = i % 2 ? dA : dB;
+            rail(p0 + i * fw - 6, p0 + (i + 1) * fw + 6, d - th, d + th, hem, zt, m, r);
+          }
+        };
+        for (const [p0, p1] of [[t0 + 20, t0 + 20 + 900], [t1 - 20 - 900, t1 - 20]])
+          stackRun(p0, p1, 42, 58, 7, 'voile', fY + 0.008, 3);
+        for (const [p0, p1] of [[t0 + 20, t0 + 20 + 700], [t1 - 20 - 700, t1 - 20]])
+          stackRun(p0, p1, 118, 152, 21, 'drapeDark', fY + 0.02, 12);
+        return;
+      }
       if (opt.blind) {
         // Modern architectural Roman / Venetian blind system
         // Clean head cassette + horizontal fold slats drawn neatly to top ~28%
@@ -6798,7 +6824,7 @@ window.HouseScene = (function () {
       // kept cleanly unobstructed without fabric bunching to maximize natural daylight flooding the double-height void.
       [ { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // FF master south
         { f: 'W', c: 3450, w: 1800, sill: 900, h: 1500, m: 'curtain2', zebra: true } ], // FF master west
-      [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', hi: 8630, ceil: true },   // SF family room glass wall — the only ceiling-to-floor pair
+      [ { f: 'E', c: 7050, w: 3160, sill: 0, h: 2700, m: 'curtain', lo: 4620, hi: 8560, ceil: true, dual: true },   // SF family room glass wall — the only ceiling-to-floor pair
         { f: 'E', c: 3450, w: 1700, sill: 900, h: 1500, m: 'curtain2', zebra: true },  // SF bed03 E: zebra shade matching master suites
         { f: 'S', c: 4100, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF master02 S: same zebra shade as the FF master
         { f: 'S', c: 8450, w: 1200, sill: 900, h: 1400, m: 'curtain2', zebra: true }, // SF bed03 S: zebra shade matching master suites
