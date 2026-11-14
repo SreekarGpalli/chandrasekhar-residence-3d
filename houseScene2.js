@@ -9347,10 +9347,16 @@ window.HouseScene = (function () {
 
     /* ======== DOLLHOUSE floors ======== */
     const floorsOut = [];
-    const familyWorkstation = [
-      { id: 'family_standing_desk', file: 'family_standing_desk.glb', fi: 2, x: 11290, y: 4911, rot: 180 },
-      { id: 'family_task_chair', file: 'family_task_chair.glb', fi: 2, x: 11290, y: 5652 }
+    const workstationLayouts = [
+      [{ x: 11260, deskY: 5650, chairY: 4750, back: 'N', z: 0.004 }], // ground-floor office rug
+      [{ x: 1120, deskY: 4071, chairY: 3330, back: 'N' }], // first-floor master
+      [
+        { x: 1120, deskY: 4071, chairY: 3330, back: 'N' }, // west bedroom
+        { x: 9540, deskY: 4071, chairY: 3330, back: 'N' }, // east bedroom
+        { x: 11290, deskY: 4911, chairY: 5652, back: 'S' } // family room
+      ]
     ];
+    const workstationModels = [];
     const FLOOR_DEFS = [
       { fY: L.f0, sch: OPEN.f0 },
       { fY: L.f1, sch: OPEN.f1 },
@@ -9661,6 +9667,7 @@ window.HouseScene = (function () {
         Lum.ac('y', 7736, 1650, 2600, 'E');           // west wall, above the dressing entrance (c 2453), nudged south; faces the bed
         Lum.downlight(11320, 1740);                   // in front of the wardrobe (face x 11820, y 232..2500)
         Lum.downlight(10950, 3800);                   // over the reading chair in the NE corner
+        Lum.downlight(9540, 3920);                    // study desk
         // (the old east-wall sconce at y 2300 sat behind the wardrobe: removed)
         // one mitred path: east wall north of the wardrobe (corner window) ->
         // north wall (AC) -> west wall (both doors) -> south wall over the bed
@@ -9887,44 +9894,8 @@ window.HouseScene = (function () {
             bag.sph('murtiGold', 9.65, fY + 1.72, -(by0 + 280) / 1000, 0.028);
           }
 
-          // 3) Luxury Nature-Black & Dark Walnut Executive Desk (x 10480–12050, y 5250–6050, h = 0.75m)
-          // Generous 1.1m clear open space to South wall behind chair, 600mm to West aisle.
-          pb(bag, 'dark', 10465, 12065, 5235, 6065, fY + 0.71, fY + 0.75); // matte black beveled top
-          pb(bag, 'woodD', 10475, 12055, 5245, 6055, fY + 0.68, fY + 0.71); // walnut sub-frame
-          // Inlaid leather writing blotter (centered in executive working zone)
-          pb(bag, 'charDark', 10750, 11750, 5350, 5800, fY + 0.75, fY + 0.756);
-          // Modesty panel facing North
-          pb(bag, 'dark', 10880, 11650, 5990, 6020, fY + 0.15, fY + 0.68);
-
-          // Left pedestal drawers (West side)
-          pb(bag, 'dark', 10500, 10880, 5280, 6000, fY + 0.04, fY + 0.68);
-          // Right pedestal drawers (East side)
-          pb(bag, 'dark', 11650, 12030, 5280, 6000, fY + 0.04, fY + 0.68);
-          // Pedestal drawer fronts & brass handles (facing South with 1.1m pull clearance)
-          for (const px of [10500, 11650]) {
-            for (let k = 0; k < 3; k++) {
-              const dh0 = fY + 0.06 + k * 0.20, dh1 = fY + 0.06 + (k + 1) * 0.20 - 0.02;
-              pb(bag, 'woodD', px + 10, px + 370, 5268, 5280, dh0, dh1);
-              pb(bag, 'brass', px + 150, px + 230, 5258, 5268, (dh0 + dh1) / 2 - 0.008, (dh0 + dh1) / 2 + 0.008);
-            }
-          }
-
-          // 4) Executive Workstation Display & Accessories
-          // Sculpted Aluminum Monitor Stand (under and behind screen on executive side)
-          pb(bag, 'steel', 11180, 11320, 5780, 5840, fY + 0.752, fY + 0.762); // base plate
-          pb(bag, 'steel', 11238, 11262, 5828, 5845, fY + 0.762, fY + 1.04); // neck
-          // Ultra-Slim Display Panel (screen facing South toward executive chair)
-          pb(bag, 'steel', 10850, 11650, 5835, 5850, fY + 0.94, fY + 1.34); // rear chassis
-          pb(bag, 'dark', 10845, 11655, 5828, 5835, fY + 0.935, fY + 1.345); // front slim bezel
-          pb(bag, 'tv', 10855, 11645, 5825, 5828, fY + 0.95, fY + 1.33); // screen face
-          pb(bag, 'lamp', 11235, 11265, 5822, 5825, fY + 0.942, fY + 0.948); // power LED
-
-          // Slim Keyboard & Mouse on Blotter
-          pb(bag, 'dark', 11050, 11450, 5480, 5600, fY + 0.756, fY + 0.766);
-          pb(bag, 'steel', 11520, 11600, 5500, 5580, fY + 0.756, fY + 0.768);
-
           // Sleek Minimalist Architectural Task Lamp (100% vector-connected)
-          const lx = 10.62, ly = fY + 0.75, lz = -5.72;
+          const lx = 10.69, ly = fY + 0.759, lz = -5.72;
           bag.cyl('brass', lx, ly + 0.005, lz, 0.038, 0.010); // flat brass base
           bag.branch('brass', lx, ly + 0.010, lz, lx, ly + 0.36, lz, 0.005, 0.005); // vertical stem
           bag.sph('brass', lx, ly + 0.36, lz, 0.008); // knuckle joint
@@ -9935,10 +9906,7 @@ window.HouseScene = (function () {
              Math.round((-hz - 0.010) * 1000), Math.round((-hz + 0.010) * 1000),
              hy - 0.024, hy - 0.012); // recessed diffuser
 
-          // 5) Executive High-Back Chair (facing North toward desk)
-          Fur.executiveChair(bag, 11250, 4750, fY, 'N');
-
-          // 6) Client / Visitor Consultation Armchairs (North Zone, facing South)
+          // Client / visitor chairs face the workstation.
           Fur.chair(bag, 10800, 6750, fY, 'S');
           Fur.chair(bag, 11700, 6750, fY, 'S');
           // Low black wood side table between guest chairs
@@ -9987,8 +9955,6 @@ window.HouseScene = (function () {
           [1850, 1.43, 230, 310, ['artD', 'artA', 'artB']],
           [2230, 1.43, 310, 240, ['artB', 'artD', 'artC']]
         ].forEach(([c, height, w, h, scheme]) => Fur.art(bag, 'y', 4805, 'W', c, fY, height, w, h, scheme));
-        Fur.standingDesk(bag, 420, 1820, 3730, 4412, fY, 'N');        // NW corner, on the north wall, clear of the curtain
-        Fur.ergoChair(bag, 1120, 3330, fY, 'N');
         // walk-in (x 3216..4805, y wy..6381)
         Fur.fullHeightWardrobe(bag, WX, 4805, wy, 6381, fY, fY + 3.203, 'W', { mirror: true });
         // the north end of the aisle is the dressing table the SF east suite has: the entry
@@ -10558,8 +10524,10 @@ window.HouseScene = (function () {
           // ceiling in the same paint: a 2 mm skin, wall face to wall face, just under
           // the roof's 8 mm charDark soffit plate (exterior group, L.roof - slabT
           // - 0.008), which is what every SF ceiling actually shows
-          pb(bag, 'limeWash', 230, 3216, 230, 4432, top - 0.010, top - 0.008);
-          pb(bag, 'limeWash', 3216, 4805, 230, 4272, top - 0.010, top - 0.008);
+          if (window.__HOUSE_WALK) {
+            pb(bag, 'limeWash', 230, 3216, 230, 4432, top - 0.010, top - 0.008);
+            pb(bag, 'limeWash', 3216, 4805, 230, 4272, top - 0.010, top - 0.008);
+          }
         }
         /* Every other SF ceiling: the roof's charDark soffit plate is all they showed (a flat
            grey, nothing like the FF's warm white), so each room gets the same 2 mm skin as the
@@ -10571,7 +10539,7 @@ window.HouseScene = (function () {
             if (r.type === 'out' || r.name === 'LIFT' || r.name === 'STAIRCASE' || r.name === 'PORTICO' ||
                 r.name.includes('BALCONY') || r.name.includes('TERRACE')) continue;
             if (r.name === 'BEDROOM' && r.x0 === 230) continue;       // west bedroom (limewash above)
-            if (!window.__HOUSE_WALK && (r === SF_FAMILY_ROOM || r.name === 'LOUNGE')) continue; // open the connected living space in the dollhouse
+            if (!window.__HOUSE_WALK && (r.type === 'bed' || r === SF_FAMILY_ROOM || r.name === 'LOUNGE')) continue; // expose the furnished rooms in the dollhouse
             pb(bag, 'white2', r.x0, r.x1, r.y0, r.y1, top - 0.010, top - 0.008);
           }
           pb(bag, 'white2', 6020, 9260, 6996, 8641, top - 0.010, top - 0.008);   // the double-height void's top: same plate, same skin
@@ -10643,13 +10611,6 @@ window.HouseScene = (function () {
         const south = SF_FAMILY_ROOM.y0;
         const { x1: wardrobeEnd, y1: wardrobeFront } = SF_FAMILY_WARDROBE;
         Fur.glazedBookcase(bag, SF_FAMILY_SOUTH_WALL_X0, wardrobeEnd, south, wardrobeFront, fY, cut);
-        // Synchronous stand-ins keep the walkthrough collision grid usable while the models load.
-        const desk = familyWorkstation[0], chair = familyWorkstation[1];
-        const deskBag = makeBag(THREE), chairBag = makeBag(THREE);
-        Fur.standingDesk(deskBag, desk.x - 700, desk.x + 700, desk.y - 341, desk.y + 341, fY, 'S');
-        Fur.ergoChair(chairBag, chair.x, chair.y, fY, 'S');
-        desk.fallback = deskBag.build(THREE, materials);
-        chair.fallback = chairBag.build(THREE, materials);
 
         // Keep the east side of the seating area clear for the glass doors.
         Fur.rug(bag, 9470, 11650, 6510, 7990, fY);
@@ -10659,7 +10620,18 @@ window.HouseScene = (function () {
 
       const g = bag.build(THREE, materials);
       g.name = 'floor' + fi;
-      if (fi === 2) for (const model of familyWorkstation) g.add(model.fallback);
+      for (const { x, deskY, chairY, back, z = 0 } of workstationLayouts[fi]) {
+        // The synchronous stand-ins also seed the walkthrough collision grid.
+        const deskBag = makeBag(THREE), chairBag = makeBag(THREE);
+        Fur.standingDesk(deskBag, x - 700, x + 700, deskY - 341, deskY + 341, fY + z, back);
+        Fur.ergoChair(chairBag, x, chairY, fY + z, back);
+        const desk = deskBag.build(THREE, materials), chair = chairBag.build(THREE, materials);
+        g.add(desk, chair);
+        workstationModels.push(
+          { id: 'family_standing_desk', file: 'family_standing_desk.glb', fi, x, y: deskY, z, rot: back === 'N' ? 0 : 180, fallback: desk },
+          { id: 'family_task_chair', file: 'family_task_chair.glb', fi, x, y: chairY, z, rot: back === 'N' ? 180 : 0, fallback: chair }
+        );
+      }
       root.add(g);
       floorsOut.push({
         group: g, floorY: fY, cut,
@@ -10703,8 +10675,7 @@ window.HouseScene = (function () {
         // ---- SF east bedroom ----
         { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
         { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
-        // ---- SF family room ----
-        ...familyWorkstation
+        ...workstationModels
       ];
       const loader = new THREE.GLTFLoader();
       const draco = THREE.DRACOLoader ? new THREE.DRACOLoader() : null;
