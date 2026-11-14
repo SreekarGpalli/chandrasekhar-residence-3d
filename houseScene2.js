@@ -6812,7 +6812,7 @@ window.HouseScene = (function () {
             if (!ti) return 1;
             const up = z >= ti.z, t = Math.min(1, Math.abs(z - ti.z) / Math.max(0.01, up ? zh - ti.z : ti.z - zb));
             const sm = t * t * (3 - 2 * t);
-            return KT + ((up ? 1 : 0.88) - KT) * sm;
+            return KT + ((up ? 1 : 0.27) - KT) * sm;      // below the tie the tail hangs narrow and straight: 0.17 -> 0.27 of the full width at the hem
           };
           const pos = [], uv = [], idx = [];
           const surf = (off2) => {
@@ -6828,8 +6828,11 @@ window.HouseScene = (function () {
                 // squeezed pleats stay crisp instead of crumpling.
                 const k = kOf(z), r = Math.abs(u - ti.outer);
                 uu = ti.outer + (u - ti.outer) * k;
-                const tight = Math.exp(-Math.pow((z - ti.z) / 0.20, 2));
-                const A = amp * zf * Math.pow(k, 0.85) * (1 + 0.28 * Math.sin(r / 97 + seed * 2)) * (1 + 0.14 * h);
+                const below = z < ti.z ? Math.min(1, (ti.z - z) / Math.max(0.01, ti.z - zb)) : 0;
+                // the bundle sits a little room-ward of the track; the tail below keeps that depth
+                // and only settles back toward the wall line slowly, so it hangs straight down
+                const tight = z < ti.z ? Math.exp(-Math.pow((ti.z - z) / 0.95, 2)) : Math.exp(-Math.pow((z - ti.z) / 0.20, 2));
+                const A = amp * zf * Math.pow(k, 0.85) * (1 + 0.28 * Math.sin(r / 97 + seed * 2)) * (1 + 0.14 * h) * (1 + 0.55 * below);
                 const phz = 2 * Math.PI * r / lam + 0.7 * Math.sin(r / 150 + seed) + 0.35 * Math.sin(r / 52 + 2 * seed) + 0.40 * Math.sin(h * 2.4 + seed);
                 d = dc + 16 * tight + A * wave(phz);
               } else {
