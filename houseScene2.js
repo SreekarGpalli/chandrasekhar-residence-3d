@@ -216,6 +216,9 @@ window.HouseScene = (function () {
     rugD:      0x9c9182,  // wool rug, border
     leather:   0x8a5934,  // cognac leather
     blackM:    0x1e1e20,  // matte black metal
+    fanWhite:  0xf5f5f3,  // BLDC ceiling fan: gloss white body + blades
+    fanBlack:  0x0c0d0f,  // BLDC fan: gloss-black display disc
+    fanLED:    0x2fa6ff,  // BLDC fan: blue indicator LEDs (emissive)
     brassI:    0xb38e56,  // satin brass (interior — exterior 'brass' is greyed)
     lacqNavy:  0x22385a,  // navy PU satin on the media wall's panel mouldings + TV backing
     lacqNavyDk:0x1a2c48,  // deeper navy PU satin — media wall pilasters, plinth, crown
@@ -249,7 +252,7 @@ window.HouseScene = (function () {
       M[key] = m; return m;
     };
     for (const k of Object.keys(C)) {
-      if (k === 'glass' || k === 'carGlass' || k === 'lamp') continue;
+      if (k === 'glass' || k === 'carGlass' || k === 'lamp' || k === 'fanLED') continue;
       mk(k, C[k]);
     }
     mk('glass', C.glass, { roughness: 0.06, metalness: 0.05, transparent: true, opacity: 0.42, depthWrite: false });
@@ -317,6 +320,8 @@ window.HouseScene = (function () {
     // behind a lip and is read via the light it throws on the ceiling, never
     // head-on. Driving this hot is what turns a cove into a glare bar.
     mk('coveLED', C.coveLED, { emissive: srgb(C.coveLED), emissiveIntensity: 1.05, roughness: 0.6 });
+    // BLDC fan indicator dots: small and blue, read as lit, never as a light source
+    mk('fanLED', C.fanLED, { emissive: srgb(0x0a6cff), emissiveIntensity: 0.6, roughness: 0.4 });
     // Surface family tuning — one coherent material language
     M.white.roughness = 0.94; M.white2.roughness = 0.92;
     if (M.fin) M.fin.roughness = 0.94;
@@ -507,7 +512,7 @@ window.HouseScene = (function () {
     oak: 1, oakDark: 1, alu: 1, aluDark: 1, lacq: 1, lacqSage: 1, lacqTaupe: 1,
     fluted: 1, quartz: 1, marbleV: 1, travertine: 1, stoneDk: 1, boucle: 1,
     linen: 1, linenDk: 1, velvet: 1, terra: 1, rugW: 1, rugD: 1, leather: 1,
-    blackM: 1, brassI: 1, ceramic: 1, sheet: 1, duvet: 1, artA: 1, artB: 1,
+    blackM: 1, brassI: 1, fanWhite: 1, fanBlack: 1, fanLED: 1, ceramic: 1, sheet: 1, duvet: 1, artA: 1, artB: 1,
     artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, limeWash: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
   };
 
@@ -1997,7 +2002,10 @@ window.HouseScene = (function () {
     // one box call for either axis: `a` is the running span, `b` the cross-band
     const rakeSide = (opts.skirt && opts.tread === FLOOR_TILE) ? (opts.skirt === 'lo' ? 'lo' : 'hi') : null;
     const slab = (m, aLo, aHi, h0, h1, inset, v) => {
-      const i0 = inset || 0, iL = rakeSide === 'lo' ? 0 : i0, iH = rakeSide === 'hi' ? 0 : i0;   // tile meets the wall under the raking skirting
+      // The finish runs the full width of the block: on the raking-skirting side it meets the wall,
+      // on the other side it is 1.5 mm proud of the block's side face (an inset left a 6 mm white
+      // strip of bare block along every tread edge, and flush would share a plane with the block side).
+      const iL = rakeSide === 'lo' ? 0 : -1.5, iH = rakeSide === 'hi' ? 0 : -1.5;
       if (alongY) tpb(m, b0 + iL, b1 - iH, aLo, aHi, h0, h1, v);
       else tpb(m, aLo, aHi, b0 + iL, b1 - iH, h0, h1, v);
     };
@@ -2008,15 +2016,17 @@ window.HouseScene = (function () {
       const top = zBot + i * stepRise;
       const aA = aBot + (i - 1) * stepGo, aB = aBot + i * stepGo;
       const lo = Math.min(aA, aB), hi = Math.max(aA, aB);
-      const cyStep = top - stepRise / 2;
+      // A finished tread (tile 12 mm) sits ON the block: the block stops under the tile instead of
+      // sharing its top plane (two materials on one plane = the white flicker over every tread)
+      const hStep = stepRise - tt, cyStep = top - tt - hStep / 2;
       if (alongY) {
         const ry = sign > 0 ? -Math.PI / 2 : Math.PI / 2;
         bag.step(mat, (b0 + b1) / 2000, cyStep, -(aA + aB) / 2000,
-                 Math.abs(stepGo) / 1000, stepRise, (b1 - b0) / 1000, 0, ry, 0);
+                 Math.abs(stepGo) / 1000, hStep, (b1 - b0) / 1000, 0, ry, 0);
       } else {
         const ry = sign > 0 ? 0 : Math.PI;
         bag.step(mat, (aA + aB) / 2000, cyStep, -(b0 + b1) / 2000,
-                 Math.abs(stepGo) / 1000, stepRise, (b1 - b0) / 1000, 0, ry, 0);
+                 Math.abs(stepGo) / 1000, hStep, (b1 - b0) / 1000, 0, ry, 0);
       }
       if (opts.riser) {
         // 10 mm riser facing on the step's leading face, under the nosing
@@ -5199,18 +5209,37 @@ window.HouseScene = (function () {
     // (shelves() keeps its bay logic; materials restyled in place below)
 
     /* ---------------- SERVICES ----------------
-       Fan: matte-black body with oak blades. AC: radiused casing. */
+       Fan: BLDC ceiling fan (owner's reference, Nov 2026): gloss-white canopy,
+       downrod and compact motor; three flat straight white blades, 1200 mm
+       sweep; underside a gloss-black remote/display disc with a ring of blue
+       LED dots. AC: radiused casing. */
     ceilingFan(bag, cx, cy, fY, ceilY) {
       const wx = cx / 1000, wz = -cy / 1000;
-      const cY = ceilY || (fY + 3.203), fanH = fY + 2.55;
-      drum(bag, 'blackM', cx, cy, cY - 0.05, cY, 0.07, 0.01);
-      bag.cyl('blackM', wx, (cY - 0.05 + fanH + 0.04) / 2, wz, 0.011, cY - 0.05 - fanH - 0.04);
-      drum(bag, 'blackM', cx, cy, fanH - 0.04, fanH + 0.05, 0.11, 0.025);
-      drum(bag, 'oakDark', cx, cy, fanH - 0.06, fanH - 0.04, 0.06, 0.006);
+      const cY = ceilY || (fY + 3.203), fanH = fY + 2.55;     // fanH = blade plane / motor waist
+      // canopy cup, flush to the soffit
+      drum(bag, 'fanWhite', cx, cy, cY - 0.085, cY, 0.046, 0.006);
+      // downrod: canopy to motor neck
+      const rodB = fanH + 0.105, rodT = cY - 0.083;
+      bag.cyl('fanWhite', wx, (rodB + rodT) / 2, wz, 0.0105, rodT - rodB);
+      // motor: one smooth turned shell - narrow neck bellying out to the blade ring
+      bag.lathe('fanWhite', wx, fanH, wz, [
+        [0, -0.040], [0.083, -0.040], [0.090, -0.033], [0.091, 0.012], [0.086, 0.026],
+        [0.068, 0.040], [0.046, 0.054], [0.031, 0.070], [0.023, 0.088], [0.019, 0.108], [0, 0.108]
+      ], 48);
+      // underside: gloss-black display disc + ring of blue LED dots
+      drum(bag, 'fanBlack', cx, cy, fanH - 0.0435, fanH - 0.0385, 0.074, 0.002);
+      for (let k = 0; k < 6; k++) {
+        const a = k * Math.PI / 3 + Math.PI / 6;
+        bag.cyl('fanLED', wx + Math.cos(a) * 0.022, fanH - 0.0442, wz - Math.sin(a) * 0.022, 0.0038, 0.0014);
+      }
+      // three flat white blades, root tucked into the motor, tip at r 600 mm.
+      // Pitch about the blade's own long axis: R = Ry(th) * Rx(p), as XYZ Euler.
+      const p = 0.11, sp = Math.sin(p), cp = Math.cos(p);
+      const r0 = 0.072, r1 = 0.600, rc = (r0 + r1) / 2, L = r1 - r0;
       for (let i = 0; i < 3; i++) {
-        const th = i * 2 * Math.PI / 3, c = Math.cos(th), s = Math.sin(th);
-        bag.box('blackM', wx + c * 0.14, fanH + 0.005, wz - s * 0.14, 0.09, 0.01, 0.03, 0, th, 0);
-        bag.rbox('oakDark', wx + c * 0.42, fanH + 0.008, wz - s * 0.42, 0.56, 0.012, 0.13, 0.005, 0, 0.06, th, 0);
+        const th = i * 2 * Math.PI / 3 + Math.PI / 6, c = Math.cos(th), s = Math.sin(th);
+        const ex = Math.atan2(sp, c * cp), ey = Math.asin(s * cp), ez = Math.atan2(-s * sp, c);
+        bag.rbox('fanWhite', wx + c * rc, fanH - 0.010, wz - s * rc, L, 0.0055, 0.094, 0.0025, 0, ex, ey, ez);
       }
     },
     splitAC(bag, dir, fixed, a0, a1, fY, face) {
@@ -6703,7 +6732,7 @@ window.HouseScene = (function () {
         /* --- Standard 3-Blade Ceiling Fan (1200mm / 48" sweep) --- */
         fan(cx, cy) {
           Fur.ceilingFan(bag, cx, cy, fY, ceilY);
-          put(cx, cy, fY + 2.50, 'fan');
+          put(cx, cy, fY + 2.72, 'fan');   // above the motor: a BLDC fan has no light kit, so this is a soft ceiling wash, never a hot spot on the black disc
           return this;
         },
         /* --- High-Wall Standalone Split AC Indoor Unit --- */

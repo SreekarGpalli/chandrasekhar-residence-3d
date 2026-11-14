@@ -187,14 +187,14 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261107_one_wood3"></script>
+<script src="lib/interiorKit.js?v=20261113_bldc_fan4"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_full2_ao' : 'houseScene.js?v=20261113_rake_flush') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_bldc_fan4' : 'houseScene.js?v=20261113_bldc_fan4') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -883,6 +883,7 @@ if(!window.THREE || !window.HouseScene){
     if (name === 'glass' || name === 'carGlass') return { glass: true, dark: name !== 'glass' };
     if (name === 'nbrWin') return { rough: 0.1, metal: 0.4, env: 1.3 };
     if (name === 'coveLED') return { emissive: true, cove: true };
+    if (name === 'fanLED') return { emissive: true, led: true };
     if (name === 'lamp' || name === 'downlight') return { emissive: true, strong: name === 'downlight' };
     if (FLOORTINT.has(name)) return { tex: 'tile', tile: 1.8, rough: 0.2, metal: 0.0, env: 0.75, interior: true };
     switch (name) {
@@ -1322,12 +1323,12 @@ if(!window.THREE || !window.HouseScene){
       m.needsUpdate = true; return;
     }
     if (t.emissive) {
-      if (m.emissive) m.emissive.setHex(t.cove ? 0xffe3b4 : t.strong ? 0xffdcae : 0xffd9a0);
+      if (m.emissive) m.emissive.setHex(t.led ? 0x0a6cff : t.cove ? 0xffe3b4 : t.strong ? 0xffdcae : 0xffd9a0);
       /* Emissive is the LOOK of the fitting, not the light in the room — the
          point-light pool does the lighting. Held low on purpose: a big oyster
          disc at 3.2+ clips to flat white under ACES and reads as glare. Coves
          are lowest of all; they are meant to be seen only as a wash. */
-      m.emissiveIntensity = t.cove ? 1.00 : t.strong ? 1.55 : 1.20;
+      m.emissiveIntensity = t.led ? 0.55 : t.cove ? 1.00 : t.strong ? 1.55 : 1.20;
       m.envMapIntensity = 0.2; m.needsUpdate = true; return;
     }
     if ('roughness' in m) m.roughness = t.rough;

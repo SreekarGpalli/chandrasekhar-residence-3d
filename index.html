@@ -389,7 +389,7 @@ window.DESIGNS = {
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261107_one_wood3"></script>
+<script src="lib/interiorKit.js?v=20261113_bldc_fan4"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
@@ -399,9 +399,9 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.file ? d.file + '?v=20261113_full2_ao'
+  var src = d.file ? d.file + '?v=20261113_bldc_fan4'
           : d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42i'
-                  : 'houseScene.js?v=20261113_rake_flush';
+                  : 'houseScene.js?v=20261113_bldc_fan4';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
 </script>
@@ -1374,7 +1374,7 @@ window.DESIGNS = {
       // they do not register as unmapped and make the coverage report lie.
       case 'glass': case 'carGlass':  return { handledElsewhere: true };
       case 'lamp': case 'downlight':  return { handledElsewhere: true };
-      case 'coveLED':                 return { handledElsewhere: true };  // keeps houseScene's low cove emissive
+      case 'coveLED': case 'fanLED':  return { handledElsewhere: true };  // keeps houseScene's low cove emissive
       case 'dark':       return { rough: 0.55, metal: 0.1, env: 0.4 };
 
       /* ---- interior surfaces ----------------------------------------------
@@ -1922,7 +1922,7 @@ window.DESIGNS = {
       } else if (key === 'lamp' || key === 'downlight') {
         if (m.emissive) m.emissive.setHex(0xffdcae);
         m.emissiveIntensity = 2.2; m.envMapIntensity = 0.2;
-      } else if (key === 'coveLED') {
+      } else if (key === 'coveLED' || key === 'fanLED') {
         m.envMapIntensity = 0.2;
       } else {
         if ('roughness' in m) m.roughness = t.rough;
