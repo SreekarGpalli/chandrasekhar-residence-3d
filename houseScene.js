@@ -867,6 +867,7 @@ window.HouseScene = (function () {
       for (const k in plates) delete plates[k];
     }
     function flushWalls() {
+      const END_MAT = { eastPlaster: 'white' };   // end-face material for walls whose long faces are sand-float
       const uniq = (arr, eps) => {
         arr.sort((p, q) => p - q); const o = [];
         for (const v of arr) if (!o.length || v - o[o.length - 1] > eps) o.push(v);
@@ -945,9 +946,13 @@ window.HouseScene = (function () {
         const g = G(W.mat);
         for (let i = 0; i < NA; i++) for (let j = 0; j < NZ; j++) if (S(i, j)) {
           const a0 = as[i], a1 = as[i + 1], z0 = zs[j], z1 = zs[j + 1], b0 = W.b0, b1 = W.b1;
-          const ge = G(faceMat('lo', i, j) || faceMat('hi', i, j) || W.mat);
-          if (!S(i - 1, j)) quad(ge, P(a0, b0, z0), P(a0, b1, z0), P(a0, b1, z1), P(a0, b0, z1), neg(nA));
-          if (!S(i + 1, j)) quad(ge, P(a1, b0, z0), P(a1, b1, z0), P(a1, b1, z1), P(a1, b0, z1), nA);
+          const skM = faceMat('lo', i, j) || faceMat('hi', i, j), ge = G(skM || W.mat), rr = W.rects[owner[i * NZ + j]];
+          // A wall's true END (not a door/window reveal) is plastered like the walls it meets: the sand-float
+          // east wall would otherwise show a grey strip on the south and north faces at every corner.
+          const endM = !skM && END_MAT[W.mat] ? G(END_MAT[W.mat]) : null;
+          const gL = endM && Math.abs(a0 - rr.a0) < 0.5 ? endM : ge, gR = endM && Math.abs(a1 - rr.a1) < 0.5 ? endM : ge;
+          if (!S(i - 1, j)) quad(gL, P(a0, b0, z0), P(a0, b1, z0), P(a0, b1, z1), P(a0, b0, z1), neg(nA));
+          if (!S(i + 1, j)) quad(gR, P(a1, b0, z0), P(a1, b1, z0), P(a1, b1, z1), P(a1, b0, z1), nA);
           if (!S(i, j - 1)) quad(g, P(a0, b0, z0), P(a1, b0, z0), P(a1, b1, z0), P(a0, b1, z0), [0, -1, 0]);
           if (!S(i, j + 1)) quad(g, P(a0, b0, z1), P(a1, b0, z1), P(a1, b1, z1), P(a0, b1, z1), [0, 1, 0]);
         }
