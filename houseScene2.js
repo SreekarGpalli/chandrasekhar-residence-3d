@@ -10641,7 +10641,6 @@ window.HouseScene = (function () {
         { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
         { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
         // ---- SF family room ----
-        { id: 'potted_plant_01', fi: 2, x: 8650, y: 5000, rot: 120 },
       ];
       const loader = new THREE.GLTFLoader();
       let pending = 0;
