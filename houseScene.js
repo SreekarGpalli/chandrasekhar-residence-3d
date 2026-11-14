@@ -10052,9 +10052,9 @@ window.HouseScene = (function () {
         // --- Guest bedroom / theater ---
         Fur.rug(bag, 8650, 11450, 850, 2900, fY);
 
-        // Sofa Murphy bed: the mattress turns around the long side above the sofa base.
-        const bedX0 = 9080, bedX1 = 11200, wallY = 232, hingeY = 680, bedY1 = 2350;
-        const hingeH = fY + 0.55, cabinetTop = fY + 2.255;
+        // Vertical Murphy bed, hinged at the south headboard and opening north over the sofa.
+        const bedX0 = 9230, bedX1 = 11070, wallY = 232, hingeY = 680, bedY1 = 2740;
+        const hingeH = fY + 0.51, cabinetTop = fY + 2.61;
         pb(bag, 'oakDark', bedX0, bedX1, wallY, wallY + 28, fY, cabinetTop);
         for (const x of [bedX0, bedX1 - 26]) {
           prb(bag, 'oakDark', x, x + 26, wallY + 28, 794, fY, cabinetTop, 4);
@@ -10075,19 +10075,27 @@ window.HouseScene = (function () {
           prb(upholstery, 'boucle', x + 8, x + cushionWidth - 8, 795, 914, fY + 0.41, fY + 0.88, 38, 12);
         }
 
-        prb(mattressBag, 'oakDark', bedX0 + 30, bedX1 - 30, hingeY, bedY1, hingeH - 0.074, hingeH + 0.012, 8);
-        for (const x of [9900, 10340]) {
-          prb(mattressBag, 'brassI', x - 60, x + 60, bedY1 - 220, bedY1 - 199, hingeH - 0.093, hingeH - 0.074, 3);
+        const left = bedX0 + 34, right = bedX1 - 34, mid = (left + right) / 2;
+        prb(mattressBag, 'walnutI', left, right, hingeY, bedY1, hingeH - 0.086, hingeH - 0.05, 8);
+        for (const x of [left, right - 58]) {
+          prb(mattressBag, 'oakDark', x, x + 58, hingeY + 5, bedY1 - 8, hingeH - 0.048, hingeH + 0.104, 12);
         }
-        for (const x of [bedX0 + 90, bedX1 - 90]) {
-          prb(legs, 'aluDark', x - 15, x + 15, bedY1 - 100, bedY1 - 46, fY + 0.014, hingeH - 0.05, 6);
+        prb(mattressBag, 'oakDark', left + 58, right - 58, bedY1 - 48, bedY1, hingeH - 0.048, hingeH + 0.123, 12);
+        prb(mattressBag, 'linen', left + 15, right - 15, hingeY + 5, hingeY + 77, hingeH - 0.043, hingeH + 0.364, 21);
+        for (const x of [mid - 220, mid + 220]) {
+          prb(mattressBag, 'brassI', x - 62, x + 62, bedY1 - 365, bedY1 - 343, hingeH - 0.108, hingeH - 0.086, 4);
         }
-        prb(mattressBag, 'sheet', bedX0 + 56, bedX1 - 56, hingeY + 14, bedY1 - 32, hingeH + 0.012, hingeH + 0.166, 28, 6);
-        prb(mattressBag, 'duvet', bedX0 + 505, bedX1 - 64, hingeY + 18, bedY1 - 38, hingeH + 0.155, hingeH + 0.194, 20, 9);
-        prb(mattressBag, 'linenDk', bedX1 - 405, bedX1 - 75, hingeY + 23, bedY1 - 45, hingeH + 0.187, hingeH + 0.221, 10);
-        const mattress = frameOf(bedX0 + 56, bedX1 - 56, hingeY + 14, bedY1 - 32, 'W');
-        for (const u of [410, 1100]) {
-          mattress.pillow(mattressBag, 'sheet', u, 202, hingeH + 0.201, 560, 350, 82, 0.12);
+        for (const x of [left + 107, right - 107]) {
+          prb(legs, 'aluDark', x - 26, x + 26, bedY1 - 133, bedY1 - 62, fY + 0.014, hingeH - 0.05, 9);
+          prb(legs, 'blackM', x - 32, x + 32, bedY1 - 141, bedY1 - 54, fY + 0.014, fY + 0.037, 5);
+        }
+        prb(legs, 'aluDark', left + 112, right - 112, bedY1 - 121, bedY1 - 74, fY + 0.115, fY + 0.165, 8);
+        prb(mattressBag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
+        prb(mattressBag, 'duvet', left + 56, right - 56, hingeY + 562, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
+        prb(mattressBag, 'linenDk', left + 62, right - 62, bedY1 - 403, bedY1 - 36, hingeH + 0.238, hingeH + 0.269, 13);
+        const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
+        for (const fraction of [0.25, 0.75]) {
+          mattress.pillow(mattressBag, 'sheet', mattress.W * fraction, 227, hingeH + 0.269, 650, 429, 124, 0.10, 48);
         }
         const pivot = new THREE.Group();
         pivot.position.set(0, hingeH, -hingeY / 1000);
@@ -10095,7 +10103,7 @@ window.HouseScene = (function () {
         deck.position.copy(pivot.position).negate();
         pivot.add(deck);
         const foot = legs.build(THREE, materials);
-        const footHinge = new THREE.Group(), footY = bedY1 - 73;
+        const footHinge = new THREE.Group(), footY = bedY1 - 97.5;
         footHinge.position.set(0, -0.05, -(footY - hingeY) / 1000);
         foot.position.set(0, -(hingeH - 0.05), footY / 1000);
         footHinge.add(foot);
