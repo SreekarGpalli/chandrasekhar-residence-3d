@@ -8314,14 +8314,8 @@ window.HouseScene = (function () {
         // SF living is now one 3180 mm French glass — no pier, no extra canopy
         // (the pergola is the shade).
         // North: GF/FF doors end 8600; wall ends 8870.
-        function cheek(y0, y1, z0, z1, innerSouth) {
-          pb(eBag, 'eastPlaster', EF - 4, EF + 88, y0, y1, z0, z1);
-          if (innerSouth) pb(eBag, 'charDark', EF + 4, EF + 84, y1 - 16, y1, z0, z1);
-          else pb(eBag, 'charDark', EF + 4, EF + 84, y0, y0 + 16, z0, z1);
-        }
-        cheek(6920, 7380, L.f0, L.f1, true);                 // GF south of door
-        cheek(8620, 8870, L.f0, L.f1, false);                // GF north of door
-        cheek(8620, 8870, L.f1, L.f2, false);                // FF north of door
+        // NO portal cheeks: they were 92 mm-proud piers beside the GF and FF main doors (an "extra wall"
+        // around each door); the doors now sit flush in the plain east wall.
         pb(eBag, 'charDark', EF - 4, EF + 40, 7400, 8600, L.f0, L.f0 + 0.04);
 
         // Lime canopies with a thin stone drip (not dark slabs).
