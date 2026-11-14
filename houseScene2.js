@@ -260,6 +260,7 @@ window.HouseScene = (function () {
     M.voile.opacity = 1;
     M.voile.depthWrite = false;
     M.voile.side = THREE.DoubleSide;
+    M.drapeDark.side = THREE.DoubleSide;
     M.drapeDark.roughness = 0.97;
     /* Curtain cloth. UVs are metres (u along the cloth, v up), so repeat = tiles per metre.
        Voile: a gauze net - 40 % clear mesh with a 1 px thread every 4 px, so it reads as
@@ -6790,8 +6791,14 @@ window.HouseScene = (function () {
         const alongY = face === 'E' || face === 'W';
         const toW = (u, dpt, z) => alongY ? [off(dpt) / 1000, z, -u / 1000] : [u / 1000, z, -off(dpt) / 1000];
         const into = alongY ? [out, 0, 0] : [0, 0, -out];
-        const cloth = (m, u0, u1, zb, zh, dc, amp, lam, seed, thick, ti) => {   // ti {z, outer}: tied back at height z, fixed edge at `outer`
-          const nu = Math.max(10, Math.round((u1 - u0) / 7)), nz = 30, H = zh - zb;
+        /* Cloth surface. Plain (voile): ripple folds from one cumulative phase along the
+           track. Tied back (ti = {z, outer}): the free edge follows an ARCH - full width at
+           the header, sweeping in a smooth curve to a tight round bundle at the tie, then
+           flaring out to the hem - and the folds are laid out in the gathered width itself
+           (wavelength shrinks with it, amplitude is held down so the cloth never folds over
+           itself). DoubleSide material, so no face can ever drop out as a hole. */
+        const cloth = (m, u0, u1, zb, zh, dc, amp, lam, seed, thick, ti) => {
+          const nu = Math.max(10, Math.round((u1 - u0) / 7)), nz = 36, H = zh - zb;
           const ph = new Float64Array(nu + 1); let p = seed * 1.7;
           for (let i = 0; i <= nu; i++) {
             const u = u0 + (u1 - u0) * i / nu;
@@ -6800,28 +6807,36 @@ window.HouseScene = (function () {
             ph[i] = p;
           }
           const wave = t => Math.sin(t) - 0.20 * Math.sin(2 * t + 0.6);
-          const dep = (i, j) => {
-            const u = u0 + (u1 - u0) * i / nu, h = j / nz;                  // h: 0 at the header, 1 at the hem
-            const z = zh - H * j / nz;
-            const sm = Math.min(1, h / 0.32), zf = 0.30 + 0.70 * sm * sm * (3 - 2 * sm);
-            // tie-back: the cloth is gathered tight at the tie (shallow, pulled room-ward)
-            // and billows into deep folds above and below it
-            let tight = 0, bill = 0;
-            if (ti) {
-              tight = Math.exp(-Math.pow((z - ti.z) / 0.20, 2));
-              bill = Math.exp(-Math.pow((Math.abs(z - ti.z) - 0.40) / 0.24, 2));
-            }
-            const A = amp * zf * (1 + 0.30 * Math.sin(u / 131 + seed * 2)) * (1 + 0.16 * h) * (1 - 0.35 * tight) * (1 + 0.55 * bill);
-            return dc + 14 * tight + A * wave(ph[i] + 0.55 * Math.sin(h * 3.1 + seed + u / 410));
+          const KT = 0.17;                                                    // bundle width / full width
+          const kOf = z => {                                                  // free-edge fraction at height z
+            if (!ti) return 1;
+            const up = z >= ti.z, t = Math.min(1, Math.abs(z - ti.z) / Math.max(0.01, up ? zh - ti.z : ti.z - zb));
+            const sm = t * t * (3 - 2 * t);
+            return KT + ((up ? 1 : 0.88) - KT) * sm;
           };
           const pos = [], uv = [], idx = [];
           const surf = (off2) => {
             const base = pos.length / 3;
             for (let i = 0; i <= nu; i++) for (let j = 0; j <= nz; j++) {
-              const u = u0 + (u1 - u0) * i / nu, z = zh - H * j / nz;
-              // the tie draws the free edge in toward the fixed one
-              const uu = ti ? ti.outer + (u - ti.outer) * (1 - 0.30 * Math.exp(-Math.pow((z - ti.z) / 0.42, 2))) : u;
-              const w = toW(uu, dep(i, j) + off2, z);
+              const u = u0 + (u1 - u0) * i / nu, h = j / nz, z = zh - H * j / nz;
+              const sm = Math.min(1, h / 0.32), zf = 0.30 + 0.70 * sm * sm * (3 - 2 * sm);
+              let uu = u, d;
+              if (ti) {
+                // Every pleat keeps its own place in the cloth (phase from the cloth coordinate r),
+                // so the fold lines run smoothly from the header down to the bundle and the gather
+                // only squeezes their spacing; the fold depth shrinks with the width so the
+                // squeezed pleats stay crisp instead of crumpling.
+                const k = kOf(z), r = Math.abs(u - ti.outer);
+                uu = ti.outer + (u - ti.outer) * k;
+                const tight = Math.exp(-Math.pow((z - ti.z) / 0.20, 2));
+                const A = amp * zf * Math.pow(k, 0.85) * (1 + 0.28 * Math.sin(r / 97 + seed * 2)) * (1 + 0.14 * h);
+                const phz = 2 * Math.PI * r / lam + 0.7 * Math.sin(r / 150 + seed) + 0.35 * Math.sin(r / 52 + 2 * seed) + 0.40 * Math.sin(h * 2.4 + seed);
+                d = dc + 16 * tight + A * wave(phz);
+              } else {
+                const A = amp * zf * (1 + 0.30 * Math.sin(u / 131 + seed * 2)) * (1 + 0.16 * h);
+                d = dc + A * wave(ph[i] + 0.55 * Math.sin(h * 3.1 + seed + u / 410));
+              }
+              const w = toW(uu, d + off2, z);
               pos.push(w[0], w[1], w[2]); uv.push(u / 1000, z);
             }
             return base;
@@ -6861,17 +6876,17 @@ window.HouseScene = (function () {
         };
         const zb = top - 0.035;
         cloth('voile', t0 + 10, t1 - 10, fY + 0.008, zb, dd + 49, 22, 100, 1.3, 0);                   // closed, wall to wall
-        /* The drapes are tied back about a quarter of the way up from the floor (tieZ): the
-           cloth is pulled in tight there and billows above and below, with a cream tie band
-           round the bundle and a small tassel hanging from its free end. */
-        const tieZ = fY + 0.86, WD = 780, WT = Math.round(WD * 0.58);
-        cloth('drapeDark', t0 + 14, t0 + 14 + WD, fY + 0.02, zb, dd + 125, 50, 120, 4.1, 7, { z: tieZ, outer: t0 + 14 });
-        cloth('drapeDark', t1 - 14 - WD, t1 - 14, fY + 0.02, zb, dd + 125, 50, 120, 9.7, 7, { z: tieZ, outer: t1 - 14 });
-        for (const [uA, uB, free] of [[t0 + 14 - 4, t0 + 14 + WT + 18, t0 + 14 + WT + 18], [t1 - 14 - WT - 18, t1 - 14 + 4, t1 - 14 - WT - 18]]) {
-          rail(uA, uB, dd + 125 - 40, dd + 125 + 62, tieZ - 0.028, tieZ + 0.028, 'linen', 12);       // tie band
-          const tw = toW(free, dd + 125 + 10, tieZ - 0.11);
-          bag.cyl('linen', tw[0], tw[1] + 0.03, tw[2], 0.009, 0.14);                                // cord
-          bag.sph('linen', tw[0], tw[1] - 0.10, tw[2], 0.024, 0.055);                               // tassel
+        /* The drapes are tied back tight, about a quarter of the way up from the floor (tieZ):
+           the free edge sweeps in an arch to a round bundle against the wall end, a cream tie
+           band closes round the bundle and a short cord and tassel hang from it. */
+        const tieZ = fY + 0.90, WD = 820, WB = Math.round(WD * 0.17);
+        cloth('drapeDark', t0 + 14, t0 + 14 + WD, fY + 0.02, zb, dd + 120, 46, 125, 4.1, 7, { z: tieZ, outer: t0 + 14 });
+        cloth('drapeDark', t1 - 14 - WD, t1 - 14, fY + 0.02, zb, dd + 120, 46, 125, 9.7, 7, { z: tieZ, outer: t1 - 14 });
+        for (const [uA, uB, free] of [[t0 + 14 - 4, t0 + 14 + WB + 10, t0 + 14 + WB + 10], [t1 - 14 - WB - 10, t1 - 14 + 4, t1 - 14 - WB - 10]]) {
+          rail(uA, uB, dd + 120 - 30, dd + 120 + 50, tieZ - 0.028, tieZ + 0.028, 'linen', 14);      // tie band
+          const tw = toW(free, dd + 120 + 8, tieZ - 0.10);
+          bag.cyl('linen', tw[0], tw[1] + 0.04, tw[2], 0.009, 0.16);                                // cord
+          bag.sph('linen', tw[0], tw[1] - 0.10, tw[2], 0.026, 0.06);                                // tassel
         }
         return;
       }
