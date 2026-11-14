@@ -5553,8 +5553,9 @@ window.HouseScene = (function () {
   const FLOOR_TILE = 'tFloor';
 
   const SF_FAMILY_ROOM = R('FAMILY ROOM', '3161 × 4095', 9260, 12421, 4546, 8641, 'living');
+  const SF_FAMILY_SOUTH_WALL_X0 = 7620; // Bedroom 03's outside corner, west of the family room's floor boundary.
   const SF_FAMILY_WARDROBE = {
-    x1: Math.round(SF_FAMILY_ROOM.x0 + 0.4 * (SF_FAMILY_ROOM.x1 - SF_FAMILY_ROOM.x0)),
+    x1: SF_FAMILY_SOUTH_WALL_X0 + Math.round(0.4 * (SF_FAMILY_ROOM.x1 - SF_FAMILY_SOUTH_WALL_X0)),
     y1: SF_FAMILY_ROOM.y0 + 600
   };
 
@@ -9159,15 +9160,11 @@ window.HouseScene = (function () {
         Lum.downlight(7090, 5770);                    // lounge centre
         Lum.downlight(5470, 7570);                    // gallery beside the stair
         // west (spine wall, west-bedroom door) -> south (walk-in 03 north wall)
-        // -> east return (bed03 doors), one mitred path
-        // The same path carries on round the OUTSIDE corner of bed03's wall (7620, 4546)
-        // and east along its north face to the shell, so the corner is one mitre, not
-        // two butted caps.
-        // Follow the sides and front of the full-height wardrobe along the south wall.
-        const { x0: west, y0: south } = SF_FAMILY_ROOM;
+        // -> east return (bed03 doors and wardrobe side), then along the wardrobe front to the south wall.
+        const south = SF_FAMILY_ROOM.y0, west = SF_FAMILY_SOUTH_WALL_X0;
         const { x1: wardrobeEnd, y1: wardrobeFront } = SF_FAMILY_WARDROBE;
-        Lum.cornerPath([[4920, 6496], [4920, 3266], [7620, 3266], [7620, south],
-          [west, south], [west, wardrobeFront], [wardrobeEnd, wardrobeFront], [wardrobeEnd, south], [12420, south]], true);
+        Lum.cornerPath([[4920, 6496], [4920, 3266], [west, 3266], [west, wardrobeFront],
+          [wardrobeEnd, wardrobeFront], [wardrobeEnd, south], [12420, south]], true);
 
         /* --- STAIRCASE --- */
         Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
@@ -10036,7 +10033,7 @@ window.HouseScene = (function () {
             if (r.type === 'out' || r.name === 'LIFT' || r.name === 'STAIRCASE' || r.name === 'PORTICO' ||
                 r.name.includes('BALCONY') || r.name.includes('TERRACE')) continue;
             if (r.name === 'BEDROOM' && r.x0 === 230) continue;       // west bedroom (limewash above)
-            if (r === SF_FAMILY_ROOM && !window.__HOUSE_WALK) continue; // expose the furnished room in the dollhouse
+            if (!window.__HOUSE_WALK && (r === SF_FAMILY_ROOM || r.name === 'LOUNGE')) continue; // open the connected living space in the dollhouse
             pb(bag, 'white2', r.x0, r.x1, r.y0, r.y1, top - 0.010, top - 0.008);
           }
           pb(bag, 'white2', 6020, 9260, 6996, 8641, top - 0.010, top - 0.008);   // the double-height void's top: same plate, same skin
@@ -10105,16 +10102,15 @@ window.HouseScene = (function () {
         }
         Fur.art(bag, 'x', 1755, 'N', 5900, fY, 1.55, 800, 1100, ['artD', 'artB', 'artC']);   // on the bath partition
         // --- Second Floor Family Room & Entertainment Lounge ---
-        const { x0: west, y0: south } = SF_FAMILY_ROOM;
+        const south = SF_FAMILY_ROOM.y0;
         const { x1: wardrobeEnd, y1: wardrobeFront } = SF_FAMILY_WARDROBE;
-        Fur.fullHeightWardrobe(bag, west, wardrobeEnd, south, wardrobeFront, fY, cut, 'N');
+        Fur.fullHeightWardrobe(bag, SF_FAMILY_SOUTH_WALL_X0, wardrobeEnd, south, wardrobeFront, fY, cut, 'N');
         Fur.standingDesk(bag, 10590, 11990, south + 24, south + 706, fY, 'S');
         Fur.ergoChair(bag, 11290, 5652, fY, 'S');
 
         // Keep the east side of the seating area clear for the glass doors.
         Fur.rug(bag, 9470, 11650, 6510, 7990, fY);
-        Fur.sofa(bag, 9440, 11660, 7750, 8600, fY, 'N', false, false, { fab: 'boucle', acc: ['linen', 'velvet', 'terra'] });
-        Fur.table(bag, 10025, 11075, 6790, 7320, fY, 0.40);
+        Fur.sofa(bag, 9440, 11660, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] });
         Fur.art(bag, 'x', 8640, 'S', 10550, fY, 1.62, 1500, 850, ['artB', 'artC', 'artA']);
       }
 
