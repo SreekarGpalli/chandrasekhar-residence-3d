@@ -6685,66 +6685,22 @@ window.HouseScene = (function () {
       };
     }
 
-    /* Slim privacy screen between the FF hall and the dining bay, beside the master bedroom
-       door: a 14 mm laser-cut jali in dark powder-coated metal - round perforations, about
-       35 % open, so the sightline into the bedroom door is broken at the angle people
-       actually look from while light still passes - between a slim oak post and a wall
-       channel, floor to soffit. Replaces the 150 mm solid fluted wing. The panel is real
-       geometry (each 90 mm cell is a square with a round hole, cut front, back and hole
-       wall), built through bag.fabric. Runs along x at plan y = yc, hall side north. */
-    function jaliScreen(bag, xa, xb, yc, fY, slabH) {
-      const T = 14, zA = fY + 0.07, zB = slabH - 0.07, PITCH = 90;
-      const nx = Math.max(2, Math.round((xb - xa) / PITCH)), nz = Math.max(2, Math.round((zB - zA) * 1000 / PITCH));
-      const px = (xb - xa) / nx, pz = (zB - zA) * 1000 / nz, hx = px / 2, hz = pz / 2, R = 0.36 * Math.min(px, pz);
-      const pos = [], nor = [], uv = [], idx = [];
-      const W = (X, Z, Y) => [X / 1000, Z, -Y / 1000];                      // plan (X, Y mm), height Z (m) -> world
-      const yF = yc + T / 2, yB = yc - T / 2;
-      // 16 hole angles: the four cell-corner directions plus three evenly spaced between each pair
-      const ac = Math.atan2(hz, hx), corners = [ac, Math.PI - ac, Math.PI + ac, 2 * Math.PI - ac], ang = [];
-      for (let c = 0; c < 4; c++) { const a0 = corners[c], a1 = corners[(c + 1) % 4] + (c === 3 ? 2 * Math.PI : 0); for (let k = 0; k < 4; k++) ang.push(a0 + (a1 - a0) * k / 4); }
-      const sq = a => { const c = Math.cos(a), s = Math.sin(a), t = Math.min(Math.abs(c) < 1e-9 ? 1e9 : hx / Math.abs(c), Math.abs(s) < 1e-9 ? 1e9 : hz / Math.abs(s)); return [c * t, s * t]; };
-      const vtx = (p, n, u, v) => { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); uv.push(u, v); return pos.length / 3 - 1; };
-      const quad = (a, b, c, d, n) => {                                       // orient by the wanted normal
-        const A = pos.slice(3 * a, 3 * a + 3), B = pos.slice(3 * b, 3 * b + 3), C = pos.slice(3 * c, 3 * c + 3);
-        const e1 = [B[0] - A[0], B[1] - A[1], B[2] - A[2]], e2 = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
-        const cr = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
-        if (cr[0] * n[0] + cr[1] * n[1] + cr[2] * n[2] >= 0) idx.push(a, b, c, a, c, d); else idx.push(a, c, b, a, d, c);
-      };
-      for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
-        const cx = xa + px * (i + 0.5), cz = zA * 1000 + pz * (j + 0.5);
-        const ring = [], outer = [];
-        for (const a of ang) { const s = sq(a); outer.push([cx + s[0], cz + s[1]]); ring.push([cx + R * Math.cos(a), cz + R * Math.sin(a)]); }
-        for (const [yy, nrm, flipSide] of [[yF, [0, 0, -1], false], [yB, [0, 0, 1], true]]) {
-          const ro = outer.map(p => vtx(W(p[0], p[1] / 1000, yy), nrm, p[0] / 1000, p[1] / 1000));
-          const ri = ring.map(p => vtx(W(p[0], p[1] / 1000, yy), nrm, p[0] / 1000, p[1] / 1000));
-          for (let k = 0; k < 16; k++) quad(ro[k], ro[(k + 1) % 16], ri[(k + 1) % 16], ri[k], nrm);
-        }
-        // hole wall, smooth normals pointing at the hole axis
-        const wf = [], wb = [];
-        for (let k = 0; k < 16; k++) {
-          const a = ang[k];
-          const nw = [-Math.cos(a), -Math.sin(a)];                        // in the (X, Z) plane, towards the axis
-          wf.push(vtx(W(ring[k][0], ring[k][1] / 1000, yF), [nw[0], nw[1], 0], 0, 0));
-          wb.push(vtx(W(ring[k][0], ring[k][1] / 1000, yB), [nw[0], nw[1], 0], 0, 0));
-        }
-        for (let k = 0; k < 16; k++) {
-          const a = ang[k] + (ang[(k + 1) % 16] - ang[k] + (k === 15 ? 2 * Math.PI : 0)) / 2;
-          const toAxis = [-Math.cos(a), -Math.sin(a), 0];                 // world x, y(up), z: (X, Z, ...) towards the axis
-          quad(wf[k], wf[(k + 1) % 16], wb[(k + 1) % 16], wb[k], [toAxis[0], toAxis[1], 0]);
-        }
+    /* Slim solid privacy screen between the FF hall and the dining bay, beside the master
+       bedroom door (owner: the 150 mm wing was too thick, the perforated jali too revealing).
+       A solid 24 mm dark-oak slab with fine vertical flutes on the hall face only (same
+       language as the TV wall) - about 40 mm overall - floor to soffit between a hairline
+       wall channel and a brass-edged free end. No holes, so it fully breaks the sightline
+       into the bedroom door while taking almost no floor. Runs along x at plan y = yc. */
+    function slimScreen(bag, xa, xb, yc, fY, slabH) {
+      const z0 = fY, z1 = slabH;
+      pb(bag, 'oakDark', xa, xb, yc - 12, yc + 12, z0, z1);                            // 24 mm core, both faces plain oak
+      for (let x = xa + 36; x + 14 < xb - 24; x += 40) {                               // hall-side flutes, 8 mm proud
+        prb(bag, 'oakDark', x, x + 14, yc + 12, yc + 20, z0 + 0.04, z1 - 0.04, 4);
       }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-      g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
-      g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-      g.setIndex(idx);
-      bag.fabric('aluDark', g);
-      // frame: slim oak post on the free end, top and bottom rails, a thin wall channel
-      pb(bag, 'oakDark', xb, xb + 36, yc - 20, yc + 20, fY, slabH);                    // end post, 36 x 40
-      pb(bag, 'oakDark', xa, xb, yc - 14, yc + 14, slabH - 0.07, slabH);               // head rail
-      pb(bag, 'oakDark', xa, xb, yc - 14, yc + 14, fY, fY + 0.07);                     // foot rail
-      pb(bag, 'aluDark', xa - 10, xa, yc - 12, yc + 12, fY, slabH);                    // wall channel
-      pb(bag, 'brassI', xb + 36, xb + 39, yc - 12, yc + 12, fY + 0.07, slabH - 0.07);  // quiet brass reveal on the free end
+      pb(bag, 'aluDark', xa - 8, xa, yc - 10, yc + 18, z0, z1);                        // hairline wall channel
+      pb(bag, 'brassI', xb, xb + 3, yc - 12, yc + 20, z0 + 0.04, z1 - 0.04);           // brass edge on the free end
+      pb(bag, 'aluDark', xa, xb, yc - 12, yc + 20, z0, z0 + 0.04);                     // shadow-line foot
+      pb(bag, 'aluDark', xa, xb, yc - 12, yc + 20, z1 - 0.04, z1);                     // and head
     }
 
     /* curtain rod + two side panels on an exterior-wall window (interior
@@ -9580,7 +9536,7 @@ window.HouseScene = (function () {
         // --- Master bedroom door privacy ---
         // Straight wing-wall just north of the door (y 3350–4350 on wall x≈4920).
         // One job: break hall → bedroom sightline. Door still approached from the east.
-        jaliScreen(bag, 4930, 5980, 4440, fY, fY + 3.203);           // slim perforated jali (was a 150 mm solid wing)
+        slimScreen(bag, 4930, 5980, 4440, fY, fY + 3.203);           // slim solid screen, ~40 mm (was a 150 mm wing)
 
         // --- Hall lounge (east of the wing, south of stair / TV) ---
         Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, true);
@@ -9591,12 +9547,21 @@ window.HouseScene = (function () {
            spine wall (x 4920..5620, y 4700..6250), facing east - its north end stops 246 mm
            short of the stair mouth (y 6496) so the stairs stay clear. One small side table
            serves both, in the corner between the three-seater's west arm and the two-seater. */
-        Fur.rug(bag, 5750, 8750, 4950, 6450, fY);
+        Fur.rug(bag, 5750, 8750, 5000, 6500, fY);
         Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S');              // three-seater, faces TV (moved back, 220 mm)
-        Fur.sofa(bag, 4920, 5620, 4700, 6250, fY, 'W');              // two-seater on the west wall
-        Fur.table(bag, 5680, 6020, 4820, 5160, fY, 0.52);            // small side table by the two-seater's arm, 360 mm clear of the three-seater
+        Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W');              // two-seater on the west wall, pushed up to the stair corner (y 6496)
+        /* teapoy (round coffee table, 560 across, 0.45 high) in front of the corner between the two
+           sofas: 190 mm from the three-seater's front and 200 mm from the two-seater's, so both reach it */
+        { const tcx = 6100, tcy = 5950, tr = 0.28;
+          drum(bag, 'woodD', tcx, tcy, fY + 0.41, fY + 0.45, tr, 0.008);                  // top
+          drum(bag, 'brassI', tcx, tcy, fY + 0.405, fY + 0.41, tr - 0.012, 0.002);        // brass underlip
+          drum(bag, 'woodD', tcx, tcy, fY + 0.12, fY + 0.135, 0.22, 0.005);               // low shelf
+          for (let k = 0; k < 3; k++) {                                                   // three turned legs
+            const a = k * 2 * Math.PI / 3 + Math.PI / 6;
+            bag.cyl('woodD', tcx / 1000 + 0.19 * Math.cos(a), fY + 0.205, -(tcy / 1000 + 0.19 * Math.sin(a)), 0.016, 0.41);
+          } }
         // art on the spine wall, facing the seating
-        Fur.art(bag, 'y', 4920, 'E', 5500, fY, 1.65, 1300, 950);
+        Fur.art(bag, 'y', 4920, 'E', 5665, fY, 1.65, 1300, 950);
 
         // --- Dining (south of door) ---
         // centred in the dining bay so the utility slider (x 6750-7950 on
