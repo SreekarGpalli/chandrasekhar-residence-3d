@@ -194,7 +194,7 @@
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_full2_o' : 'houseScene.js?v=20261113_grille_white2') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_full2_p' : 'houseScene.js?v=20261113_sf_corner') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1409,7 +1409,12 @@ if(!window.THREE || !window.HouseScene){
   const lightPool = [];
   for (let i = 0; i < POOL_N; i++) {
     const p = new THREE.PointLight(0xffe0b8, 0, 9.5, 1.8);
-    p.visible = false; scene.add(p); lightPool.push(p);
+    /* Pool lights stay VISIBLE for the life of the page; an unused slot is
+       parked at intensity 0. three.js compiles the point-light COUNT into every
+       shader, so toggling `visible` as you walked (12 slots indoors, 0 out in
+       the yard) recompiled all ~270 materials each time the count changed: a
+       ~2 s freeze per step, over and over, walking in or out of the house. */
+    p.visible = true; scene.add(p); lightPool.push(p);
   }
   // pre-bucket fixtures by floor so we only scan nearby levels
   const fixturesByFloor = { 0: [], 1: [], 2: [], other: [] };
@@ -1484,8 +1489,7 @@ if(!window.THREE || !window.HouseScene){
           p.distance = isNight ? 18.0 : 14.0;
           p.decay = 1.8;
         }
-        p.visible = true;
-      } else p.visible = false;
+      } else p.intensity = 0;   // never toggle visible: see the pool comment
     }
   }
 
@@ -1527,6 +1531,131 @@ if(!window.THREE || !window.HouseScene){
     });
   }
   rebuildColliders();
+
+  /* Collision grid. The colliders are ~420 merged meshes (~1.4 M triangles,
+     scanned CC0 plants alone are 100 k each) and THREE.Raycaster tests every
+     triangle of every mesh whose bounding sphere the ray touches, which for
+     house-sized merged meshes is nearly all of them: 4.5 ms per ray, and a
+     walking frame casts ~23 rays (9 per axis + ground + wedge probes), so
+     walking ran at ~10 fps. Nothing that collides ever moves, so bake the
+     colliders once into world-space triangles bucketed on a 0.5 m XZ grid; a
+     probe only visits the few cells its short segment crosses.
+     Same answers as Raycaster: per-material front/back/double-side culling
+     (and the winding flip a mirrored matrix causes), nearest hit within far. */
+  function buildCollisionGrid(list) {
+    const CELL = 0.5;
+    let nTri = 0;
+    for (let i = 0; i < list.length; i++) {
+      const g = list[i].geometry;
+      if (!g || !g.attributes.position) continue;
+      const n = ((g.index ? g.index.count : g.attributes.position.count) / 3) | 0;
+      nTri += n * (list[i].isInstancedMesh ? list[i].count : 1);
+    }
+    const T = new Float32Array(nTri * 9), cull = new Uint8Array(nTri);
+    const m = new THREE.Matrix4(), im = new THREE.Matrix4();
+    const va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+    let t = 0;
+    for (let i = 0; i < list.length; i++) {
+      const o = list[i], g = o.geometry;
+      if (!g || !g.attributes.position) continue;
+      o.updateWorldMatrix(true, false);
+      const side = Array.isArray(o.material) ? THREE.DoubleSide : o.material.side;
+      const pos = g.attributes.position, idx = g.index;
+      const n = ((idx ? idx.count : pos.count) / 3) | 0;
+      const inst = o.isInstancedMesh ? o.count : 1;
+      for (let k = 0; k < inst; k++) {
+        if (o.isInstancedMesh) { o.getMatrixAt(k, im); m.multiplyMatrices(o.matrixWorld, im); }
+        else m.copy(o.matrixWorld);
+        const flip = (m.determinant() < 0) !== (side === THREE.BackSide);
+        const c = side === THREE.DoubleSide ? 0 : 1;
+        for (let f = 0; f < n; f++) {
+          const i0 = idx ? idx.getX(f * 3) : f * 3;
+          const i1 = idx ? idx.getX(f * 3 + 1) : f * 3 + 1;
+          const i2 = idx ? idx.getX(f * 3 + 2) : f * 3 + 2;
+          va.fromBufferAttribute(pos, i0).applyMatrix4(m);
+          vb.fromBufferAttribute(pos, flip ? i2 : i1).applyMatrix4(m);
+          vc.fromBufferAttribute(pos, flip ? i1 : i2).applyMatrix4(m);
+          const b = t * 9;
+          T[b] = va.x; T[b + 1] = va.y; T[b + 2] = va.z;
+          T[b + 3] = vb.x; T[b + 4] = vb.y; T[b + 5] = vb.z;
+          T[b + 6] = vc.x; T[b + 7] = vc.y; T[b + 8] = vc.z;
+          cull[t] = c;
+          minX = Math.min(minX, va.x, vb.x, vc.x); maxX = Math.max(maxX, va.x, vb.x, vc.x);
+          minZ = Math.min(minZ, va.z, vb.z, vc.z); maxZ = Math.max(maxZ, va.z, vb.z, vc.z);
+          t++;
+        }
+      }
+    }
+    if (!t) return null;
+    const nx = Math.max(1, Math.ceil((maxX - minX) / CELL) + 1);
+    const nz = Math.max(1, Math.ceil((maxZ - minZ) / CELL) + 1);
+    const start = new Uint32Array(nx * nz + 1);
+    const cellOf = (v, lo, nmax) => Math.min(nmax - 1, Math.max(0, Math.floor((v - lo) / CELL)));
+    // two passes (count, fill) into one flat CSR index — no per-cell arrays
+    for (let pass = 0; pass < 2; pass++) {
+      var items = pass ? new Uint32Array(start[nx * nz]) : null;
+      const fill = pass ? start.slice(0, nx * nz) : null;
+      for (let i = 0; i < t; i++) {
+        const b = i * 9;
+        const x0 = cellOf(Math.min(T[b], T[b + 3], T[b + 6]), minX, nx);
+        const x1 = cellOf(Math.max(T[b], T[b + 3], T[b + 6]), minX, nx);
+        const z0 = cellOf(Math.min(T[b + 2], T[b + 5], T[b + 8]), minZ, nz);
+        const z1 = cellOf(Math.max(T[b + 2], T[b + 5], T[b + 8]), minZ, nz);
+        for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) {
+          const c = z * nx + x;
+          if (pass) items[fill[c]++] = i; else start[c + 1]++;
+        }
+      }
+      if (!pass) for (let c = 0; c < nx * nz; c++) start[c + 1] += start[c];
+    }
+    const stamp = new Uint32Array(t);
+    let q = 0;
+    const res = { distance: 0, point: new THREE.Vector3() };
+    // nearest hit along a unit direction, or null — Raycaster.intersectTriangle maths
+    function cast(ox, oy, oz, dx, dy, dz, far) {
+      const ex = ox + dx * far, ez = oz + dz * far;
+      if (Math.max(ox, ex) < minX || Math.min(ox, ex) > maxX ||
+          Math.max(oz, ez) < minZ || Math.min(oz, ez) > maxZ) return null;
+      const x0 = cellOf(Math.min(ox, ex), minX, nx), x1 = cellOf(Math.max(ox, ex), minX, nx);
+      const z0 = cellOf(Math.min(oz, ez), minZ, nz), z1 = cellOf(Math.max(oz, ez), minZ, nz);
+      if (++q === 0xffffffff) { stamp.fill(0); q = 1; }
+      let best = Infinity;
+      for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) {
+        const c = z * nx + x;
+        for (let k = start[c], kn = start[c + 1]; k < kn; k++) {
+          const i = items[k];
+          if (stamp[i] === q) continue;
+          stamp[i] = q;
+          const b = i * 9;
+          const ax = T[b], ay = T[b + 1], az = T[b + 2];
+          const e1x = T[b + 3] - ax, e1y = T[b + 4] - ay, e1z = T[b + 5] - az;
+          const e2x = T[b + 6] - ax, e2y = T[b + 7] - ay, e2z = T[b + 8] - az;
+          const nX = e1y * e2z - e1z * e2y, nY = e1z * e2x - e1x * e2z, nZ = e1x * e2y - e1y * e2x;
+          let DdN = dx * nX + dy * nY + dz * nZ, sign;
+          if (DdN > 0) { if (cull[i]) continue; sign = 1; }
+          else if (DdN < 0) { sign = -1; DdN = -DdN; }
+          else continue;
+          const qx = ox - ax, qy = oy - ay, qz = oz - az;
+          // Q x E2 and E1 x Q
+          const u = sign * (dx * (qy * e2z - qz * e2y) + dy * (qz * e2x - qx * e2z) + dz * (qx * e2y - qy * e2x));
+          if (u < 0) continue;
+          const v = sign * (dx * (e1y * qz - e1z * qy) + dy * (e1z * qx - e1x * qz) + dz * (e1x * qy - e1y * qx));
+          if (v < 0 || u + v > DdN) continue;
+          const QdN = -sign * (qx * nX + qy * nY + qz * nZ);
+          if (QdN < 0) continue;
+          const d = QdN / DdN;
+          if (d <= far && d < best) best = d;
+        }
+      }
+      if (best === Infinity) return null;
+      res.distance = best;
+      res.point.set(ox + dx * best, oy + dy * best, oz + dz * best);
+      return res;
+    }
+    return { cast, tris: t, cells: nx * nz };
+  }
+  const collisionGrid = buildCollisionGrid(colliders);
   // Extra AABB colliders (car, etc.) — cheap, no triangle tests
   const boxColliders = [];
   function registerCarCollider() {
@@ -1595,6 +1724,7 @@ if(!window.THREE || !window.HouseScene){
     if (_d.lengthSq() < 1e-12) return null;
     _d.normalize();
     ray.set(_o, _d);
+    if (collisionGrid) return collisionGrid.cast(_o.x, _o.y, _o.z, _d.x, _d.y, _d.z, maxDist);
     ray.far = maxDist;
     ray.near = 0;
     const hit = ray.intersectObjects(colliders, false);
@@ -2170,7 +2300,7 @@ if(!window.THREE || !window.HouseScene){
   /* ---------------- debug / capture hook (tooling only) ----------------
      Renders synchronously on demand so frames can be captured even when
      the tab is hidden (rAF is throttled there and toDataURL would be blank). */
-  window.__wt = {
+  window.__wt = { collisionGrid, colliders,
     renderer, scene, camera, player, spawnTo,
     // day/night from the console (the footer pill is the user-facing control)
     night(v) { applyTimeOfDay(v === undefined ? true : !!v); return isNight; },

@@ -8864,11 +8864,12 @@ window.HouseScene = (function () {
         Lum.downlight(10700, 8200);                   // reading light over the north sofa
         Lum.downlight(10700, 4900);                   // and the south one (was a 4-can grid)
         Lum.floorLamp(9300, 5200, 1.55);              // freestanding floor lamp
-        // Corner line. North wall to the void edge; the south one is a single
-        // run along bed03's north wall, from the lounge passage to the east
-        // shell. None on the east glass wall: its curtain track is ceiling-hung.
-        Lum.cornerPath([[9260, 8640], [12420, 8640]], false)
-           .cornerPath([[7620, 4546], [12420, 4546]], true);
+        // Corner line, the common area's north wall in ONE mitred path, east shell to
+        // the stair: family room, on over the double-height void, then the gallery,
+        // ending square at x 4920 where the stair starts (nothing in the stairwell).
+        // The south side (bed03's north wall) is part of the lounge path below.
+        // None on the east glass wall: its curtain track is ceiling-hung.
+        Lum.cornerPath([[12420, 8640], [4920, 8640]], true);
 
         /* --- LOUNGE + PASSAGE (4920..9260, 3266..6996; no ceiling light before) ---
            Open to the family room and the void, so the corner line runs on
@@ -8879,7 +8880,10 @@ window.HouseScene = (function () {
         Lum.downlight(5470, 7570);                    // gallery beside the stair
         // west (spine wall, west-bedroom door) -> south (walk-in 03 north wall)
         // -> east return (bed03 doors), one mitred path
-        Lum.cornerPath([[4920, 6496], [4920, 3266], [7620, 3266], [7620, 4546]], true);
+        // The same path carries on round the OUTSIDE corner of bed03's wall (7620, 4546)
+        // and east along its north face to the shell, so the corner is one mitre, not
+        // two butted caps.
+        Lum.cornerPath([[4920, 6496], [4920, 3266], [7620, 3266], [7620, 4546], [12420, 4546]], true);
 
         /* --- STAIRCASE --- */
         Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
