@@ -10952,7 +10952,7 @@ window.HouseScene = (function () {
         Fur.archSkin(bag, 'paintPeach', 7090, 300, fY + 0.07, fY + 1.65, 3266, 'N', 1.5);
         Fur.archSkin(bag, 'paintSand', 6580, 300, fY + 0.07, fY + 2.15, 3266, 'N', 3);
         Fur.archSkin(bag, 'paintCream', 6070, 300, fY + 0.07, fY + 1.90, 3266, 'N', 4.5);
-        Fur.archSkin(bag, 'paintTan', 5390, 270, fY + 0.07, fY + 1.50, 3266, 'N', 1.5);
+        Fur.archSkin(bag, 'paintTan', 5590, 270, fY + 0.07, fY + 1.50, 3266, 'N', 1.5);
         Fur.sideboard(bag, 'woodD', 5370, 7170, 3266, 420, fY);
         // Budget wall set (paint + thin painted MDF only): passage end wall arch, lounge spine panels, desk-wall arch.
         // lounge spine wall (x 4920): a cluster of seven small photo frames, four above / three offset below, centred on y 5521
