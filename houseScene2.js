@@ -1132,6 +1132,29 @@ window.HouseScene = (function () {
       cyl: (mat, cx, cy, cz, r, h, rx, ry, rz) => place(mat, cylG, cx, cy, cz, r, h, r, rx, ry, rz),
       disc: (mat, cx, cy, cz, r, h, rx, ry, rz) => place(mat, discG, cx, cy, cz, r, h, r, rx, ry, rz),
       fabric: (mat, geom) => add(mat, geom, IDENT, true),   // arbitrary prebuilt geometry (curtains), UVs kept
+      // prism: a convex polygon in (a, z) - a along the flight (plan x or y), z up - extruded across the
+      // flight between plan c0..c1. Flat-shaded, box-projected UVs (so the tile veins carry on). Raking skirting.
+      prism: (mat, alongY, pts, c0, c1) => {
+        const W = (a, z, c) => alongY ? [c / 1000, z, -a / 1000] : [a / 1000, z, -c / 1000];
+        const F = pts.map(p => W(p[0], p[1], c0)), B = pts.map(p => W(p[0], p[1], c1));
+        const cen = [0, 0, 0]; for (const q of F.concat(B)) { cen[0] += q[0]; cen[1] += q[1]; cen[2] += q[2]; }
+        for (let k = 0; k < 3; k++) cen[k] /= F.length * 2;
+        const pos = [], nor = [];
+        const tri = (A, Bq, C) => {
+          let u = [Bq[0] - A[0], Bq[1] - A[1], Bq[2] - A[2]], v = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
+          let n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+          const m = [(A[0] + Bq[0] + C[0]) / 3 - cen[0], (A[1] + Bq[1] + C[1]) / 3 - cen[1], (A[2] + Bq[2] + C[2]) / 3 - cen[2]];
+          if (n[0] * m[0] + n[1] * m[1] + n[2] * m[2] < 0) { const t = Bq; Bq = C; C = t; n = [-n[0], -n[1], -n[2]]; }
+          const l = Math.hypot(n[0], n[1], n[2]) || 1;
+          for (const q of [A, Bq, C]) { pos.push(q[0], q[1], q[2]); nor.push(n[0] / l, n[1] / l, n[2] / l); }
+        };
+        for (let i = 1; i < F.length - 1; i++) { tri(F[0], F[i], F[i + 1]); tri(B[0], B[i], B[i + 1]); }
+        for (let i = 0; i < F.length; i++) { const j = (i + 1) % F.length; tri(F[i], F[j], B[j]); tri(F[i], B[j], B[i]); }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+        add(mat, g, IDENT, false);
+      },
       trunk: (mat, cx, cy, cz, rBot, h) => place(mat, trunkG, cx, cy, cz, rBot, h, rBot),
       sph: (mat, cx, cy, cz, r, sy) => place(mat, sphG, cx, cy, cz, r, sy || r, r),
       // irregular foliage blob: independent xyz scale + yaw; low=true uses
@@ -2003,14 +2026,39 @@ window.HouseScene = (function () {
         // tile/timber going with a 12 mm nosing over the riser below
         const nLo = sign > 0 ? lo : lo - 12, nHi = sign > 0 ? hi + 12 : hi;
         slab(opts.tread, nLo, nHi, top - tt, top, 6, vT);
-        // skirting up the wall side of each step
+        // skirting up the wall side of each step (outdoor stairs only: the interior flights get ONE
+        // straight raking skirting after the loop)
         // (true / 'hi' = the wall at b1, 'lo' = the wall at b0), 70 mm like the floor skirting
-        if (opts.skirt) {
+        if (opts.skirt && opts.tread !== FLOOR_TILE) {
           const sLo = opts.skirt === 'lo', s0 = sLo ? b0 : b1 - 8, s1 = sLo ? b0 + 8 : b1;
           if (alongY) tpb(opts.tread, s0, s1, lo, hi, top, top + 0.07, vT);
           else tpb(opts.tread, lo, hi, s0, s1, top, top + 0.07, vT);
         }
       }
+    }
+
+    /* Interior flights: ONE straight raking skirting on the wall side, parallel to the pitch line,
+       in the tread tile. Its lower edge runs through the concave inner corners of the steps (floor to
+       top landing), so it meets every tread with no gap; its top edge is 50 mm + one riser above
+       that, i.e. 50 mm above each nosing, a clean straight slope. Clipped 70 mm above the top
+       landing, 8 mm thick. */
+    if (opts.skirt && opts.tread === FLOOR_TILE) {
+      const sLo = opts.skirt === 'lo', s0 = sLo ? b0 : b1 - 8, s1 = sLo ? b0 + 8 : b1;
+      const H = 0.05 + stepRise, zLo = Math.min(zBot, zTop), zHi = Math.max(zBot, zTop) + 0.07;
+      let poly = [[aBot, zBot], [aTop, zTop], [aTop, zTop + H], [aBot, zBot + H]];   // lower edge through the inner corners (floor -> top landing)
+      const clip = (pts, inside, cut) => {
+        const out = [];
+        for (let i = 0; i < pts.length; i++) {
+          const P = pts[i], Q = pts[(i + 1) % pts.length], pi = inside(P), qi = inside(Q);
+          if (pi) out.push(P);
+          if (pi !== qi) out.push(cut(P, Q));
+        }
+        return out;
+      };
+      const zCut = z => (P, Q) => { const t = (z - P[1]) / (Q[1] - P[1]); return [P[0] + (Q[0] - P[0]) * t, z]; };
+      poly = clip(poly, P => P[1] >= zBot - 1e-9 && P[1] >= zLo - 1e-9, zCut(zLo));
+      if (poly.length) poly = clip(poly, P => P[1] <= zHi + 1e-9, zCut(zHi));
+      if (poly.length >= 3) bag.prism(opts.tread, alongY, poly, s0, s1);
     }
 
     if (opts.foot === true) {
