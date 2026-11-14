@@ -339,7 +339,7 @@ window.DESIGNS = {
       <button data-view="floor0" aria-pressed="false">GROUND</button>
       <button data-view="floor1" aria-pressed="false">FIRST</button>
       <button data-view="floor2" aria-pressed="false">SECOND</button>
-      <button id="guestLayout" hidden>Lower guest bed</button>
+      <button id="guestLayout" hidden>Bedroom mode</button>
     </nav>
   </div>
 
@@ -400,9 +400,9 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.file ? d.file + '?v=20261114_guest_theater'
+  var src = d.file ? d.file + '?v=20261114_guest_theater_modes'
           : d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42i'
-                  : 'houseScene.js?v=20261114_guest_theater';
+                  : 'houseScene.js?v=20261114_guest_theater_modes';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
 </script>
@@ -1784,10 +1784,9 @@ window.DESIGNS = {
   scene.add(data.root);
   const guestLayout = document.getElementById('guestLayout');
   guestLayout.addEventListener('click', () => {
-    const { openBed, foldedBed } = data.guestRoom;
-    openBed.visible = !openBed.visible;
-    foldedBed.visible = !openBed.visible;
-    guestLayout.textContent = openBed.visible ? 'Fold guest bed' : 'Lower guest bed';
+    const guest = data.guestRoom;
+    guest.toggle();
+    guestLayout.textContent = guest.bedroom ? 'Theater mode' : 'Bedroom mode';
     resetAccum();
     refreshShadows();
   });
@@ -3490,6 +3489,10 @@ window.DESIGNS = {
      at sample 0 forever and never resolve. */
   const _lastCam = new Float64Array(16);
   function frame(now) {
+    if (data.guestRoom?.update(now) && activeView === 'floor2') {
+      resetAccum();
+      refreshShadows();
+    }
     requestAnimationFrame(frame);
     const frameMs = now - last; last = now;
     if (document.hidden || contextLost) return;  // pause when tab hidden / GPU lost

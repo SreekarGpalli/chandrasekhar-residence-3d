@@ -9672,8 +9672,8 @@ window.HouseScene = (function () {
         // north wall (AC) -> west wall (both doors) -> south wall over the bed
         // head, ending flush on the wardrobe face
         Lum.cornerPath([[12420, 2500], [12420, 4432], [7736, 4432], [7736, 230], [11820, 230]], true);
-        Lum.raw(8810, 442, fY + 0.86, 'bedside');
-        Lum.raw(11310, 442, fY + 0.86, 'bedside');
+        Lum.raw(8730, 442, fY + 0.86, 'bedside');
+        Lum.raw(11520, 442, fY + 0.86, 'bedside');
 
         /* --- EAST WALK-IN (4920..7620, 1755..3151) --- */
         Lum.downlight(5950, 2153);                    // down the middle of the wardrobe aisle
@@ -10547,44 +10547,127 @@ window.HouseScene = (function () {
         eastBath(bag, fY);                                            // zellige shower, tile to the slab, flat-deck basin
         // --- Guest bedroom / theater ---
         Fur.rug(bag, 8650, 11450, 850, 2900, fY);
-        // Horizontal folding bed, set into the old bed's 1900 × 1600 mm footprint.
-        const bedX0 = 9100, bedX1 = 11000, wallY = 232, cabinetFront = 550, bedY1 = 1832;
-        pb(bag, 'oakDark', bedX0, bedX1, wallY, wallY + 28, fY, fY + 1.73);
-        for (const x of [bedX0, bedX1 - 24]) {
-          prb(bag, 'oakDark', x, x + 24, wallY + 28, cabinetFront, fY, fY + 1.73, 3);
-        }
-        pb(bag, 'oakDark', bedX0 + 24, bedX1 - 24, wallY + 28, cabinetFront, fY + 1.706, fY + 1.73);
-        pb(bag, 'oakDark', bedX0 + 24, bedX1 - 24, wallY + 28, cabinetFront, fY, fY + 0.19);
-        prb(bag, 'linen', bedX0 + 39, bedX1 - 39, wallY + 32, wallY + 85, fY + 0.47, fY + 0.98, 12);
 
-        const folded = makeBag(THREE), unfolded = makeBag(THREE);
-        prb(folded, 'oakDark', bedX0 + 27, bedX1 - 27, cabinetFront - 28, cabinetFront, fY + 0.197, fY + 1.700, 4);
-        pb(folded, 'aluDark', 10047, 10053, cabinetFront, cabinetFront + 1, fY + 0.207, fY + 1.69);
-        for (const x of [9900, 10200]) {
-          prb(folded, 'brassI', x - 54, x + 54, cabinetFront, cabinetFront + 22, fY + 1.42, fY + 1.438, 3);
+        // Sofa Murphy bed: the mattress turns around the long side above the sofa base.
+        const bedX0 = 9080, bedX1 = 11200, wallY = 232, hingeY = 680, bedY1 = 2350;
+        const hingeH = fY + 0.55, cabinetTop = fY + 2.255;
+        pb(bag, 'oakDark', bedX0, bedX1, wallY, wallY + 28, fY, cabinetTop);
+        for (const x of [bedX0, bedX1 - 26]) {
+          prb(bag, 'oakDark', x, x + 26, wallY + 28, 794, fY, cabinetTop, 4);
+        }
+        pb(bag, 'oakDark', bedX0 + 26, bedX1 - 26, wallY + 28, 794, cabinetTop - 0.032, cabinetTop);
+        prb(bag, 'oakDark', bedX0 + 26, bedX1 - 26, 485, 1220, fY, fY + 0.10, 8);
+        prb(bag, 'linen', bedX0 + 25, bedX1 - 25, 518, 1265, fY + 0.10, fY + 0.29, 34);
+
+        const upholstery = makeBag(THREE), mattressBag = makeBag(THREE), legs = makeBag(THREE);
+        const sofaX0 = bedX0 + 45, sofaX1 = bedX1 - 45;
+        for (const x of [sofaX0, sofaX1 - 138]) {
+          prb(upholstery, 'linen', x, x + 138, 775, 1265, fY + 0.29, fY + 0.64, 28);
+        }
+        const cushionWidth = (sofaX1 - sofaX0 - 276) / 3;
+        for (let i = 0; i < 3; i++) {
+          const x = sofaX0 + 138 + i * cushionWidth;
+          prb(upholstery, 'linen', x + 3, x + cushionWidth - 3, 820, 1245, fY + 0.29, fY + 0.44, 34, 12);
+          prb(upholstery, 'boucle', x + 8, x + cushionWidth - 8, 795, 914, fY + 0.41, fY + 0.88, 38, 12);
         }
 
-        prb(unfolded, 'oakDark', bedX0 + 27, bedX1 - 27, wallY + 48, bedY1, fY + 0.36, fY + 0.45, 7);
-        for (const x of [9180, 10940]) {
-          prb(unfolded, 'aluDark', x - 16, x + 16, bedY1 - 91, bedY1 - 35, fY, fY + 0.37, 7);
+        prb(mattressBag, 'oakDark', bedX0 + 30, bedX1 - 30, hingeY, bedY1, hingeH - 0.074, hingeH + 0.012, 8);
+        for (const x of [9900, 10340]) {
+          prb(mattressBag, 'brassI', x - 60, x + 60, bedY1 - 220, bedY1 - 199, hingeH - 0.093, hingeH - 0.074, 3);
         }
-        prb(unfolded, 'sheet', 9140, 10960, 325, bedY1 - 20, fY + 0.45, fY + 0.64, 30, 8);
-        prb(unfolded, 'duvet', 9540, 10948, 336, bedY1 - 24, fY + 0.62, fY + 0.69, 24, 13);
-        prb(unfolded, 'linenDk', 10580, 10890, 335, bedY1 - 29, fY + 0.681, fY + 0.709, 12);
-        const mattress = frameOf(9140, 10960, 325, bedY1 - 20, 'W');
-        for (const u of [410, 1050]) {
-          mattress.pillow(unfolded, 'sheet', u, 193, fY + 0.705, 545, 360, 128, 0.16);
+        for (const x of [bedX0 + 90, bedX1 - 90]) {
+          prb(legs, 'aluDark', x - 15, x + 15, bedY1 - 100, bedY1 - 46, fY + 0.014, hingeH - 0.05, 6);
         }
-        const foldedBed = folded.build(THREE, materials), openBed = unfolded.build(THREE, materials);
-        foldedBed.name = 'guestMurphyClosed';
-        openBed.name = 'guestMurphyOpen';
-        openBed.visible = false;
-        guestRoom = { foldedBed, openBed, bedX0, bedX1, wallY, bedY1 };
+        prb(mattressBag, 'sheet', bedX0 + 56, bedX1 - 56, hingeY + 14, bedY1 - 32, hingeH + 0.012, hingeH + 0.166, 28, 6);
+        prb(mattressBag, 'duvet', bedX0 + 505, bedX1 - 64, hingeY + 18, bedY1 - 38, hingeH + 0.155, hingeH + 0.194, 20, 9);
+        prb(mattressBag, 'linenDk', bedX1 - 405, bedX1 - 75, hingeY + 23, bedY1 - 45, hingeH + 0.187, hingeH + 0.221, 10);
+        const mattress = frameOf(bedX0 + 56, bedX1 - 56, hingeY + 14, bedY1 - 32, 'W');
+        for (const u of [410, 1100]) {
+          mattress.pillow(mattressBag, 'sheet', u, 202, hingeH + 0.201, 560, 350, 82, 0.12);
+        }
+        const pivot = new THREE.Group();
+        pivot.position.set(0, hingeH, -hingeY / 1000);
+        const deck = mattressBag.build(THREE, materials);
+        deck.position.copy(pivot.position).negate();
+        pivot.add(deck);
+        const foot = legs.build(THREE, materials);
+        const footHinge = new THREE.Group(), footY = bedY1 - 73;
+        footHinge.position.set(0, -0.05, -(footY - hingeY) / 1000);
+        foot.position.set(0, -(hingeH - 0.05), footY / 1000);
+        footHinge.add(foot);
+        pivot.add(footHinge);
+        const sofa = upholstery.build(THREE, materials);
 
-        // Fixed 16:9 screen on the solid north wall. Lens y=2790 is north of the fan's y=2500 sweep limit.
-        const screenY = 4405, imageBottom = fY + 0.72, imageTop = imageBottom + 2.2 * 9 / 16;
-        prb(bag, 'blackM', 8918, 11182, screenY, 4432, imageBottom - 0.032, imageTop + 0.032, 4);
-        pb(bag, 'white2', 8950, 11150, screenY - 3, screenY, imageBottom, imageTop);
+        // Ceiling cassette and a retracting screen with black drop and weighted hem.
+        // The lens is north of the fan's y=2500 sweep limit.
+        const screenY = 4350, imageBottom = fY + 0.72, imageTop = imageBottom + 2.2 * 9 / 16;
+        const dropTop = cut - 0.18;
+        prb(bag, 'blackM', 8840, 11260, screenY - 44, screenY + 52, dropTop, cut - 0.072, 12);
+        for (const x of [8990, 11110]) {
+          pb(bag, 'aluDark', x - 24, x + 24, screenY - 37, screenY + 8, cut - 0.075, cut - 0.010);
+        }
+        const clothBag = makeBag(THREE);
+        pb(clothBag, 'blackM', 8918, 11182, screenY, screenY + 4, imageBottom - 0.03, dropTop);
+        pb(clothBag, 'sheet', 8950, 11150, screenY - 2, screenY, imageBottom, imageTop);
+        const screen = new THREE.Group(), cloth = clothBag.build(THREE, materials);
+        screen.position.y = dropTop;
+        cloth.position.y = -dropTop;
+        screen.add(cloth);
+        const hemBag = makeBag(THREE);
+        prb(hemBag, 'blackM', 8918, 11182, screenY - 7, screenY + 12, dropTop - 0.022, dropTop, 4);
+        const hem = hemBag.build(THREE, materials);
+
+        const chairs = [0, 1].map(() => {
+          const chairBag = makeBag(THREE);
+          Fur.sofa(chairBag, -313, 313, -310, 310, fY + 0.018, 'S', false, false, { fab: 'boucle' });
+          return chairBag.build(THREE, materials);
+        });
+        const moving = new THREE.Group();
+        moving.name = 'guestRoomMovingFurniture';
+        moving.add(pivot, sofa, screen, hem, ...chairs);
+        const chairStops = [
+          { movie: [9.45, -2.23], window: [11.74, -3.02] },
+          { movie: [10.95, -2.23], window: [11.74, -3.94] }
+        ];
+        const ease = (p, start, end) => {
+          const t = Math.max(0, Math.min(1, (p - start) / (end - start)));
+          return t * t * (3 - 2 * t);
+        };
+        const mix = (a, b, t) => a + (b - a) * t;
+        let progress = 0, lastTime = 0;
+        const duration = 2200;
+        guestRoom = {
+          moving, bedroom: false, duration,
+          motionBounds: { x0: bedX0 / 1000, x1: 12.06, z0: -4.26, z1: -wallY / 1000 },
+          toggle() { this.bedroom = !this.bedroom; lastTime = performance.now(); },
+          update(now) {
+            const target = this.bedroom ? 1 : 0;
+            if (progress === target && lastTime) return;
+            progress = Math.max(0, Math.min(1, progress + (target ? 1 : -1) * Math.max(0, now - lastTime) / duration));
+            lastTime = now;
+            const bed = ease(progress, 0.43, 1);
+            pivot.rotation.x = (1 - bed) * Math.PI / 2;
+            const support = ease(progress, 0.85, 1);
+            footHinge.rotation.x = -(1 - support) * Math.PI / 2;
+            const sofaHeight = 1 - 0.82 * ease(progress, 0.28, 0.50);
+            sofa.scale.y = sofaHeight;
+            sofa.position.y = (fY + 0.29) * (1 - sofaHeight);
+            const drop = 1 - ease(progress, 0, 0.48);
+            screen.visible = drop > 0.002;
+            screen.scale.y = Math.max(0.002, drop);
+            hem.position.y = (imageBottom - 0.032 - dropTop) * drop;
+            chairs.forEach((chair, i) => {
+              const { movie, window } = chairStops[i], t = ease(progress, 0, 0.43);
+              chair.position.set(mix(movie[0], window[0], t), 0, mix(movie[1], window[1], t));
+              chair.rotation.y = Math.PI / 2 * ease(progress, 0.16, 0.43);
+            });
+            moving.updateMatrixWorld(true);
+            return true;
+          }
+        };
+        guestRoom.update(performance.now());
+
+
         const lensH = fY + 2.86;
         prb(bag, 'aluDark', 9990, 10110, 2600, 2700, cut - 0.018, cut, 4);
         bag.cyl('aluDark', 10.05, cut - 0.145, -2.65, 0.016, 0.26);
@@ -10596,7 +10679,7 @@ window.HouseScene = (function () {
           pb(bag, 'blackM', x, x + 10, 2534, 2541, lensH - 0.028, lensH + 0.022);
         }
         Fur.art(bag, 'y', 7736, 'E', 1150, fY, 1.6, 900, 1100, ['artC', 'artA', 'artB']);
-        Fur.side(bag, 8600, 9020, 232, 652, fY); Fur.side(bag, 11100, 11520, 232, 652, fY);
+        Fur.side(bag, 8520, 8940, 232, 652, fY); Fur.side(bag, 11310, 11730, 232, 652, fY);
         Fur.fullHeightWardrobe(bag, 11820, 12420, 232, 2500, fY, fY + 3.203); // East wall full-height wardrobe, short of the big window (y 2600..4300)
         /* --- EAST WALK-IN DRESSING (4920..7620, 1755..3151) ---
            The bath and the dressing room split the 2.9 m between them evenly (1407 /
@@ -10665,7 +10748,7 @@ window.HouseScene = (function () {
 
       const g = bag.build(THREE, materials);
       g.name = 'floor' + fi;
-      if (fi === 2) g.add(guestRoom.foldedBed, guestRoom.openBed);
+      if (fi === 2) g.add(guestRoom.moving);
       for (const { x, deskY, chairY, back, z = 0 } of workstationLayouts[fi]) {
         // The synchronous stand-ins also seed the walkthrough collision grid.
         const deskBag = makeBag(THREE), chairBag = makeBag(THREE);

@@ -138,7 +138,7 @@
   <button data-spawn="4">E<small>EXTERIOR</small></button>
 </div>
 
-<button id="guestLayout" hidden>Lower guest bed (B)</button>
+<button id="guestLayout" hidden>Bedroom mode (B)</button>
 
 <div id="foot">
   <a href="index.html" class="back-link" title="Back to 3D model viewer"><svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>3D MODEL</a><span class="sep"></span>
@@ -199,7 +199,7 @@
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_guest_theater' : 'houseScene.js?v=20261114_guest_theater') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_guest_theater_modes' : 'houseScene.js?v=20261114_guest_theater_modes') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1565,7 +1565,7 @@ if(!window.THREE || !window.HouseScene){
       // Skip meshes whose entire ancestor chain is hidden (shouldn't happen now)
       let p = o;
       while (p) {
-        if (p.visible === false || p === data.guestRoom?.foldedBed) return;
+        if (p.visible === false || p === data.guestRoom?.moving) return;
         p = p.parent;
       }
       const key = meshMatKey(o);
@@ -1702,11 +1702,10 @@ if(!window.THREE || !window.HouseScene){
   const collisionGrid = buildCollisionGrid(colliders);
   const guestRoom = data.guestRoom;
   const guestLayout = $('guestLayout');
-  // Cache each bed position separately so folding never leaves a collision behind.
-  const bedGrids = guestRoom && {
-    open: buildCollisionGrid(guestRoom.openBed.children),
-    folded: buildCollisionGrid(guestRoom.foldedBed.children)
-  };
+  const movingGuestMeshes = [];
+  guestRoom?.moving.traverse(o => { if (o.isMesh) movingGuestMeshes.push(o); });
+  const guestRayMeshes = [];
+  const guestRayHits = [];
   // Extra AABB colliders (car, etc.) — cheap, no triangle tests
   const boxColliders = [];
   function registerCarCollider() {
@@ -1777,9 +1776,17 @@ if(!window.THREE || !window.HouseScene){
     ray.set(_o, _d);
     if (collisionGrid) {
       const hit = collisionGrid.cast(_o.x, _o.y, _o.z, _d.x, _d.y, _d.z, maxDist);
-      if (!bedGrids) return hit;
-      const bedGrid = guestRoom.openBed.visible ? bedGrids.open : bedGrids.folded;
-      return bedGrid.cast(_o.x, _o.y, _o.z, _d.x, _d.y, _d.z, hit ? hit.distance : maxDist) || hit;
+      if (!guestRoom || x < 7.5 || x > 12.65 || z < -4.55 || z > -0.18 || y < L.f2) return hit;
+      ray.near = 0;
+      ray.far = hit ? hit.distance : maxDist;
+      guestRayMeshes.length = guestRayHits.length = 0;
+      for (const mesh of movingGuestMeshes) {
+        let group = mesh;
+        while (group && group.visible) group = group.parent;
+        if (!group) guestRayMeshes.push(mesh);
+      }
+      ray.intersectObjects(guestRayMeshes, false, guestRayHits);
+      return guestRayHits[0] || hit;
     }
     ray.far = maxDist;
     ray.near = 0;
@@ -2054,13 +2061,14 @@ if(!window.THREE || !window.HouseScene){
   }
   function toggleGuestBed() {
     if (!inGuestRoom()) return;
-    const { openBed, foldedBed, bedX0, bedX1, wallY, bedY1 } = guestRoom;
     const { x, z } = player.pos, r = player.radius;
-    if (x > bedX0 / 1000 - r && x < bedX1 / 1000 + r &&
-        z > -bedY1 / 1000 - r && z < -wallY / 1000 + r) return;
-    openBed.visible = !openBed.visible;
-    foldedBed.visible = !openBed.visible;
-    refreshShadows();
+    const { x0, x1, z0, z1 } = guestRoom.motionBounds;
+    if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) {
+      guestLayout.textContent = 'Step toward the doorway';
+      return;
+    }
+    guestRoom.toggle();
+    guestLayout.textContent = guestRoom.bedroom ? 'Theater mode (B)' : 'Bedroom mode (B)';
   }
   guestLayout.addEventListener('click', toggleGuestBed);
 
@@ -2261,9 +2269,6 @@ if(!window.THREE || !window.HouseScene){
   function updateHUD() {
     const fi = currentFloorIndex();
     guestLayout.hidden = !inGuestRoom();
-    if (!guestLayout.hidden) {
-      guestLayout.textContent = guestRoom.openBed.visible ? 'Fold guest bed (B)' : 'Lower guest bed (B)';
-    }
     const px = player.pos.x * 1000, py = -player.pos.z * 1000;
 
     // 1. Special areas (balconies, terrace, portico, lift, stairs)
@@ -2318,6 +2323,7 @@ if(!window.THREE || !window.HouseScene){
     if (document.hidden || contextLost) return; // pause when tab hidden / GPU lost
     const dt = Math.min(0.05, frameMs / 1000);
     scaler.sample(frameMs);
+    if (guestRoom?.update(now)) refreshShadows();
     updatePlayer(dt);
     placeCamera(dt);
     skyDome.position.copy(camera.position);

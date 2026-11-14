@@ -20,7 +20,7 @@
 <script src="lib/GLTFLoader.js"></script>
 <script src="lib/DRACOLoader.js"></script>
 <script src="lib/GLTFExporter.js"></script>
-<script src="houseScene.js?v=20261114_guest_theater"></script>
+<script src="houseScene.js?v=20261114_guest_theater_modes"></script>
 </head>
 <body>
 <main>
@@ -75,7 +75,6 @@
 
   let meshCount = 0;
   root.traverse(function (o) {
-    if (o === data.guestRoom?.openBed) return; // export the default folded guest bed
     o.visible = true;
     if (!o.isMesh) return;
     meshCount++;
