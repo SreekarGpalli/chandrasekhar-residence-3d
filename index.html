@@ -390,7 +390,7 @@ window.DESIGNS = {
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261114_sf_cleared2"></script>
+<script src="lib/interiorKit.js?v=20261114_kadapa_treads"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
@@ -400,9 +400,9 @@ window.DESIGNS = {
    synchronous — the inline viewer below expects window.HouseScene to exist. */
 (function () {
   var d = window.DESIGNS[window.DESIGN];
-  var src = d.file ? d.file + '?v=20261114_soffit_paint'
+  var src = d.file ? d.file + '?v=20261114_kadapa_treads'
           : d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42i'
-                  : 'houseScene.js?v=20261114_soffit_paint';
+                  : 'houseScene.js?v=20261114_kadapa_treads';
   document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
 })();
 </script>
@@ -1850,7 +1850,7 @@ window.DESIGNS = {
      point. */
   const DEPTH_LAYER = {
     terraceF: 1, balcTile: 1, tOut: 1, pave: 1, paver: 1, paver2: 1, roadLine: 1,
-    tFloor: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
+    tFloor: 1, tTread: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
     tPooja: 1, tWalk: 1, copingLight: 1, plinth: 1, soil: 1, grass: 1, rug: 1,
     skirt: 2, skirtTile: 2, woodD: 2, walnut: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
     brass: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,

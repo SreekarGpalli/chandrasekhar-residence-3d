@@ -143,6 +143,8 @@ window.HouseScene = (function () {
     // tFloor: the laid 1200 x 1800 slabs (per-zone grids, one-piece treads). The
     // slab colour is painted in the texture (floorSlab), so this is near-white
     tFloor:  0xfdfcfa,
+    // tTread: honed Kadapa-style stone for interior stair treads + mid-landings (colour is in the texture)
+    tTread:  0xfcfbf7,
     // furniture
     fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x3f2617,
     woodD:   0x3f2616, mattress:0xeee8dc, pillow: 0xf4efe6,
@@ -1961,12 +1963,13 @@ window.HouseScene = (function () {
     // A finish in the house floor marble is cut from ONE slab per piece: no
     // joint across a tread, and the slab changes from step to step. v = slab variant.
     const tpb = (m, x0, x1, y0, y1, h0, h1, v) => {
-      if (m === FLOOR_TILE && v !== undefined) bag.uv(pieceMap(x0 / 1000, x1 / 1000, -y1 / 1000, -y0 / 1000, h0, h1, v));
+      if ((m === FLOOR_TILE || m === TREAD_TILE) && v !== undefined) bag.uv(pieceMap(x0 / 1000, x1 / 1000, -y1 / 1000, -y0 / 1000, h0, h1, v));
       pb(bag, m, x0, x1, y0, y1, h0, h1);
       bag.uv(null);
     };
     // one box call for either axis: `a` is the running span, `b` the cross-band
-    const rakeSide = (opts.skirt && opts.tread === FLOOR_TILE) ? (opts.skirt === 'lo' ? 'lo' : 'hi') : null;
+    const inFlight = opts.tread === FLOOR_TILE || opts.tread === TREAD_TILE;   // interior flight (tiled), as opposed to the outdoor stairs
+    const rakeSide = (opts.skirt && inFlight) ? (opts.skirt === 'lo' ? 'lo' : 'hi') : null;
     const slab = (m, aLo, aHi, h0, h1, inset, v) => {
       // The finish runs the full width of the block: on the raking-skirting side it meets the wall,
       // on the other side it is 1.5 mm proud of the block's side face (an inset left a 6 mm white
@@ -2006,7 +2009,7 @@ window.HouseScene = (function () {
         // skirting up the wall side of each step (outdoor stairs only: the interior flights get ONE
         // straight raking skirting after the loop)
         // (true / 'hi' = the wall at b1, 'lo' = the wall at b0), 70 mm like the floor skirting
-        if (opts.skirt && opts.tread !== FLOOR_TILE) {
+        if (opts.skirt && !inFlight) {
           const sLo = opts.skirt === 'lo', s0 = sLo ? b0 - 1.5 : b1 - 8, s1 = sLo ? b0 + 8 : b1 + 1.5;   // 1.5 mm past the block side: no shared plane
           if (alongY) tpb(opts.tread, s0, s1, lo, hi, top, top + 0.07, vT);
           else tpb(opts.tread, lo, hi, s0, s1, top, top + 0.07, vT);
@@ -2022,7 +2025,7 @@ window.HouseScene = (function () {
        skirting. 1 mm (not 0) because a coplanar face would z-fight the plaster. The tread tile runs
        right up to the wall on this side so the skirting meets it with no strip between. Clipped to
        70 mm above the top landing. */
-    if (opts.skirt && opts.tread === FLOOR_TILE) {
+    if (opts.skirt && inFlight) {
       const sLo = opts.skirt === 'lo', s0 = sLo ? b0 - 8 : b1 - 1, s1 = sLo ? b0 + 1 : b1 + 8;
       const H = 0.05 + stepRise, zHi = Math.max(zBot, zTop) + 0.07;
       const clip = (pts, inside, cut) => {
@@ -2039,7 +2042,7 @@ window.HouseScene = (function () {
         const aA = aBot + (i - 1) * stepGo, aB = aBot + i * stepGo, tTop = zBot + i * stepRise;
         let poly = [[aA, tTop], [aB, tTop], [aB, zl(aB) + H], [aA, zl(aA) + H]];
         poly = clip(poly, P => P[1] <= zHi + 1e-9, (P, Q) => { const t = (zHi - P[1]) / (Q[1] - P[1]); return [P[0] + (Q[0] - P[0]) * t, zHi]; });
-        if (poly.length >= 3) bag.prism(opts.tread, alongY, poly, s0, s1);
+        if (poly.length >= 3) bag.prism(FLOOR_TILE, alongY, poly, s0, s1);   // the raking skirting stays the floor tile, whatever the tread is
       }
     }
 
@@ -2061,7 +2064,7 @@ window.HouseScene = (function () {
     pb(bag, m, x0, x1, y0, y1, top - t, top - treadT);
     // finish edge to edge; its exposed edges are plastered down over the
     // slab, so the landing edge reads as one plain face (no tile/slab lines)
-    if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 }, finish === FLOOR_TILE ? 'room' : null);
+    if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 }, (finish === FLOOR_TILE || finish === TREAD_TILE) ? 'room' : null);
     // skirting on the landing's wall sides ('W' x0, 'E' x1, 'S' y0, 'N' y1): a
     // landing is a floor of its own, so the flush skirting of wallRun (storey level) never reaches it
     if (finish && skirtSides) {
@@ -5589,6 +5592,7 @@ window.HouseScene = (function () {
   // Its own key (not tLiving): the tiles carry laid UVs, so the viewers must
   // not box-project them (treatment flag preUV in lib/interiorKit.js).
   const FLOOR_TILE = 'tFloor';
+  const TREAD_TILE = 'tTread';   // interior stair treads + mid-landings (the risers, skirting and floors stay FLOOR_TILE)
 
   const SF_FAMILY_ROOM = R('FAMILY ROOM', '3161 × 4095', 9260, 12421, 4546, 8641, 'living');
   const SF_FAMILY_SOUTH_WALL_X0 = 7620; // Bedroom 03's outside corner, west of the family room's floor boundary.
@@ -7328,7 +7332,7 @@ window.HouseScene = (function () {
     }
 
     // Interior stair finish kit (wood treads, soft risers, black MS pickets with wooden top handrail)
-    const STAIR_IN = { tread: FLOOR_TILE, riser: FLOOR_TILE };   // internal stair finish = the house floor tile
+    const STAIR_IN = { tread: TREAD_TILE, riser: FLOOR_TILE };   // internal stair finish = the house floor tile
     const RAIL_IN = { post: 'ms', spindle: 'ms', rail: 'frame' };
     // Exterior stair handrail — black MS posts, black MS rail
     const RAIL_OUT = { post: 'ms', spindle: 'ms', rail: 'ms' };
@@ -9615,8 +9619,8 @@ window.HouseScene = (function () {
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE, skirt: 'lo' });
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE, undefined, undefined, 'WSN');
+                    { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // furniture
         westSuite(bag, fY);
@@ -9975,22 +9979,22 @@ window.HouseScene = (function () {
 
         // Internal stair: flight B FF→SF (from mid landing) + full SF→roof U-stair
         const midFF = landI(L.f1);
-        stairLanding(bag, 230, 1330, 6496, 8641, midFF, FLOOR_TILE, undefined, undefined, 'WSN');
+        stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
+                    { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
 
         // flight A' SF → mid landing toward roof
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE, skirt: 'lo' });
+                    { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), FLOOR_TILE, undefined, undefined, 'WSN');
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
-                    { tread: FLOOR_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
+                    { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
