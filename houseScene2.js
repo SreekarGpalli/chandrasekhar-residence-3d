@@ -5283,17 +5283,21 @@ window.HouseScene = (function () {
        piece of furniture. y0 stops on a wall; the free end at y1 is a
        full-thickness bullnose, so it ends in a curve, not a cut. */
     foyerPartition(bag, x0, x1, y0, y1, fY, h) {
+      /* Sleek foyer fin (owner: make it sleek like the rest of the house): a 40 mm solid timber
+         blade (20 mm core + 10 mm fine flutes on each face), floor to soffit on hairline shadow
+         reveals, ending in a slim half-round. x0..x1 is the old 89 mm envelope; the blade keeps the
+         east face (x1 - 2) where Ganesha stands and gives the rest of the thickness back. */
       h = h || L.f2f - L.slabT;                   // floor -> soffit (3.203)
-      const c0 = x0 + 25, c1 = x1 - 25, g = 0.06, gT = 0.02;
-      const r = (x1 - x0) / 2, yN = y1 - r;       // bullnose centre
+      const g = 0.06, gT = 0.02, xe = x1 - 2, xw = xe - 40, c0 = xw + 10, c1 = xe - 10;
+      const rr = 20, yN = y1 - rr;                // half-round end, 40 across
       const z0 = fY + g, z1 = fY + h - gT;
-      pb(bag, 'woodD', c0, c1, y0, yN, z0, z1);
-      pb(bag, 'woodD', c0 + 10, c1 - 10, y0, yN, fY, z0);             // shadow plinth
-      pb(bag, 'woodD', c0 + 10, c1 - 10, y0, yN, z1, fY + h);         // shadow reveal at the soffit
-      bag.cyl('walnutI', (x0 + r) / 1000, (z0 + z1) / 2, -yN / 1000, r / 1000, z1 - z0);
-      for (let y = y0 + 15; y + 30 <= yN - 15; y += 45) {
-        prb(bag, 'walnutI', x0, c0 + 2, y, y + 30, z0, z1, 9);
-        prb(bag, 'walnutI', c1 - 2, x1, y, y + 30, z0, z1, 9);
+      pb(bag, 'woodD', c0, c1, y0, yN, z0, z1);                         // core
+      pb(bag, 'woodD', c0 + 4, c1 - 4, y0, yN, fY, z0);                 // shadow plinth, set back
+      pb(bag, 'woodD', c0 + 4, c1 - 4, y0, yN, z1, fY + h);             // shadow reveal at the soffit
+      bag.cyl('walnutI', (xw + rr) / 1000, (z0 + z1) / 2, -yN / 1000, rr / 1000, z1 - z0);   // slim half-round end
+      for (let y = y0 + 12; y + 14 <= yN - 12; y += 32) {               // fine flutes, 14 wide on a 32 pitch
+        prb(bag, 'walnutI', xw, c0 + 1, y, y + 14, z0, z1, 5);
+        prb(bag, 'walnutI', c1 - 1, xe, y, y + 14, z0, z1, 5);
       }
     },
     /* Rectangular timber casing for a room opening: walnut linings through
@@ -5318,14 +5322,18 @@ window.HouseScene = (function () {
     /* Ganesha on a floating ledge against a partition's east face (faceX),
        facing east to the main door: brass prabhavali behind, diya, flowers. */
     ganeshaShrine(bag, faceX, cy, fY) {
+      /* Ganesha on a slim floating ledge on the fin's east face (faceX), facing east to the main
+         door: a 28 mm timber ledge (220 x 380) with a brass edge and a hidden LED under it, a thin
+         brass ring round a dark timber medallion behind the idol (no coloured disc), diya. */
       const lz = fY + 1.00;
-      prb(bag, 'walnutI', faceX, faceX + 240, cy - 220, cy + 220, lz - 0.05, lz, 5);
-      pb(bag, 'brassI', faceX + 236, faceX + 242, cy - 220, cy + 220, lz - 0.045, lz - 0.005);
-      bag.cyl('brassI', (faceX + 4) / 1000, lz + 0.30, -cy / 1000, 0.21, 0.008, 0, 0, Math.PI / 2);
-      bag.cyl('peetaRed', (faceX + 9) / 1000, lz + 0.30, -cy / 1000, 0.18, 0.004, 0, 0, Math.PI / 2);
+      prb(bag, 'walnutI', faceX, faceX + 220, cy - 190, cy + 190, lz - 0.028, lz, 4);
+      pb(bag, 'brassI', faceX + 217, faceX + 220, cy - 190, cy + 190, lz - 0.026, lz - 0.002);
+      pb(bag, 'lamp', faceX + 20, faceX + 200, cy - 170, cy + 170, lz - 0.034, lz - 0.028);        // glow under the ledge
+      bag.disc('brassI', (faceX + 3) / 1000, lz + 0.31, -cy / 1000, 0.215, 0.006, 0, 0, Math.PI / 2);   // slim brass ring
+      bag.disc('woodD', (faceX + 7) / 1000, lz + 0.31, -cy / 1000, 0.200, 0.006, 0, 0, Math.PI / 2);    // dark timber medallion
       // the idol itself is a scanned model (placeInteriorModels: 'ganesha')
-      bag.cyl('brassI', (faceX + 175) / 1000, lz + 0.012, -(cy - 165) / 1000, 0.03, 0.022);
-      bag.cone('lamp', (faceX + 175) / 1000, lz + 0.04, -(cy - 165) / 1000, 0.009, 0.026);
+      bag.cyl('brassI', (faceX + 160) / 1000, lz + 0.012, -(cy - 150) / 1000, 0.026, 0.020);
+      bag.cone('lamp', (faceX + 160) / 1000, lz + 0.036, -(cy - 150) / 1000, 0.008, 0.024);
     },
     /* Tall shoe cabinet on a wall, front at y0 facing south: fluted leaf +
        full-length mirror leaf, shadow plinth, oak cap. */
@@ -9449,7 +9457,7 @@ window.HouseScene = (function () {
         // 2: pooja north wall, starting flush on the Ganesha fin's east face
         //    (10881) so its end is hidden against the fin -> foyer east wall
         //    (over the entry door) -> north wall to the void edge.
-        Lum.cornerPath([[10881, 6815], [12420, 6815], [12420, 8640], [9260, 8640]], true);
+        Lum.cornerPath([[10879, 6815], [12420, 6815], [12420, 8640], [9260, 8640]], true);
         /* --- DOUBLE-HEIGHT VOID CHANDELIER — FOUR BRASS HALO RINGS ---
            Void opening in the SF slab: X 6020..9260, Y 6996..8641, soffit
            VOID_TOP = 6.556 m AFF. Hung on x = 7130, the axis of the sofa,
@@ -10132,7 +10140,7 @@ window.HouseScene = (function () {
         // It half-screens the lounge from the doorstep; y 7385..8642 (1.26 m)
         // stays open.
         Fur.foyerPartition(bag, 10792, 10881, 6815, 7385, fY);
-        Fur.ganeshaShrine(bag, 10881, 7100, fY);
+        Fur.ganeshaShrine(bag, 10879, 7100, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
         // Room x 10893–12418, y 5060–6700. Mandir on EAST wall facing WEST.
@@ -10555,7 +10563,7 @@ window.HouseScene = (function () {
         // "Lord-ganesha" by Thunk3D scanner / Diana123456, CC-BY-4.0
         // (sketchfab.com/3d-models/lord-ganesha-1399da994ce54420878133a81f2f8f1e),
         // simplified 900k -> ~90k verts; untextured scan, cast in brass here.
-        { id: 'ganesha', file: 'ganesha.glb', fi: 1, x: 11006, y: 7100, z: 1.00, rot: 90, h: 0.42, brass: true },
+        { id: 'ganesha', file: 'ganesha.glb', fi: 1, x: 10989, y: 7100, z: 1.00, rot: 90, h: 0.42, brass: true },
         // ---- SF east bedroom ----
         { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
         { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
