@@ -199,7 +199,7 @@
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_guest_theater_modes' : 'houseScene.js?v=20261114_guest_theater_modes') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_guest_theater_refined' : 'houseScene.js?v=20261114_guest_theater_refined') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1706,6 +1706,8 @@ if(!window.THREE || !window.HouseScene){
   guestRoom?.moving.traverse(o => { if (o.isMesh) movingGuestMeshes.push(o); });
   const guestRayMeshes = [];
   const guestRayHits = [];
+  const guestFurnitureBounds = [new THREE.Box3(), new THREE.Box3(), new THREE.Box3()];
+  const guestStandingSpots = [[8.52, -1.12], [8.52, -2.40], [8.52, -3.72], [10.04, -4.02], [11.55, -1.57]];
   // Extra AABB colliders (car, etc.) — cheap, no triangle tests
   const boxColliders = [];
   function registerCarCollider() {
@@ -2061,16 +2063,29 @@ if(!window.THREE || !window.HouseScene){
   }
   function toggleGuestBed() {
     if (!inGuestRoom()) return;
-    const { x, z } = player.pos, r = player.radius;
-    const { x0, x1, z0, z1 } = guestRoom.motionBounds;
-    if (x > x0 - r && x < x1 + r && z > z0 - r && z < z1 + r) {
-      guestLayout.textContent = 'Step toward the doorway';
-      return;
-    }
     guestRoom.toggle();
     guestLayout.textContent = guestRoom.bedroom ? 'Theater mode (B)' : 'Bedroom mode (B)';
   }
   guestLayout.addEventListener('click', toggleGuestBed);
+
+  function clearMovingGuestFurniture() {
+    if (!inGuestRoom()) return;
+    const { x, y, z } = player.pos, r = player.radius;
+    const overlaps = guestRoom.furniture.some((part, i) => {
+      const { min, max } = guestFurnitureBounds[i].setFromObject(part);
+      return y < max.y && y + player.eye > min.y &&
+        x > min.x - r && x < max.x + r && z > min.z - r && z < max.z + r;
+    });
+    if (!overlaps) return;
+    let closest, best = Infinity;
+    for (const spot of guestStandingSpots) {
+      const d = (x - spot[0]) ** 2 + (z - spot[1]) ** 2;
+      if (d < best) { closest = spot; best = d; }
+    }
+    player.pos.set(closest[0], L.f2 + 0.014, closest[1]);
+    player.velY = 0;
+    moveVel.set(0, 0, 0);
+  }
 
   window.addEventListener('keydown', e => {
     const k = e.key.toLowerCase();
@@ -2116,7 +2131,10 @@ if(!window.THREE || !window.HouseScene){
   function lockPointer() {
     try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) { /* browser throttles rapid re-locks */ }
   }
-  canvas.addEventListener('click', () => { if (!introOpen && !coarse) lockPointer(); });
+  canvas.addEventListener('click', () => {
+    if (locked && inGuestRoom()) toggleGuestBed();
+    else if (!introOpen && !coarse) lockPointer();
+  });
   // level pills (work without pointer lock)
   document.querySelectorAll('#levels button').forEach(b =>
     b.addEventListener('click', e => { e.stopPropagation(); spawnTo(+b.dataset.spawn); }));
@@ -2323,7 +2341,10 @@ if(!window.THREE || !window.HouseScene){
     if (document.hidden || contextLost) return; // pause when tab hidden / GPU lost
     const dt = Math.min(0.05, frameMs / 1000);
     scaler.sample(frameMs);
-    if (guestRoom?.update(now)) refreshShadows();
+    if (guestRoom?.update(now)) {
+      clearMovingGuestFurniture();
+      refreshShadows();
+    }
     updatePlayer(dt);
     placeCamera(dt);
     skyDome.position.copy(camera.position);

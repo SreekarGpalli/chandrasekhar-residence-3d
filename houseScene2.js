@@ -10598,28 +10598,43 @@ window.HouseScene = (function () {
         pivot.add(footHinge);
         const sofa = upholstery.build(THREE, materials);
 
-        // Ceiling cassette and a retracting screen with black drop and weighted hem.
+        // Low-profile wall cassette just above the picture, with no extra drop.
         // The lens is north of the fan's y=2500 sweep limit.
         const screenY = 4350, imageBottom = fY + 0.72, imageTop = imageBottom + 2.2 * 9 / 16;
-        const dropTop = cut - 0.18;
-        prb(bag, 'blackM', 8840, 11260, screenY - 44, screenY + 52, dropTop, cut - 0.072, 12);
-        for (const x of [8990, 11110]) {
-          pb(bag, 'aluDark', x - 24, x + 24, screenY - 37, screenY + 8, cut - 0.075, cut - 0.010);
-        }
+        const dropTop = imageTop + 0.010, dropBottom = imageBottom - 0.007;
+        prb(bag, 'whiteG', 8915, 11185, screenY - 27, 4432, dropTop, dropTop + 0.075, 8);
+        pb(bag, 'aluDark', 8942, 11158, screenY - 6, screenY + 8, dropTop - 0.002, dropTop + 0.005);
         const clothBag = makeBag(THREE);
-        pb(clothBag, 'blackM', 8918, 11182, screenY, screenY + 4, imageBottom - 0.03, dropTop);
-        pb(clothBag, 'sheet', 8950, 11150, screenY - 2, screenY, imageBottom, imageTop);
+        pb(clothBag, 'sheet', 8950, 11150, screenY - 2, screenY, dropBottom, dropTop);
         const screen = new THREE.Group(), cloth = clothBag.build(THREE, materials);
         screen.position.y = dropTop;
         cloth.position.y = -dropTop;
         screen.add(cloth);
         const hemBag = makeBag(THREE);
-        prb(hemBag, 'blackM', 8918, 11182, screenY - 7, screenY + 12, dropTop - 0.022, dropTop, 4);
+        prb(hemBag, 'whiteG', 8945, 11155, screenY - 7, screenY + 9, dropTop - 0.014, dropTop, 4);
         const hem = hemBag.build(THREE, materials);
 
         const chairs = [0, 1].map(() => {
           const chairBag = makeBag(THREE);
-          Fur.sofa(chairBag, -313, 313, -310, 310, fY + 0.018, 'S', false, false, { fab: 'boucle' });
+          // Slim walnut side frames carry separate, softly upholstered cushions.
+          const base = fY + 0.018;
+          for (const x of [-276, 276]) {
+            const side = x / 1000, outer = (x + Math.sign(x) * 17) / 1000;
+            bagChairRail(side, -0.193, base + 0.325, outer, -0.266, base + 0.014, 0.019, 0.015);
+            bagChairRail(side, 0.207, base + 0.318, outer, 0.280, base + 0.014, 0.019, 0.015);
+            bagChairRail(side, -0.219, base + 0.610, side, -0.156, base + 0.315, 0.019, 0.021);
+            bagChairRail(side, 0.173, base + 0.577, side, 0.205, base + 0.313, 0.017, 0.021);
+            bagChairRail(side * 0.87, -0.276, base + 0.792, side, -0.176, base + 0.338, 0.019, 0.022);
+            prb(chairBag, 'walnutI', x - 25, x + 25, -230, 205, base + 0.555, base + 0.596, 12);
+            prb(chairBag, 'walnutI', x - 17, x + 17, -218, 224, base + 0.306, base + 0.350, 8);
+          }
+          function bagChairRail(x0, y0, h0, x1, y1, h1, r0, r1) {
+            chairBag.branch('walnutI', x0, h0, -y0, x1, h1, -y1, r0, r1);
+          }
+          prb(chairBag, 'walnutI', -266, 266, -218, 223, base + 0.324, base + 0.363, 12);
+          prb(chairBag, 'linenDk', -241, 241, -184, 222, base + 0.358, base + 0.448, 32, 12);
+          const chairFrame = frameOf(-253, 253, -302, 250, 'S');
+          chairFrame.pillow(chairBag, 'linenDk', 253, 115, base + 0.626, 490, 383, 100, 1.29, 42);
           return chairBag.build(THREE, materials);
         });
         const moving = new THREE.Group();
@@ -10635,10 +10650,10 @@ window.HouseScene = (function () {
         };
         const mix = (a, b, t) => a + (b - a) * t;
         let progress = 0, lastTime = 0;
-        const duration = 2200;
+        const duration = 1450;
         guestRoom = {
           moving, bedroom: false, duration,
-          motionBounds: { x0: bedX0 / 1000, x1: 12.06, z0: -4.26, z1: -wallY / 1000 },
+          furniture: [pivot, ...chairs],
           toggle() { this.bedroom = !this.bedroom; lastTime = performance.now(); },
           update(now) {
             const target = this.bedroom ? 1 : 0;
@@ -10652,10 +10667,11 @@ window.HouseScene = (function () {
             const sofaHeight = 1 - 0.82 * ease(progress, 0.28, 0.50);
             sofa.scale.y = sofaHeight;
             sofa.position.y = (fY + 0.29) * (1 - sofaHeight);
+            sofa.visible = bed < 0.94;
             const drop = 1 - ease(progress, 0, 0.48);
             screen.visible = drop > 0.002;
             screen.scale.y = Math.max(0.002, drop);
-            hem.position.y = (imageBottom - 0.032 - dropTop) * drop;
+            hem.position.y = (dropBottom - dropTop) * drop;
             chairs.forEach((chair, i) => {
               const { movie, window } = chairStops[i], t = ease(progress, 0, 0.43);
               chair.position.set(mix(movie[0], window[0], t), 0, mix(movie[1], window[1], t));
