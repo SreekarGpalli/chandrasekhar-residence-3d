@@ -4053,6 +4053,20 @@ window.HouseScene = (function () {
       bag.prism(mat, false, pts, c0, c1);
     },
 
+    // 6a6. Wall-mounted handrail on a wall along x at y = wallY (room 'N' = +y / 'S' = -y): a 50 x 40 mm timber rail (frame wood)
+    // whose TOP runs from (x0, z0) to (x1, z1) (mm, m), 90 mm off the wall on slim black MS brackets near each end and mid-run.
+    wallRail(bag, wallY, face, x0, z0, x1, z1) {
+      const s = face === 'N' ? 1 : -1, yc = wallY + s * 90, run = (x1 - x0) / 1000, rise = z1 - z0, len = Math.hypot(run, rise);
+      bag.box('frame', (x0 + x1) / 2000, (z0 + z1) / 2 - 0.02, -yc / 1000, len, 0.040, 0.050, 0, 0, Math.atan2(rise, run));
+      for (const t of [0.08, 0.5, 0.92]) {
+        const x = x0 + (x1 - x0) * t, zt = z0 + rise * t - 0.04;                       // rail underside
+        const ya = Math.min(wallY, yc), yb = Math.max(wallY, yc);
+        pb(bag, 'ms', x - 6, x + 6, ya - (s < 0 ? 1 : 0), yb + (s > 0 ? 1 : 0), zt - 0.06, zt - 0.048);   // arm
+        pb(bag, 'ms', x - 6, x + 6, yc - 6, yc + 6, zt - 0.06, zt);                     // upright under the rail
+        bag.disc('ms', x / 1000, zt - 0.054, -(wallY + s * 3) / 1000, 0.032, 0.006, Math.PI / 2, 0, 0);   // wall rose
+      }
+    },
+
     // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
     // slot in it. Mounted on a wall that runs along x; `face` 'N' = the wall faces +y, 'S' = faces -y; yAbs = centre height (m).
     stepLight(bag, x, wallY, yAbs, face) {
@@ -10222,6 +10236,7 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
+        Fur.wallRail(bag, 6496, 'N', 4630, fY + 0.90, 1330, landI(fY) + 0.90);                                    // teak wall handrail along the south wall (flight A / A2)
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
@@ -10591,11 +10606,7 @@ window.HouseScene = (function () {
         stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        // stair north wall (flight B): three 500 x 650 prints climbing with the flight, centred 1.55 m above the nosing line
-        for (const k of [0, 1, 2]) {
-          const x = 1330 + 3300 * (k + 0.5) / 3, zn = midFF + (x - 1330) / 3300 * 10 * RISE_I;
-          Fur.art(bag, 'x', 8640, 'S', x, zn, 1.55, 500, 650, [['artA', 'artB', 'artC'], ['artB', 'artC', 'artD'], ['artD', 'artA', 'artB']][k]);
-        }
+        Fur.wallRail(bag, 8640, 'S', 1330, midFF + 0.90, 4630, midFF + 10 * RISE_I + 0.90);                       // teak wall handrail along the north wall (flight B)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
@@ -10604,17 +10615,14 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
+        Fur.wallRail(bag, 6496, 'N', 4630, fY + 0.90, 1330, landI(fY) + 0.90);                                    // teak wall handrail along the south wall (flight A / A2)
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
-        // stair north wall (flight B2): three 500 x 650 prints climbing with the flight, centred 1.55 m above the nosing line
-        for (const k of [0, 1, 2]) {
-          const x = 1330 + 3300 * (k + 0.5) / 3, zn = landI(fY) + (x - 1330) / 3300 * 10 * RISE_I;
-          Fur.art(bag, 'x', 8640, 'S', x, zn, 1.55, 500, 650, [['artA', 'artB', 'artC'], ['artB', 'artC', 'artD'], ['artD', 'artA', 'artB']][k]);
-        }
+        Fur.wallRail(bag, 8640, 'S', 1330, landI(fY) + 0.90, 4630, landI(fY) + 10 * RISE_I + 0.90);               // teak wall handrail along the north wall (flight B2)
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
@@ -10922,8 +10930,16 @@ window.HouseScene = (function () {
         Fur.battenGrid(bag, 'white2', 9260, 12420, 8640, 'S', fY + 0.07, fY + 3.203 - 0.066, 4, 4);
         // Budget wall set (paint + thin painted MDF only): passage end wall arch, lounge spine panels, desk-wall arch.
         Fur.archSkin(bag, 'paintSand', 6270, 650, fY + 0.07, fY + 1.95, 3266, 'N');                                   // passage end wall (y 3266): 1.3 m paint arch
-        Fur.art(bag, 'x', 3266, 'N', 6270, fY, 1.55, 700, 950, ['artC', 'artA', 'artB']);                          // one framed print centred in the arch
-        pb(bag, 'limeSand', 4919, 4922, 4546, 6496, fY + 0.07, fY + 3.203 - 0.066);                                  // lounge spine wall (x 4920): warm two-shade limewash, whole wall, no joinery
+        Fur.console(bag, 5770, 6770, 3266, 3626, fY, 'N');                                                          // low closed slatted-oak console in the arch (top 0.80 m)
+        bag.cyl('ceramic', 6.50, fY + 0.80 + 0.15, -3.45, 0.075, 0.30); bag.cyl('linen', 6.50, fY + 0.80 + 0.40, -3.45, 0.16, 0.22);   // table lamp
+        bag.cyl('ceramic', 5.98, fY + 0.80 + 0.13, -3.42, 0.05, 0.26);                                                // vase
+        // lounge spine wall (x 4920): a cluster of seven small photo frames, four above / three offset below, centred on y 5521
+        [
+          [5521 - 570, 1.82, 250, 320, ['artD', 'artB', 'artC']], [5521 - 190, 1.82, 310, 240, ['artB', 'artC', 'artA']],
+          [5521 + 190, 1.82, 240, 320, ['artC', 'artA', 'artD']], [5521 + 570, 1.82, 290, 250, ['artA', 'artD', 'artB']],
+          [5521 - 380, 1.43, 300, 230, ['artA', 'artC', 'artD']], [5521, 1.43, 230, 310, ['artD', 'artA', 'artB']],
+          [5521 + 380, 1.43, 310, 240, ['artB', 'artD', 'artC']]
+        ].forEach(([c, height, w, h, scheme]) => Fur.art(bag, 'y', 4920, 'E', c, fY, height, w, h, scheme));
         Fur.archSkin(bag, 'paintSand', 10980, 1000, fY + 0.07, fY + 1.90, 4546, 'N');                                 // family room south wall: 2.0 m arch on the wall's centre, the desk centred in it
       }
 
