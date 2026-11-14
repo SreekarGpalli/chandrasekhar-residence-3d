@@ -157,6 +157,7 @@ window.HouseScene = (function () {
     tFloor:  0xfdfcfa,
     // tTread: honed Kadapa-style stone for interior stair treads + mid-landings (colour is in the texture)
     tTread:  0xfcfbf7,
+    skirtTread: 0xfcfbf5,   // stair skirting (raking + landings): the tread stone, cut as skirting
     // furniture
     fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x3f2617,
     woodD:   0x3f2616, mattress:0xeee8dc, pillow: 0xf4efe6,
@@ -497,7 +498,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, skirtTread: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -2081,7 +2082,7 @@ window.HouseScene = (function () {
         const aA = aBot + (i - 1) * stepGo, aB = aBot + i * stepGo, tTop = zBot + i * stepRise;
         let poly = [[aA, tTop], [aB, tTop], [aB, zl(aB) + H], [aA, zl(aA) + H]];
         poly = clip(poly, P => P[1] <= zHi + 1e-9, (P, Q) => { const t = (zHi - P[1]) / (Q[1] - P[1]); return [P[0] + (Q[0] - P[0]) * t, zHi]; });
-        if (poly.length >= 3) bag.prism(FLOOR_TILE, alongY, poly, s0, s1);   // the raking skirting stays the floor tile, whatever the tread is
+        if (poly.length >= 3) bag.prism('skirtTread', alongY, poly, s0, s1);   // the raking skirting is the tread stone
       }
     }
 
@@ -2108,10 +2109,13 @@ window.HouseScene = (function () {
     // landing is a floor of its own, so the flush skirting of wallRun (storey level) never reaches it
     if (finish && skirtSides) {
       const sb = top - 0.005, st = top + 0.07;
-      if (skirtSides.includes('W')) pb(bag, 'skirtTile', x0, x0 + 12, y0, y1, sb, st);
-      if (skirtSides.includes('E')) pb(bag, 'skirtTile', x1 - 12, x1, y0, y1, sb, st);
-      if (skirtSides.includes('S')) pb(bag, 'skirtTile', x0 + (skirtSides.includes('W') ? 12 : 0), x1 - (skirtSides.includes('E') ? 12 : 0), y0, y0 + 12, sb, st);
-      if (skirtSides.includes('N')) pb(bag, 'skirtTile', x0 + (skirtSides.includes('W') ? 12 : 0), x1 - (skirtSides.includes('E') ? 12 : 0), y1 - 12, y1, sb, st);
+      // FLUSH, like the raking stair skirting: 1 mm proud of the plaster, 8 mm into the wall (it used to stand 12 mm
+      // out from the wall), in the tread stone. Along S/N it starts/stops 1 mm in from a W/E return so no two faces share a plane.
+      const sw = skirtSides.includes('W'), se = skirtSides.includes('E');
+      if (sw) pb(bag, 'skirtTread', x0 - 8, x0 + 1, y0, y1, sb, st);
+      if (se) pb(bag, 'skirtTread', x1 - 1, x1 + 8, y0, y1, sb, st);
+      if (skirtSides.includes('S')) pb(bag, 'skirtTread', x0 + (sw ? 1 : 0), x1 - (se ? 1 : 0), y0 - 8, y0 + 1, sb, st);
+      if (skirtSides.includes('N')) pb(bag, 'skirtTread', x0 + (sw ? 1 : 0), x1 - (se ? 1 : 0), y1 - 2, y1 + 8, sb, st);   // north wall face is y 8640 (landing y1 8641), so the 1 mm proud face is y1 - 2
     }
   }
 
