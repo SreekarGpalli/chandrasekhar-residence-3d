@@ -8851,6 +8851,10 @@ window.HouseScene = (function () {
 
     /* ======== DOLLHOUSE floors ======== */
     const floorsOut = [];
+    const familyWorkstation = [
+      { id: 'family_standing_desk', file: 'family_standing_desk.glb', fi: 2, x: 11290, y: 4911, rot: 180 },
+      { id: 'family_task_chair', file: 'family_task_chair.glb', fi: 2, x: 11290, y: 5652 }
+    ];
     const FLOOR_DEFS = [
       { fY: L.f0, sch: OPEN.f0 },
       { fY: L.f1, sch: OPEN.f1 },
@@ -10143,8 +10147,13 @@ window.HouseScene = (function () {
         const south = SF_FAMILY_ROOM.y0;
         const { x1: wardrobeEnd, y1: wardrobeFront } = SF_FAMILY_WARDROBE;
         Fur.glazedBookcase(bag, SF_FAMILY_SOUTH_WALL_X0, wardrobeEnd, south, wardrobeFront, fY, cut);
-        Fur.standingDesk(bag, 10590, 11990, south + 24, south + 706, fY, 'S');
-        Fur.ergoChair(bag, 11290, 5652, fY, 'S');
+        // Synchronous stand-ins keep the walkthrough collision grid usable while the models load.
+        const desk = familyWorkstation[0], chair = familyWorkstation[1];
+        const deskBag = makeBag(THREE), chairBag = makeBag(THREE);
+        Fur.standingDesk(deskBag, desk.x - 700, desk.x + 700, desk.y - 341, desk.y + 341, fY, 'S');
+        Fur.ergoChair(chairBag, chair.x, chair.y, fY, 'S');
+        desk.fallback = deskBag.build(THREE, materials);
+        chair.fallback = chairBag.build(THREE, materials);
 
         // Keep the east side of the seating area clear for the glass doors.
         Fur.rug(bag, 9470, 11650, 6510, 7990, fY);
@@ -10154,6 +10163,7 @@ window.HouseScene = (function () {
 
       const g = bag.build(THREE, materials);
       g.name = 'floor' + fi;
+      if (fi === 2) for (const model of familyWorkstation) g.add(model.fallback);
       root.add(g);
       floorsOut.push({
         group: g, floorY: fY, cut,
@@ -10198,8 +10208,11 @@ window.HouseScene = (function () {
         { id: 'modern_arm_chair_01', fi: 2, x: 10950, y: 3800, rot: 315 },
         { id: 'potted_plant_02', fi: 2, x: 8150, y: 640, rot: 80 },
         // ---- SF family room ----
+        ...familyWorkstation
       ];
       const loader = new THREE.GLTFLoader();
+      const draco = THREE.DRACOLoader ? new THREE.DRACOLoader() : null;
+      if (draco) loader.setDRACOLoader(draco.setDecoderPath('lib/draco/'));
       let pending = 0;
       const byFloor = [new THREE.Group(), new THREE.Group(), new THREE.Group()];
       byFloor.forEach((g, i) => { g.name = 'interiorScans' + i; if (floorsOut[i]) floorsOut[i].group.add(g); });
@@ -10215,14 +10228,16 @@ window.HouseScene = (function () {
         obj.updateMatrixWorld(true);
         const bb = new THREE.Box3().setFromObject(obj);
         obj.position.set(pl.x / 1000 - (bb.min.x + bb.max.x) / 2,
-                         FL[pl.fi] + (pl.z || 0) - bb.min.y + 0.002,
+                         FL[pl.fi] + (pl.z || 0) - bb.min.y + (pl.fallback ? 0.014 : 0.002),
                          -pl.y / 1000 - (bb.min.z + bb.max.z) / 2);
         const brass = pl.brass ? new THREE.MeshStandardMaterial({ color: 0xb08a3e, metalness: 0.85, roughness: 0.34 }) : null;
         obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.scan = pl.id; if (brass) o.material = brass; } });
         byFloor[pl.fi].add(obj);
+        if (pl.fallback) byFloor[pl.fi].parent.remove(pl.fallback);
       }
       function done() {
         if (--pending > 0) return;
+        if (draco) draco.dispose();
         for (let i = 0; i < 3; i++) {
           window.dispatchEvent(new CustomEvent('houseInteriorReady', { detail: { group: byFloor[i], floor: i } }));
         }
