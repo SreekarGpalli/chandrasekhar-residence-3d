@@ -10038,19 +10038,19 @@ window.HouseScene = (function () {
            short of the stair mouth (y 6496) so the stairs stay clear. One small side table
            serves both, in the corner between the three-seater's west arm and the two-seater. */
         Fur.rug(bag, 5750, 8750, 5000, 6500, fY);
-        Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S');              // three-seater, faces TV (moved back, 220 mm)
-        Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W');              // two-seater on the west wall, pushed up to the stair corner (y 6496)
+        Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S', false, false, { acc: ['boucle', 'boucle', 'boucle'] });              // three-seater, faces TV (moved back, 220 mm)
+        Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W', false, false, { acc: ['boucle', 'boucle', 'boucle'] });              // two-seater on the west wall, pushed up to the stair corner (y 6496)
         /* coffee table after the owner's reference: a solid timber open box, 1000 x 520 x 0.42 -
            50 mm top, two 40 mm end slabs, an open lower shelf, open on both long sides. It stands
            in front of the corner between the sofas: 280 mm off the three-seater's front, 210 mm
            off the two-seater's, so both reach it and the stair route to the east stays clear. */
-        { const tx0 = 5830, tx1 = 6830, ty0 = 5760, ty1 = 6280;
+        { const tx0 = 6010, tx1 = 7010, ty0 = 5860, ty1 = 6380;   // nudged 100 mm north and 180 mm east: 360 mm off the two-seater, 380 off the three-seater
           pb(bag, 'woodD', tx0, tx1, ty0, ty1, fY + 0.37, fY + 0.42);                    // top
           pb(bag, 'woodD', tx0, tx0 + 40, ty0, ty1, fY + 0.02, fY + 0.37);               // end slabs
           pb(bag, 'woodD', tx1 - 40, tx1, ty0, ty1, fY + 0.02, fY + 0.37);
           pb(bag, 'woodD', tx0 + 40, tx1 - 40, ty0 + 18, ty1 - 18, fY + 0.09, fY + 0.125); // lower shelf
           pb(bag, 'aluDark', tx0 + 12, tx1 - 12, ty0 + 14, ty1 - 14, fY, fY + 0.02);     // recessed plinth shadow
-          Fur.books(bag, 6180, 6020, fY + 0.42, 3, true); }
+          Fur.books(bag, 6360, 6120, fY + 0.42, 3, true); }
         // art on the spine wall, facing the seating
         Fur.art(bag, 'y', 4920, 'E', 5665, fY, 1.65, 1300, 950);
 
@@ -10544,8 +10544,8 @@ window.HouseScene = (function () {
         // so 750 mm stays clear between it and the kitchen corner (y 5060):
         // that gap is the route from the dining room to the hall and foyer.
         // ---- FF dining / kitchen / foyer ----
-        { id: 'ceramic_vase_02', fi: 1, x: 6560, y: 6090, z: 0.42 },
-        { id: 'wooden_bowl_01', fi: 1, x: 6420, y: 5900, z: 0.42 },
+        { id: 'ceramic_vase_02', fi: 1, x: 6740, y: 6190, z: 0.42 },
+        { id: 'wooden_bowl_01', fi: 1, x: 6600, y: 6000, z: 0.42 },
         { id: 'ceramic_vase_01', fi: 1, x: 7150, y: 2850, z: 0.75 },
         { id: 'wooden_bowl_01', fi: 1, x: 7550, y: 2820, z: 0.75 },
         { id: 'potted_plant_04', fi: 1, x: 12150, y: 4650, z: 0.88 },
