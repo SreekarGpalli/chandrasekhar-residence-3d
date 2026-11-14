@@ -6867,7 +6867,7 @@ window.HouseScene = (function () {
     function curtains(bag, face, c, w, sill, h, fY, mat, opt) {
       if (AUD.on && AUD.depth === 0) {
         AUD.cur = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; AUD.depth++;
-        try { curtains(bag, face, c, w, sill, h, fY, mat, opt); }
+        try { return curtains(bag, face, c, w, sill, h, fY, mat, opt); }
         finally { AUD.depth--; AUD.items.push({ name: 'curtains', args: [face, c, w], box: AUD.cur }); AUD.cur = null; }
         return;
       }
@@ -6893,31 +6893,31 @@ window.HouseScene = (function () {
       if (opt.base != null) base = opt.base;          // an interior wall (FF dining's south wall face, y 1065)
       const out = face === 'E' || face === 'N' ? -1 : 1;     // into the room
       const off = (d) => base + out * d;
-      const rail = (a0, a1, d0, d1, h0, h1, m, r) => {
+      const rail = (a0, a1, d0, d1, h0, h1, m, r, target = bag) => {
         const lo = Math.min(off(d0), off(d1)), hi = Math.max(off(d0), off(d1));
-        if (face === 'E' || face === 'W') prb(bag, m, lo, hi, a0, a1, h0, h1, r);
-        else prb(bag, m, a0, a1, lo, hi, h0, h1, r);
+        if (face === 'E' || face === 'W') prb(target, m, lo, hi, a0, a1, h0, h1, r);
+        else prb(target, m, a0, a1, lo, hi, h0, h1, r);
       };
       if (opt.zebra) {
         // Cordless zebra roller with matching cassette and weighted hem.
         const case0 = c - w / 2 + 5, case1 = c + w / 2 - 5;
         const fabric0 = case0 + 10, fabric1 = case1 - 10;
-        const bottom = head - h * 0.75 / 1000;
+        const animated = opt.animated;
+        const bottom = head - h * (animated ? 1 : 0.75) / 1000;
         rail(case0, case1, 0, 66, head - 0.045, head + 0.018, 'whiteG', 7);
-        rail(case0 + 8, case1 - 8, 24, 60, bottom - 0.014, bottom + 0.010, 'whiteG', 4);
+        rail(case0 + 8, case1 - 8, 24, 60, bottom - 0.014, bottom + 0.010, 'whiteG', 4, animated?.hem);
 
-        // Both fabric runs are aligned in the daylight position.
+        // In the theater shade, stagger the rear bands to cover the front run's sheer gaps.
         const fabricTop = head - 0.044;
-        for (let z = fabricTop; z > bottom; z -= 0.125) {
-          const stripeBottom = Math.max(bottom, z - 0.075);
-          for (const d of [26, 55]) {
-            rail(fabric0, fabric1, d, d + 1, stripeBottom, z, fab, 0.4);
-            if (stripeBottom > bottom) {
-              rail(fabric0, fabric1, d, d + 1, Math.max(bottom, z - 0.125), stripeBottom, 'zebraSheer', 0.4);
-            }
+        for (const d of [26, 55]) {
+          const offset = animated && d === 26 ? 0.0625 : 0;
+          for (let z = fabricTop + offset; z > bottom; z -= 0.125) {
+            const stripeBottom = Math.max(bottom, z - 0.075);
+            rail(fabric0, fabric1, d, d + 1, stripeBottom, Math.min(fabricTop, z), fab, 0.4, animated?.fabric);
+            rail(fabric0, fabric1, d, d + 1, Math.max(bottom, z - 0.125), stripeBottom, 'zebraSheer', 0.4, animated?.fabric);
           }
         }
-        return;
+        return animated ? { anchor: fabricTop, travel: fabricTop - bottom } : undefined;
       }
       if (opt.dual) {
         /* Whole-wall dressing (SF family-room glass wall, FF dining's south glass door): a
@@ -10585,14 +10585,14 @@ window.HouseScene = (function () {
         }
         prb(legs, 'aluDark', left + 112, right - 112, bedY1 - 131, bedY1 - 84, fY + 0.29, fY + 0.34, 8);
         prb(mattressBag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
-        prb(mattressBag, 'duvet', left + 56, right - 56, hingeY + 562, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
+        prb(mattressBag, 'duvet', left + 56, right - 56, hingeY + 705, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
         prb(mattressBag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
-        prb(mattressBag, 'linenDk', left + 60, right - 60, bedY1 - 35, bedY1 - 14, hingeH + 0.145, hingeH + 0.269, 8);
+        prb(mattressBag, 'linenDk', left + 61, right - 61, bedY1 - 39, bedY1 - 22, hingeH + 0.179, hingeH + 0.265, 6);
         const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
         for (const fraction of [0.25, 0.75]) {
-          mattress.pillow(mattressBag, 'sheet', mattress.W * fraction, 227, hingeH + 0.269, 650, 429, 124, 0.10, 48);
+          mattress.pillow(mattressBag, 'sheet', mattress.W * fraction, 213, hingeH + 0.275, 610, 390, 124, 0.12, 53);
         }
-        mattress.pillow(mattressBag, 'terra', mattress.W / 2, 410, hingeH + 0.29, 540, 235, 128, 0.27, 42);
+        mattress.pillow(mattressBag, 'terra', mattress.W / 2, 514, hingeH + 0.267, 480, 178, 96, 0.19, 40);
         const pivot = new THREE.Group();
         pivot.position.set(0, hingeH, -hingeY / 1000);
         const deck = mattressBag.build(THREE, materials);
@@ -10647,25 +10647,20 @@ window.HouseScene = (function () {
         });
         const moving = new THREE.Group();
         moving.name = 'guestRoomMovingFurniture';
-        // The guest room uses full-width roller shades for the theater layout.
-        // Keep each cassette fixed while the fabric and weighted lower rail move.
+        // The original guest-room zebra shades share the screen's mode animation.
         const blinds = [
-          { x0: 12355, x1: 12419, y0: 2600, y1: 4300, top: 2.40, east: true },
-          { x0: 7850, x1: 9050, y0: 231, y1: 295, top: 2.30, east: false }
-        ].map(({ x0, x1, y0, y1, top, east }) => {
-          const rollerBag = makeBag(THREE), hemBag = makeBag(THREE);
-          const anchor = fY + top - 0.044, bottom = fY + 0.90;
-          prb(bag, 'whiteG', x0, x1, y0, y1, anchor, anchor + 0.062, 7);
-          const fabric = east ? [x0 + 13, x0 + 17, y0 + 11, y1 - 11] : [x0 + 11, x1 - 11, y1 - 17, y1 - 13];
-          const lowerRail = east ? [x0 + 7, x0 + 24, y0 + 8, y1 - 8] : [x0 + 8, x1 - 8, y1 - 24, y1 - 7];
-          pb(rollerBag, 'linenDk', ...fabric, bottom, anchor);
-          prb(hemBag, 'whiteG', ...lowerRail, anchor - 0.019, anchor, 4);
-          const shade = new THREE.Group(), fabricMesh = rollerBag.build(THREE, materials), rail = hemBag.build(THREE, materials);
+          { face: 'E', center: 3450, width: 1700, height: 1500, name: 'guestEastBlind' },
+          { face: 'S', center: 8450, width: 1200, height: 1400, name: 'guestSouthBlind' }
+        ].map(({ face, center, width, height, name }) => {
+          const fabric = makeBag(THREE), hem = makeBag(THREE);
+          const { anchor, travel } = curtains(bag, face, center, width, 900, height, fY, 'curtain2',
+            { zebra: true, animated: { fabric, hem } });
+          const shade = new THREE.Group(), fabricMesh = fabric.build(THREE, materials), rail = hem.build(THREE, materials);
           shade.position.y = anchor;
           fabricMesh.position.y = -anchor;
           shade.add(fabricMesh);
-          shade.name = east ? 'guestEastBlind' : 'guestSouthBlind';
-          return { shade, rail, travel: anchor - bottom };
+          shade.name = name;
+          return { shade, rail, travel };
         });
         moving.add(pivot, sofa, screen, hem, ...chairs, ...blinds.flatMap(({ shade, rail }) => [shade, rail]));
         const chairStops = [
@@ -10703,7 +10698,7 @@ window.HouseScene = (function () {
             for (const { shade, rail, travel } of blinds) {
               shade.visible = drop > 0.002;
               shade.scale.y = Math.max(0.002, drop);
-              rail.position.y = -travel * drop;
+              rail.position.y = travel * (1 - drop);
             }
             chairs.forEach((chair, i) => {
               const { movie, window } = chairStops[i], t = ease(progress, 0, 0.43);
