@@ -6790,7 +6790,7 @@ window.HouseScene = (function () {
         const alongY = face === 'E' || face === 'W';
         const toW = (u, dpt, z) => alongY ? [off(dpt) / 1000, z, -u / 1000] : [u / 1000, z, -off(dpt) / 1000];
         const into = alongY ? [out, 0, 0] : [0, 0, -out];
-        const cloth = (m, u0, u1, zb, zh, dc, amp, lam, seed, thick) => {
+        const cloth = (m, u0, u1, zb, zh, dc, amp, lam, seed, thick, ti) => {   // ti {z, outer}: tied back at height z, fixed edge at `outer`
           const nu = Math.max(10, Math.round((u1 - u0) / 7)), nz = 30, H = zh - zb;
           const ph = new Float64Array(nu + 1); let p = seed * 1.7;
           for (let i = 0; i <= nu; i++) {
@@ -6802,16 +6802,26 @@ window.HouseScene = (function () {
           const wave = t => Math.sin(t) - 0.20 * Math.sin(2 * t + 0.6);
           const dep = (i, j) => {
             const u = u0 + (u1 - u0) * i / nu, h = j / nz;                  // h: 0 at the header, 1 at the hem
+            const z = zh - H * j / nz;
             const sm = Math.min(1, h / 0.32), zf = 0.30 + 0.70 * sm * sm * (3 - 2 * sm);
-            const A = amp * zf * (1 + 0.30 * Math.sin(u / 131 + seed * 2)) * (1 + 0.16 * h);
-            return dc + A * wave(ph[i] + 0.55 * Math.sin(h * 3.1 + seed + u / 410));
+            // tie-back: the cloth is gathered tight at the tie (shallow, pulled room-ward)
+            // and billows into deep folds above and below it
+            let tight = 0, bill = 0;
+            if (ti) {
+              tight = Math.exp(-Math.pow((z - ti.z) / 0.20, 2));
+              bill = Math.exp(-Math.pow((Math.abs(z - ti.z) - 0.40) / 0.24, 2));
+            }
+            const A = amp * zf * (1 + 0.30 * Math.sin(u / 131 + seed * 2)) * (1 + 0.16 * h) * (1 - 0.35 * tight) * (1 + 0.55 * bill);
+            return dc + 14 * tight + A * wave(ph[i] + 0.55 * Math.sin(h * 3.1 + seed + u / 410));
           };
           const pos = [], uv = [], idx = [];
           const surf = (off2) => {
             const base = pos.length / 3;
             for (let i = 0; i <= nu; i++) for (let j = 0; j <= nz; j++) {
               const u = u0 + (u1 - u0) * i / nu, z = zh - H * j / nz;
-              const w = toW(u, dep(i, j) + off2, z);
+              // the tie draws the free edge in toward the fixed one
+              const uu = ti ? ti.outer + (u - ti.outer) * (1 - 0.30 * Math.exp(-Math.pow((z - ti.z) / 0.42, 2))) : u;
+              const w = toW(uu, dep(i, j) + off2, z);
               pos.push(w[0], w[1], w[2]); uv.push(u / 1000, z);
             }
             return base;
@@ -6851,8 +6861,18 @@ window.HouseScene = (function () {
         };
         const zb = top - 0.035;
         cloth('voile', t0 + 10, t1 - 10, fY + 0.008, zb, dd + 49, 22, 100, 1.3, 0);                   // closed, wall to wall
-        cloth('drapeDark', t0 + 14, t0 + 14 + 780, fY + 0.02, zb, dd + 125, 44, 120, 4.1, 7);        // drawn back to the south / west end
-        cloth('drapeDark', t1 - 14 - 780, t1 - 14, fY + 0.02, zb, dd + 125, 44, 120, 9.7, 7);        // ... and to the north / east end
+        /* The drapes are tied back about a quarter of the way up from the floor (tieZ): the
+           cloth is pulled in tight there and billows above and below, with a cream tie band
+           round the bundle and a small tassel hanging from its free end. */
+        const tieZ = fY + 0.86, WD = 780, WT = Math.round(WD * 0.58);
+        cloth('drapeDark', t0 + 14, t0 + 14 + WD, fY + 0.02, zb, dd + 125, 50, 120, 4.1, 7, { z: tieZ, outer: t0 + 14 });
+        cloth('drapeDark', t1 - 14 - WD, t1 - 14, fY + 0.02, zb, dd + 125, 50, 120, 9.7, 7, { z: tieZ, outer: t1 - 14 });
+        for (const [uA, uB, free] of [[t0 + 14 - 4, t0 + 14 + WT + 18, t0 + 14 + WT + 18], [t1 - 14 - WT - 18, t1 - 14 + 4, t1 - 14 - WT - 18]]) {
+          rail(uA, uB, dd + 125 - 40, dd + 125 + 62, tieZ - 0.028, tieZ + 0.028, 'linen', 12);       // tie band
+          const tw = toW(free, dd + 125 + 10, tieZ - 0.11);
+          bag.cyl('linen', tw[0], tw[1] + 0.03, tw[2], 0.009, 0.14);                                // cord
+          bag.sph('linen', tw[0], tw[1] - 0.10, tw[2], 0.024, 0.055);                               // tassel
+        }
         return;
       }
       if (opt.blind) {
