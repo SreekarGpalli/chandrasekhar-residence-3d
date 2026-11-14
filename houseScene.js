@@ -8238,7 +8238,10 @@ window.HouseScene = (function () {
       // Terrace slab stops at the lift east face on every bay.
       // East of SHELTER_X is pergola only — no plate.
       pb(eBag, 'white', 0, SHELTER_X, -762, EAST_RAFTER_YE, L.roof - L.slabT, L.roof);
-      pb(eBag, 'charDark', 60, SHELTER_X - 60, -702, EAST_RAFTER_YE - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
+      /* Roof-slab soffit over the balconies and decks: painted off-white like the interior ceilings (it was bare grey).
+         The lift shaft's top (x 12650..14040, y 230..1805) is an interior ceiling and keeps the old grey. */
+      plate(eBag, 'white2', 60, SHELTER_X - 60, -702, EAST_RAFTER_YE - 60, [12650, 14040, 230, 1805], L.roof - L.slabT - 0.008, L.roof - L.slabT);
+      pb(eBag, 'charDark', 12650, 14040, 230, 1805, L.roof - L.slabT - 0.008, L.roof - L.slabT);
       /* THE STAIRWELL MUST GO THROUGH THIS BAY.
          This plate covers x 0..14270, y 3459..8870, and the internal stair comes
          up inside x 230..4630, y 6496..8641 — entirely within it. Drawn solid,
@@ -8249,10 +8252,10 @@ window.HouseScene = (function () {
          plate() takes the opening; it simply was never used here. */
       const STAIRWELL = [230, 4630, 6496, 8641];
       plate(eBag, 'white', 0, SHELTER_X, EAST_RAFTER_YE, Y1n, STAIRWELL, L.roof - L.slabT, L.roof);
-      plate(eBag, 'charDark', 60, SHELTER_X - 60, EAST_RAFTER_YE, Y1n - 60, STAIRWELL,
+      plate(eBag, 'white2', 60, SHELTER_X - 60, EAST_RAFTER_YE, Y1n - 60, STAIRWELL,
             L.roof - L.slabT - 0.008, L.roof - L.slabT);
       pb(eBag, 'white', 0, SHELTER_X, Y1n, Y1n + 1000, L.roof - L.slabT, L.roof);
-      pb(eBag, 'charDark', 60, SHELTER_X - 60, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
+      pb(eBag, 'white2', 60, SHELTER_X - 60, Y1n, Y1n + 1000 - 60, L.roof - L.slabT - 0.008, L.roof - L.slabT);
       // Wall lamps — dark body + steel bezel + warm lens.
       // Flank centers sit OUTSIDE the opening leaf + accent surround (~130 mm),
       // never on the glass / door leaf itself.
@@ -8556,7 +8559,7 @@ window.HouseScene = (function () {
         const s0 = h0 - 0.008, s1 = h0;
         if (x1 - x0 < 40 || y1 - y0 < 40) return;
         pb(bag, 'white', x0, x1, y0, y1, h0, h1);
-        pb(bag, 'charDark', x0 + 40, x1 - 40, y0 + 40, y1 - 40, s0, s1);
+        pb(bag, 'white2', x0 + 40, x1 - 40, y0 + 40, y1 - 40, s0, s1);   // soffit painted in the house's off-white (was bare grey)
         pb(bag, tileMat || 'balcTile', x0, x1, y0, y1, t0, t1);
       }
 
