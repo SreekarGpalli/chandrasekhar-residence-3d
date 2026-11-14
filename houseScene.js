@@ -3940,6 +3940,14 @@ window.HouseScene = (function () {
       bag.cyl('lamp', ax / 1000, bY + 0.05, -ay / 1000, 0.035, 0.08);
     },
 
+    // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
+    // slot in it. Mounted on a wall that runs along x; `face` 'N' = the wall faces +y, 'S' = faces -y; yAbs = centre height (m).
+    stepLight(bag, x, wallY, yAbs, face) {
+      const s = face === 'N' ? 1 : -1;
+      bag.box('charDark', x / 1000, yAbs, -(wallY + s * 1) / 1000, 0.130, 0.030, 0.002);
+      bag.box('coveLED', x / 1000, yAbs, -(wallY + s * 2.75) / 1000, 0.112, 0.007, 0.0015);
+    },
+
     // 7. Architectural Up/Down Wall Wash Sconce
     wallSconce(bag, x, y, mountH, dir, face) {
       const W = 45, H = 0.09, D = 55;
@@ -6666,6 +6674,10 @@ window.HouseScene = (function () {
     // Internal U-stair: 10 risers + mid landing + 10 risers → next floor (flush)
     const RISE_I = L.f2f / 20;
     const landI = (base) => base + 10 * RISE_I;
+    /* Stair step lights: every third tread (2, 5, 8) of a flight, 300 mm above its nosing, on the flight's wall; one on each
+       side wall of a landing. x0 = foot of the flight, dx = +/-330 along its run, wallY 6496 (face N) or 8640 (face S). */
+    const stepLights = (Lum, base, x0, dx, wallY, face) => { for (const i of [2, 5, 8]) Lum.stepLight(x0 + dx * (i - 0.5), wallY, base + i * RISE_I + 0.30, face); };
+    const landingStepLights = (Lum, top) => { Lum.stepLight(780, 6496, top + 0.30, 'N'); Lum.stepLight(780, 8640, top + 0.30, 'S'); };
 
     /* -------- lighting contract --------
        Every interior luminaire is placed through `makeLum`, which draws the
@@ -6683,7 +6695,7 @@ window.HouseScene = (function () {
     const lights = [];
     const LUM_I = {
       downlight: 0.85, panel: 0.90, profile: 0.65, bracket: 0.65, fan: 0.35, cove: 0.50, oyster: 0.90, can: 0.65,
-      pendant: 0.80, cluster: 1.15, sconce: 0.55, vanity: 0.60, task: 0.45, bedside: 0.35, flame: 0.55
+      pendant: 0.80, cluster: 1.15, step: 0.14, sconce: 0.55, vanity: 0.60, task: 0.45, bedside: 0.35, flame: 0.55
     };
     /* How far BELOW the slab a ceiling fitting's source sits. */
     const CEIL_SRC = 0.45;
@@ -6772,6 +6784,13 @@ window.HouseScene = (function () {
         /* --- bathroom exhaust fan on the west wall (no light source) --- */
         exhaust(x, y, h, face) {
           Fur.exhaustFan(bag, x, y, fY + h, face);
+          return this;
+        },
+        /* Recessed step light (stair walls). The source sits 120 mm off the wall and low-weighted, so it washes the wall
+           softly instead of burning a spot into it. yAbs is absolute: flights start at different storeys. */
+        stepLight(x, wallY, yAbs, face) {
+          Fur.stepLight(bag, x, wallY, yAbs, face);
+          put(x, wallY + (face === 'N' ? 120 : -120), yAbs - 0.04, 'step');
           return this;
         },
         wallBracket(x, y, h, dir, face) {
@@ -9164,7 +9183,9 @@ window.HouseScene = (function () {
         for (const x of [13270, 15590, 16880]) Lum.downlight(x, 4810).downlight(x, 7690);
 
         /* --- STAIRCASE --- */
-        Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
+        // (the brass tulip bracket on the west wall is gone: flush step lights along the flights instead)
+        stepLights(Lum, fY, 4630, -330, 6496, 'N');                       // flight A, FF -> mid landing (south wall)
+        landingStepLights(Lum, landI(fY));                                // mid landing
       }
 
       if (fi === 2) {
@@ -9220,7 +9241,11 @@ window.HouseScene = (function () {
           [wardrobeEnd, wardrobeFront], [wardrobeEnd, south], [12420, south]], true);
 
         /* --- STAIRCASE --- */
-        Lum.wallBracket(230, 6730, 2.75, 'y', 'E');   // west wall beside the centred landing window
+        // (the brass tulip bracket on the west wall is gone: flush step lights along the flights instead)
+        stepLights(Lum, landI(L.f1), 1330, 330, 8640, 'S');              // flight B, mid landing -> SF (north wall)
+        stepLights(Lum, fY, 4630, -330, 6496, 'N');                       // flight A', SF -> roof mid landing (south wall)
+        landingStepLights(Lum, landI(fY));                                // roof mid landing
+        stepLights(Lum, landI(fY), 1330, 330, 8640, 'S');                // flight B', roof mid landing -> roof (north wall)
       }
 
       /* ---- curtains on living / bed / office windows ---- */
