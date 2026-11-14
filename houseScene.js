@@ -3940,6 +3940,20 @@ window.HouseScene = (function () {
       bag.cyl('lamp', ax / 1000, bY + 0.05, -ay / 1000, 0.035, 0.08);
     },
 
+    // 6a. Board-and-batten grid on a wall that runs along x, in the wall's OWN paint (`mat`): flat battens `BD` mm proud (18),
+    // 70 mm wide, a heavier 100 mm base rail, `cols` x `rows` near-square panels between x0..x1 and z0..z1 (m). `face` 'S' = the room is
+    // to the south of the wall (y < wallY), 'N' = to the north. Horizontals stop at the verticals: no coplanar overlaps.
+    battenGrid(bag, mat, x0, x1, wallY, face, z0, z1, cols, rows) {
+      const BW = 70, BD = 18, BASE = 0.10, TOP = 0.07;
+      const ya = face === 'S' ? wallY - BD : wallY - 2, yb = face === 'S' ? wallY + 2 : wallY + BD;   // 2 mm into the wall: no coplanar back face
+      const px = (x1 - x0 - BW) / cols, vx = k => x0 + k * px;
+      for (let k = 0; k <= cols; k++) pb(bag, mat, vx(k), vx(k) + BW, ya, yb, z0, z1);
+      for (let j = 0; j <= rows; j++) {
+        const lo = j === 0 ? z0 : z0 + j * ((z1 - z0 - TOP) / rows), hi = j === 0 ? z0 + BASE : lo + TOP;
+        for (let k = 0; k < cols; k++) pb(bag, mat, vx(k) + BW, vx(k + 1), ya, yb, lo, Math.min(hi, z1));
+      }
+    },
+
     // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
     // slot in it. Mounted on a wall that runs along x; `face` 'N' = the wall faces +y, 'S' = faces -y; yAbs = centre height (m).
     stepLight(bag, x, wallY, yAbs, face) {
@@ -10326,7 +10340,9 @@ window.HouseScene = (function () {
         // Keep the east side of the seating area clear for the glass doors.
         Fur.rug(bag, 9470, 11650, 6510, 7990, fY);
         Fur.sofa(bag, 9440, 11660, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] });
-        Fur.art(bag, 'x', 8640, 'S', 10550, fY, 1.62, 1500, 850, ['artB', 'artC', 'artA']);
+        // North wall behind the sofa: the picture is gone; a floor-to-ceiling board-and-batten grid (3 x 4 near-square panels, 70 x 18 mm battens,
+        // centred on the sofa, x 9400..11700) in the wall's own paint (white2), so the wall colour is unchanged.
+        Fur.battenGrid(bag, 'white2', 9400, 11700, 8640, 'S', fY + 0.07, fY + 3.10, 3, 4);
       }
 
       const g = bag.build(THREE, materials);
