@@ -8103,10 +8103,10 @@ window.HouseScene = (function () {
       pb(eBag, 'terraceF', 150, 12650, 230, 1805, L.roof - 0.055, TFIN);
       pb(eBag, 'terraceF', 14040, SHELTER_X, 230, 1805, L.roof - 0.055, TFIN);
       pb(eBag, 'terraceF', 150, SHELTER_X, 1805, EAST_RAFTER_YE, L.roof - 0.055, TFIN);
-      pb(eBag, 'terraceF', 150, SHELTER_X, EAST_RAFTER_YE, 6496, L.roof - 0.055, TFIN);
-      pb(eBag, 'terraceF', 150, 230, 6496, 8641, L.roof - 0.055, TFIN);
-      pb(eBag, 'terraceF', 5600, SHELTER_X, 6496, 8641, L.roof - 0.055, TFIN);
-      pb(eBag, 'terraceF', 150, SHELTER_X, 8641, Y1n, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, SHELTER_X, EAST_RAFTER_YE, 6481, L.roof - 0.055, TFIN);   // ends 15 mm INSIDE the mumty south wall (y 6381..6496): its face was coplanar with the wall's, a dark band up the stair wall
+      pb(eBag, 'terraceF', 150, 215, 6496, 8641, L.roof - 0.055, TFIN);   // 15 mm inside the mumty west wall (x 0..230), see above
+      pb(eBag, 'terraceF', 5615, SHELTER_X, 6496, 8641, L.roof - 0.055, TFIN);
+      pb(eBag, 'terraceF', 150, SHELTER_X, 8656, Y1n, L.roof - 0.055, TFIN);   // 15 mm inside the mumty north wall
       pb(eBag, 'terraceF', 150, SHELTER_X, Y1n, 9720, L.roof - 0.055, TFIN);
       pb(eBag, 'terraceF', 150, SHELTER_X, -612, 150, L.roof - 0.055, TFIN);
       pb(eBag, 'terraceF', 12650, 14040, 230, 1805, L.roof - 0.055, TFIN);
