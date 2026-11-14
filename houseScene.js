@@ -10451,20 +10451,12 @@ window.HouseScene = (function () {
         // from the window's east jamb x 9260 to the east wall x 12420, up to the ceiling corner profile; the sofa sits on the wall's centre, x 10840) in the wall's own paint (white2), so the wall colour is unchanged.
         Fur.battenGrid(bag, 'white2', 9260, 12420, 8640, 'S', fY + 0.07, fY + 3.203 - 0.066, 4, 4);
         // Passage end wall (y 3266, x 4920..7620): four overlapping painted arches in soft tones (owner's reference as seen from the passage: peach on the left, tan on the right), a low
-        // sideboard in the house wood, a ribbed vase with dried grass, a small potted cactus and a globe wall light.
-        Fur.archSkin(bag, 'paintPeach', 7090, 300, fY + 0.07, fY + 1.45, 3266, 'N', 1.5);
-        Fur.archSkin(bag, 'paintSand', 6580, 300, fY + 0.07, fY + 1.95, 3266, 'N', 3);
-        Fur.archSkin(bag, 'paintCream', 6070, 300, fY + 0.07, fY + 1.70, 3266, 'N', 4.5);
-        Fur.archSkin(bag, 'paintTan', 5460, 280, fY + 0.07, fY + 1.30, 3266, 'N', 1.5);
+        // sideboard in the house wood; the decor on it is real scans (vase, bowl, small plant: see placeInteriorModels). No wall light.
+        Fur.archSkin(bag, 'paintPeach', 7090, 300, fY + 0.07, fY + 1.65, 3266, 'N', 1.5);
+        Fur.archSkin(bag, 'paintSand', 6580, 300, fY + 0.07, fY + 2.15, 3266, 'N', 3);
+        Fur.archSkin(bag, 'paintCream', 6070, 300, fY + 0.07, fY + 1.90, 3266, 'N', 4.5);
+        Fur.archSkin(bag, 'paintTan', 5460, 280, fY + 0.07, fY + 1.50, 3266, 'N', 1.5);
         Fur.sideboard(bag, 'woodD', 5370, 7170, 3266, 420, fY);
-        for (const [r, z] of [[0.075, 0.03], [0.060, 0.09], [0.068, 0.15], [0.050, 0.21], [0.030, 0.26]]) bag.cyl('ceramic', 6.92, fY + 0.80 + z, -3.47, r, 0.06);   // ribbed vase
-        for (const [dx, dz, a] of [[0, 0, 0], [0.04, 0.02, 0.18], [-0.04, 0.01, -0.2], [0.07, -0.02, 0.35], [-0.07, 0, -0.33]])
-          bag.cyl('accentWarm', 6.92 + dx, fY + 1.40 + dz, -3.47, 0.003, 0.70, 0, 0, a);                                   // dried grass stems
-        bag.cyl('ceramic', 6.49, fY + 0.80 + 0.07, -3.47, 0.06, 0.14);                                                       // white pot
-        for (const [dx, h, a] of [[0, 0.30, 0], [0.03, 0.20, 0.25], [-0.03, 0.22, -0.25]])
-          bag.cyl('green', 6.49 + dx, fY + 0.94 + h / 2, -3.47, 0.012, h, 0, 0, a);                                       // cactus
-        bag.disc('brassI', 6.325, fY + 2.00, -3.268, 0.06, 0.006, Math.PI / 2, 0, 0);                                     // globe light back plate
-        bag.sph('lamp', 6.325, fY + 2.00, -3.36, 0.085);                                                                   // opal globe
         // Budget wall set (paint + thin painted MDF only): passage end wall arch, lounge spine panels, desk-wall arch.
         // lounge spine wall (x 4920): a cluster of seven small photo frames, four above / three offset below, centred on y 5521
         [
@@ -10524,6 +10516,10 @@ window.HouseScene = (function () {
         { id: 'ceramic_vase_01', fi: 1, x: 7150, y: 2850, z: 0.75 },
         { id: 'wooden_bowl_01', fi: 1, x: 7550, y: 2820, z: 0.75 },
         { id: 'potted_plant_04', fi: 1, x: 12150, y: 4650, z: 0.88 },
+        // ---- SF passage end wall: on the wood sideboard (top 0.80 m, x 5370..7170, y 3266..3686) ----
+        { id: 'ceramic_vase_01', fi: 2, x: 6880, y: 3470, z: 0.80 },
+        { id: 'wooden_bowl_01', fi: 2, x: 6250, y: 3480, z: 0.80 },
+        { id: 'potted_plant_04', fi: 2, x: 5680, y: 3470, z: 0.80 },
         // (foyer cleared; FF master + SF west bedroom: no lounge chair, the
         //  NW corner is the desk)
         // Foyer Ganesha on the partition ledge, facing the main door (east).
