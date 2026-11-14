@@ -1961,10 +1961,11 @@ window.HouseScene = (function () {
       bag.uv(null);
     };
     // one box call for either axis: `a` is the running span, `b` the cross-band
+    const rakeSide = (opts.skirt && opts.tread === FLOOR_TILE) ? (opts.skirt === 'lo' ? 'lo' : 'hi') : null;
     const slab = (m, aLo, aHi, h0, h1, inset, v) => {
-      const i0 = inset || 0;
-      if (alongY) tpb(m, b0 + i0, b1 - i0, aLo, aHi, h0, h1, v);
-      else tpb(m, aLo, aHi, b0 + i0, b1 - i0, h0, h1, v);
+      const i0 = inset || 0, iL = rakeSide === 'lo' ? 0 : i0, iH = rakeSide === 'hi' ? 0 : i0;   // tile meets the wall under the raking skirting
+      if (alongY) tpb(m, b0 + iL, b1 - iH, aLo, aHi, h0, h1, v);
+      else tpb(m, aLo, aHi, b0 + iL, b1 - iH, h0, h1, v);
     };
     const hb = tileHash(Math.round(b0), Math.round(aBot), 1) & 3;
     for (let i = 1; i <= n; i++) {
@@ -2003,15 +2004,17 @@ window.HouseScene = (function () {
       }
     }
 
-    /* Interior flights: ONE straight raking skirting on the wall side, parallel to the pitch line,
-       in the tread tile. Its lower edge runs through the concave inner corners of the steps (floor to
-       top landing), so it meets every tread with no gap; its top edge is 50 mm + one riser above
-       that, i.e. 50 mm above each nosing, a clean straight slope. Clipped 70 mm above the top
-       landing, 8 mm thick. */
+    /* Interior flights: ONE straight raking skirting on the wall side, flush with the plaster. The
+       visible shape is unchanged: a straight raking top edge 50 mm above every nosing, its foot
+       following the treads. It is built per step as a small prism between the tread level and the
+       raking line, standing IN the wall (it runs from 1 mm proud of the plaster to 8 mm into the
+       wall), so there is no 8 mm lip: from the room the band is the wall's own face, like the floor
+       skirting. 1 mm (not 0) because a coplanar face would z-fight the plaster. The tread tile runs
+       right up to the wall on this side so the skirting meets it with no strip between. Clipped to
+       70 mm above the top landing. */
     if (opts.skirt && opts.tread === FLOOR_TILE) {
-      const sLo = opts.skirt === 'lo', s0 = sLo ? b0 : b1 - 8, s1 = sLo ? b0 + 8 : b1;
-      const H = 0.05 + stepRise, zLo = Math.min(zBot, zTop), zHi = Math.max(zBot, zTop) + 0.07;
-      let poly = [[aBot, zBot], [aTop, zTop], [aTop, zTop + H], [aBot, zBot + H]];   // lower edge through the inner corners (floor -> top landing)
+      const sLo = opts.skirt === 'lo', s0 = sLo ? b0 - 8 : b1 - 1, s1 = sLo ? b0 + 1 : b1 + 8;
+      const H = 0.05 + stepRise, zHi = Math.max(zBot, zTop) + 0.07;
       const clip = (pts, inside, cut) => {
         const out = [];
         for (let i = 0; i < pts.length; i++) {
@@ -2021,10 +2024,13 @@ window.HouseScene = (function () {
         }
         return out;
       };
-      const zCut = z => (P, Q) => { const t = (z - P[1]) / (Q[1] - P[1]); return [P[0] + (Q[0] - P[0]) * t, z]; };
-      poly = clip(poly, P => P[1] >= zBot - 1e-9 && P[1] >= zLo - 1e-9, zCut(zLo));
-      if (poly.length) poly = clip(poly, P => P[1] <= zHi + 1e-9, zCut(zHi));
-      if (poly.length >= 3) bag.prism(opts.tread, alongY, poly, s0, s1);
+      const zl = a => zBot + ((a - aBot) / (aTop - aBot)) * rise;                       // line through the inner corners
+      for (let i = 1; i <= n; i++) {
+        const aA = aBot + (i - 1) * stepGo, aB = aBot + i * stepGo, tTop = zBot + i * stepRise;
+        let poly = [[aA, tTop], [aB, tTop], [aB, zl(aB) + H], [aA, zl(aA) + H]];
+        poly = clip(poly, P => P[1] <= zHi + 1e-9, (P, Q) => { const t = (zHi - P[1]) / (Q[1] - P[1]); return [P[0] + (Q[0] - P[0]) * t, zHi]; });
+        if (poly.length >= 3) bag.prism(opts.tread, alongY, poly, s0, s1);
+      }
     }
 
     if (opts.foot === true) {
