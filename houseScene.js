@@ -160,7 +160,7 @@ window.HouseScene = (function () {
     curtain2:0xc4bbaf,   // dedupe vs fabric
     zebraSheer: 0xf0e9dc, // warm-white mesh between the shade bands
     voile:   0xf3eee3,   // sheer under-curtain (translucent, see M.voile)
-    drapeDark:0x4a4039,  // heavy dark drape
+    drapeDark:0x76675a,  // heavy drape: warm mocha-taupe
     downlight:0xf4ead2,
     coveLED: 0xffe3b4,   // concealed indirect strip — never seen direct
     road:    0x3f4043,
@@ -269,9 +269,9 @@ window.HouseScene = (function () {
         for (let i = 0; i < N; i++) { rowA.push(rnd() < 0.08 ? 0.22 : 0.0); colA.push(rnd() < 0.08 ? 0.22 : 0.0); }
         for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
           const o = (y * N + x) * 4;
-          let a = 0.40 + (rnd() - 0.5) * 0.10;
-          if (y % 4 === 0) a += 0.36;
-          if (x % 4 === 0) a += 0.30;
+          let a = 0.60 + (rnd() - 0.5) * 0.08;
+          if (y % 4 === 0) a += 0.22;
+          if (x % 4 === 0) a += 0.18;
           a += rowA[y] + colA[x];
           d[o] = 252; d[o + 1] = 249; d[o + 2] = 242; d[o + 3] = Math.max(0, Math.min(255, a * 255));
         }
