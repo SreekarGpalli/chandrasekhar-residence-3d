@@ -187,14 +187,14 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261113_bldc_fan4"></script>
+<script src="lib/interiorKit.js?v=20261113_audit2"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_bldc_fan4' : 'houseScene.js?v=20261113_bldc_fan4') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261113_audit2' : 'houseScene.js?v=20261113_audit2') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1349,6 +1349,28 @@ if(!window.THREE || !window.HouseScene){
   //    material key per floor group (avoids exterior/floor z-fight without
   //    cloning every mesh's material).
   const FLOOR_GROUPS = new Set(['floor0', 'floor1', 'floor2']);
+  /* Depth ordering for coplanar surfaces. Every floor material used to get the SAME -4 units, so two
+     different materials sharing one plane (a tile on its slab, a skirting on its wall, a frame on a
+     grille, a trim on a panel) tied on depth and the winner flipped pixel by pixel - the white
+     speckle over treads, skirting and edges. Now each material key has a layer like the viewer's
+     (index.html DEPTH_LAYER): base surfaces 0, finishes 1, trims 2; a layer is 3 units, and a small
+     per-key jitter (0..1.2) breaks ties inside a layer, so a coplanar pair always has ONE fixed winner.
+     Floor groups sit at -4 or more, the exterior shell and decks at 0..-3.5, so the per-floor copy of
+     a wall still beats the shell's. Units only: a slope factor pulls edge-on surfaces through walls. */
+  const WT_LAYER = {
+    terraceF: 1, balcTile: 1, tOut: 1, pave: 1, paver: 1, paver2: 1, roadLine: 1,
+    tFloor: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
+    tPooja: 1, tWalk: 1, plinth: 1, soil: 1, grass: 1, rug: 1, tileBath: 1, tileShower: 1,
+    quartz: 1, limeWash: 1, stoneDk: 1, travertine: 1,
+    skirt: 2, skirtTile: 2, woodD: 2, walnut: 2, walnutI: 2, oakDark: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
+    brass: 2, brassI: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,
+    aluDark: 2, alu: 2, counterTop: 2, tv: 2, solar: 2, solarFrm: 2, msWhite: 2, gBlue: 2, lacqSage: 2,
+    lamp: 3, coveLED: 3, fanLED: 3
+  };
+  const wtHash = k => { let h = 0; for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) % 997; return h / 997; };
+  const wtUnits = (key, floor) => floor ? -(4 + 3 * (WT_LAYER[key] || 0) + wtHash(key) * 1.2)
+                                        : -(1.5 * (WT_LAYER[key] || 0) + wtHash(key) * 0.5);
+  const SHELL_GROUPS = new Set(['exterior', 'outdoor0', 'outdoor1', 'outdoor2']);
   data.root.children.forEach(group => {
     const isFloor = FLOOR_GROUPS.has(group.name);
     const matClone = isFloor ? new Map() : null;
@@ -1358,6 +1380,10 @@ if(!window.THREE || !window.HouseScene){
       // through, the storeys stack and a cap would read as a band at every
       // slab edge
       if (isFloor && o.userData.matKey === 'copingLight') { o.visible = false; return; }
+      if (SHELL_GROUPS.has(group.name) && o.material && !o.material.userData.poff && o.userData.matKey && o.userData.matKey !== 'white') {
+        const m = o.material;       // the shell is one group's own meshes: offset the material it owns
+        m.polygonOffset = true; m.polygonOffsetFactor = 0; m.polygonOffsetUnits = wtUnits(o.userData.matKey, false);
+      }
       // floor slabs ('white') have no exterior twin, so they get no offset —
       // biased, a slab edge tucked 2 mm behind a wall pops through it at
       // glancing angles as a line along every slab level
@@ -1371,7 +1397,7 @@ if(!window.THREE || !window.HouseScene){
           // 115 mm wall — the dashed lines at every slab level
           cloned.polygonOffset = true;
           cloned.polygonOffsetFactor = 0;
-          cloned.polygonOffsetUnits = -4;
+          cloned.polygonOffsetUnits = wtUnits(o.userData.matKey || '', true);
           cloned.userData.poff = true;
           if (src.userData && src.userData.name) cloned.userData.name = src.userData.name;
           matClone.set(src, cloned);

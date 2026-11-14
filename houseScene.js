@@ -1305,7 +1305,7 @@ window.HouseScene = (function () {
   function windowGrille(put, g) {
     const { a0, a1, b, t, edge, outSign } = g;
     const dp = (n0, n1) => outSign > 0 ? [edge + n0, edge + n1] : [edge - n1, edge - n0];
-    const fr = dp(26, 52), br = dp(32, 48), st = dp(42, 54);
+    const fr = dp(24, 52), br = dp(32, 48), st = dp(42, 54);     // frame front plane 24 (not 26): 2 mm clear of the window frame's inner face
     const GF = 24, BAR = 16, STAY = 16;        // frame flat / square bar / back stay (mm)
     const gz0 = b + GF / 1000, gz1 = t - GF / 1000;
     put('msWhite', a0 - 30, a0 + GF, fr[0], fr[1], b - 0.03, t + 0.03);
@@ -2007,7 +2007,7 @@ window.HouseScene = (function () {
         // straight raking skirting after the loop)
         // (true / 'hi' = the wall at b1, 'lo' = the wall at b0), 70 mm like the floor skirting
         if (opts.skirt && opts.tread !== FLOOR_TILE) {
-          const sLo = opts.skirt === 'lo', s0 = sLo ? b0 : b1 - 8, s1 = sLo ? b0 + 8 : b1;
+          const sLo = opts.skirt === 'lo', s0 = sLo ? b0 - 1.5 : b1 - 8, s1 = sLo ? b0 + 8 : b1 + 1.5;   // 1.5 mm past the block side: no shared plane
           if (alongY) tpb(opts.tread, s0, s1, lo, hi, top, top + 0.07, vT);
           else tpb(opts.tread, lo, hi, s0, s1, top, top + 0.07, vT);
         }
