@@ -145,6 +145,7 @@ window.HouseScene = (function () {
     tFloor:  0xfdfcfa,
     // tTread: honed Kadapa-style stone for interior stair treads + mid-landings (colour is in the texture)
     tTread:  0xfcfbf7,
+    paintSand: 0xe3dacb,    // soft sand emulsion for the accent panels / stair band (a touch deeper than the white2 walls, same family)
     skirtTread: 0xfcfbf5,   // stair skirting (raking + landings): the tread stone, cut as skirting
     // furniture
     fabric:  0xc4bbae, fabric2: 0x8a847a, woodF: 0x3f2617,
@@ -486,7 +487,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, skirtTread: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, skirtTread: 1, paintSand: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -3940,27 +3941,53 @@ window.HouseScene = (function () {
       bag.cyl('lamp', ax / 1000, bY + 0.05, -ay / 1000, 0.035, 0.08);
     },
 
-    // 6a. Board-and-batten grid on a wall that runs along x, in the wall's OWN paint (`mat`). Each batten is 80 mm wide and 26 mm
-    // deep with 45-degree CHAMFERED edges (a flat core plus a diamond-section bar on each edge, half of it buried in the wall), so the
-    // up-, down- and side-facing bevels take different light and the grid reads even in plain white. 110 mm base rail, 80 mm top rail;
-    // `cols` x `rows` near-square panels between x0..x1 and z0..z1 (m). `face` 'S' = the room is south of the wall (y < wallY), 'N' = north.
-    battenGrid(bag, mat, x0, x1, wallY, face, z0, z1, cols, rows) {
-      const BW = 80, C = 26, BASE = 0.11, TOP = 0.08, S2 = C * Math.SQRT2 / 1000, wy = -wallY / 1000;
-      const ya = face === 'S' ? wallY - C : wallY - 2, yb = face === 'S' ? wallY + 2 : wallY + C;   // core: 2 mm into the wall, no coplanar back face
-      const px = (x1 - x0 - BW) / cols, vx = k => x0 + k * px;
+    // 6a. Board-and-batten grid in the wall's OWN paint (`mat`). 80 mm wide, 26 mm deep battens with 45-degree CHAMFERED edges (a flat core
+    // plus a diamond-section bar on each edge, half of it buried in the wall), so the up-, down- and side-facing bevels take different light
+    // and the grid reads even in plain white. 110 mm base rail, 80 mm top rail; `cols` x `rows` near-square panels between a0..a1 along the
+    // wall and z0..z1 (m). dir 'x' (default): wall runs along x at y = `wall`, face 'S' = room at y < wall, 'N' = y > wall. dir 'y': wall
+    // runs along y at x = `wall`, face 'W' = room at x < wall, 'E' = x > wall.
+    battenGrid(bag, mat, a0, a1, wall, face, z0, z1, cols, rows, dir) {
+      const BW = 80, C = 26, BASE = 0.11, TOP = 0.08, S2 = C * Math.SQRT2 / 1000, Y = dir === 'y', low = face === 'S' || face === 'W';
+      const d0 = low ? wall - C : wall - 2, d1 = low ? wall + 2 : wall + C;   // core: 2 mm into the wall, no coplanar back face
+      const rect = (p0, p1, zz0, zz1) => Y ? pb(bag, mat, d0, d1, p0, p1, zz0, zz1) : pb(bag, mat, p0, p1, d0, d1, zz0, zz1);
+      const at = (p, zc) => Y ? [wall / 1000, zc, -p / 1000] : [p / 1000, zc, -wall / 1000];
+      const px = (a1 - a0 - BW) / cols, vx = k => a0 + k * px;
       for (let k = 0; k <= cols; k++) {
         const a = vx(k);
-        pb(bag, mat, a + C, a + BW - C, ya, yb, z0, z1);
-        for (const xe of [a + C, a + BW - C]) bag.box(mat, xe / 1000, (z0 + z1) / 2, wy, S2, z1 - z0, S2, 0, Math.PI / 4, 0);
+        rect(a + C, a + BW - C, z0, z1);
+        for (const xe of [a + C, a + BW - C]) bag.box(mat, ...at(xe, (z0 + z1) / 2), S2, z1 - z0, S2, 0, Math.PI / 4, 0);
       }
       for (let j = 0; j <= rows; j++) {
         const lo = j === 0 ? z0 : z0 + j * ((z1 - z0 - TOP) / rows), hi = Math.min(j === 0 ? z0 + BASE : lo + TOP, z1);
         for (let k = 0; k < cols; k++) {
           const a = vx(k) + BW - C, c = vx(k + 1) + C;   // run on into each upright's core so the joints are crossed bevels, not butted ends
-          pb(bag, mat, a, c, ya, yb, lo + C / 1000, hi - C / 1000);
-          for (const ze of [lo + C / 1000, hi - C / 1000]) bag.box(mat, (a + c) / 2000, ze, wy, (c - a) / 1000, S2, S2, Math.PI / 4, 0, 0);
+          rect(a, c, lo + C / 1000, hi - C / 1000);
+          for (const ze of [lo + C / 1000, hi - C / 1000]) {
+            const q = at((a + c) / 2, ze);
+            if (Y) bag.box(mat, q[0], q[1], q[2], S2, S2, (c - a) / 1000, 0, 0, Math.PI / 4);
+            else bag.box(mat, q[0], q[1], q[2], (c - a) / 1000, S2, S2, Math.PI / 4, 0, 0);
+          }
         }
       }
+    },
+
+    // 6a2. Paint band that follows a flight, on a wall along x at y = wallY (room on face 'N' = +y or 'S' = -y): a 2 mm skin in `mat`,
+    // from o0 to o1 m ABOVE the nosing line pts [[x mm, z m], ...] (a polyline: foot extension, the flight, the landing).
+    rakeBand(bag, mat, wallY, face, pts, o0, o1) {
+      const c0 = face === 'S' ? wallY - 2 : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + 2;
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const [xa, za] = pts[i], [xb, zb] = pts[i + 1];
+        if (Math.abs(xb - xa) < 1) continue;
+        bag.prism(mat, false, [[xa, za + o0], [xb, zb + o0], [xb, zb + o1], [xa, za + o1]], c0, c1);
+      }
+    },
+
+    // 6a3. Arched paint panel on a wall along x at y = wallY: a 2 mm skin in `mat`, 2 x halfW mm wide, straight from z0 up to zSpring (m),
+    // then a semicircular head (apex zSpring + halfW). Paint only, no joinery.
+    archSkin(bag, mat, cx, halfW, z0, zSpring, wallY, face) {
+      const c0 = face === 'S' ? wallY - 2 : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + 2, N = 20, pts = [[cx - halfW, z0], [cx + halfW, z0]];
+      for (let k = 0; k <= N; k++) { const t = Math.PI * k / N; pts.push([cx + halfW * Math.cos(t), zSpring + (halfW / 1000) * Math.sin(t)]); }
+      bag.prism(mat, false, pts, c0, c1);
     },
 
     // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
@@ -9669,6 +9696,7 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
+        Fur.rakeBand(bag, 'paintSand', 6496, 'N', [[4800, fY], [4630, fY], [1330, landI(fY)], [230, landI(fY)]], 0.50, 1.10);   // stair south wall: tone band parallel to flight A
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
@@ -9788,6 +9816,10 @@ window.HouseScene = (function () {
         // It half-screens the lounge from the doorstep; y 7385..8642 (1.26 m)
         // stays open.
         Fur.foyerPartition(bag, 10792, 10881, 6815, 7385, fY);
+        // Budget wall set (paint + one MDF shelf): foyer south wall arch + key shelf, master bedroom desk-wall arch.
+        Fur.archSkin(bag, 'paintSand', 11650, 480, fY + 0.07, fY + 1.85, 6815, 'N');                                  // foyer south wall (y 6815): 0.96 m paint arch
+        pb(bag, 'white2', 11250, 12050, 6815, 7115, fY + 0.85, fY + 0.89);                                           // 0.8 x 0.3 m floating key shelf (MDF)
+        Fur.archSkin(bag, 'paintSand', 1120, 850, fY + 0.07, fY + 1.85, 4432, 'S');                                   // master bedroom north wall (y 4432): 1.7 m arch behind the desk (x 420..1820)
         Fur.ganeshaShrine(bag, 10879, 7100, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
@@ -10033,6 +10065,7 @@ window.HouseScene = (function () {
         stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
+        Fur.rakeBand(bag, 'paintSand', 8640, 'S', [[230, midFF], [1330, midFF], [4630, midFF + 10 * RISE_I], [4800, midFF + 10 * RISE_I]], 0.50, 1.10);   // stair north wall: flight B
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
@@ -10041,12 +10074,14 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
+        Fur.rakeBand(bag, 'paintSand', 6496, 'N', [[4800, fY], [4630, fY], [1330, landI(fY)], [230, landI(fY)]], 0.50, 1.10);   // stair south wall: flight A2 (SF -> roof landing)
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
+        Fur.rakeBand(bag, 'paintSand', 8640, 'S', [[230, landI(fY)], [1330, landI(fY)], [4630, landI(fY) + 10 * RISE_I], [4800, landI(fY) + 10 * RISE_I]], 0.50, 1.10);   // stair north wall: flight B2 to the roof
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
@@ -10352,6 +10387,10 @@ window.HouseScene = (function () {
         // North wall behind the sofa: the picture is gone; a floor-to-ceiling board-and-batten grid across the WHOLE wall (4 x 4 near-square panels, 80 x 26 mm battens,
         // from the window's east jamb x 9260 to the east wall x 12420, up to the ceiling corner profile; the sofa sits on the wall's centre, x 10840) in the wall's own paint (white2), so the wall colour is unchanged.
         Fur.battenGrid(bag, 'white2', 9260, 12420, 8640, 'S', fY + 0.07, fY + 3.203 - 0.066, 4, 4);
+        // Budget wall set (paint + thin painted MDF only): passage end wall arch, lounge spine panels, desk-wall arch.
+        Fur.archSkin(bag, 'paintSand', 6270, 650, fY + 0.07, fY + 1.95, 3266, 'N');                                   // passage end wall (y 3266): 1.3 m paint arch
+        Fur.battenGrid(bag, 'white2', 4620, 6440, 4920, 'E', fY + 0.07, fY + 3.203 - 0.066, 2, 3, 'y');              // lounge spine wall (x 4920): 2 x 3 chamfered panels
+        Fur.archSkin(bag, 'paintSand', 11290, 1000, fY + 0.07, fY + 1.90, 4546, 'N');                                 // family room south wall: 2.0 m arch behind the standing desk (x 10590..11990)
       }
 
       const g = bag.build(THREE, materials);

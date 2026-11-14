@@ -192,14 +192,14 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261114_batten_wall5"></script>
+<script src="lib/interiorKit.js?v=20261114_wall_set"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_batten_wall5' : 'houseScene.js?v=20261114_batten_wall5') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_wall_set' : 'houseScene.js?v=20261114_wall_set') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1371,7 +1371,7 @@ if(!window.THREE || !window.HouseScene){
     // finishes laid over finishes
     limeWash: 1, tileShower: 2, quartz: 3,
     // trims
-    skirt: 2, skirtTile: 2, skirtTread: 2, woodD: 2, walnut: 2, walnutI: 2, oakDark: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
+    paintSand: 1, skirt: 2, skirtTile: 2, skirtTread: 2, woodD: 2, walnut: 2, walnutI: 2, oakDark: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
     brass: 2, brassI: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,
     counterTop: 2, tv: 2, solar: 2, solarFrm: 2, msWhite: 2, lacqSage: 2,
     gBlue: 3, alu: 3, aluDark: 4,
