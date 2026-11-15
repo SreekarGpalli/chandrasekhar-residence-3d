@@ -192,14 +192,14 @@
 <script>if(!window.THREE){ bootFail('Failed to load the 3D engine — check your network connection.'); }</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261114_east_bed_cement"></script>
+<script src="lib/interiorKit.js?v=20261114_mural_arches2"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
 /* ?v=full2 walks the second full house (houseScene2.js: full house + V42 exterior). */
-document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_stair_match' : 'houseScene.js?v=20261114_stair_match') + '"></scr' + 'ipt>');
+document.write('<scr' + 'ipt src="' + (/[?&]v=full2(&|$)/i.test(location.search) ? 'houseScene2.js?v=20261114_mural_arches' : 'houseScene.js?v=20261114_mural_arches') + '"></scr' + 'ipt>');
 </script>
 <script>
 if(!window.THREE || !window.HouseScene){
@@ -1369,7 +1369,7 @@ if(!window.THREE || !window.HouseScene){
     tPooja: 1, tWalk: 1, plinth: 1, soil: 1, grass: 1, rug: 1, tileBath: 1, stoneDk: 1, travertine: 1,
     eastPlaster: 1, curtain2: 1,
     // finishes laid over finishes
-    limeWash: 1, limeDusk: 1, limeDuskDk: 1, tileShower: 2, quartz: 3,
+    limeWash: 1, limeDusk: 1, limeDuskDk: 1, muralArch: 1, tileShower: 2, quartz: 3,
     // trims
     paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, skirt: 2, skirtTile: 2, skirtTread: 2, skirtStairStone: 2, stairMetal: 2, woodD: 2, walnut: 2, walnutI: 2, oakDark: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
     brass: 2, brassI: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,

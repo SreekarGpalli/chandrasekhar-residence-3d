@@ -250,6 +250,7 @@ window.HouseScene = (function () {
     wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
     limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
     limeDusk:  0xfaf9f6,  // near-white: the dusk limewash shades live in the texture (limewashDusk): SF east bedroom / theatre walls + ceiling
+    muralArch: 0xfcfbf8,  // near-white: the mural's beige tones live in the texture (muralArches): FF master north wall
     limeDuskDk: 0xf9f8f6, // near-white: deeper load of the same colour (limewashDuskDk): SF east bedroom screen wall
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
@@ -498,7 +499,7 @@ window.HouseScene = (function () {
   const NO_SHADOW_CAST = {
     glass: 1, carGlass: 1, zebraSheer: 1, voile: 1, ground: 1, plotPad: 1, grass: 1, soil: 1,
     green: 1, green2: 1, leafDark: 1, leafLight: 1, boug: 1, ixora: 1,
-    arcTone1: 1, arcTone2: 1, arcTone3: 1, paintSand: 1, paintPeach: 1, paintCream: 1, paintTan: 1,   // 1 mm paint skins: no shadow casting
+    arcTone1: 1, arcTone2: 1, arcTone3: 1, paintSand: 1, paintPeach: 1, paintCream: 1, paintTan: 1, muralArch: 1,   // 1 mm paint skins: no shadow casting
     flowerPink: 1, road: 1, roadLine: 1, roadLine2: 1
   };
 
@@ -531,7 +532,7 @@ window.HouseScene = (function () {
     fluted: 1, quartz: 1, marbleV: 1, travertine: 1, stoneDk: 1, boucle: 1,
     linen: 1, linenDk: 1, velvet: 1, terra: 1, rugW: 1, rugD: 1, leather: 1,
     blackM: 1, brassI: 1, fanWhite: 1, fanBlack: 1, fanLED: 1, ceramic: 1, sheet: 1, duvet: 1, artA: 1, artB: 1,
-    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, limeWash: 1, limeDusk: 1, limeDuskDk: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
+    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, limeWash: 1, limeDusk: 1, limeDuskDk: 1, muralArch: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
   };
 
   /* Building footprint in plan-mm (main block + upper-floor south service). */
@@ -4067,6 +4068,22 @@ window.HouseScene = (function () {
       const d = depth || 2, c0 = face === 'S' ? wallY - d : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + d, N = 20, pts = [[cx - halfW, z0], [cx + halfW, z0]];
       for (let k = 0; k <= N; k++) { const t = Math.PI * k / N; pts.push([cx + halfW * Math.cos(t), zSpring + (halfW / 1000) * Math.sin(t)]); }
       bag.prism(mat, false, pts, c0, c1);
+    },
+
+    // 6a3b. One-piece painted mural on a wall along x at y = wallY (room face 'S' = room at -y, 'N' = +y): a 3 mm skin in `mat`
+    // (a preUV texture treatment) from x0..x1 and the skirting top to zTop (m), with the openings cut out (`holes`: {a0, a1, top (m)},
+    // floor to top). The texture spans the whole wall x0..x1 and fY..zTop, so the composition ignores the door.
+    mural(bag, mat, x0, x1, wallY, face, fY, zTop, holes) {
+      const T = 3, c0 = face === 'S' ? wallY - T : wallY, c1 = face === 'S' ? wallY : wallY + T, zLo = fY + SKIRT_H;
+      bag.uv(v => [(v.x * 1000 - x0) / (x1 - x0), (v.y - fY) / (zTop - fY)]);
+      let cur = x0;
+      for (const h of holes.slice().sort((p, q) => p.a0 - q.a0)) {
+        if (h.a0 > cur) pb(bag, mat, cur, h.a0, c0, c1, zLo, zTop);
+        if (h.top < zTop) pb(bag, mat, h.a0, h.a1, c0, c1, h.top, zTop);
+        cur = h.a1;
+      }
+      if (cur < x1) pb(bag, mat, cur, x1, c0, c1, zLo, zTop);
+      bag.uv(null);
     },
 
     // 6a6. Wall-mounted handrail on a wall along x at y = wallY (room 'N' = +y / 'S' = -y): a 50 x 40 mm timber rail (frame wood)
@@ -10488,8 +10505,7 @@ window.HouseScene = (function () {
         // Budget wall set (paint + one MDF shelf): foyer south wall arch + key shelf, master bedroom desk-wall arch.
         Fur.archSkin(bag, 'paintSand', 11650, 480, fY + 0.07, fY + 1.85, 6815, 'N');                                  // foyer south wall (y 6815): 0.96 m paint arch
         pb(bag, 'white2', 11250, 12050, 6815, 7115, fY + 0.85, fY + 0.89);                                           // 0.8 x 0.3 m floating key shelf (MDF)
-        Fur.archSkin(bag, 'paintSand', 1120, 850, fY + 0.07, fY + 1.85, 4432, 'S');                                   // master bedroom north wall (y 4432): 1.7 m arch behind the desk (x 420..1820)
-        Fur.art(bag, 'x', 4432, 'S', 2635, fY, 1.55, 900, 700, ['artD', 'artB', 'artC']);                          // one framed print centred on the free wall right of the arch
+        Fur.mural(bag, 'muralArch', 230, 4805, 4432, 'S', fY, fY + 3.203, [{ a0: 3300, a1: 4100, top: fY + 2.1 }]);     // master bedroom north wall (y 4432): owner's arch/pill mural, full wall bar the walk-in door (x 3300..4100)
         Fur.ganeshaShrine(bag, 10879, 7100, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
