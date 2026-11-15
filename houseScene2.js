@@ -10786,9 +10786,9 @@ window.HouseScene = (function () {
             pb(bag, 'limeWash', 230, 4805, 230, 4432, top - 0.010, top - 0.008);
           }
         }
-        /* SF east bedroom = guest bedroom + home theatre: colour-drenched in a warm mushroom-taupe
+        /* SF east bedroom = guest bedroom + home theatre: colour-drenched in a soft warm greige-taupe
            limewash (walls AND ceiling, one colour), the way media rooms are done -
-           a mid-dark, desaturated, dead-matte surround bounces little projector light back
+           a muted, desaturated, dead-matte surround bounces little projector light back
            onto the screen and stops the white walls glowing in peripheral vision, while the
            soft two-shade clouds keep it a calm, cocooning bedroom by day. Lime is the right
            finish for both: mineral-matte (no sheen, no hotspots from the downlights).
