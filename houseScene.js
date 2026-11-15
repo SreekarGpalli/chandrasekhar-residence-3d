@@ -10237,10 +10237,10 @@ window.HouseScene = (function () {
         // below its bottom: pb() drops the inverted runs, but the base collar,
         // the plus arms and the coping still land as loose slabs floating over
         // the deck. There is nothing to draw on this storey.
-        // Duplex void safety railings overlooking the first floor hall (black MS pickets + wooden top bar)
-        railing(bag, 'y', 6020, 6996, 8641, fY, 1.0, { topRail: 'frame' });
-        railing(bag, 'x', 6996, 6020, 9260, fY, 1.0, { topRail: 'frame' });
-        railing(bag, 'y', 9260, 6996, 8641, fY, 1.0, { topRail: 'frame' });
+        // Duplex void safety railings overlooking the first floor hall (off-white painted MS pickets, same as the stair + wooden top bar)
+        railing(bag, 'y', 6020, 6996, 8641, fY, 1.0, { metal: 'stairMetal', topRail: 'frame' });
+        railing(bag, 'x', 6996, 6020, 9260, fY, 1.0, { metal: 'stairMetal', topRail: 'frame' });
+        railing(bag, 'y', 9260, 6996, 8641, fY, 1.0, { metal: 'stairMetal', topRail: 'frame' });
         Fur.tvFeatureWall(bag, 6020, 8241, 8622, 8642, fY, 3.353, false);
 
         // Internal stair: flight B FF→SF (from mid landing) + full SF→roof U-stair
