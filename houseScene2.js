@@ -2060,7 +2060,7 @@ window.HouseScene = (function () {
       }
       if (opts.tread) {
         // tile/timber going with a 12 mm nosing over the riser below
-        const nLo = sign > 0 ? lo : lo - 12, nHi = sign > 0 ? hi + 12 : hi;
+        const nLo = sign > 0 ? lo - 12 : lo, nHi = sign > 0 ? hi : hi + 12;
         slab(opts.tread, nLo, nHi, top - tt, top, 6, vT);
         // skirting up the wall side of each step (outdoor stairs only: the interior flights get ONE
         // straight raking skirting after the loop)
