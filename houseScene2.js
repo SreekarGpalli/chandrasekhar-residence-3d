@@ -4098,6 +4098,26 @@ window.HouseScene = (function () {
       this.archSkin(bag, 'white2', cx, R - mats.length * band, base, base, wallY, face, 1.5 + mats.length);
     },
 
+    // 6a9. Tall, narrow 'rainbow' arch: nested arch outlines (straight sides, round head) on a wall along x at y = wallY, all springing
+    // from the same level, deep tone outside -> light inside, a slim white eye in the middle. halfW mm, straight m from base to spring.
+    tallRainbow(bag, cx, base, wallY, face, halfW, straight, mats) {
+      const band = halfW / (mats.length + 1);
+      mats.forEach((m, i) => this.archSkin(bag, m, cx, halfW - i * band, base, base + straight, wallY, face, 1.5 + i));
+      this.archSkin(bag, 'white2', cx, halfW - mats.length * band, base, base + straight, wallY, face, 1.5 + mats.length);
+    },
+
+    // 6a10. A row of tall rainbow arches climbing one flight on its wall: five arches (520 wide, 140 apart) evenly along the run
+    // xa (foot, nosing z0) -> xb (top, z0 + rise), each standing 0.40 m above the nosing line at its own centre (clear of the step
+    // lights at +0.30), so the row steps up with the stair; plus one on the landing wall at landX (landing top landTop).
+    rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop) {
+      const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 260, S = 1.90;
+      for (let k = 0; k < 5; k++) {
+        const x = xa + (xb - xa) * (k + 0.5) / 5, zn = z0 + rise * (k + 0.5) / 5;
+        this.tallRainbow(bag, x, zn + 0.40, wallY, face, H, S, T);
+      }
+      if (landX != null) this.tallRainbow(bag, landX, landTop + 0.40, wallY, face, H, S, T);
+    },
+
     // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
     // slot in it. Mounted on a wall that runs along x; `face` 'N' = the wall faces +y, 'S' = faces -y; yAbs = centre height (m).
     stepLight(bag, x, wallY, yAbs, face) {
@@ -10267,8 +10287,7 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        // stair south wall: one subtle 'rainbow' of four close warm tones, in the plain wall between flight A and the flight above
-        Fur.rainbow(bag, 2980, L.f1 + 2.30, 6496, 'N', 1100, 160, ['arcTone1', 'arcTone2', 'arcTone3', 'arcTone4']);
+        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY));                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
@@ -10638,8 +10657,7 @@ window.HouseScene = (function () {
         stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        // stair north wall: the matching rainbow between flight B and flight B2 (seen from the FF hall through the stair mouth)
-        Fur.rainbow(bag, 2780, midFF + 1.77, 8640, 'S', 1100, 160, ['arcTone1', 'arcTone2', 'arcTone3', 'arcTone4']);
+        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF);                              // stair north wall: tall tonal rainbow arches up flight B + one on the landing
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
@@ -10648,12 +10666,14 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
+        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY));                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
+        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, landI(fY), 10 * RISE_I, 780, landI(fY));                      // stair north wall: flight B2 to the roof
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
