@@ -161,9 +161,9 @@ window.HouseScene = (function () {
     paintPeach: 0xe8c3a6,   // passage arch composition: soft peach
     paintCream: 0xf2eadd,   // passage arch composition: cream
     paintTan:   0xd9bd96,   // passage arch composition: sand-tan
-    arcTone1: 0xdcbfa2,   // stair rainbow tone 1 (deep -> light, one warm family)
-    arcTone2: 0xe5ceb6,   // stair rainbow tone 2 (deep -> light, one warm family)
-    arcTone3: 0xeddcc9,   // stair rainbow tone 3 (deep -> light, one warm family)
+    arcTone1: 0xe4cbb3,   // stair rainbow tone 1 (deep -> light, one warm family)
+    arcTone2: 0xebd8c4,   // stair rainbow tone 2 (deep -> light, one warm family)
+    arcTone3: 0xf2e5d6,   // stair rainbow tone 3 (deep -> light, one warm family)
     arcTone4: 0xf4eadd,   // stair rainbow tone 4 (deep -> light, one warm family)
     paintSand: 0xe3dacb,    // soft sand emulsion for the accent panels / stair band (a touch deeper than the white2 walls, same family)
     skirtTread: 0xfcfbf5,   // stair skirting (raking + landings): the tread stone, cut as skirting
@@ -493,6 +493,7 @@ window.HouseScene = (function () {
   const NO_SHADOW_CAST = {
     glass: 1, carGlass: 1, zebraSheer: 1, voile: 1, ground: 1, plotPad: 1, grass: 1, soil: 1,
     green: 1, green2: 1, leafDark: 1, leafLight: 1, boug: 1, ixora: 1,
+    arcTone1: 1, arcTone2: 1, arcTone3: 1, paintSand: 1, paintPeach: 1, paintCream: 1, paintTan: 1,   // 1 mm paint skins: no shadow casting
     flowerPink: 1, road: 1, roadLine: 1, roadLine2: 1
   };
 
@@ -10737,24 +10738,12 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), () => L.roof + 2.636, L.roof + 2.636);   // up to the stair-head coping                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
-        Fur.windowRainbow(bag, 230, 'E', landI(fY), { a0: 6968.5, a1: 8168.5, z0: fY + 2.08, z1: fY + 3.18 }, ['arcTone1', 'arcTone2', 'arcTone3']);   // landing west wall (SF -> roof landing)
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
-        // stair north wall, flight B2 to the roof: laid out around the stair-head window (x 3150..3850, roof + 1.30..2.00) so the window
-        // is the eye of a framing arch instead of cutting across two: landing arch (normal) - inverted - window arch (normal, 1.17 m).
-        (function () {
-          const T = ['arcTone1', 'arcTone2', 'arcTone3'], R10 = 10 * RISE_I, top = () => L.roof + 2.636, lt = landI(fY);
-          const foot = x => lt + 0.05 + RISE_I + R10 * (x - 1330) / 3300 + 0.012, zl = lt + 0.082;
-          const win = [{ a0: 3150 - 15, a1: 3850 + 15, z0: L.roof + 1.30 - 0.015, z1: L.roof + 2.00 + 0.015 }];
-          Fur.rakeRainbow(bag, 780, 450, () => zl, zl + 1.90, 8640, 'S', T, false);
-          Fur.rakeRainbow(bag, 2072, 450, top, foot(2072) + 0.30 + 0.45, 8640, 'S', T, true);
-          Fur.rakeRainbow(bag, 3500, 585, foot, L.roof + 2.04, 8640, 'S', T, false, win, false, 65);   // eye 780 wide around the 700 window
-        })();
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
