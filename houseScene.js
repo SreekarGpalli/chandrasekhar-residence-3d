@@ -4111,15 +4111,15 @@ window.HouseScene = (function () {
       });
     },
 
-    // 6a9b. The landing (west) wall: one large rainbow arch framing the landing window, which sits in its white eye (60 mm clear of
-    // the inner band), standing on the landing skirting's LED strip, heads springing 150 mm above the window head. Paint stops at
-    // the opening. win = { a0, a1, z0, z1 } (y mm, z m).
-    windowRainbow(bag, wallX, face, landTop, win, mats) {
-      const band = 80, eye = (win.a1 - win.a0) / 2 + 60, hw = eye + band * mats.length, zl = landTop + 0.082;
-      this.rakeRainbow(bag, (win.a0 + win.a1) / 2, hw, () => zl, win.z1 + 0.15, wallX, face, mats, false,
+    // 6a9b. The landing (west) wall: an INVERTED rainbow arch hanging from the ceiling (the slab of the landing overhead, `ceilZ`) over the
+    // window `win` = { a0, a1, z0, z1 } (y mm, z m): sides straight down from the soffit, round end 250 mm above the window head, three
+    // 70 mm bands around an eye 60 mm wider than the window each side. It continues the stair's normal / inverted rhythm and, like every
+    // arch here, starts on a real edge. Paint stops at the opening.
+    windowRainbow(bag, wallX, face, win, mats, ceilZ) {
+      const band = 70, hw = (win.a1 - win.a0) / 2 + 60 + band * mats.length;
+      this.rakeRainbow(bag, (win.a0 + win.a1) / 2, hw, () => ceilZ + 0.005, win.z1 + 0.25 + hw / 1000, wallX, face, mats, true,
                        [{ a0: win.a0 - 15, a1: win.a1 + 15, z0: win.z0 - 0.015, z1: win.z1 + 0.015 }], true, band);
     },
-
     // 6a10. One flight's row, alternating NORMAL / INVERTED along the way up (the first one met is normal): three 900 mm arches
     // (200 mm apart) evenly along the run xa (foot, nosing z0) -> xb (top, z0 + rise) plus one on the landing wall at landX.
     // A normal arch stands on the skirting LED line, crown 1.90 m + r above its foot. An inverted arch hangs from the real top of
@@ -9862,7 +9862,7 @@ window.HouseScene = (function () {
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
         Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025);                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
-        Fur.windowRainbow(bag, 230, 'E', landI(fY), { a0: 6968.5, a1: 8168.5, z0: fY + 2.08, z1: fY + 3.18 }, ['arcTone1', 'arcTone2', 'arcTone3']);   // landing west wall: the window in a rainbow's eye
+        Fur.windowRainbow(bag, 230, 'E', { a0: 6968.5, a1: 8168.5, z0: fY + 2.08, z1: fY + 3.18 }, ['arcTone1', 'arcTone2', 'arcTone3'], landI(fY + L.f2f) - 0.157);   // landing west wall: inverted arch hanging over the window
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
