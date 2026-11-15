@@ -157,13 +157,16 @@ window.HouseScene = (function () {
     tFloor:  0xfdfcfa,
     // tTread: honed Kadapa-style stone for interior stair treads + mid-landings (colour is in the texture)
     tTread:  0xfcfbf7,
+    stairStone:      0xe1ddd3,  // lower stair: honed warm greige stone on treads, risers and landing
+    skirtStairStone: 0xe1ddd4,  // same stone, box-projected on the skirting
+    stairMetal:      0xede9df,  // off-white painted mild steel on the indoor stair
     limeSand: 0xfcfaf4,     // near-white: the warm limewash shades live in the texture (limewashWarm): SF lounge spine wall
     paintPeach: 0xe8c3a6,   // passage arch composition: soft peach
     paintCream: 0xf2eadd,   // passage arch composition: cream
     paintTan:   0xd9bd96,   // passage arch composition: sand-tan
-    arcTone1: 0xe4cbb3,   // stair rainbow tone 1 (deep -> light, one warm family)
-    arcTone2: 0xebd8c4,   // stair rainbow tone 2 (deep -> light, one warm family)
-    arcTone3: 0xf2e5d6,   // stair rainbow tone 3 (deep -> light, one warm family)
+    arcTone1: 0xd3c7b5,   // warm putty on the outer arch band
+    arcTone2: 0xe1d7c6,   // soft sand on the middle band
+    arcTone3: 0xeee7db,   // ivory on the inner band
     arcTone4: 0xf4eadd,   // stair rainbow tone 4 (deep -> light, one warm family)
     paintSand: 0xe3dacb,    // soft sand emulsion for the accent panels / stair band (a touch deeper than the white2 walls, same family)
     skirtTread: 0xfcfbf5,   // stair skirting (raking + landings): the tread stone, cut as skirting
@@ -508,7 +511,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, skirtTread: 1, paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, skirtTread: 1, skirtStairStone: 1, paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -1705,7 +1708,8 @@ window.HouseScene = (function () {
   function railing(bag, dir, fc, a0, a1, base, h, opts) {
     h = h || 1.0;
     opts = opts || {};
-    const topM = opts.topRail || 'gBlue';   // FULL2: V42 blue-grey
+    const metal = opts.metal || 'gBlue';   // FULL2: V42 blue-grey
+    const topM = opts.topRail || metal;
     const sit = base + 0.012;
     const len = a1 - a0; if (len < 80) return;
     const n = Math.max(2, Math.round(len / 110));
@@ -1722,12 +1726,12 @@ window.HouseScene = (function () {
       const isPost = (i === 0 || i === n || (i % 8 === 0));
       const hw = isPost ? 12 : 10; // 24mm stanchion post vs 20mm baluster picket
       if (dir === 'x') {
-        pb(bag, 'gBlue', a - hw, a + hw, fc - hw, fc + hw, botZ + botH, sit + h - topH);
+        pb(bag, metal, a - hw, a + hw, fc - hw, fc + hw, botZ + botH, sit + h - topH);
         // Base anchor studs into floor for posts
-        if (isPost) pb(bag, 'gBlue', a - 18, a + 18, fc - 18, fc + 18, sit, botZ + botH);
+        if (isPost) pb(bag, metal, a - 18, a + 18, fc - 18, fc + 18, sit, botZ + botH);
       } else {
-        pb(bag, 'gBlue', fc - hw, fc + hw, a - hw, a + hw, botZ + botH, sit + h - topH);
-        if (isPost) pb(bag, 'gBlue', fc - 18, fc + 18, a - 18, a + 18, sit, botZ + botH);
+        pb(bag, metal, fc - hw, fc + hw, a - hw, a + hw, botZ + botH, sit + h - topH);
+        if (isPost) pb(bag, metal, fc - 18, fc + 18, a - 18, a + 18, sit, botZ + botH);
       }
     }
 
@@ -1735,13 +1739,13 @@ window.HouseScene = (function () {
     if (dir === 'x') {
       pb(bag, topM, a0 - (opts.corner0 ? 25 : 15), a1 + (opts.corner1 ? 25 : 15), fc - 25, fc + 25, sit + h - topH, sit + h);
       // Bottom runner bar (30x15 mm MS flat)
-      pb(bag, 'gBlue', a0 - (opts.corner0 ? 15 : 10), a1 + (opts.corner1 ? 15 : 10), fc - 15, fc + 15, botZ, botZ + botH);
+      pb(bag, metal, a0 - (opts.corner0 ? 15 : 10), a1 + (opts.corner1 ? 15 : 10), fc - 15, fc + 15, botZ, botZ + botH);
       // Intermediate safety runner bar (20x10 mm MS flat)
-      pb(bag, 'gBlue', a0 - 10, a1 + 10, fc - 10, fc + 10, midZ, midZ + 0.012);
+      pb(bag, metal, a0 - 10, a1 + 10, fc - 10, fc + 10, midZ, midZ + 0.012);
     } else {
       pb(bag, topM, fc - 25, fc + 25, a0 - (opts.corner0 ? 25 : 15), a1 + (opts.corner1 ? 25 : 15), sit + h - topH, sit + h);
-      pb(bag, 'gBlue', fc - 15, fc + 15, a0 - (opts.corner0 ? 15 : 10), a1 + (opts.corner1 ? 15 : 10), botZ, botZ + botH);
-      pb(bag, 'gBlue', fc - 10, fc + 10, a0 - 10, a1 + 10, midZ, midZ + 0.012);
+      pb(bag, metal, fc - 15, fc + 15, a0 - (opts.corner0 ? 15 : 10), a1 + (opts.corner1 ? 15 : 10), botZ, botZ + botH);
+      pb(bag, metal, fc - 10, fc + 10, a0 - 10, a1 + 10, midZ, midZ + 0.012);
     }
   }
   function railPillar(bag, x, y, base, h) {
@@ -2013,12 +2017,12 @@ window.HouseScene = (function () {
     // A finish in the house floor marble is cut from ONE slab per piece: no
     // joint across a tread, and the slab changes from step to step. v = slab variant.
     const tpb = (m, x0, x1, y0, y1, h0, h1, v) => {
-      if ((m === FLOOR_TILE || m === TREAD_TILE) && v !== undefined) bag.uv(pieceMap(x0 / 1000, x1 / 1000, -y1 / 1000, -y0 / 1000, h0, h1, v));
+      if (isSlabTile(m) && v !== undefined) bag.uv(pieceMap(x0 / 1000, x1 / 1000, -y1 / 1000, -y0 / 1000, h0, h1, v));
       pb(bag, m, x0, x1, y0, y1, h0, h1);
       bag.uv(null);
     };
     // one box call for either axis: `a` is the running span, `b` the cross-band
-    const inFlight = opts.tread === FLOOR_TILE || opts.tread === TREAD_TILE;   // interior flight (tiled), as opposed to the outdoor stairs
+    const inFlight = isSlabTile(opts.tread);   // interior flight (tiled), as opposed to the outdoor stairs
     const rakeSide = (opts.skirt && inFlight) ? (opts.skirt === 'lo' ? 'lo' : 'hi') : null;
     const slab = (m, aLo, aHi, h0, h1, inset, v) => {
       // The finish runs the full width of the block: on the raking-skirting side it meets the wall,
@@ -2076,6 +2080,7 @@ window.HouseScene = (function () {
        right up to the wall on this side so the skirting meets it with no strip between. Clipped to
        70 mm above the top landing. */
     if (opts.skirt && inFlight) {
+      const skirtMat = opts.tread === STAIR_STONE ? 'skirtStairStone' : 'skirtTread';
       const sLo = opts.skirt === 'lo', s0 = sLo ? b0 - 8 : b1 - 1, s1 = sLo ? b0 + 1 : b1 + 8;
       const H = 0.05 + stepRise, zHi = Math.max(zBot, zTop) + 0.07;
       const clip = (pts, inside, cut) => {
@@ -2092,7 +2097,7 @@ window.HouseScene = (function () {
         const aA = aBot + (i - 1) * stepGo, aB = aBot + i * stepGo, tTop = zBot + i * stepRise;
         let poly = [[aA, tTop], [aB, tTop], [aB, zl(aB) + H], [aA, zl(aA) + H]];
         poly = clip(poly, P => P[1] <= zHi + 1e-9, (P, Q) => { const t = (zHi - P[1]) / (Q[1] - P[1]); return [P[0] + (Q[0] - P[0]) * t, zHi]; });
-        if (poly.length >= 3) bag.prism('skirtTread', alongY, poly, s0, s1);   // the raking skirting is the tread stone
+        if (poly.length >= 3) bag.prism(skirtMat, alongY, poly, s0, s1);   // the raking skirting is the tread stone
       }
     }
 
@@ -2114,18 +2119,19 @@ window.HouseScene = (function () {
     pb(bag, m, x0, x1, y0, y1, top - t, top - treadT);
     // finish edge to edge; its exposed edges are plastered down over the
     // slab, so the landing edge reads as one plain face (no tile/slab lines)
-    if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 }, (finish === FLOOR_TILE || finish === TREAD_TILE) ? 'room' : null);
+    if (finish) bag.plate(finish, x0, x1, y0, y1, top - treadT, top, { mat: m, down: t - treadT, out: 2 }, isSlabTile(finish) ? 'room' : null);
     // skirting on the landing's wall sides ('W' x0, 'E' x1, 'S' y0, 'N' y1): a
     // landing is a floor of its own, so the flush skirting of wallRun (storey level) never reaches it
     if (finish && skirtSides) {
+      const skirtMat = finish === STAIR_STONE ? 'skirtStairStone' : 'skirtTread';
       const sb = top - 0.005, st = top + 0.07;
       // FLUSH, like the raking stair skirting: 1 mm proud of the plaster, 8 mm into the wall (it used to stand 12 mm
       // out from the wall), in the tread stone. Along S/N it starts/stops 1 mm in from a W/E return so no two faces share a plane.
       const sw = skirtSides.includes('W'), se = skirtSides.includes('E');
-      if (sw) pb(bag, 'skirtTread', x0 - 8, x0 + 1, y0, y1, sb, st);
-      if (se) pb(bag, 'skirtTread', x1 - 1, x1 + 8, y0, y1, sb, st);
-      if (skirtSides.includes('S')) pb(bag, 'skirtTread', x0 + (sw ? 1 : 0), x1 - (se ? 1 : 0), y0 - 8, y0 + 1, sb, st);
-      if (skirtSides.includes('N')) pb(bag, 'skirtTread', x0 + (sw ? 1 : 0), x1 - (se ? 1 : 0), y1 - 2, y1 + 8, sb, st);   // north wall face is y 8640 (landing y1 8641), so the 1 mm proud face is y1 - 2
+      if (sw) pb(bag, skirtMat, x0 - 8, x0 + 1, y0, y1, sb, st);
+      if (se) pb(bag, skirtMat, x1 - 1, x1 + 8, y0, y1, sb, st);
+      if (skirtSides.includes('S')) pb(bag, skirtMat, x0 + (sw ? 1 : 0), x1 - (se ? 1 : 0), y0 - 8, y0 + 1, sb, st);
+      if (skirtSides.includes('N')) pb(bag, skirtMat, x0 + (sw ? 1 : 0), x1 - (se ? 1 : 0), y1 - 2, y1 + 8, sb, st);   // north wall face is y 8640 (landing y1 8641), so the 1 mm proud face is y1 - 2
     }
   }
 
@@ -4102,11 +4108,10 @@ window.HouseScene = (function () {
     // 6a9. Tonal 'rainbow' arch on a stair wall: concentric bands, deep tone outside -> light inside, the eye is the bare wall.
     // Normal: bottoms follow zAt(a) (the skirting's LED line), round heads about the centre line zC.
     // Inverted: tops follow zAt(a) (the real soffit / wall top above), round ends hang down about zC.
-    // It is PAINT: every band is subtracted from the wall's openings (holes [{a0, a1, z0, z1}], a in mm along the wall, z in m), so
-    // nothing ever runs across glass. Wall along x at plan y = wall (dirY false) or along y at plan x = wall (dirY true); face is the
-    // side the room is on ('S'/'W' = the lower coordinate).
-    rakeRainbow(bag, cx, halfW, zAt, zC, wall, face, mats, inverted, holes, dirY, bandMm) {
-      const band = bandMm || halfW / (mats.length + 1), N = 24, s = inverted ? -1 : 1, low = face === 'S' || face === 'W';
+    // In the dollhouse, clip the paint to the visible wall between the floor and the cut.
+    // The wall runs along x at plan y = wall, with the room on the 'N' or 'S' face.
+    rakeRainbow(bag, cx, halfW, zAt, zC, wall, face, mats, inverted, wallSpan) {
+      const band = halfW / (mats.length + 1), N = 24, s = inverted ? -1 : 1, low = face === 'S';
       const half = (poly, f) => {                        // keep the part of a convex polygon where f(p) >= 0
         const out = [];
         for (let k = 0; k < poly.length; k++) {
@@ -4116,21 +4121,11 @@ window.HouseScene = (function () {
         }
         return out;
       };
-      const minus = (polys, h) => {                       // convex pieces of polys outside the rectangle h
-        const res = [];
-        for (const q of polys) {
-          const mid = half(half(q, p => p[0] - h.a0), p => h.a1 - p[0]);
-          for (const piece of [half(q, p => h.a0 - p[0]), half(q, p => p[0] - h.a1), half(mid, p => h.z0 - p[1]), half(mid, p => p[1] - h.z1)])
-            if (piece.length >= 3) res.push(piece);
-        }
-        return res;
-      };
       // FLAT paint: each band is its own U-shaped region (outer outline minus inner), cut into convex pieces - two side strips
       // and the head as quads between the two arcs - all at ONE depth, side by side, never stacked. The eye is not drawn at all:
       // it is the wall. (Stacked skins left a 1 mm step at every band edge that rendered as a dotted, sticker-like outline.)
       const D = 0.8, c0 = low ? wall - D : wall - 1, c1 = low ? wall + 1 : wall + D;
       const arc = (hw, t) => [cx + hw * Math.cos(t), zC + s * (hw / 1000) * Math.sin(t)];
-      const emit = poly => { let pieces = [poly]; for (const h of (holes || [])) pieces = minus(pieces, h); return pieces; };
       mats.forEach((m, i) => {
         const ho = halfW - i * band, hi = halfW - (i + 1) * band, polys = [];
         for (const sg of [-1, 1]) {                       // side strips: from the edge line zAt up (or down) to the spring zC
@@ -4141,7 +4136,10 @@ window.HouseScene = (function () {
           const t0 = Math.PI * k / N, t1 = Math.PI * (k + 1) / N;
           polys.push([arc(ho, t0), arc(ho, t1), arc(hi, t1), arc(hi, t0)]);
         }
-        for (const q of polys) for (const piece of emit(q)) bag.prism(m, !!dirY, piece, c0, c1);
+        for (const q of polys) {
+          const piece = wallSpan ? half(half(q, p => p[1] - wallSpan[0]), p => wallSpan[1] - p[1]) : q;
+          if (piece.length >= 3) bag.prism(m, false, piece, c0, c1);
+        }
       });
     },
 
@@ -4161,15 +4159,15 @@ window.HouseScene = (function () {
     // A normal arch stands on the skirting LED line, crown 1.90 m + r above its foot. An inverted arch hangs from the real top of
     // the wall above it - ceil(x), the soffit of the flight overhead (raking) or the stair-head ceiling; landCeil over the landing -
     // and its round end stops 0.30 m above the skirting. Both kinds start from a real edge: no imaginary datum.
-    rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop, ceil, landCeil, holes) {
+    rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop, ceil, landCeil, wallSpan) {
       const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 450, S = 1.90, G = 0.30, r = H / 1000;
       const foot = x => z0 + 0.05 + rise / 10 + rise * (x - xa) / (xb - xa) + 0.012;   // raking skirt top (50 mm over the nosing line) + strip
       const zl = landTop != null ? landTop + 0.07 + 0.012 : 0;
       const items = [0, 1, 2].map(k => ({ x: xa + (xb - xa) * (k + 0.5) / 3, f: foot, c: ceil }));
       if (landX != null) { const land = { x: landX, f: () => zl, c: () => landCeil }; if (Math.abs(xa - 1330) < 1) items.unshift(land); else items.push(land); }
       items.forEach((it, n) => {
-        if (n % 2 === 0) this.rakeRainbow(bag, it.x, H, it.f, it.f(it.x) + S, wallY, face, T, false, holes);
-        else this.rakeRainbow(bag, it.x, H, it.c, it.f(it.x) + G + r, wallY, face, T, true, holes);
+        if (n % 2 === 0) this.rakeRainbow(bag, it.x, H, it.f, it.f(it.x) + S, wallY, face, T, false, wallSpan);
+        else this.rakeRainbow(bag, it.x, H, it.c, it.f(it.x) + G + r, wallY, face, T, true, wallSpan);
       });
     },
 
@@ -5848,7 +5846,9 @@ window.HouseScene = (function () {
   // Its own key (not tLiving): the tiles carry laid UVs, so the viewers must
   // not box-project them (treatment flag preUV in lib/interiorKit.js).
   const FLOOR_TILE = 'tFloor';
-  const TREAD_TILE = 'tTread';   // interior stair treads + mid-landings (the risers, skirting and floors stay FLOOR_TILE)
+  const TREAD_TILE = 'tTread';   // upper stair treads and half-landing
+  const STAIR_STONE = 'stairStone';
+  const isSlabTile = mat => mat === FLOOR_TILE || mat === TREAD_TILE || mat === STAIR_STONE;
 
   const SF_FAMILY_ROOM = R('FAMILY ROOM', '3161 × 4095', 9260, 12421, 4546, 8641, 'living');
   const SF_FAMILY_SOUTH_WALL_X0 = 7620; // Bedroom 03's outside corner, west of the family room's floor boundary.
@@ -8140,9 +8140,9 @@ window.HouseScene = (function () {
       }
     }
 
-    // Interior stair finish kit (wood treads, soft risers, black MS pickets with wooden top handrail)
-    const STAIR_IN = { tread: TREAD_TILE, riser: FLOOR_TILE };   // internal stair finish = the house floor tile
-    const RAIL_IN = { post: 'ms', spindle: 'ms', rail: 'frame' };
+    // The indoor steelwork shares one off-white finish on both sloped and level rails.
+    const RAIL_IN = { post: 'stairMetal', spindle: 'stairMetal', rail: 'frame' };
+    const LANDING_RAIL_IN = { metal: 'stairMetal', topRail: 'frame' };
     // Exterior stair handrail — black MS posts, black MS rail
     const RAIL_OUT = { post: 'ms', spindle: 'ms', rail: 'ms' };
 
@@ -10360,14 +10360,14 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025);                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
+        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         const stairWindow = fd.sch.W.find(o => o.c > 6496 && o.c < 8640);
         const landingPaintTop = window.__HOUSE_WALK ? landI(L.f2) - 0.157 : cut;
         Fur.stairLandingPaint(bag, WB[1], stairWindow, fY, landI(fY) + 0.082, landingPaintTop);
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
-        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
+                    { tread: STAIR_STONE, riser: STAIR_STONE, skirt: 'lo' });
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), STAIR_STONE, undefined, undefined, 'WSN');
+        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, LANDING_RAIL_IN);
         // furniture
         westSuite(bag, fY);
         Fur.clad(bag, 'x', 950, 'S', 8250, 9370, fY, 2.40);          // common bath north
@@ -10730,12 +10730,15 @@ window.HouseScene = (function () {
 
         // Internal stair: flight B FF→SF (from mid landing) + full SF→roof U-stair
         const midFF = landI(L.f1);
-        stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
-        railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
+        // The isolated second-floor view needs this landing. The walkthrough already has the first-floor copy.
+        if (!window.__HOUSE_WALK) {
+          stairLanding(bag, 230, 1330, 6496, 8641, midFF, STAIR_STONE, undefined, undefined, 'WSN');
+          railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, LANDING_RAIL_IN);
+        }
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025);                              // stair north wall: tall tonal rainbow arches up flight B + one on the landing
+        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
-                    { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
+                    { tread: STAIR_STONE, riser: STAIR_STONE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
 
         // flight A' SF → mid landing toward roof
@@ -10743,12 +10746,12 @@ window.HouseScene = (function () {
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
-        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
+        railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, LANDING_RAIL_IN);
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
-        railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
+        railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, LANDING_RAIL_IN);
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
            own top landing, so the same tile as the flights. */
