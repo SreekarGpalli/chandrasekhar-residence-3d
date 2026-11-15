@@ -4098,20 +4098,59 @@ window.HouseScene = (function () {
       this.archSkin(bag, 'white2', cx, R - mats.length * band, base, base, wallY, face, 1.5 + mats.length);
     },
 
-    // 6a9. Tonal 'rainbow' arch on a stair wall along x at y = wallY: nested outlines, deep tone outside -> light inside, white eye.
-    // Normal: bottoms follow zAt(x) (the skirting's LED line), round heads about the centre line zC.
-    // Inverted: tops follow zAt(x) (a datum raking with the stair), round ends hang down about zC.
-    // Every band is a 1.5-4.5 mm paint skin over the one outside it, so nothing shares a plane.
-    rakeRainbow(bag, cx, halfW, zAt, zC, wallY, face, mats, inverted) {
-      const band = halfW / (mats.length + 1), N = 24, s = inverted ? -1 : 1;
-      const one = (m, hw, d) => {
-        const c0 = face === 'S' ? wallY - d : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + d;
-        const pts = [[cx - hw, zAt(cx - hw)], [cx + hw, zAt(cx + hw)]];
-        for (let k = 0; k <= N; k++) { const t = Math.PI * k / N; pts.push([cx + hw * Math.cos(t), zC + s * (hw / 1000) * Math.sin(t)]); }
-        bag.prism(m, false, pts, c0, c1);
+    // 6a9. Tonal 'rainbow' arch on a stair wall: concentric bands, deep tone outside -> light inside, the eye is the bare wall.
+    // Normal: bottoms follow zAt(a) (the skirting's LED line), round heads about the centre line zC.
+    // Inverted: tops follow zAt(a) (the real soffit / wall top above), round ends hang down about zC.
+    // It is PAINT: every band is subtracted from the wall's openings (holes [{a0, a1, z0, z1}], a in mm along the wall, z in m), so
+    // nothing ever runs across glass. Wall along x at plan y = wall (dirY false) or along y at plan x = wall (dirY true); face is the
+    // side the room is on ('S'/'W' = the lower coordinate).
+    rakeRainbow(bag, cx, halfW, zAt, zC, wall, face, mats, inverted, holes, dirY, bandMm) {
+      const band = bandMm || halfW / (mats.length + 1), N = 24, s = inverted ? -1 : 1, low = face === 'S' || face === 'W';
+      const half = (poly, f) => {                        // keep the part of a convex polygon where f(p) >= 0
+        const out = [];
+        for (let k = 0; k < poly.length; k++) {
+          const P = poly[k], Q = poly[(k + 1) % poly.length], fp = f(P), fq = f(Q);
+          if (fp >= 0) out.push(P);
+          if ((fp >= 0) !== (fq >= 0)) { const t = fp / (fp - fq); out.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t]); }
+        }
+        return out;
       };
-      mats.forEach((m, i) => one(m, halfW - i * band, 1.5 + i));
-      one('white2', halfW - mats.length * band, 1.5 + mats.length);
+      const minus = (polys, h) => {                       // convex pieces of polys outside the rectangle h
+        const res = [];
+        for (const q of polys) {
+          const mid = half(half(q, p => p[0] - h.a0), p => h.a1 - p[0]);
+          for (const piece of [half(q, p => h.a0 - p[0]), half(q, p => p[0] - h.a1), half(mid, p => h.z0 - p[1]), half(mid, p => p[1] - h.z1)])
+            if (piece.length >= 3) res.push(piece);
+        }
+        return res;
+      };
+      // FLAT paint: each band is its own U-shaped region (outer outline minus inner), cut into convex pieces - two side strips
+      // and the head as quads between the two arcs - all at ONE depth, side by side, never stacked. The eye is not drawn at all:
+      // it is the wall. (Stacked skins left a 1 mm step at every band edge that rendered as a dotted, sticker-like outline.)
+      const D = 0.8, c0 = low ? wall - D : wall - 1, c1 = low ? wall + 1 : wall + D;
+      const arc = (hw, t) => [cx + hw * Math.cos(t), zC + s * (hw / 1000) * Math.sin(t)];
+      const emit = poly => { let pieces = [poly]; for (const h of (holes || [])) pieces = minus(pieces, h); return pieces; };
+      mats.forEach((m, i) => {
+        const ho = halfW - i * band, hi = halfW - (i + 1) * band, polys = [];
+        for (const sg of [-1, 1]) {                       // side strips: from the edge line zAt up (or down) to the spring zC
+          const xo = cx + sg * ho, xi = cx + sg * hi;
+          polys.push([[xo, zAt(xo)], [xi, zAt(xi)], [xi, zC], [xo, zC]]);
+        }
+        for (let k = 0; k < N; k++) {                     // the head: quads between the outer and inner arcs
+          const t0 = Math.PI * k / N, t1 = Math.PI * (k + 1) / N;
+          polys.push([arc(ho, t0), arc(ho, t1), arc(hi, t1), arc(hi, t0)]);
+        }
+        for (const q of polys) for (const piece of emit(q)) bag.prism(m, !!dirY, piece, c0, c1);
+      });
+    },
+
+    // 6a9b. The landing (west) wall: one large rainbow arch framing the landing window, which sits in its white eye (60 mm clear of
+    // the inner band), standing on the landing skirting's LED strip, heads springing 150 mm above the window head. Paint stops at
+    // the opening. win = { a0, a1, z0, z1 } (y mm, z m).
+    windowRainbow(bag, wallX, face, landTop, win, mats) {
+      const band = 80, eye = (win.a1 - win.a0) / 2 + 60, hw = eye + band * mats.length, zl = landTop + 0.082;
+      this.rakeRainbow(bag, (win.a0 + win.a1) / 2, hw, () => zl, win.z1 + 0.15, wallX, face, mats, false,
+                       [{ a0: win.a0 - 15, a1: win.a1 + 15, z0: win.z0 - 0.015, z1: win.z1 + 0.015 }], true, band);
     },
 
     // 6a10. One flight's row, alternating NORMAL / INVERTED along the way up (the first one met is normal): three 900 mm arches
@@ -4119,15 +4158,15 @@ window.HouseScene = (function () {
     // A normal arch stands on the skirting LED line, crown 1.90 m + r above its foot. An inverted arch hangs from the real top of
     // the wall above it - ceil(x), the soffit of the flight overhead (raking) or the stair-head ceiling; landCeil over the landing -
     // and its round end stops 0.30 m above the skirting. Both kinds start from a real edge: no imaginary datum.
-    rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop, ceil, landCeil) {
+    rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop, ceil, landCeil, holes) {
       const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 450, S = 1.90, G = 0.30, r = H / 1000;
       const foot = x => z0 + 0.05 + rise / 10 + rise * (x - xa) / (xb - xa) + 0.012;   // raking skirt top (50 mm over the nosing line) + strip
       const zl = landTop != null ? landTop + 0.07 + 0.012 : 0;
       const items = [0, 1, 2].map(k => ({ x: xa + (xb - xa) * (k + 0.5) / 3, f: foot, c: ceil }));
       if (landX != null) { const land = { x: landX, f: () => zl, c: () => landCeil }; if (Math.abs(xa - 1330) < 1) items.unshift(land); else items.push(land); }
       items.forEach((it, n) => {
-        if (n % 2 === 0) this.rakeRainbow(bag, it.x, H, it.f, it.f(it.x) + S, wallY, face, T, false);
-        else this.rakeRainbow(bag, it.x, H, x => it.c(x) + 0.005, it.f(it.x) + G + r, wallY, face, T, true);   // 5 mm tucked into the soffit
+        if (n % 2 === 0) this.rakeRainbow(bag, it.x, H, it.f, it.f(it.x) + S, wallY, face, T, false, holes);
+        else this.rakeRainbow(bag, it.x, H, it.c, it.f(it.x) + G + r, wallY, face, T, true, holes);
       });
     },
 
@@ -6875,7 +6914,7 @@ window.HouseScene = (function () {
        side wall of a landing. x0 = foot of the flight, dx = +/-330 along its run, wallY 6496 (face N) or 8640 (face S). */
     // (the recessed step lights on these walls are gone: an LED strip on the skirting top instead, which the wall arches stand on)
     const stepLights = (Lum, base, x0, dx, wallY, face) => { const za = base + 0.05 + RISE_I; Lum.rakeStrip(wallY, face, x0, za, x0 + 10 * dx, za + 10 * RISE_I); };
-    const landingStepLights = (Lum, top) => { Lum.rakeStrip(6496, 'N', 230, top + 0.07, 1330, top + 0.07); Lum.rakeStrip(8640, 'S', 230, top + 0.07, 1330, top + 0.07); };
+    const landingStepLights = (Lum, top) => { Lum.rakeStrip(6496, 'N', 230, top + 0.07, 1330, top + 0.07); Lum.rakeStrip(8640, 'S', 230, top + 0.07, 1330, top + 0.07); Lum.westStrip(top); };
 
     /* -------- lighting contract --------
        Every interior luminaire is placed through `makeLum`, which draws the
@@ -6987,6 +7026,11 @@ window.HouseScene = (function () {
         /* Recessed step light (stair walls). The source sits 120 mm off the wall and low-weighted, so it washes the wall
            softly instead of burning a spot into it. yAbs is absolute: flights start at different storeys. */
         /* LED strip on the skirting top (stairs): three low 'step' sources 150 mm off the wall wash the treads. */
+        westStrip(top) {   // landing west wall (x 230): the same 12 mm strip on the skirting top
+          pb(bag, 'coveLED', 229, 234, 6496, 8641, top + 0.07, top + 0.082);
+          put(380, 7568, top + 0.22, 'step');
+          return this;
+        },
         rakeStrip(wallY, face, xa, za, xb, zb) {
           Fur.rakeStrip(bag, wallY, face, xa, za, xb, zb);
           for (const t of [1 / 6, 0.5, 5 / 6]) put(xa + (xb - xa) * t, wallY + (face === 'N' ? 150 : -150), za + (zb - za) * t + 0.15, 'step');
@@ -10313,7 +10357,8 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.33, landI(fY + L.f2f) - 0.157);                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
+        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025);                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
+        Fur.windowRainbow(bag, 230, 'E', landI(fY), { a0: 6968.5, a1: 8168.5, z0: fY + 2.08, z1: fY + 3.18 }, ['arcTone1', 'arcTone2', 'arcTone3']);   // landing west wall: the window in a rainbow's eye
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
@@ -10683,7 +10728,7 @@ window.HouseScene = (function () {
         stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.33, landI(fY) - 0.157);                              // stair north wall: tall tonal rainbow arches up flight B + one on the landing
+        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025);                              // stair north wall: tall tonal rainbow arches up flight B + one on the landing
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
@@ -10692,14 +10737,24 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), () => L.roof + 2.53, L.roof + 2.53);                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
+        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), () => L.roof + 2.636, L.roof + 2.636);   // up to the stair-head coping                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
+        Fur.windowRainbow(bag, 230, 'E', landI(fY), { a0: 6968.5, a1: 8168.5, z0: fY + 2.08, z1: fY + 3.18 }, ['arcTone1', 'arcTone2', 'arcTone3']);   // landing west wall (SF -> roof landing)
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, landI(fY), 10 * RISE_I, 780, landI(fY), () => L.roof + 2.53, L.roof + 2.53);                      // stair north wall: flight B2 to the roof
+        // stair north wall, flight B2 to the roof: laid out around the stair-head window (x 3150..3850, roof + 1.30..2.00) so the window
+        // is the eye of a framing arch instead of cutting across two: landing arch (normal) - inverted - window arch (normal, 1.17 m).
+        (function () {
+          const T = ['arcTone1', 'arcTone2', 'arcTone3'], R10 = 10 * RISE_I, top = () => L.roof + 2.636, lt = landI(fY);
+          const foot = x => lt + 0.05 + RISE_I + R10 * (x - 1330) / 3300 + 0.012, zl = lt + 0.082;
+          const win = [{ a0: 3150 - 15, a1: 3850 + 15, z0: L.roof + 1.30 - 0.015, z1: L.roof + 2.00 + 0.015 }];
+          Fur.rakeRainbow(bag, 780, 450, () => zl, zl + 1.90, 8640, 'S', T, false);
+          Fur.rakeRainbow(bag, 2072, 450, top, foot(2072) + 0.30 + 0.45, 8640, 'S', T, true);
+          Fur.rakeRainbow(bag, 3500, 585, foot, L.roof + 2.04, 8640, 'S', T, false, win, false, 65);   // eye 780 wide around the 700 window
+        })();
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
