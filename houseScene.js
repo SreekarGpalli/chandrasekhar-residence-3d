@@ -237,6 +237,8 @@ window.HouseScene = (function () {
     mirrorI:   0xa4abb0,  // silvered mirror (reads as glass, not a white board, against the bright rooms)
     wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
     limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
+    limeDusk:  0xfaf9f6,  // near-white: the dusk limewash shades live in the texture (limewashDusk): SF east bedroom / theatre walls + ceiling
+    limeDuskDk: 0xf9f8f6, // near-white: deeper load of the same colour (limewashDuskDk): SF east bedroom screen wall
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
     skirtTile: 0xfdfcf8   // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
@@ -517,7 +519,7 @@ window.HouseScene = (function () {
     fluted: 1, quartz: 1, marbleV: 1, travertine: 1, stoneDk: 1, boucle: 1,
     linen: 1, linenDk: 1, velvet: 1, terra: 1, rugW: 1, rugD: 1, leather: 1,
     blackM: 1, brassI: 1, fanWhite: 1, fanBlack: 1, fanLED: 1, ceramic: 1, sheet: 1, duvet: 1, artA: 1, artB: 1,
-    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, limeWash: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
+    artC: 1, artD: 1, mirrorI: 1, tileBath: 1, tileShower: 1, limeWash: 1, limeDusk: 1, limeDuskDk: 1, lacqNavy: 1, lacqNavyDk: 1, paintNavy: 1, walnutI: 1
   };
 
   /* Building footprint in plan-mm (main block + upper-floor south service). */
@@ -10287,6 +10289,35 @@ window.HouseScene = (function () {
             pb(bag, 'limeWash', 230, 4805, 230, 4432, top - 0.010, top - 0.008);
           }
         }
+        /* SF east bedroom = guest bedroom + home theatre: colour-drenched in a warm mushroom-taupe
+           limewash (walls AND ceiling, one colour), the way media rooms are done -
+           a mid-dark, desaturated, dead-matte surround bounces little projector light back
+           onto the screen and stops the white walls glowing in peripheral vision, while the
+           soft two-shade clouds keep it a calm, cocooning bedroom by day. Lime is the right
+           finish for both: mineral-matte (no sheen, no hotspots from the downlights).
+           The screen wall (north) carries a deeper load of the same colour, so the image
+           frame sits on the darkest surface; everything else is one step lighter.
+           3 mm skins on the room faces from the skirting up, like the west bedroom's; the
+           east wall only north of the full-height wardrobe (y 2500), the south wall only
+           west of it (x 11820); window reveals lined in the same paint. */
+        {
+          const T = 3, top = fY + 3.203, lw0 = fY + SKIRT_H, X0 = 7736, X1 = 12421, Y0 = 230, Y1 = 4432;
+          const win = o => ({ c: o.c, w: o.w, sill: o.sill, h: o.h });
+          const wE = fd.sch.E.filter(o => o.c < Y1).map(win), wS = fd.sch.S.filter(o => o.c > X0 && o.c < X1).map(win);
+          const doors = [{ c: 2453, w: 950, sill: 0, h: 2100 }, { c: 3800, w: 1000, sill: 0, h: 2100 }];
+          wallRun(bag, 'limeDusk', 'y', Y0, Y1, X0, X0 + T, lw0, top, fY, doors);              // west (walk-in + entry doors)
+          wallRun(bag, 'limeDusk', 'y', 2500, Y1, X1 - T, X1, lw0, top, fY, wE);               // east, north of the wardrobe
+          wallRun(bag, 'limeDusk', 'x', X0 + T, 11820, Y0, Y0 + T, lw0, top, fY, wS);          // south (Murphy bed wall)
+          wallRun(bag, 'limeDuskDk', 'x', X0 + T, X1 - T, Y1 - T, Y1, lw0, top, fY, []);       // north: the screen wall
+          const liner = (dir, o, b0, b1) => {   // reveal liner, room face back to the frame (74 mm)
+            const a0 = o.c - o.w / 2, a1 = o.c + o.w / 2, z0 = fY + o.sill / 1000, z1 = z0 + o.h / 1000;
+            const p = (a, b, z, zz) => dir === 'y' ? pb(bag, 'limeDusk', b0, b1, a, b, z, zz) : pb(bag, 'limeDusk', a, b, b0, b1, z, zz);
+            p(a0, a1, z0, z0 + 0.003); p(a0, a1, z1 - 0.003, z1);
+            p(a0, a0 + 3, z0, z1); p(a1 - 3, a1, z0, z1);
+          };
+          wE.forEach(o => liner('y', o, X1, X1 + 74)); wS.forEach(o => liner('x', o, 156, 230));
+          if (window.__HOUSE_WALK) pb(bag, 'limeDusk', X0, X1, Y0, Y1, top - 0.010, top - 0.008);   // ceiling, under the soffit plate
+        }
         /* Every other SF ceiling: the roof's charDark soffit plate is all they showed (a flat
            grey, nothing like the FF's warm white), so each room gets the same 2 mm skin as the
            west bedroom's, in the house's warm off-white. The west bedroom keeps its limewash;
@@ -10297,6 +10328,7 @@ window.HouseScene = (function () {
             if (r.type === 'out' || r.name === 'LIFT' || r.name === 'STAIRCASE' || r.name === 'PORTICO' ||
                 r.name.includes('BALCONY') || r.name.includes('TERRACE')) continue;
             if (r.name === 'BEDROOM' && r.x0 === 230) continue;       // west bedroom (limewash above)
+            if (r.name === 'BEDROOM' && r.x0 === 7736) continue;      // east bedroom / theatre (dusk limewash above)
             if (!window.__HOUSE_WALK && (r.type === 'bed' || r === SF_FAMILY_ROOM || r.name === 'LOUNGE')) continue; // expose the furnished rooms in the dollhouse
             pb(bag, 'white2', r.x0, r.x1, r.y0, r.y1, top - 0.010, top - 0.008);
           }
