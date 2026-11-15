@@ -9357,13 +9357,7 @@ window.HouseScene = (function () {
         //    (10881) so its end is hidden against the fin -> foyer east wall
         //    (over the entry door) -> north wall to the void edge.
         Lum.cornerPath([[10879, 6815], [12420, 6815], [12420, 8640], [9260, 8640]], true);
-        /* --- DOUBLE-HEIGHT VOID CHANDELIER — FOUR BRASS HALO RINGS ---
-           Void opening in the SF slab: X 6020..9260, Y 6996..8641, soffit
-           VOID_TOP = 6.556 m AFF. Hung on x = 7130, the axis of the sofa,
-           rug, TV and the window pair, not the geometric middle of the
-           opening (7640); y = 7818 is the middle of the opening's depth.
-           Rings and drops live in VOID_RINGS (model and lights share it). */
-        Lum.cluster(7130, 7818, VOID_TOP);
+        // Double-height void: no chandelier (removed at the owner's request; Fur.voidCluster / Lum.cluster stay unused).
 
         /* --- DINING (4921..9371, 1526..4506) --- */
         Lum.fan(7110, 2440);                          // FF plan position
