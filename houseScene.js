@@ -145,7 +145,7 @@ window.HouseScene = (function () {
     tFloor:  0xfdfcfa,
     // tTread: honed Kadapa-style stone for interior stair treads + mid-landings (colour is in the texture)
     tTread:  0xfcfbf7,
-    stairStone:      0xe1ddd3,  // lower stair: honed warm greige stone on treads, risers and landing
+    stairStone:      0xe1ddd3,  // indoor stair: honed warm greige stone on treads, risers and landings
     skirtStairStone: 0xe1ddd4,  // same stone, box-projected on the skirting
     stairMetal:      0xede9df,  // off-white painted mild steel on the indoor stair
     limeSand: 0xfcfaf4,     // near-white: the warm limewash shades live in the texture (limewashWarm): SF lounge spine wall
@@ -5814,7 +5814,7 @@ window.HouseScene = (function () {
   // Its own key (not tLiving): the tiles carry laid UVs, so the viewers must
   // not box-project them (treatment flag preUV in lib/interiorKit.js).
   const FLOOR_TILE = 'tFloor';
-  const TREAD_TILE = 'tTread';   // upper stair treads and half-landing
+  const TREAD_TILE = 'tTread';   // legacy Kadapa slab finish
   const STAIR_STONE = 'stairStone';
   const isSlabTile = mat => mat === FLOOR_TILE || mat === TREAD_TILE || mat === STAIR_STONE;
 
@@ -8396,10 +8396,10 @@ window.HouseScene = (function () {
       pb(eBag, 'steel', mX0 - 18, mX0 + 35, mY0, mY1, zMTop + 0.155, zMTop + 0.185);
       pb(eBag, 'steel', mX1 - 35, mX1 + 18, mY0, mY1, zMTop + 0.155, zMTop + 0.185);
       // Mumty interior: floor ONLY on arrival pad (stair void x < 4630 stays open)
-      pb(eBag, 'terraceF', 4630, mx[1] - 20, my[0] + 20, my[1] - 20, L.roof, L.roof + 0.02);
-      pb(eBag, 'skirt', 4630, mx[1] - 10, my[0] + 10, my[0] + 28, L.roof + 0.02, L.roof + 0.10);
-      pb(eBag, 'skirt', 4630, mx[1] - 10, my[1] - 28, my[1] - 10, L.roof + 0.02, L.roof + 0.10);
-      pb(eBag, 'skirt', mx[1] - 28, mx[1] - 10, my[0] + 10, my[1] - 10, L.roof + 0.02, L.roof + 0.10);
+      eBag.plate(STAIR_STONE, 4630, mx[1] - 20, my[0] + 20, my[1] - 20, L.roof, L.roof + 0.02, null, 'room');
+      pb(eBag, 'skirtStairStone', 4630, mx[1] - 10, my[0] + 10, my[0] + 28, L.roof + 0.02, L.roof + 0.10);
+      pb(eBag, 'skirtStairStone', 4630, mx[1] - 10, my[1] - 28, my[1] - 10, L.roof + 0.02, L.roof + 0.10);
+      pb(eBag, 'skirtStairStone', mx[1] - 28, mx[1] - 10, my[0] + 10, my[1] - 10, L.roof + 0.02, L.roof + 0.10);
       /* Guard at the arrival edge (x = 4630) — and ONLY where there is a void.
          The comment used to claim it did not cross the stair mouth; it ran
          y 6550..8600 and crossed it completely. Flight B' arrives at roof level
@@ -8411,7 +8411,7 @@ window.HouseScene = (function () {
          mumty is a walled box — its south wall is y 6381..6496 and its north
          wall y 8641..8870 — so rails at y 6550 and y 8600 sat 40–55 mm off solid
          plaster, guarding nothing, over a void nobody can stand in anyway. */
-      railing(eBag, 'y', 4630, 6550, 7641, L.roof, 0.95);
+      railing(eBag, 'y', 4630, 6550, 7641, L.roof, 0.95, LANDING_RAIL_IN);
       /* Wall lamp + switchboard, BESIDE the terrace door rather than in it.
          Both used to sit at y 7400..7900 — but the door opening is c 7560 w 900,
          i.e. y 7110..8010, so they were fixed to a piece of wall that has a hole
@@ -10248,19 +10248,19 @@ window.HouseScene = (function () {
 
         // flight A' SF → mid landing toward roof
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
-                    { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
+                    { tread: STAIR_STONE, riser: STAIR_STONE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
+        stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), STAIR_STONE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, LANDING_RAIL_IN);
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
-                    { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
+                    { tread: STAIR_STONE, riser: STAIR_STONE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, LANDING_RAIL_IN);
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
            own top landing, so the same tile as the flights. */
-        stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, FLOOR_TILE);
+        stairLanding(bag, 4630, 5600, 6496, 8641, L.roof, STAIR_STONE);
         westSuite(bag, fY, true);
         /* SF west bedroom only: limewash on the four room-side wall faces and the ceiling (the
            FF master keeps its white). A 3 mm skin on the faces, starting on top of the flush
