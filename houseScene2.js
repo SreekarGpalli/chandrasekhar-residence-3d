@@ -4098,32 +4098,41 @@ window.HouseScene = (function () {
       this.archSkin(bag, 'white2', cx, R - mats.length * band, base, base, wallY, face, 1.5 + mats.length);
     },
 
-    // 6a9. Grounded tonal 'rainbow' arch on a stair wall along x at y = wallY: nested arch outlines whose BOTTOMS follow zAt(x) (the
-    // skirting's LED line, raking with the flight) and whose round heads all spring from zSpring, deep tone outside -> light inside,
-    // white eye in the middle. Every band is a 1.5-4.5 mm paint skin over the one outside it, so nothing shares a plane.
-    rakeRainbow(bag, cx, halfW, zAt, zSpring, wallY, face, mats) {
-      const band = halfW / (mats.length + 1), N = 24;
-      const one = (m, hw, d) => {
-        const c0 = face === 'S' ? wallY - d : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + d;
-        const pts = [[cx - hw, zAt(cx - hw)], [cx + hw, zAt(cx + hw)]];
-        for (let k = 0; k <= N; k++) { const t = Math.PI * k / N; pts.push([cx + hw * Math.cos(t), zSpring + (hw / 1000) * Math.sin(t)]); }
-        bag.prism(m, false, pts, c0, c1);
-      };
-      mats.forEach((m, i) => one(m, halfW - i * band, 1.5 + i));
-      one('white2', halfW - mats.length * band, 1.5 + mats.length);
-    },
-
-    // 6a10. One flight's row: three 800 mm arches evenly along the run xa (foot, nosing z0) -> xb (top, z0 + rise), each standing on the
-    // skirting LED line (skirt top + 12 mm strip) so the row is grounded on the stair instead of floating, heads 1.90 m above their
-    // own foot; plus one on the landing wall at landX, standing on the landing skirting's strip (landing top landTop).
+    // 6a9. Stair ARCADE (the stair walls' feature). Three values only: the white wall, a deep warm clay tone and a light sand (smooth matte: limewash read blotchy here).
+    //  - a deep raking BASE BAND, 300 mm, standing on the skirting's LED strip and following the stair (a stylobate), carried level
+    //    across the landing and on to the stair mouth, so the composition has a ground and every edge meets something;
+    //  - an ARCADE on it: three 700 mm arches per flight (one per ~3 treads, 400 mm piers), each a slim 60 mm deep-tone rim around a smooth
+    //    light-sand field, rising out of the band in the same colour (no floating bottoms), heads 1.85 m + r above the band on a datum
+    //    raking with the stair; one more arch centred on the landing wall.
+    // All paint: matte emulsion, 1.5-3.5 mm skins so no two faces share a plane.
     rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop) {
-      const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 400, S = 1.90;
-      const foot = x => z0 + 0.05 + rise / 10 + rise * (x - xa) / (xb - xa) + 0.012;   // raking skirt top (50 mm over the nosing line) + strip
+      const DEEP = 'arcTone1', FIELD = 'arcTone3', BAND = 0.30, SPRING = 1.85, HW = 350, RIM = 60, N = 28;
+      const R = rise / 10, slope = rise / (xb - xa);
+      const foot = x => z0 + 0.05 + R + slope * (x - xa) + 0.012;          // raking skirting top + 12 mm LED strip
+      const top = x => foot(x) + BAND;
+      const skin = (m, pts, d) => bag.prism(m, false, pts, face === 'S' ? wallY - d : wallY - 1, face === 'S' ? wallY + 1 : wallY + d);
+      const arch = (m, cx, hw, bot, zs, d) => {
+        const pts = [[cx - hw, bot(cx - hw)], [cx + hw, bot(cx + hw)]];
+        for (let k = 0; k <= N; k++) { const t = Math.PI * k / N; pts.push([cx + hw * Math.cos(t), zs + (hw / 1000) * Math.sin(t)]); }
+        skin(m, pts, d);
+      };
+      // base band along the flight
+      skin(DEEP, [[xa, foot(xa)], [xb, foot(xb)], [xb, top(xb)], [xa, top(xa)]], 1.5);
+      // landing end (x 1330) -> level across the landing; floor end (x 4630) -> level to the stair mouth (x 4805)
+      const xj = Math.abs(xa - 1330) < 1 ? xa : xb, xf = xj === xa ? xb : xa, zFloor = xf === xa ? z0 : z0 + rise;
+      if (landX != null) skin(DEEP, [[230, landTop + 0.082], [1330, landTop + 0.082], [1330, top(xj)], [230, top(xj)]], 1.5);
+      skin(DEEP, [[4630, zFloor + 0.07], [4805, zFloor + 0.07], [4805, top(xf)], [4630, top(xf)]], 1.5);
+      // arcade
       for (let k = 0; k < 3; k++) {
-        const x = xa + (xb - xa) * (k + 0.5) / 3;
-        this.rakeRainbow(bag, x, H, foot, foot(x) + S, wallY, face, T);
+        const cx = xa + (xb - xa) * (k + 0.5) / 3, zs = top(cx) + SPRING;
+        arch(DEEP, cx, HW, x => top(x) - 0.004, zs, 2.5);
+        arch(FIELD, cx, HW - RIM, top, zs, 3.5);
       }
-      if (landX != null) { const zl = landTop + 0.07 + 0.012; this.rakeRainbow(bag, landX, H, () => zl, zl + S, wallY, face, T); }
+      if (landX != null) {
+        const zl = top(xj), zs = zl + SPRING;
+        arch(DEEP, landX, HW, () => zl - 0.004, zs, 2.5);
+        arch(FIELD, landX, HW - RIM, () => zl, zs, 3.5);
+      }
     },
 
     // 6a11. Warm LED strip on the top edge of the stair skirting: a 12 mm opal line, 4 mm proud, from (xa, za) to (xb, zb) (mm, m).
