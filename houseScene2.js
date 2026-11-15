@@ -4115,20 +4115,19 @@ window.HouseScene = (function () {
     },
 
     // 6a10. One flight's row, alternating NORMAL / INVERTED along the way up (the first one met is normal): three 900 mm arches
-    // evenly along the run xa (foot, nosing z0) -> xb (top, z0 + rise) plus one on the landing wall at landX (landing top landTop).
-    // Both kinds live in the same raking band so they interlock: a normal arch stands on the skirting LED line and its crown reaches
-    // the datum D = foot + 1.90 + r; an inverted arch hangs from that datum (its flat top IS the datum) and its round end stops
-    // 0.30 m above the skirting, so the row reads as one wave climbing the stair.
-    rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop) {
-      const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 450, S = 1.90, G = 0.30, r = H / 1000;   // 900 mm arches, 200 mm apart
+    // (200 mm apart) evenly along the run xa (foot, nosing z0) -> xb (top, z0 + rise) plus one on the landing wall at landX.
+    // A normal arch stands on the skirting LED line, crown 1.90 m + r above its foot. An inverted arch hangs from the real top of
+    // the wall above it - ceil(x), the soffit of the flight overhead (raking) or the stair-head ceiling; landCeil over the landing -
+    // and its round end stops 0.30 m above the skirting. Both kinds start from a real edge: no imaginary datum.
+    rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop, ceil, landCeil) {
+      const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 450, S = 1.90, G = 0.30, r = H / 1000;
       const foot = x => z0 + 0.05 + rise / 10 + rise * (x - xa) / (xb - xa) + 0.012;   // raking skirt top (50 mm over the nosing line) + strip
       const zl = landTop != null ? landTop + 0.07 + 0.012 : 0;
-      const items = [0, 1, 2].map(k => { const x = xa + (xb - xa) * (k + 0.5) / 3; return { x, f: foot }; });
-      if (landX != null) { const land = { x: landX, f: () => zl }; if (Math.abs(xa - 1330) < 1) items.unshift(land); else items.push(land); }
+      const items = [0, 1, 2].map(k => ({ x: xa + (xb - xa) * (k + 0.5) / 3, f: foot, c: ceil }));
+      if (landX != null) { const land = { x: landX, f: () => zl, c: () => landCeil }; if (Math.abs(xa - 1330) < 1) items.unshift(land); else items.push(land); }
       items.forEach((it, n) => {
-        const f = it.f, inv = n % 2 === 1;
-        if (!inv) this.rakeRainbow(bag, it.x, H, f, f(it.x) + S, wallY, face, T, false);
-        else this.rakeRainbow(bag, it.x, H, x => f(x) + S + r, f(it.x) + G + r, wallY, face, T, true);
+        if (n % 2 === 0) this.rakeRainbow(bag, it.x, H, it.f, it.f(it.x) + S, wallY, face, T, false);
+        else this.rakeRainbow(bag, it.x, H, x => it.c(x) + 0.005, it.f(it.x) + G + r, wallY, face, T, true);   // 5 mm tucked into the soffit
       });
     },
 
@@ -10314,7 +10313,7 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY));                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
+        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.33, landI(fY + L.f2f) - 0.157);                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
@@ -10684,7 +10683,7 @@ window.HouseScene = (function () {
         stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF);                              // stair north wall: tall tonal rainbow arches up flight B + one on the landing
+        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.33, landI(fY) - 0.157);                              // stair north wall: tall tonal rainbow arches up flight B + one on the landing
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
@@ -10693,14 +10692,14 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY));                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
+        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), () => L.roof + 2.53, L.roof + 2.53);                             // stair south wall: tall tonal rainbow arches stepping up the flight + one on the landing
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, landI(fY), 10 * RISE_I, 780, landI(fY));                      // stair north wall: flight B2 to the roof
+        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, landI(fY), 10 * RISE_I, 780, landI(fY), () => L.roof + 2.53, L.roof + 2.53);                      // stair north wall: flight B2 to the roof
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
