@@ -4064,24 +4064,38 @@ window.HouseScene = (function () {
       this.archSkin(bag, 'white2', cx, R - mats.length * band, base, base, wallY, face, 1.5 + mats.length);
     },
 
-    // 6a9. Tall, narrow 'rainbow' arch: nested arch outlines (straight sides, round head) on a wall along x at y = wallY, all springing
-    // from the same level, deep tone outside -> light inside, a slim white eye in the middle. halfW mm, straight m from base to spring.
-    tallRainbow(bag, cx, base, wallY, face, halfW, straight, mats) {
-      const band = halfW / (mats.length + 1);
-      mats.forEach((m, i) => this.archSkin(bag, m, cx, halfW - i * band, base, base + straight, wallY, face, 1.5 + i));
-      this.archSkin(bag, 'white2', cx, halfW - mats.length * band, base, base + straight, wallY, face, 1.5 + mats.length);
+    // 6a9. Grounded tonal 'rainbow' arch on a stair wall along x at y = wallY: nested arch outlines whose BOTTOMS follow zAt(x) (the
+    // skirting's LED line, raking with the flight) and whose round heads all spring from zSpring, deep tone outside -> light inside,
+    // white eye in the middle. Every band is a 1.5-4.5 mm paint skin over the one outside it, so nothing shares a plane.
+    rakeRainbow(bag, cx, halfW, zAt, zSpring, wallY, face, mats) {
+      const band = halfW / (mats.length + 1), N = 24;
+      const one = (m, hw, d) => {
+        const c0 = face === 'S' ? wallY - d : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + d;
+        const pts = [[cx - hw, zAt(cx - hw)], [cx + hw, zAt(cx + hw)]];
+        for (let k = 0; k <= N; k++) { const t = Math.PI * k / N; pts.push([cx + hw * Math.cos(t), zSpring + (hw / 1000) * Math.sin(t)]); }
+        bag.prism(m, false, pts, c0, c1);
+      };
+      mats.forEach((m, i) => one(m, halfW - i * band, 1.5 + i));
+      one('white2', halfW - mats.length * band, 1.5 + mats.length);
     },
 
-    // 6a10. A row of tall rainbow arches climbing one flight on its wall: five arches (520 wide, 140 apart) evenly along the run
-    // xa (foot, nosing z0) -> xb (top, z0 + rise), each standing 0.40 m above the nosing line at its own centre (clear of the step
-    // lights at +0.30), so the row steps up with the stair; plus one on the landing wall at landX (landing top landTop).
+    // 6a10. One flight's row: three 800 mm arches evenly along the run xa (foot, nosing z0) -> xb (top, z0 + rise), each standing on the
+    // skirting LED line (skirt top + 12 mm strip) so the row is grounded on the stair instead of floating, heads 1.90 m above their
+    // own foot; plus one on the landing wall at landX, standing on the landing skirting's strip (landing top landTop).
     rainbowFlight(bag, wallY, face, xa, xb, z0, rise, landX, landTop) {
-      const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 260, S = 1.90;
-      for (let k = 0; k < 5; k++) {
-        const x = xa + (xb - xa) * (k + 0.5) / 5, zn = z0 + rise * (k + 0.5) / 5;
-        this.tallRainbow(bag, x, zn + 0.40, wallY, face, H, S, T);
+      const T = ['arcTone1', 'arcTone2', 'arcTone3'], H = 400, S = 1.90;
+      const foot = x => z0 + 0.05 + rise / 10 + rise * (x - xa) / (xb - xa) + 0.012;   // raking skirt top (50 mm over the nosing line) + strip
+      for (let k = 0; k < 3; k++) {
+        const x = xa + (xb - xa) * (k + 0.5) / 3;
+        this.rakeRainbow(bag, x, H, foot, foot(x) + S, wallY, face, T);
       }
-      if (landX != null) this.tallRainbow(bag, landX, landTop + 0.40, wallY, face, H, S, T);
+      if (landX != null) { const zl = landTop + 0.07 + 0.012; this.rakeRainbow(bag, landX, H, () => zl, zl + S, wallY, face, T); }
+    },
+
+    // 6a11. Warm LED strip on the top edge of the stair skirting: a 12 mm opal line, 4 mm proud, from (xa, za) to (xb, zb) (mm, m).
+    rakeStrip(bag, wallY, face, xa, za, xb, zb) {
+      const c0 = face === 'S' ? wallY - 4 : wallY - 1, c1 = face === 'S' ? wallY + 1 : wallY + 4;
+      bag.prism('coveLED', false, [[xa, za], [xb, zb], [xb, zb + 0.012], [xa, za + 0.012]], c0, c1);
     },
 
     // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
@@ -6820,8 +6834,9 @@ window.HouseScene = (function () {
     const landI = (base) => base + 10 * RISE_I;
     /* Stair step lights: every third tread (2, 5, 8) of a flight, 300 mm above its nosing, on the flight's wall; one on each
        side wall of a landing. x0 = foot of the flight, dx = +/-330 along its run, wallY 6496 (face N) or 8640 (face S). */
-    const stepLights = (Lum, base, x0, dx, wallY, face) => { for (const i of [2, 5, 8]) Lum.stepLight(x0 + dx * (i - 0.5), wallY, base + i * RISE_I + 0.30, face); };
-    const landingStepLights = (Lum, top) => { Lum.stepLight(780, 6496, top + 0.30, 'N'); Lum.stepLight(780, 8640, top + 0.30, 'S'); };
+    // (the recessed step lights on these walls are gone: an LED strip on the skirting top instead, which the wall arches stand on)
+    const stepLights = (Lum, base, x0, dx, wallY, face) => { const za = base + 0.05 + RISE_I; Lum.rakeStrip(wallY, face, x0, za, x0 + 10 * dx, za + 10 * RISE_I); };
+    const landingStepLights = (Lum, top) => { Lum.rakeStrip(6496, 'N', 230, top + 0.07, 1330, top + 0.07); Lum.rakeStrip(8640, 'S', 230, top + 0.07, 1330, top + 0.07); };
 
     /* -------- lighting contract --------
        Every interior luminaire is placed through `makeLum`, which draws the
@@ -6932,6 +6947,12 @@ window.HouseScene = (function () {
         },
         /* Recessed step light (stair walls). The source sits 120 mm off the wall and low-weighted, so it washes the wall
            softly instead of burning a spot into it. yAbs is absolute: flights start at different storeys. */
+        /* LED strip on the skirting top (stairs): three low 'step' sources 150 mm off the wall wash the treads. */
+        rakeStrip(wallY, face, xa, za, xb, zb) {
+          Fur.rakeStrip(bag, wallY, face, xa, za, xb, zb);
+          for (const t of [1 / 6, 0.5, 5 / 6]) put(xa + (xb - xa) * t, wallY + (face === 'N' ? 150 : -150), za + (zb - za) * t + 0.15, 'step');
+          return this;
+        },
         stepLight(x, wallY, yAbs, face) {
           Fur.stepLight(bag, x, wallY, yAbs, face);
           put(x, wallY + (face === 'N' ? 120 : -120), yAbs - 0.04, 'step');
