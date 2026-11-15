@@ -161,6 +161,10 @@ window.HouseScene = (function () {
     paintPeach: 0xe8c3a6,   // passage arch composition: soft peach
     paintCream: 0xf2eadd,   // passage arch composition: cream
     paintTan:   0xd9bd96,   // passage arch composition: sand-tan
+    arcTone1: 0xdcbfa2,   // stair rainbow tone 1 (deep -> light, one warm family)
+    arcTone2: 0xe5ceb6,   // stair rainbow tone 2 (deep -> light, one warm family)
+    arcTone3: 0xeddcc9,   // stair rainbow tone 3 (deep -> light, one warm family)
+    arcTone4: 0xf4eadd,   // stair rainbow tone 4 (deep -> light, one warm family)
     paintSand: 0xe3dacb,    // soft sand emulsion for the accent panels / stair band (a touch deeper than the white2 walls, same family)
     skirtTread: 0xfcfbf5,   // stair skirting (raking + landings): the tread stone, cut as skirting
     // furniture
@@ -503,7 +507,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, skirtTread: 1, paintSand: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, skirtTread: 1, paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -4084,6 +4088,14 @@ window.HouseScene = (function () {
       for (let k = 0; k < 3; k++) { const h0 = zb + 0.01 + k * dh; front(x0 + w, x1 - w, h0, h0 + dh); pull((x0 + x1) / 2, h0 + dh / 2); }
       for (const [lx, ly] of [[x0 + 70, y0 + 80], [x1 - 70, y0 + 80], [x0 + 70, y1 - 60], [x1 - 70, y1 - 60]])
         bag.cyl(mat, lx / 1000, fY + 0.09, -ly / 1000, 0.016, 0.18);                        // tapered-look legs
+    },
+
+    // 6a8. Painted 'rainbow' mural: concentric half-round bands on a wall along x at y = wallY (room 'N' = +y / 'S' = -y), resting on
+    // a level baseline `base` (m), outer radius R mm, `band` mm per band. One close-toned family (deep outside -> light inside), the
+    // eye left in the wall's own white. Each band is a 2-4 mm paint skin layered over the one outside it, so nothing shares a plane.
+    rainbow(bag, cx, base, wallY, face, R, band, mats) {
+      mats.forEach((m, i) => this.archSkin(bag, m, cx, R - i * band, base, base, wallY, face, 1.5 + i));
+      this.archSkin(bag, 'white2', cx, R - mats.length * band, base, base, wallY, face, 1.5 + mats.length);
     },
 
     // 6b. Recessed step light: a 130 x 30 mm dark faceplate 2 mm proud of the plaster with a 112 x 7 mm warm
@@ -10255,7 +10267,8 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.wallRail(bag, 6496, 'N', 4630, fY + 0.90, 1330, landI(fY) + 0.90);                                    // teak wall handrail along the south wall (flight A / A2)
+        // stair south wall: one subtle 'rainbow' of four close warm tones, in the plain wall between flight A and the flight above
+        Fur.rainbow(bag, 2980, L.f1 + 2.30, 6496, 'N', 1100, 160, ['arcTone1', 'arcTone2', 'arcTone3', 'arcTone4']);
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
@@ -10625,7 +10638,8 @@ window.HouseScene = (function () {
         stairLanding(bag, 230, 1330, 6496, 8641, midFF, TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, { topRail: 'frame' });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        Fur.wallRail(bag, 8640, 'S', 1330, midFF + 0.90, 4630, midFF + 10 * RISE_I + 0.90);                       // teak wall handrail along the north wall (flight B)
+        // stair north wall: the matching rainbow between flight B and flight B2 (seen from the FF hall through the stair mouth)
+        Fur.rainbow(bag, 2780, midFF + 1.77, 8640, 'S', 1100, 160, ['arcTone1', 'arcTone2', 'arcTone3', 'arcTone4']);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
@@ -10634,14 +10648,12 @@ window.HouseScene = (function () {
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, skirt: 'lo' });
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.wallRail(bag, 6496, 'N', 4630, fY + 0.90, 1330, landI(fY) + 0.90);                                    // teak wall handrail along the south wall (flight A / A2)
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), TREAD_TILE, undefined, undefined, 'WSN');
         railing(bag, 'y', 1330, 7496, 7641, landI(fY), 0.95, { topRail: 'frame' });
         // flight B' mid → roof (flush at L.roof)
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, landI(fY), 4630, landI(fY) + 10 * RISE_I, 10, 0.14,
                     { tread: TREAD_TILE, riser: FLOOR_TILE, foot: false, skirt: true });
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, landI(fY), RISE_I, 0.95, RAIL_IN);
-        Fur.wallRail(bag, 8640, 'S', 1330, landI(fY) + 0.90, 4630, landI(fY) + 10 * RISE_I + 0.90);               // teak wall handrail along the north wall (flight B2)
         railing(bag, 'y', 4630, 7496, 7641, fY, 0.95, { topRail: 'frame' });
 
         /* Mumty arrival pad (void stays open for the climb) — the stair's
