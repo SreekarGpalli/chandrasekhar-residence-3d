@@ -157,7 +157,7 @@ window.HouseScene = (function () {
     tFloor:  0xfdfcfa,
     // tTread: honed Kadapa-style stone for interior stair treads + mid-landings (colour is in the texture)
     tTread:  0xfcfbf7,
-    stairStone:      0xe1ddd3,  // indoor stair: honed warm greige stone on treads, risers and landings
+    stairStone:      0xfdfcf6,  // indoor stair: honed warm greige stone on treads, risers and landings
     skirtStairStone: 0xe1ddd4,  // same stone, box-projected on the skirting
     stairMetal:      0xede9df,  // off-white painted mild steel on the indoor stair
     limeSand: 0xfcfaf4,     // near-white: the warm limewash shades live in the texture (limewashWarm): SF lounge spine wall
@@ -249,6 +249,8 @@ window.HouseScene = (function () {
     artC:      0x33465d,  // canvas — indigo
     artD:      0x899985,  // canvas — sage
     mirrorI:   0xa4abb0,  // silvered mirror (reads as glass, not a white board, against the bright rooms)
+    wallStoneLt:  0xcbbfae,  // pale warm stone texture paint (foyer, master, stair panels)
+    wallStoneMid: 0x9a8d7e,  // mid warm stone texture paint (family-room dado)
     wallLime:  0x6b6157,  // deep warm stone: trowelled texture paint on the TV wall
     limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
     limeDusk:  0xfaf9f6,  // near-white: the dusk limewash shades live in the texture (limewashDusk): SF east bedroom / theatre walls + ceiling
@@ -4062,11 +4064,30 @@ window.HouseScene = (function () {
     // 6a2. Stone panel: the TV wall's language at room scale. A straight-edged, floor-to-soffit band of the same deep-stone
     // texture paint on a wall along x at y = wallY, 2 x halfW mm wide, with one brass hairline 90 mm inside each edge.
     // Paint and two brass flats; no arch, no joinery.
-    stonePanel(bag, cx, halfW, z0, z1, wallY, face) {
+    stoneField(bag, mat, a0, a1, z0, z1, wallY, face) {          // a paint skin on a wall along x
       const s = face === 'S' ? -1 : 1;
-      pb(bag, 'wallLime', cx - halfW, cx + halfW, Math.min(wallY - s, wallY + 2 * s), Math.max(wallY - s, wallY + 2 * s), z0, z1);
-      for (const u of [cx - halfW + 90, cx + halfW - 90])
-        pb(bag, 'brassI', u - 4, u + 4, Math.min(wallY + 2 * s, wallY + 5 * s), Math.max(wallY + 2 * s, wallY + 5 * s), z0, z1);
+      pb(bag, mat, a0, a1, Math.min(wallY - s, wallY + 2 * s), Math.max(wallY - s, wallY + 2 * s), z0, z1);
+    },
+    brassV(bag, a, z0, z1, wallY, face) {                         // 8 mm vertical brass hairline, 3 mm proud
+      const s = face === 'S' ? -1 : 1;
+      pb(bag, 'brassI', a - 4, a + 4, Math.min(wallY + 2 * s, wallY + 5 * s), Math.max(wallY + 2 * s, wallY + 5 * s), z0, z1);
+    },
+    brassH(bag, a0, a1, z, wallY, face) {                         // 8 mm horizontal brass hairline
+      const s = face === 'S' ? -1 : 1;
+      pb(bag, 'brassI', a0, a1, Math.min(wallY + 2 * s, wallY + 5 * s), Math.max(wallY + 2 * s, wallY + 5 * s), z - 0.004, z + 0.004);
+    },
+    /* Stair walls, FF -> SF. Three upright panels of pale stone texture paint per flight, each one
+       set higher than the last so the wall climbs with you; a brass hairline on each panel's uphill
+       edge. Straight edges only, paint and three brass flats. `clip` = [floorY, cutHeight] in the
+       cut-away viewer, so nothing floats above a cut wall. */
+    stairPanels(bag, wallY, face, xa, xb, z0, rise, clip) {
+      const dir = Math.sign(xb - xa), zMax = clip ? clip[0] + clip[1] : Infinity;
+      for (let k = 0; k < 3; k++) {
+        const f = (k + 0.5) / 3, xc = xa + (xb - xa) * f, bot = z0 + rise * f + 0.55, top = Math.min(bot + 1.45, zMax);
+        if (top - bot < 0.3) continue;
+        this.stoneField(bag, 'wallStoneLt', xc - 330, xc + 330, bot, top, wallY, face);
+        this.brassV(bag, xc + dir * 270, bot, top, wallY, face);
+      }
     },
 
     // 6a3. Arched paint panel on a wall along x at y = wallY: a 2 mm skin in `mat`, 2 x halfW mm wide, straight from z0 up to zSpring (m),
@@ -10486,7 +10507,7 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        // stair walls: plain room white (tonal arches removed Nov 2026: no arch shapes) // Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
+        Fur.stairPanels(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, window.__HOUSE_WALK ? undefined : [fY, cut]);   // (was) Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         const stairWindow = fd.sch.W.find(o => o.c > 6496 && o.c < 8640);
         const landingPaintTop = window.__HOUSE_WALK ? landI(L.f2) - 0.157 : cut;
         Fur.stairLandingPaint(bag, WB[1], stairWindow, fY, landI(fY) + 0.082, landingPaintTop);
@@ -10612,9 +10633,16 @@ window.HouseScene = (function () {
         // stays open.
         Fur.foyerPartition(bag, 10792, 10881, 6815, 7385, fY);
         // Budget wall set (paint + one MDF shelf): foyer south wall arch + key shelf, master bedroom desk-wall arch.
-        Fur.stonePanel(bag, 11650, 480, fY + 0.07, fY + 3.203 - 0.066, 6815, 'N');   // foyer: straight stone band, echoes the TV wall on arrival                                  // foyer south wall (y 6815): 0.96 m paint arch
+        // foyer: pale stone field with a slim brass frame drawn inside it (the key shelf sits within the frame)
+        Fur.stoneField(bag, 'wallStoneLt', 11170, 12130, fY + 0.07, fY + 3.203 - 0.066, 6815, 'N');
+        Fur.brassV(bag, 11250, fY + 0.16, fY + 3.203 - 0.156, 6815, 'N'); Fur.brassV(bag, 12050, fY + 0.16, fY + 3.203 - 0.156, 6815, 'N');
+        Fur.brassH(bag, 11246, 12054, fY + 0.16, 6815, 'N'); Fur.brassH(bag, 11246, 12054, fY + 3.203 - 0.156, 6815, 'N');
+        //   // foyer: straight stone band, echoes the TV wall on arrival                                  // foyer south wall (y 6815): 0.96 m paint arch
         pb(bag, 'white2', 11250, 12050, 6815, 7115, fY + 0.85, fY + 0.89);                                           // 0.8 x 0.3 m floating key shelf (MDF)
-        Fur.stonePanel(bag, 2700, 500, fY + 0.07, fY + 3.203 - 0.066, 4432, 'S');   // master bedroom north wall: 1.0 m stone band on the bed axis (replaces the arch mural)
+        // master bedroom north wall: the whole free wall in pale stone, one brass datum line at door-head height
+        Fur.stoneField(bag, 'wallStoneLt', 245, 3240, fY + 0.07, fY + 3.203 - 0.066, 4432, 'S');
+        Fur.brassH(bag, 245, 3240, fY + 2.10, 4432, 'S');
+        //   // master bedroom north wall: 1.0 m stone band on the bed axis (replaces the arch mural)
         Fur.ganeshaShrine(bag, 10879, 7100, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
@@ -10868,7 +10896,7 @@ window.HouseScene = (function () {
           railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, LANDING_RAIL_IN);
         }
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        // stair walls: plain room white (tonal arches removed Nov 2026: no arch shapes) // Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
+        Fur.stairPanels(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, window.__HOUSE_WALK ? undefined : [fY, cut]);   // (was) Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: STAIR_STONE, riser: STAIR_STONE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
@@ -11235,7 +11263,10 @@ window.HouseScene = (function () {
           [5521 - 380, 1.43, 300, 230, ['artA', 'artC', 'artD']], [5521, 1.43, 230, 310, ['artD', 'artA', 'artB']],
           [5521 + 380, 1.43, 310, 240, ['artB', 'artD', 'artC']]
         ].forEach(([c, height, w, h, scheme]) => upperArt('y', 4920, 'E', c, fY, height, w, h, scheme));
-        Fur.stonePanel(bag, 10980, 1000, fY + 0.07, fY + 3.203 - 0.066, 4546, 'N');   // family room desk wall: 2.0 m stone band, desk centred                                 // family room south wall: 2.0 m arch on the wall's centre, the desk centred in it
+        // family room desk wall: a low, wide mid-stone dado (2.6 m x 1.45 m) capped by one brass line; white above
+        Fur.stoneField(bag, 'wallStoneMid', 9680, 12280, fY + 0.07, fY + 1.45, 4546, 'N');
+        Fur.brassH(bag, 9680, 12280, fY + 1.454, 4546, 'N');
+        //   // family room desk wall: 2.0 m stone band, desk centred                                 // family room south wall: 2.0 m arch on the wall's centre, the desk centred in it
       }
 
       const g = bag.build(THREE, materials);
