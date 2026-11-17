@@ -229,6 +229,8 @@ window.HouseScene = (function () {
     terra:     0xb4684a,  // terracotta accent cushion
     rugW:      0xd3c7b2,  // wool rug, light
     rugD:      0x9c9182,  // wool rug, border
+    rugUpper:  0xece1ce,  // woven field, upper floors
+    rugEdgeUpper: 0xa29481,  // bound edges
     leather:   0x8a5934,  // cognac leather
     blackM:    0x1e1e20,  // matte black metal
     fanWhite:  0xf5f5f3,  // BLDC ceiling fan: gloss white body + blades
@@ -254,6 +256,8 @@ window.HouseScene = (function () {
     limeDuskDk: 0xf9f8f6, // near-white: deeper load of the same colour (limewashDuskDk): SF east bedroom screen wall
     tileBath:  0xdbd5cb,  // large-format bath wall tile
     tileShower:0x6f8b78,  // handmade eucalyptus-green zellige, vertical stack: shower walls
+    tUpperMarble: 0xfefdfb,
+    skirtUpperMarble: 0xfefdfa,
     skirtTile: 0xfdfcf8   // interior skirting: cut from the floor slabs (near-white: colour is in the texture)
   };
 
@@ -487,7 +491,7 @@ window.HouseScene = (function () {
     if (M.oak) { M.oak.roughness = 0.46; M.oak.metalness = 0.02; }
     if (M.woodD) { M.woodD.roughness = 0.48; M.woodD.metalness = 0.02; }
     // warm vitrified floors — slightly polished
-    for (const k of ['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tCirc', 'tOffice', 'tPooja', 'tWalk', 'tFloor', 'tOut', 'skirtTile']) {
+    for (const k of ['tLiving', 'tBed', 'tBath', 'tKitch', 'tUtil', 'tCirc', 'tOffice', 'tPooja', 'tWalk', 'tFloor', 'tUpperMarble', 'tOut', 'skirtTile', 'skirtUpperMarble']) {
       if (M[k]) { M[k].roughness = 0.35; M[k].metalness = 0.02; }
     }
     return M;
@@ -514,7 +518,7 @@ window.HouseScene = (function () {
     // furniture / soft goods / appliances (avoid wedge-stuck in rooms)
     fabric: 1, fabric2: 1, mattress: 1, bedding: 1, pillow: 1,
     rug: 1, counter: 1, counterTop: 1, steel: 1, dark: 1, tv: 1,
-    skirt: 1, skirtTile: 1, skirtTread: 1, skirtStairStone: 1, paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
+    skirt: 1, skirtTile: 1, skirtUpperMarble: 1, skirtTread: 1, skirtStairStone: 1, paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, whiteG: 1, accentWarm: 1,
     // emissive fixtures (tiny, not walkable surfaces)
     lamp: 1, downlight: 1,
     // dense foliage blobs — ground/plotPad under them still catches the player
@@ -2277,7 +2281,8 @@ window.HouseScene = (function () {
   function skirtProbe(fi, floorRects) {
     const deck = fi === 0 ? [] : ROOMS[fi].filter(r => r.type === 'out').map(r => [r.x0, r.x1, r.y0, r.y1]);
     const inAny = (rs, x, y) => rs.some(r => x > r[0] && x < r[1] && y > r[2] && y < r[3]);
-    return (x, y) => inAny(floorRects, x, y) ? 'skirtTile' : inAny(deck, x, y) ? 'balcTile' : null;
+    const interior = fi === 0 ? 'skirtTile' : 'skirtUpperMarble';
+    return (x, y) => inAny(floorRects, x, y) ? interior : inAny(deck, x, y) ? 'balcTile' : null;
   }
 
   /* Backdrop neighbour house: simple plaster mass with parapet, slab bands.
@@ -4484,7 +4489,7 @@ window.HouseScene = (function () {
     /* ---------------- BED ----------------
        Low upholstered platform. The headboard stops at 0.86 m because
        every bed in the house sits under a 0.9 m-sill window. */
-    bed(bag, x0, x1, y0, y1, fY, head) {
+    bed(bag, x0, x1, y0, y1, fY, head, install) {
       const F = frameOf(x0, x1, y0, y1, head);
       const W = F.W, L = F.D;
       const HB = 0.86;
@@ -4498,30 +4503,36 @@ window.HouseScene = (function () {
       for (let i = 0; i < nCh; i++) {
         F.rb(bag, 'linen', -30 + i * cw + 4, -30 + (i + 1) * cw - 4, 50, 130, fY + 0.36, fY + HB, 40);
       }
-      // mattress
-      F.rb(bag, 'sheet', 40, W - 40, 120, L - 40, fY + 0.37, fY + 0.59, 45, 10);
-      // duvet: top layer + soft drops on the sides and foot
-      F.rb(bag, 'duvet', 18, W - 18, 680, L - 12, fY + 0.575, fY + 0.635, 28, 18);
-      F.rb(bag, 'duvet', 2, 46, 680, L - 30, fY + 0.31, fY + 0.62, 20);
-      F.rb(bag, 'duvet', W - 46, W - 2, 680, L - 30, fY + 0.31, fY + 0.62, 20);
-      F.rb(bag, 'duvet', 30, W - 30, L - 46, L - 2, fY + 0.31, fY + 0.62, 20);
-      // turned-down sheet
-      F.rb(bag, 'sheet', 22, W - 22, 590, 780, fY + 0.59, fY + 0.655, 30, 12);
-      // pillows: sleeping pair, euro shams, lumbar
-      if (W >= 1300) {
-        F.pillow(bag, 'sheet', W * 0.27, 310, fY + 0.78, W / 2 - 90, 480, 170, 1.12);
-        F.pillow(bag, 'sheet', W * 0.73, 310, fY + 0.78, W / 2 - 90, 480, 170, 1.12);
-        F.pillow(bag, 'boucle', W / 2 - 270, 450, fY + 0.74, 500, 460, 150, 1.0);
-        F.pillow(bag, 'boucle', W / 2 + 270, 450, fY + 0.74, 500, 460, 150, 1.0);
-        F.pillow(bag, 'terra', W / 2, 570, fY + 0.69, 560, 300, 130, 0.82);
-      } else {
-        F.pillow(bag, 'sheet', W / 2, 310, fY + 0.78, W - 180, 480, 170, 1.12);
-        F.pillow(bag, 'boucle', W / 2, 460, fY + 0.73, 480, 460, 140, 0.95);
-      }
-      // throw across the foot, draping over both sides
-      F.rb(bag, 'linenDk', -12, W + 12, L - 600, L - 220, fY + 0.632, fY + 0.66, 14, 6);
-      F.rb(bag, 'linenDk', -26, -10, L - 600, L - 220, fY + 0.40, fY + 0.66, 8);
-      F.rb(bag, 'linenDk', W + 10, W + 26, L - 600, L - 220, fY + 0.40, fY + 0.66, 8);
+      const bedding = bag => {
+        // mattress
+        F.rb(bag, 'sheet', 40, W - 40, 120, L - 40, fY + 0.37, fY + 0.59, 45, 10);
+        // duvet: top layer + soft drops on the sides and foot
+        F.rb(bag, 'duvet', 18, W - 18, 680, L - 12, fY + 0.575, fY + 0.635, 28, 18);
+        F.rb(bag, 'duvet', 2, 46, 680, L - 30, fY + 0.31, fY + 0.62, 20);
+        F.rb(bag, 'duvet', W - 46, W - 2, 680, L - 30, fY + 0.31, fY + 0.62, 20);
+        F.rb(bag, 'duvet', 30, W - 30, L - 46, L - 2, fY + 0.31, fY + 0.62, 20);
+        // turned-down sheet
+        F.rb(bag, 'sheet', 22, W - 22, 590, 780, fY + 0.59, fY + 0.655, 30, 12);
+        // pillows: sleeping pair, euro shams, lumbar
+        if (W >= 1300) {
+          F.pillow(bag, 'sheet', W * 0.27, 310, fY + 0.78, W / 2 - 90, 480, 170, 1.12);
+          F.pillow(bag, 'sheet', W * 0.73, 310, fY + 0.78, W / 2 - 90, 480, 170, 1.12);
+          F.pillow(bag, 'boucle', W / 2 - 270, 450, fY + 0.74, 500, 460, 150, 1.0);
+          F.pillow(bag, 'boucle', W / 2 + 270, 450, fY + 0.74, 500, 460, 150, 1.0);
+          F.pillow(bag, 'terra', W / 2, 570, fY + 0.69, 560, 300, 130, 0.82);
+        } else {
+          F.pillow(bag, 'sheet', W / 2, 310, fY + 0.78, W - 180, 480, 170, 1.12);
+          F.pillow(bag, 'boucle', W / 2, 460, fY + 0.73, 480, 460, 140, 0.95);
+        }
+        // throw across the foot, draping over both sides
+        F.rb(bag, 'linenDk', -12, W + 12, L - 600, L - 220, fY + 0.632, fY + 0.66, 14, 6);
+        F.rb(bag, 'linenDk', -26, -10, L - 600, L - 220, fY + 0.40, fY + 0.66, 8);
+        F.rb(bag, 'linenDk', W + 10, W + 26, L - 600, L - 220, fY + 0.40, fY + 0.66, 8);
+      };
+      if (install) install(bedding);
+      else bedding(bag);
+
+
     },
 
     /* ---------------- NIGHTSTAND ----------------
@@ -4809,7 +4820,7 @@ window.HouseScene = (function () {
     },
     /* Contemporary luxury undermount kitchen/utility sink with deep bowl,
        basket strainer waste kit, commercial high-arc gooseneck mixer, and soap dispenser. */
-    sink(bag, cx, cy, fY, back) {
+    sink(bag, cx, cy, fY, back, install) {
       back = back || 'E';
       const top = fY + 0.84, bot = top - 0.20;
       const alongY = back === 'E' || back === 'W';
@@ -4817,57 +4828,61 @@ window.HouseScene = (function () {
       const x0 = cx - w / 2, x1 = cx + w / 2, y0 = cy - d / 2, y1 = cy + d / 2;
       const t = 16;
 
-      // 1. Undermount composite/steel bowl body
-      // Base floor sloping slightly toward the central waste
-      pb(bag, 'stoneDk', x0 + t, x1 - t, y0 + t, y1 - t, bot - 0.012, bot);
-      // Walls with a positive reveal under the quartz worktop
-      pb(bag, 'stoneDk', x0, x1, y0, y0 + t, bot, top);
-      pb(bag, 'stoneDk', x0, x1, y1 - t, y1, bot, top);
-      pb(bag, 'stoneDk', x0, x0 + t, y0 + t, y1 - t, bot, top);
-      pb(bag, 'stoneDk', x1 - t, x1, y0 + t, y1 - t, bot, top);
+      const bowl = bag => {
+        // 1. Undermount composite/steel bowl body
+        // Base floor sloping slightly toward the central waste
+        pb(bag, 'stoneDk', x0 + t, x1 - t, y0 + t, y1 - t, bot - 0.012, bot);
+        // Walls with a positive reveal under the quartz worktop
+        pb(bag, 'stoneDk', x0, x1, y0, y0 + t, bot, top);
+        pb(bag, 'stoneDk', x0, x1, y1 - t, y1, bot, top);
+        pb(bag, 'stoneDk', x0, x0 + t, y0 + t, y1 - t, bot, top);
+        pb(bag, 'stoneDk', x1 - t, x1, y0 + t, y1 - t, bot, top);
 
-      // Soft rolled inner stainless ledge lining the bowl top
-      pb(bag, 'steel', x0 + t - 2, x1 - t + 2, y0 + t - 2, y0 + t + 2, top - 0.006, top);
-      pb(bag, 'steel', x0 + t - 2, x1 - t + 2, y1 - t - 2, y1 - t + 2, top - 0.006, top);
-      pb(bag, 'steel', x0 + t - 2, x0 + t + 2, y0 + t + 2, y1 - t - 2, top - 0.006, top);
-      pb(bag, 'steel', x1 - t - 2, x1 - t + 2, y0 + t + 2, y1 - t - 2, top - 0.006, top);
+        // Soft rolled inner stainless ledge lining the bowl top
+        pb(bag, 'steel', x0 + t - 2, x1 - t + 2, y0 + t - 2, y0 + t + 2, top - 0.006, top);
+        pb(bag, 'steel', x0 + t - 2, x1 - t + 2, y1 - t - 2, y1 - t + 2, top - 0.006, top);
+        pb(bag, 'steel', x0 + t - 2, x0 + t + 2, y0 + t + 2, y1 - t - 2, top - 0.006, top);
+        pb(bag, 'steel', x1 - t - 2, x1 - t + 2, y0 + t + 2, y1 - t - 2, top - 0.006, top);
 
-      // Subtle diagonal drainage grooves in the basin floor toward the strainer
-      for (const [gx0, gy0, gx1, gy1] of [
-        [x0 + t + 40, y0 + t + 40, cx - 45, cy - 45],
-        [x1 - t - 40, y0 + t + 40, cx + 45, cy - 45],
-        [x0 + t + 40, y1 - t - 40, cx - 45, cy + 45],
-        [x1 - t - 40, y1 - t - 40, cx + 45, cy + 45]
-      ]) {
-        const midX = (gx0 + gx1) / 2, midY = (gy0 + gy1) / 2;
-        pb(bag, 'dark', Math.min(gx0, gx1) - 2, Math.max(gx0, gx1) + 2,
-          Math.min(gy0, gy1) - 2, Math.max(gy0, gy1) + 2, bot, bot + 0.002);
-      }
+        // Subtle diagonal drainage grooves in the basin floor toward the strainer
+        for (const [gx0, gy0, gx1, gy1] of [
+          [x0 + t + 40, y0 + t + 40, cx - 45, cy - 45],
+          [x1 - t - 40, y0 + t + 40, cx + 45, cy - 45],
+          [x0 + t + 40, y1 - t - 40, cx - 45, cy + 45],
+          [x1 - t - 40, y1 - t - 40, cx + 45, cy + 45]
+        ]) {
+          const midX = (gx0 + gx1) / 2, midY = (gy0 + gy1) / 2;
+          pb(bag, 'dark', Math.min(gx0, gx1) - 2, Math.max(gx0, gx1) + 2,
+            Math.min(gy0, gy1) - 2, Math.max(gy0, gy1) + 2, bot, bot + 0.002);
+        }
 
-      // 2. Luxury Chrome Basket Strainer Waste Kit
-      const cxM = cx / 1000, czM = -cy / 1000;
-      bag.cyl('chrome', cxM, bot + 0.003, czM, 0.054, 0.006);    // outer polished chrome bezel
-      bag.cyl('steel',  cxM, bot + 0.005, czM, 0.042, 0.006);    // perforated stainless strainer cup
-      bag.cyl('dark',   cxM, bot + 0.007, czM, 0.032, 0.010);    // waste hole trap
-      pb(bag, 'chrome', cx - 22, cx + 22, cy - 2, cy + 2, bot + 0.012, bot + 0.015); // crossbar
-      pb(bag, 'chrome', cx - 2, cx + 2, cy - 22, cy + 22, bot + 0.012, bot + 0.015);
-      bag.cyl('chrome', cxM, bot + 0.022, czM, 0.007, 0.018);    // central stopper pull post
+        // 2. Luxury Chrome Basket Strainer Waste Kit
+        const cxM = cx / 1000, czM = -cy / 1000;
+        bag.cyl('chrome', cxM, bot + 0.003, czM, 0.054, 0.006);    // outer polished chrome bezel
+        bag.cyl('steel',  cxM, bot + 0.005, czM, 0.042, 0.006);    // perforated stainless strainer cup
+        bag.cyl('dark',   cxM, bot + 0.007, czM, 0.032, 0.010);    // waste hole trap
+        pb(bag, 'chrome', cx - 22, cx + 22, cy - 2, cy + 2, bot + 0.012, bot + 0.015); // crossbar
+        pb(bag, 'chrome', cx - 2, cx + 2, cy - 22, cy + 22, bot + 0.012, bot + 0.015);
+        bag.cyl('chrome', cxM, bot + 0.022, czM, 0.007, 0.018);    // central stopper pull post
 
-      // 3. Overflow Slot with chrome grid on the rear bowl wall
-      const ofY = top - 0.035;
-      if (back === 'E') {
-        pb(bag, 'dark', x1 - t - 2, x1 - t, cy - 26, cy + 26, ofY - 0.006, ofY + 0.006);
-        pb(bag, 'chrome', x1 - t - 3, x1 - t - 1, cy - 24, cy + 24, ofY - 0.004, ofY + 0.004);
-      } else if (back === 'W') {
-        pb(bag, 'dark', x0 + t, x0 + t + 2, cy - 26, cy + 26, ofY - 0.006, ofY + 0.006);
-        pb(bag, 'chrome', x0 + t + 1, x0 + t + 3, cy - 24, cy + 24, ofY - 0.004, ofY + 0.004);
-      } else if (back === 'N') {
-        pb(bag, 'dark', cx - 26, cx + 26, y1 - t - 2, y1 - t, ofY - 0.006, ofY + 0.006);
-        pb(bag, 'chrome', cx - 24, cx + 24, y1 - t - 3, y1 - t - 1, ofY - 0.004, ofY + 0.004);
-      } else {
-        pb(bag, 'dark', cx - 26, cx + 26, y0 + t, y0 + t + 2, ofY - 0.006, ofY + 0.006);
-        pb(bag, 'chrome', cx - 24, cx + 24, y0 + t + 1, y0 + t + 3, ofY - 0.004, ofY + 0.004);
-      }
+        // 3. Overflow Slot with chrome grid on the rear bowl wall
+        const ofY = top - 0.035;
+        if (back === 'E') {
+          pb(bag, 'dark', x1 - t - 2, x1 - t, cy - 26, cy + 26, ofY - 0.006, ofY + 0.006);
+          pb(bag, 'chrome', x1 - t - 3, x1 - t - 1, cy - 24, cy + 24, ofY - 0.004, ofY + 0.004);
+        } else if (back === 'W') {
+          pb(bag, 'dark', x0 + t, x0 + t + 2, cy - 26, cy + 26, ofY - 0.006, ofY + 0.006);
+          pb(bag, 'chrome', x0 + t + 1, x0 + t + 3, cy - 24, cy + 24, ofY - 0.004, ofY + 0.004);
+        } else if (back === 'N') {
+          pb(bag, 'dark', cx - 26, cx + 26, y1 - t - 2, y1 - t, ofY - 0.006, ofY + 0.006);
+          pb(bag, 'chrome', cx - 24, cx + 24, y1 - t - 3, y1 - t - 1, ofY - 0.004, ofY + 0.004);
+        } else {
+          pb(bag, 'dark', cx - 26, cx + 26, y0 + t, y0 + t + 2, ofY - 0.006, ofY + 0.006);
+          pb(bag, 'chrome', cx - 24, cx + 24, y0 + t + 1, y0 + t + 3, ofY - 0.004, ofY + 0.004);
+        }
+      };
+      if (install) install(bowl);
+      else bowl(bag);
 
       // 4. Commercial High-Arc Gooseneck Mixer Tap (Matte Black with Chrome Highlights)
       const off = alongY ? w / 2 + 65 : d / 2 + 65;
@@ -5018,7 +5033,7 @@ window.HouseScene = (function () {
 
     /* ---------------- BATHROOM ---------------- */
     /* Wall-hung WC on a concealed-cistern panel */
-    wc(bag, cx, cy, fY, facing) {
+    wc(bag, cx, cy, fY, facing, install) {
       facing = facing || 'S';
       const back = facing === 'N' ? 'S' : facing === 'S' ? 'N' : facing === 'E' ? 'W' : 'E';
       // the WC is placed with its centre ~300 mm off the wall; rebuild the
@@ -5035,24 +5050,30 @@ window.HouseScene = (function () {
       F.rb(bag, 'chrome', W / 2 - 58, W / 2 + 58, 158, 163, fY + 0.985, fY + 1.03, 2);         // dual flush: full
       F.rb(bag, 'chrome', W / 2 - 30, W / 2 + 30, 158, 163, fY + 0.935, fY + 0.968, 2);        // dual flush: half
       F.rb(bag, 'quartz', W / 2 - 410, W / 2 + 410, -10, 160, fY + 1.12, fY + 1.14, 3);        // stone ledge on the cistern box
-      // oval bowl: a lathe stretched along the projection axis
-      const bc = F.pt(W / 2, 420), alongX = back === 'E' || back === 'W';
-      F.rb(bag, 'whiteG', W / 2 - 150, W / 2 + 150, 150, 330, fY + 0.24, fY + 0.40, 60);
-      bag.latheS('whiteG', bc[0] / 1000, fY + 0.22, -bc[1] / 1000,
-        [[0, 0], [0.11, 0], [0.16, 0.06], [0.18, 0.15], [0.182, 0.18], [0, 0.18]], 40,
-        alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-      bag.latheS('whiteG', bc[0] / 1000, fY + 0.40, -bc[1] / 1000,
-        [[0.12, 0], [0.186, 0], [0.19, 0.012], [0.185, 0.022], [0.12, 0.022], [0.115, 0.01]], 40,
-        alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-      // soft-close seat on the rim and the lid closed over it, with the hinge block behind
-      bag.latheS('whiteG', bc[0] / 1000, fY + 0.422, -bc[1] / 1000,
-        [[0.115, 0], [0.18, 0], [0.184, 0.01], [0.18, 0.02], [0.115, 0.02]], 40,
-        alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-      bag.latheS('whiteG', bc[0] / 1000, fY + 0.442, -bc[1] / 1000,
-        [[0, 0.018], [0.09, 0.02], [0.165, 0.016], [0.18, 0.008], [0.184, 0], [0, 0]], 40,
-        alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-      F.rb(bag, 'whiteG', W / 2 - 105, W / 2 + 105, 160, 205, fY + 0.405, fY + 0.46, 6);       // hinge block
-      for (const du of [-82, 82]) { const q = F.pt(W / 2 + du, 195); bag.cyl('chrome', q[0] / 1000, fY + 0.468, -q[1] / 1000, 0.011, 0.012); }
+      const bowl = bag => {
+        // oval bowl: a lathe stretched along the projection axis
+        const bc = F.pt(W / 2, 420), alongX = back === 'E' || back === 'W';
+        F.rb(bag, 'whiteG', W / 2 - 150, W / 2 + 150, 150, 330, fY + 0.24, fY + 0.40, 60);
+        bag.latheS('whiteG', bc[0] / 1000, fY + 0.22, -bc[1] / 1000,
+          [[0, 0], [0.11, 0], [0.16, 0.06], [0.18, 0.15], [0.182, 0.18], [0, 0.18]], 40,
+          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
+        bag.latheS('whiteG', bc[0] / 1000, fY + 0.40, -bc[1] / 1000,
+          [[0.12, 0], [0.186, 0], [0.19, 0.012], [0.185, 0.022], [0.12, 0.022], [0.115, 0.01]], 40,
+          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
+        // soft-close seat on the rim and the lid closed over it, with the hinge block behind
+        bag.latheS('whiteG', bc[0] / 1000, fY + 0.422, -bc[1] / 1000,
+          [[0.115, 0], [0.18, 0], [0.184, 0.01], [0.18, 0.02], [0.115, 0.02]], 40,
+          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
+        bag.latheS('whiteG', bc[0] / 1000, fY + 0.442, -bc[1] / 1000,
+          [[0, 0.018], [0.09, 0.02], [0.165, 0.016], [0.18, 0.008], [0.184, 0], [0, 0]], 40,
+          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
+        F.rb(bag, 'whiteG', W / 2 - 105, W / 2 + 105, 160, 205, fY + 0.405, fY + 0.46, 6);       // hinge block
+        for (const du of [-82, 82]) { const q = F.pt(W / 2 + du, 195); bag.cyl('chrome', q[0] / 1000, fY + 0.468, -q[1] / 1000, 0.011, 0.012); }
+      };
+      if (install) install(bowl);
+      else bowl(bag);
+
+
     },
     /* Contemporary luxury floating architectural vanity unit:
        - Floating wall-hung joinery with dual drawer tiers and recessed Gola finger-pull channel
@@ -5162,24 +5183,28 @@ window.HouseScene = (function () {
         // drain: chrome grid disc in the floor
         bag.cyl('chrome', cX, fY + 0.671, cZ, 0.034, 0.004);
         bag.cyl('dark',   cX, fY + 0.674, cZ, 0.022, 0.003);
-      } else bag.lathe('ceramic', cX, vBase, cZ, [
-        [0, 0],
-        [rM * 0.65, 0],
-        [rM * 0.88, vH * 0.25],
-        [rM, vH * 0.75],
-        [rM, vH],
-        [rM - 0.007, vH],
-        [rM - 0.010, vH * 0.90],
-        [rM * 0.82, vH * 0.40],
-        [rM * 0.55, 0.015],
-        [0, 0.015]
-      ], 40);
+      } else {
+        const vessel = bag => {
+          bag.lathe('ceramic', cX, vBase, cZ, [
+            [0, 0],
+            [rM * 0.65, 0],
+            [rM * 0.88, vH * 0.25],
+            [rM, vH * 0.75],
+            [rM, vH],
+            [rM - 0.007, vH],
+            [rM - 0.010, vH * 0.90],
+            [rM * 0.82, vH * 0.40],
+            [rM * 0.55, 0.015],
+            [0, 0.015]
+          ], 40);
 
-      if (!opts.flat) {
-        // Polished Chrome Pop-Up Clicker Drain Stopper
-        bag.cyl('chrome', cX, vBase + 0.016, cZ, 0.035, 0.003); // outer chrome bezel
-        bag.cyl('dark',   cX, vBase + 0.018, cZ, 0.030, 0.004); // silicone seal groove
-        bag.cyl('chrome', cX, vBase + 0.024, cZ, 0.024, 0.006); // domed pop-up stopper cap
+          // Polished chrome pop-up drain stopper
+          bag.cyl('chrome', cX, vBase + 0.016, cZ, 0.035, 0.003); // outer chrome bezel
+          bag.cyl('dark',   cX, vBase + 0.018, cZ, 0.030, 0.004); // silicone seal groove
+          bag.cyl('chrome', cX, vBase + 0.024, cZ, 0.024, 0.006); // domed pop-up stopper cap
+        };
+        if (opts.install) opts.install(vessel);
+        else vessel(bag);
       }
 
       // 5. Architectural Luxury Mixer
@@ -5560,6 +5585,11 @@ window.HouseScene = (function () {
     /* ---------------- DECOR ---------------- */
     /* Wool rug: border band + slightly raised field */
     rug(bag, x0, x1, y0, y1, fY, field, border) {
+      if (fY >= L.f1) {
+        prb(bag, 'rugEdgeUpper', x0, x1, y0, y1, fY + 0.0145, fY + 0.021, 3);
+        prb(bag, 'rugUpper', x0 + 35, x1 - 35, y0 + 35, y1 - 35, fY + 0.015, fY + 0.022, 2);
+        return;
+      }
       prb(bag, border || 'rugD', x0, x1, y0, y1, fY + 0.004, fY + 0.016, 5);
       prb(bag, field || 'rugW', x0 + 110, x1 - 110, y0 + 110, y1 - 110, fY + 0.006, fY + 0.019, 5);
     },
@@ -5867,7 +5897,7 @@ window.HouseScene = (function () {
   const FLOOR_TILE = 'tFloor';
   const TREAD_TILE = 'tTread';   // legacy Kadapa slab finish
   const STAIR_STONE = 'stairStone';
-  const isSlabTile = mat => mat === FLOOR_TILE || mat === TREAD_TILE || mat === STAIR_STONE;
+  const isSlabTile = mat => mat === FLOOR_TILE || mat === 'tUpperMarble' || mat === TREAD_TILE || mat === STAIR_STONE;
 
   const SF_FAMILY_ROOM = R('FAMILY ROOM', '3161 × 4095', 9260, 12421, 4546, 8641, 'living');
   const SF_FAMILY_SOUTH_WALL_X0 = 7620; // Bedroom 03's outside corner, west of the family room's floor boundary.
@@ -9618,6 +9648,82 @@ window.HouseScene = (function () {
       ]
     ];
     const workstationModels = [];
+    const upperModels = [];
+    const upperGroups = [[], [], []];
+    const front = { S: 0, E: 90, N: 180, W: -90 };
+
+    // The synchronous original keeps the collision footprint and remains visible
+    // when an asset cannot load. Animated hosts stay attached to their pivots.
+    function stageUpper(id, fY, rot, draw, options = {}) {
+      const fi = fY === L.f1 ? 1 : 2;
+      const fallbackBag = makeBag(THREE);
+      draw(fallbackBag);
+      const fallback = fallbackBag.build(THREE, materials);
+      const host = new THREE.Group();
+      host.add(fallback);
+      if (!options.moving) upperGroups[fi].push(host);
+      upperModels.push({ id, file: id + '.glb', fi, rot, host, fallback,
+        fit: new THREE.Box3().setFromObject(fallback), ...options });
+      return host;
+    }
+
+    // The utility aisle sees the east face of both 600 mm appliances.
+    function upperLaundry(bag, x, y, floor, dryer) {
+      const face = x + 300, shaft = -y / 1000;
+      const doorY = floor + 0.405;
+      prb(bag, 'whiteG', x - 300, face - 3, y - 300, y + 300, floor + 0.026, floor + 0.88, 12);
+      pb(bag, 'blackM', x - 265, face - 22, y - 262, y + 262, floor, floor + 0.038);
+      prb(bag, 'whiteG', face - 13, face, y - 286, y + 286, floor + 0.039, floor + 0.864, 7);
+      pb(bag, 'aluDark', face - 2, face + 1, y - 283, y + 283, floor + 0.675, floor + 0.678);
+
+      // Recessed drum tunnel, dark foam gasket, chrome outer ring and curved glass.
+      const profile = [[0.184, -0.012], [0.212, -0.012], [0.215, 0.004], [0.211, 0.019],
+        [0.201, 0.026], [0.178, 0.025], [0.176, 0.013], [0.179, -0.011]];
+      const door = new THREE.LatheGeometry(profile.map(([r, d]) => new THREE.Vector2(r, d)), 48);
+      door.rotateZ(-Math.PI / 2);
+      door.translate(face / 1000, doorY, shaft);
+      bag.fabric('steel', door);
+      bag.disc('blackM', face / 1000 + 0.008, doorY, shaft, 0.180, 0.006, 0, 0, Math.PI / 2);
+      bag.disc('aluDark', face / 1000 + 0.010, doorY, shaft, 0.164, 0.006, 0, 0, Math.PI / 2);
+      for (let i = 0; i < 36; i++) {
+        const a = i * Math.PI / 18;
+        bag.disc('dark', face / 1000 + 0.014, doorY + 0.146 * Math.sin(a), shaft + 0.146 * Math.cos(a),
+          0.003, 0.002, 0, 0, Math.PI / 2);
+      }
+      bag.blob('glass', face / 1000 + 0.016, doorY, shaft, 0.020, 0.165, 0.165);
+      prb(bag, 'blackM', face + 18, face + 29, y - 198, y - 181, doorY - 0.036, doorY + 0.036, 3);
+
+      // Detergent drawer or condensate tank, selector dial, and inset display.
+      prb(bag, 'lacq', face - 1, face + 3, y - 258, y - 118, floor + 0.715, floor + 0.827, 4);
+      pb(bag, 'aluDark', face + 2, face + 4, y - 246, y - 130, floor + 0.725, floor + 0.732);
+      bag.disc('blackM', face / 1000 + 0.003, floor + 0.77, shaft, 0.043, 0.007, 0, 0, Math.PI / 2);
+      bag.disc('steel', face / 1000 + 0.012, floor + 0.77, shaft, 0.036, 0.014, 0, 0, Math.PI / 2);
+      pb(bag, 'blackM', face + 18, face + 20, y - 2, y + 2, floor + 0.786, floor + 0.800);
+      prb(bag, 'tv', face + 1, face + 4, y + 105, y + 252, floor + 0.747, floor + 0.823, 5);
+      for (let i = 0; i < 3; i++) {
+        bag.disc('steel', face / 1000 + 0.004, floor + 0.718, -(y + 135 + i * 42) / 1000,
+          0.009, 0.004, 0, 0, Math.PI / 2);
+      }
+      if (dryer) {
+        pb(bag, 'aluDark', face + 1, face + 3, y - 245, y - 95, floor + 0.087, floor + 0.141);
+        for (let i = 0; i < 4; i++) {
+          pb(bag, 'steel', face + 3, face + 4, y - 234, y - 106, floor + 0.092 + i * 0.011, floor + 0.095 + i * 0.011);
+        }
+      } else {
+        prb(bag, 'lacq', face + 1, face + 4, y + 136, y + 252, floor + 0.082, floor + 0.166, 5);
+      }
+    }
+
+    function upperWC(bag, x, y, fY, facing) {
+      Fur.wc(bag, x, y, fY, facing, draw => stageUpper('wc_porcelain', fY, front[facing], draw));
+    }
+    function upperSink(bag, x, y, fY, back = 'E') {
+      Fur.sink(bag, x, y, fY, back, draw => stageUpper('kitchen_sink_steel', fY, back === 'E' || back === 'W' ? 0 : 90, draw));
+    }
+    function upperArt(dir, at, face, c, fY, z, w, h, scheme) {
+      const id = h > w ? 'hanging_picture_frame_01' : 'hanging_picture_frame_02';
+      stageUpper(id, fY, front[face] + 180, bag => Fur.art(bag, dir, at, face, c, fY, z, w, h, scheme));
+    }
     const FLOOR_DEFS = [
       { fY: L.f0, sch: OPEN.f0 },
       { fY: L.f1, sch: OPEN.f1 },
@@ -9666,7 +9772,7 @@ window.HouseScene = (function () {
       // where this floor exists.
       const FZ0 = fY, FZ1 = fY + 0.014;   // above the deck tile (+0.012), under the rugs (+0.016)
       const { rects: floorRects, lay: floorLay } = floorRectsOf(fi);
-      floorRects.forEach((r, i) => bag.plate(FLOOR_TILE, r[0], r[1], r[2], r[3], FZ0, FZ1, fi ? { mat: 'white2', down: L.slabT, out: 2 } : null, floorLay[i]));
+      floorRects.forEach((r, i) => bag.plate(fi === 0 ? FLOOR_TILE : 'tUpperMarble', r[0], r[1], r[2], r[3], FZ0, FZ1, fi ? { mat: 'white2', down: L.slabT, out: 2 } : null, floorLay[i]));
       const skirtAt = skirtAtFi[fi];
 
       // exterior walls (cut) — door openings become gaps; windows leave sill stubs
@@ -10198,13 +10304,14 @@ window.HouseScene = (function () {
            entrance (see IW) sits hard against the bath partition. The FF keeps its 600 deep wardrobe. */
         const WX = sf ? 4305 : 4205, wy = 4547;               // wardrobe front; the walk-in's entrance-wall face
         Fur.rug(bag, 1500, 3900, 400, 2800, fY);
-        Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S');                // queen, headboard on the south wall, 50 short of the window jamb
+        Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S',
+          draw => stageUpper('bed_draped', fY, 0, draw));                // queen, headboard on the south wall, 50 short of the window jamb
         Fur.side(bag, 1500, 1900, 232, 732, fY);                      // west side table
         Fur.side(bag, 3550, 3950, 232, 732, fY);                      // east side table, under the window
         Fur.bench(bag, 2150, 3250, 2190, 2590, fY);                   // bench at the foot of the bed
         Fur.fullHeightWardrobe(bag, 230, 830, 232, 2470, fY, fY + 3.203);   // west wall, short of the window
         // the FF master and the SF bedroom are one plan, furnished identically
-        Fur.art(bag, 'x', 232, 'N', 2700, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);   // above the bed (centred on it, x 2700), on the head wall; it used to hang on the north wall
+        upperArt('x', 232, 'N', 2700, fY, 1.62, 1100, 800, ['artD', 'artB', 'artC']);   // above the bed (centred on it, x 2700), on the head wall; it used to hang on the north wall
         // East-wall gallery: four frames above, three offset below.
         [
           [1280, 1.82, 250, 320, ['artD', 'artB', 'artC']],
@@ -10214,7 +10321,7 @@ window.HouseScene = (function () {
           [1470, 1.43, 300, 230, ['artA', 'artC', 'artD']],
           [1850, 1.43, 230, 310, ['artD', 'artA', 'artB']],
           [2230, 1.43, 310, 240, ['artB', 'artD', 'artC']]
-        ].forEach(([c, height, w, h, scheme]) => Fur.art(bag, 'y', 4805, 'W', c, fY, height, w, h, scheme));
+        ].forEach(([c, height, w, h, scheme]) => upperArt('y', 4805, 'W', c, fY, height, w, h, scheme));
         // walk-in (x 3216..4805, y wy..6381)
         Fur.fullHeightWardrobe(bag, WX, 4805, wy, 6381, fY, fY + 3.203, 'W', { mirror: true });
         // the north end of the aisle is the dressing table the SF east suite has: the entry
@@ -10232,7 +10339,7 @@ window.HouseScene = (function () {
         pb(bag, 'tileShower', 230, 1130, 4557, 6371, fY + 0.012, fY + 0.020);
         pb(bag, 'blackM', 625, 735, 5695, 5805, fY + 0.020, fY + 0.023);
         pb(bag, 'tileShower', 640, 720, 5710, 5790, fY + 0.023, fY + 0.0235);
-        Fur.wc(bag, 1700, 6096, fY, 'S');
+        upperWC(bag, 1700, 6096, fY, 'S');
         Fur.basin(bag, 2300, 3105, 5881, 6381, fY, 'N', { flat: true }); Fur.mirror(bag, 2330, 3075, 6369, 6381, fY, 'S');
         Fur.clad(bag, 'x', 6381, 'S', 230, 1130, fY, 3.203, 'tileShower');   // shower back wall, floor to slab
         Fur.clad(bag, 'x', 6381, 'S', 1130, 3105, fY, 3.203);
@@ -10303,7 +10410,7 @@ window.HouseScene = (function () {
         pb(bag, 'tileShower', 4920, 5820, 230, 1130, Y(0.012), Y(0.020));          // pan, wall to wall
         pb(bag, 'blackM', 5315, 5425, 675, 785, Y(0.020), Y(0.023));              // square drain centered under rain head
         pb(bag, 'tileShower', 5330, 5410, 690, 770, Y(0.023), Y(0.0235));
-        Fur.wc(bag, 6390, 515, fY, 'N');
+        upperWC(bag, 6390, 515, fY, 'N');
         Fur.basin(bag, 6800, 7620, 230, 730, fY, 'S', { flat: true });
         Fur.mirror(bag, 6830, 7590, 230, 242, fY, 'N');
         // wet walls
@@ -10402,8 +10509,8 @@ window.HouseScene = (function () {
            short of the stair mouth (y 6496) so the stairs stay clear. One small side table
            serves both, in the corner between the three-seater's west arm and the two-seater. */
         Fur.rug(bag, 5750, 8750, 5000, 6500, fY);
-        Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S', false, false, { acc: ['boucle', 'boucle', 'boucle'] });              // three-seater, faces TV (moved back, 220 mm)
-        Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W', false, false, { acc: ['boucle', 'boucle', 'boucle'] });              // two-seater on the west wall, pushed up to the stair corner (y 6496)
+        stageUpper('sofa_oatmeal', fY, 180, bag => Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S', false, false, { acc: ['boucle', 'boucle', 'boucle'] }));              // three-seater, faces TV (moved back, 220 mm)
+        stageUpper('sofa_oatmeal', fY, 90, bag => Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W', false, false, { acc: ['boucle', 'boucle', 'boucle'] }));              // two-seater on the west wall, pushed up to the stair corner (y 6496)
         /* coffee table after the owner's reference: a solid timber open box, 1000 x 520 x 0.42 -
            50 mm top, two 40 mm end slabs, an open lower shelf, open on both long sides. It stands
            in front of the corner between the sofas: 280 mm off the three-seater's front, 210 mm
@@ -10416,7 +10523,7 @@ window.HouseScene = (function () {
           pb(bag, 'aluDark', tx0 + 12, tx1 - 12, ty0 + 14, ty1 - 14, fY, fY + 0.02);     // recessed plinth shadow
           Fur.books(bag, 6360, 6120, fY + 0.42, 3, true); }
         // art on the spine wall, facing the seating
-        Fur.art(bag, 'y', 4920, 'E', 5665, fY, 1.65, 1300, 950);
+        upperArt('y', 4920, 'E', 5665, fY, 1.65, 1300, 950);
 
         // --- Dining (south of door) ---
         // centred in the dining bay so the utility slider (x 6750-7950 on
@@ -10426,8 +10533,10 @@ window.HouseScene = (function () {
         // the sofa (that strip + the gap past the privacy wing is the route to
         // the master bedroom door), 0.7 m east to the kitchen
         Fur.table(bag, 6400, 8200, 2400, 3300, fY, 0.75);            // moved 250 mm south
-        for (const dx of [6850, 7750]) { Fur.chair(bag, dx, 2170, fY, 'N'); Fur.chair(bag, dx, 3530, fY, 'S'); }
-        Fur.chair(bag, 6170, 2850, fY, 'E'); Fur.chair(bag, 8430, 2850, fY, 'W');
+        for (const [x, y, face] of [[6850, 2170, 'N'], [7750, 2170, 'N'], [6850, 3530, 'S'],
+          [7750, 3530, 'S'], [6170, 2850, 'E'], [8430, 2850, 'W']]) {
+          stageUpper('dining_chair_02', fY, front[face], bag => Fur.chair(bag, x, y, fY, face));
+        }
         Fur.crockeryUnit(bag, 4920, 5370, 1530, 3180, fY);
         // --- Kitchen (x 9486..12420, y 1065..4945) ---
         // The wet-kitchen band was pulled south (wall now y 950..1065), so the
@@ -10458,7 +10567,7 @@ window.HouseScene = (function () {
 
         // Hob / sink / hood (hood 900 along the wall: y 1650..2550, clear of the window)
         Fur.hob(bag, 12110, K.hob, fY);
-        Fur.sink(bag, 12110, K.sink, fY);
+        upperSink(bag, 12110, K.sink, fY);
         Fur.rangeHood(bag, 12110, K.hob, fY);
 
         // Wall units (z 1.45..2.30, 320 deep)
@@ -10482,8 +10591,8 @@ window.HouseScene = (function () {
         // flush with the wall's dining face (x 9371), so from the dining it
         // reads as the wall dropping to worktop height.
         pb(bag, 'white2', 9371, 9385, 1677, 2700, fY, fY + 0.84);
-        pb(bag, 'skirtTile', 9359, 9373, 1677, 2700, fY - 0.005, fY + 0.07);
-        pb(bag, 'skirtTile', 9383, 9397, 1677, 2700, fY - 0.005, fY + 0.07);       // kitchen face too
+        pb(bag, 'skirtUpperMarble', 9359, 9373, 1677, 2700, fY - 0.005, fY + 0.07);
+        pb(bag, 'skirtUpperMarble', 9383, 9397, 1677, 2700, fY - 0.005, fY + 0.07);       // kitchen face too
         // --- Entrance (north bay: duplex entry door c 8000 + sidelite c 7100) ---
         // Cleared for Vastu; the south wall is the pooja's, so nothing stands
         // against it. Oct 2026: the hall|foyer wall and its walnut casing are
@@ -10560,10 +10669,13 @@ window.HouseScene = (function () {
           // 4) Mandir Backboard with Prabhavali Halo & Warm Divine Backlighting
           pb(bag, 'oakDark', mx1 - 28, mx1, my0 + 10, my1 - 10, fY + 0.24, fY + 1.95);
           pb(bag, 'brassI', mx1 - 36, mx1 - 26, my0 + 50, my1 - 50, fY + 0.45, fY + 1.70);
-          pb(bag, 'lamp', mx1 - 42, mx1 - 34, my0 + 120, my1 - 120, fY + 0.65, fY + 1.55);
+          pb(bag, 'walnutI', mx1 - 42, mx1 - 34, my0 + 120, my1 - 120, fY + 0.65, fY + 1.55);
           // Prabhavali (Divine Arch) behind Lord Venkateswara
           bag.cyl('brassI', 12365 / 1000, fY + 0.90, -midY / 1000, 0.22, 0.012, 0, 0, Math.PI / 2);
-          bag.cyl('lamp', 12360 / 1000, fY + 0.90, -midY / 1000, 0.20, 0.008, 0, 0, Math.PI / 2);
+          const halo = new THREE.RingGeometry(0.193, 0.200, 48);
+          halo.rotateY(-Math.PI / 2);
+          halo.translate(12.357, fY + 0.90, -midY / 1000);
+          bag.fabric('coveLED', halo);
           // Side pillars & Mandir sides
           pb(bag, 'oakDark', mx0 + 20, mx1 - 28, my0 + 8, my0 + 38, fY + 0.24, fY + 1.85);
           pb(bag, 'oakDark', mx0 + 20, mx1 - 28, my1 - 38, my1 - 8, fY + 0.24, fY + 1.85);
@@ -10580,7 +10692,7 @@ window.HouseScene = (function () {
           bag.cone('brassI', 12250 / 1000, fY + 2.22, -midY / 1000, 0.018, 0.06);
 
           // 5) Sacred Hindu Murtis on Peeta (facing West)
-          Fur.murtiGanesha(bag, 12270, midY - 250, peetaTop, 0.92);
+          stageUpper('ganesha', fY, front.W, bag => Fur.murtiGanesha(bag, 12270, midY - 250, peetaTop, 0.92), { brass: true });
           Fur.murtiVenkateswara(bag, 12280, midY, peetaTop, 1.05);
           Fur.murtiLakshmi(bag, 12270, midY + 250, peetaTop, 0.92);
 
@@ -10649,7 +10761,7 @@ window.HouseScene = (function () {
         // on the east, and nothing else.
         // 1. West counter against the divider (full band depth)
         Fur.counterX(bag, 9486, 10086, -520, 950, fY, { cx: 9786, cy: 540, w: 420, d: 760 });
-        Fur.sink(bag, 9786, 540, fY, 'W');
+        upperSink(bag, 9786, 540, fY, 'W');
 
         // Dishwasher on the South end below the West counter (facing East)
         pb(bag, 'charDark', 10066, 10086, -440, 100, fY, fY + 0.04); // Dishwasher kickplate (recessed)
@@ -10681,7 +10793,7 @@ window.HouseScene = (function () {
         bag.cyl('alu', 12067 / 1000, fY + 1.87, -535 / 1000, 0.006, 0.08);
 
         // --- Common Bath (relocated into the south band, east of the utility) ---
-        Fur.wc(bag, 8810, -361, fY, 'N');                             // WC against the outer south wall, facing north
+        upperWC(bag, 8810, -361, fY, 'N');                             // WC against the outer south wall, facing north
 
         // Closed Door (centered at Y = 520, width = 700, on the West wall X = 8135..8250)
         const dbY0 = 170, dbY1 = 870;
@@ -10708,9 +10820,9 @@ window.HouseScene = (function () {
         // --- Utility (band y -646..950): the W/D stack against the west wall
         // right beside the SW grill door (y -607..193), facing east. Nothing
         // else on that wall; the wash basin stays on the outer south wall. ---
-        Fur.washer(bag, 5205, 600, fY, 'E');                          // washer
+        upperLaundry(bag, 5205, 600, fY, false);                          // washer
         pb(bag, 'oakDark', 4920, 5540, 250, 950, fY + 0.88, fY + 0.92);    // shelf between
-        Fur.washer(bag, 5205, 600, fY + 0.92, 'E');                   // dryer on top
+        upperLaundry(bag, 5205, 600, fY + 0.92, true);                   // dryer on top
         pb(bag, 'lacq', 4920, 5540, 250, 275, fY, fY + 2.40);          // side panel on the door side
         pb(bag, 'oakDark', 4920, 5540, 250, 950, fY + 2.36, fY + 2.40);    // top panel
         // open detergent shelf over the stack (machines stay in view)
@@ -10720,7 +10832,9 @@ window.HouseScene = (function () {
         Fur.slidingDoor(bag, 5630, 8030, 950, 1065, fY, 2.40);
 
         // Wash basin on the outer South wall, under the grilled window (facing North)
-        Fur.basin(bag, 7300, 8100, -646, -146, fY, 'S');
+        Fur.basin(bag, 7300, 8100, -646, -146, fY, 'S', {
+          install: draw => stageUpper('vessel_ceramic', fY, 0, draw)
+        });
         // utility floor drain
         bag.cyl('dark', 7450 / 1000, fY + 0.01, 350 / 1000, 0.035, 0.02);
       }
@@ -10865,17 +10979,19 @@ window.HouseScene = (function () {
         prb(bag, 'oakDark', bedX0 + 26, bedX1 - 26, 485, 1220, fY, fY + 0.10, 8);
         prb(bag, 'linen', bedX0 + 25, bedX1 - 25, 518, 1265, fY + 0.10, fY + 0.29, 34);
 
-        const upholstery = makeBag(THREE), mattressBag = makeBag(THREE), legs = makeBag(THREE);
-        const sofaX0 = bedX0 + 45, sofaX1 = bedX1 - 45;
-        for (const x of [sofaX0, sofaX1 - 138]) {
-          prb(upholstery, 'linen', x, x + 138, 775, 1265, fY + 0.29, fY + 0.64, 28);
-        }
-        const cushionWidth = (sofaX1 - sofaX0 - 276) / 3;
-        for (let i = 0; i < 3; i++) {
-          const x = sofaX0 + 138 + i * cushionWidth;
-          prb(upholstery, 'linen', x + 3, x + cushionWidth - 3, 820, 1245, fY + 0.29, fY + 0.44, 34, 12);
-          prb(upholstery, 'boucle', x + 8, x + cushionWidth - 8, 795, 914, fY + 0.41, fY + 0.88, 38, 12);
-        }
+        const mattressBag = makeBag(THREE), legs = makeBag(THREE);
+        const sofa = stageUpper('theater_upholstery', fY, front.N, upholstery => {
+          const sofaX0 = bedX0 + 45, sofaX1 = bedX1 - 45;
+          for (const x of [sofaX0, sofaX1 - 138]) {
+            prb(upholstery, 'linen', x, x + 138, 775, 1265, fY + 0.29, fY + 0.64, 28);
+          }
+          const cushionWidth = (sofaX1 - sofaX0 - 276) / 3;
+          for (let i = 0; i < 3; i++) {
+            const x = sofaX0 + 138 + i * cushionWidth;
+            prb(upholstery, 'linen', x + 3, x + cushionWidth - 3, 820, 1245, fY + 0.29, fY + 0.44, 34, 12);
+            prb(upholstery, 'boucle', x + 8, x + cushionWidth - 8, 795, 914, fY + 0.41, fY + 0.88, 38, 12);
+          }
+        }, { moving: true });
 
         const left = bedX0 + 34, right = bedX1 - 34, mid = (left + right) / 2;
         prb(mattressBag, 'walnutI', left, right, hingeY, bedY1, hingeH - 0.086, hingeH - 0.05, 8);
@@ -10892,27 +11008,29 @@ window.HouseScene = (function () {
           prb(legs, 'blackM', x - 32, x + 32, bedY1 - 141, bedY1 - 54, fY + 0.014, fY + 0.037, 5);
         }
         prb(legs, 'aluDark', left + 112, right - 112, bedY1 - 131, bedY1 - 84, fY + 0.29, fY + 0.34, 8);
-        prb(mattressBag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
-        prb(mattressBag, 'duvet', left + 56, right - 56, hingeY + 705, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
-        prb(mattressBag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
-        prb(mattressBag, 'linenDk', left + 61, right - 61, bedY1 - 39, bedY1 - 22, hingeH + 0.179, hingeH + 0.265, 6);
-        const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
-        for (const fraction of [0.25, 0.75]) {
-          mattress.pillow(mattressBag, 'sheet', mattress.W * fraction, 213, hingeH + 0.275, 610, 390, 124, 0.12, 53);
-        }
-        mattress.pillow(mattressBag, 'terra', mattress.W / 2, 514, hingeH + 0.267, 480, 178, 96, 0.19, 40);
+        const linens = stageUpper('murphy_linen', fY, 0, bag => {
+          prb(bag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
+          prb(bag, 'duvet', left + 56, right - 56, hingeY + 705, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
+          prb(bag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
+          prb(bag, 'linenDk', left + 61, right - 61, bedY1 - 39, bedY1 - 22, hingeH + 0.179, hingeH + 0.265, 6);
+          const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
+          for (const fraction of [0.25, 0.75]) {
+            mattress.pillow(bag, 'sheet', mattress.W * fraction, 213, hingeH + 0.275, 610, 390, 124, 0.12, 53);
+          }
+          mattress.pillow(bag, 'terra', mattress.W / 2, 514, hingeH + 0.267, 480, 178, 96, 0.19, 40);
+        }, { moving: true });
         const pivot = new THREE.Group();
         pivot.position.set(0, hingeH, -hingeY / 1000);
         const deck = mattressBag.build(THREE, materials);
         deck.position.copy(pivot.position).negate();
-        pivot.add(deck);
+        linens.position.copy(deck.position);
+        pivot.add(deck, linens);
         const foot = legs.build(THREE, materials);
         const footHinge = new THREE.Group(), footY = bedY1 - 97.5;
         footHinge.position.set(0, -0.05, -(footY - hingeY) / 1000);
         foot.position.set(0, -(hingeH - 0.05), footY / 1000);
         footHinge.add(foot);
         pivot.add(footHinge);
-        const sofa = upholstery.build(THREE, materials);
 
         // Low-profile wall cassette just above the picture, with no extra drop.
         // The lens is north of the fan's y=2500 sweep limit.
@@ -10930,8 +11048,7 @@ window.HouseScene = (function () {
         prb(hemBag, 'whiteG', 8945, 11155, screenY - 7, screenY + 9, dropTop - 0.014, dropTop, 4);
         const hem = hemBag.build(THREE, materials);
 
-        const chairs = [0, 1].map(() => {
-          const chairBag = makeBag(THREE);
+        const chairs = [0, 1].map(() => stageUpper('mid_century_lounge_chair', fY, front.N, chairBag => {
           // Slim walnut side frames carry separate, softly upholstered cushions.
           const base = fY + 0.018;
           for (const x of [-276, 276]) {
@@ -10951,8 +11068,7 @@ window.HouseScene = (function () {
           prb(chairBag, 'linenDk', -241, 241, -184, 222, base + 0.358, base + 0.448, 32, 12);
           const chairFrame = frameOf(-253, 253, -302, 250, 'S');
           chairFrame.pillow(chairBag, 'linenDk', 253, 115, base + 0.626, 490, 383, 100, 1.29, 42);
-          return chairBag.build(THREE, materials);
-        });
+        }, { moving: true }));
         const moving = new THREE.Group();
         moving.name = 'guestRoomMovingFurniture';
         // The original guest-room zebra shades share the screen's mode animation.
@@ -11030,7 +11146,7 @@ window.HouseScene = (function () {
           const x = 9907 + i * 24;
           pb(bag, 'blackM', x, x + 10, 2534, 2541, lensH - 0.028, lensH + 0.022);
         }
-        Fur.art(bag, 'y', 7736, 'E', 1150, fY, 1.6, 900, 1100, ['artC', 'artA', 'artB']);
+        upperArt('y', 7736, 'E', 1150, fY, 1.6, 900, 1100, ['artC', 'artA', 'artB']);
         Fur.side(bag, 8520, 8940, 232, 652, fY); Fur.side(bag, 11310, 11730, 232, 652, fY);
         Fur.fullHeightWardrobe(bag, 11820, 12420, 232, 2500, fY, fY + 3.203); // East wall full-height wardrobe, short of the big window (y 2600..4300)
         /* --- EAST WALK-IN DRESSING (4920..7620, 1755..3151) ---
@@ -11086,7 +11202,7 @@ window.HouseScene = (function () {
           pb(bag, 'oakDark', 5260, 5400, 1920, 2040, Z(0.75), Z(0.80));                 // makeup organiser tray
           Fur.pouf(bag, 5600, yc, fY);                                                  // stool tucked under the desk
         }
-        Fur.art(bag, 'x', 1755, 'N', 5900, fY, 1.55, 800, 1100, ['artD', 'artB', 'artC']);   // on the bath partition
+        upperArt('x', 1755, 'N', 5900, fY, 1.55, 800, 1100, ['artD', 'artB', 'artC']);   // on the bath partition
         // --- Second Floor Family Room & Entertainment Lounge ---
         const south = SF_FAMILY_ROOM.y0;
         const { x1: wardrobeEnd, y1: wardrobeFront } = SF_FAMILY_WARDROBE;
@@ -11094,7 +11210,7 @@ window.HouseScene = (function () {
 
         // Keep the east side of the seating area clear for the glass doors.
         Fur.rug(bag, 9750, 11930, 6510, 7990, fY);
-        Fur.sofa(bag, 9730, 11950, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] });
+        stageUpper('sofa_oatmeal', fY, 0, bag => Fur.sofa(bag, 9730, 11950, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] }));
         // North wall behind the sofa: the picture is gone; a floor-to-ceiling board-and-batten grid across the WHOLE wall (4 x 4 near-square panels, 80 x 26 mm battens,
         // from the window's east jamb x 9260 to the east wall x 12420, up to the ceiling corner profile; the sofa sits on the wall's centre, x 10840) in the wall's own paint (white2), so the wall colour is unchanged.
         Fur.battenGrid(bag, 'white2', 9260, 12420, 8640, 'S', fY + 0.07, fY + 3.203 - 0.066, 4, 4);
@@ -11112,12 +11228,13 @@ window.HouseScene = (function () {
           [5521 + 190, 1.82, 240, 320, ['artC', 'artA', 'artD']], [5521 + 570, 1.82, 290, 250, ['artA', 'artD', 'artB']],
           [5521 - 380, 1.43, 300, 230, ['artA', 'artC', 'artD']], [5521, 1.43, 230, 310, ['artD', 'artA', 'artB']],
           [5521 + 380, 1.43, 310, 240, ['artB', 'artD', 'artC']]
-        ].forEach(([c, height, w, h, scheme]) => Fur.art(bag, 'y', 4920, 'E', c, fY, height, w, h, scheme));
+        ].forEach(([c, height, w, h, scheme]) => upperArt('y', 4920, 'E', c, fY, height, w, h, scheme));
         Fur.archSkin(bag, 'paintSand', 10980, 1000, fY + 0.07, fY + 1.90, 4546, 'N');                                 // family room south wall: 2.0 m arch on the wall's centre, the desk centred in it
       }
 
       const g = bag.build(THREE, materials);
       g.name = 'floor' + fi;
+      if (upperGroups[fi].length) g.add(...upperGroups[fi]);
       if (fi === 2) g.add(guestRoom.moving);
       for (const { x, deskY, chairY, back, z = 0 } of workstationLayouts[fi]) {
         // The synchronous stand-ins also seed the walkthrough collision grid.
@@ -11175,7 +11292,8 @@ window.HouseScene = (function () {
         // (sketchfab.com/3d-models/lord-ganesha-1399da994ce54420878133a81f2f8f1e),
         // simplified 900k -> ~90k verts; untextured scan, cast in brass here.
         { id: 'ganesha', file: 'ganesha.glb', fi: 1, x: 10989, y: 7100, z: 1.00, rot: 90, h: 0.42, brass: true },
-        ...workstationModels
+        ...workstationModels,
+        ...upperModels
       ];
       const loader = new THREE.GLTFLoader();
       const draco = THREE.DRACOLoader ? new THREE.DRACOLoader() : null;
@@ -11183,9 +11301,46 @@ window.HouseScene = (function () {
       let pending = 0;
       const byFloor = [new THREE.Group(), new THREE.Group(), new THREE.Group()];
       byFloor.forEach((g, i) => { g.name = 'interiorScans' + i; if (floorsOut[i]) floorsOut[i].group.add(g); });
+      const movingByFloor = [[], [], []];
+      function markMesh(obj, pl) {
+        const brass = pl.brass ? new THREE.MeshStandardMaterial({ color: 0xb08a3e, metalness: 0.85, roughness: 0.34 }) : null;
+        obj.traverse(o => {
+          if (!o.isMesh) return;
+          o.castShadow = true;
+          o.receiveShadow = true;
+          o.userData.scan = pl.id;
+          if (brass) o.material = brass;
+        });
+      }
+
+      function fitUpper(obj, pl) {
+        const mount = new THREE.Group();
+        mount.name = pl.id;
+        mount.add(obj);
+        const source = new THREE.Box3().setFromObject(mount);
+        const size = source.getSize(new THREE.Vector3());
+        if (Math.min(size.x, size.y, size.z) < 1e-5 || pl.fit.isEmpty()) return;
+        const scale = pl.fit.getSize(new THREE.Vector3()).divide(size);
+        mount.scale.copy(scale);
+        mount.position.copy(pl.fit.min).sub(source.min.multiply(scale));
+        markMesh(mount, pl);
+        if (pl.moving) {
+          pl.host.add(mount);
+          pl.host.remove(pl.fallback);
+          movingByFloor[pl.fi].push(mount);
+        } else {
+          byFloor[pl.fi].add(mount);
+          pl.host.parent.remove(pl.host);
+        }
+      }
+
       function place(src, pl) {
         const obj = src.clone(true);
         obj.rotation.y = (pl.rot || 0) * Math.PI / 180;
+        if (pl.fit) {
+          fitUpper(obj, pl);
+          return;
+        }
         if (pl.s) obj.scale.setScalar(pl.s);
         if (pl.h) {   // downloaded models come at arbitrary scale: fit to a height (m)
           obj.updateMatrixWorld(true);
@@ -11197,8 +11352,7 @@ window.HouseScene = (function () {
         obj.position.set(pl.x / 1000 - (bb.min.x + bb.max.x) / 2,
                          FL[pl.fi] + (pl.z || 0) - bb.min.y + (pl.fallback ? 0.014 : 0.002),
                          -pl.y / 1000 - (bb.min.z + bb.max.z) / 2);
-        const brass = pl.brass ? new THREE.MeshStandardMaterial({ color: 0xb08a3e, metalness: 0.85, roughness: 0.34 }) : null;
-        obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.scan = pl.id; if (brass) o.material = brass; } });
+        markMesh(obj, pl);
         byFloor[pl.fi].add(obj);
         if (pl.fallback) byFloor[pl.fi].parent.remove(pl.fallback);
       }
@@ -11206,7 +11360,9 @@ window.HouseScene = (function () {
         if (--pending > 0) return;
         if (draco) draco.dispose();
         for (let i = 0; i < 3; i++) {
-          window.dispatchEvent(new CustomEvent('houseInteriorReady', { detail: { group: byFloor[i], floor: i } }));
+          window.dispatchEvent(new CustomEvent('houseInteriorReady', {
+            detail: { group: byFloor[i], moving: movingByFloor[i], floor: i }
+          }));
         }
       }
       const ids = Array.from(new Set(P.map(p => p.id)));

@@ -103,14 +103,14 @@
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261114_east_bed_lavender"></script>
+<script src="lib/interiorKit.js?v=20261116_upper_interiors"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
 const sceneFile = window.DESIGN === 'full2' ? 'houseScene2.js' : 'houseScene.js';
-document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/script>');
+document.write('<script src="' + sceneFile + '?v=20261116_upper_interiors"><\/script>');
 </script>
 
 <script>
@@ -249,7 +249,7 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
         gl_FragColor = vec4(vec3(ao), 1.0);
       }`,
       { tDepth: { value: null }, projInv: { value: new THREE.Matrix4() },
-        res: { value: new THREE.Vector2(1, 1) }, projScale: { value: 1 }, radius: { value: 0.45 } });
+        res: { value: new THREE.Vector2(1, 1) }, projScale: { value: 1 }, radius: { value: window.DESIGN === 'full2' ? 0.85 : 0.45 } });
 
     const blurFrag = `
       varying vec2 vUv;
@@ -307,7 +307,7 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
         c = pow(max(c, 0.0), vec3(1.0 / 2.2));           // to sRGB
         gl_FragColor = vec4(c, 1.0);
       }`,
-      { tCol: { value: null }, tAO: { value: null }, exposure: { value: 0.98 }, aoStrength: { value: 0.55 } });
+      { tCol: { value: null }, tAO: { value: null }, exposure: { value: 0.98 }, aoStrength: { value: window.DESIGN === 'full2' ? 0.9 : 0.55 } });
 
     const finalPass = pass(`
       varying vec2 vUv;
@@ -738,6 +738,11 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
   /* Interior finishes (lib/interiorKit.js) — shared generators, wrapped
      with this viewer's own texture plumbing. */
   if (window.InteriorKit) {
+    for (const name of InteriorKit.photoNames) {
+      TEX[name] = () => texCache[name] || (texCache[name] = InteriorKit.photoKit(THREE, name, Q.anisotropy || 4, () => {
+        window.dispatchEvent(new Event('houseInteriorReady'));
+      }));
+    }
     for (const n in InteriorKit.kits) {
       TEX[n] = function () {
         const ck = 'ik_' + n;
@@ -974,6 +979,8 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
         mid: { value: new THREE.Color(0x7fa8cd) },
         bot: { value: new THREE.Color(0xd9d3c5) },
         sunDir: { value: SUN_DIR.clone() },
+        tSky: { value: null }, skyOn: { value: 0 }, skyRot: { value: 0 }, skyLin: { value: 0 },
+        hazeCol: { value: new THREE.Color(0xd6dce0) },
         tNoise: { value: noiseTex }
       },
       vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);} `,
@@ -981,9 +988,23 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
         varying vec3 vDir;
         uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir;
         uniform sampler2D tNoise;
+        uniform sampler2D tSky; uniform float skyOn; uniform float skyRot; uniform float skyLin; uniform vec3 hazeCol;
         void main(){
           vec3 d = normalize(vDir);
           float h = clamp(d.y, -1.0, 1.0);
+          if (skyOn > 0.5) {
+            // FULL 2: photographed sky (Poly Haven CC0), rotated so its sun sits on sunDir
+            vec2 suv = vec2(atan(d.z, d.x) / 6.2831853 + 0.5 + skyRot, asin(h) / 3.14159265 + 0.5);
+            vec3 p = texture2D(tSky, suv).rgb;
+            vec3 hz = hazeCol;
+            if (skyLin > 0.5) {
+              p = pow(p, vec3(2.2)); hz = pow(hz, vec3(2.2));
+              p /= (1.0 - 0.6 * min(dot(p, vec3(0.2126, 0.7152, 0.0722)), 0.95));
+            }
+            p = mix(p, hz, smoothstep(0.035, -0.02, h));
+            gl_FragColor = vec4(p, 1.0);
+            return;
+          }
           vec3 col = h > 0.0 ? mix(mid, top, pow(h, 0.62)) : mix(mid, bot, pow(-h, 0.5));
           float haze = pow(1.0 - abs(h), 6.0);
           col = mix(col, vec3(0.89, 0.89, 0.86), haze * 0.3);
@@ -1009,6 +1030,43 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
   const skyMat = skyMaterial();
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), skyMat);
   scene.add(skyDome);
+  /* FULL 2 photographed sky: dome + sky IBL from one CC0 photo. Sun in the JPG is at u = 0.599. */
+  const FULL2 = window.DESIGN === 'full2';
+  const SKY = { img: null, rot: 0.599 - (Math.atan2(SUN_DIR.z, SUN_DIR.x) / (Math.PI * 2) + 0.5) };
+  if (FULL2) {
+    const im = new Image();
+    im.onload = () => {
+      SKY.img = im;
+      const t = new THREE.Texture(im);
+      t.wrapS = THREE.RepeatWrapping; t.generateMipmaps = false;
+      t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true;
+      skyMat.uniforms.tSky.value = t;
+      skyMat.uniforms.skyRot.value = SKY.rot;
+      skyMat.uniforms.skyLin.value = POST.on ? 1 : 0;
+      skyMat.uniforms.skyOn.value = (typeof isNight !== 'undefined' && isNight) ? 0 : 1;
+      try {
+        // sky IBL from the same photo, same rotation; warm ground bounce below the horizon
+        const w = Q.tier === 'high' ? 1024 : (Q.tier === 'medium' ? 512 : 256), h = w >> 1, hh = h >> 1;
+        const c = cv(w, h), x = c.getContext('2d');
+        const g = x.createLinearGradient(0, hh, 0, h);
+        g.addColorStop(0, '#b9ad95'); g.addColorStop(1, '#6f665a');
+        x.fillStyle = g; x.fillRect(0, 0, w, h);
+        const off = (((SKY.rot % 1) + 1) % 1) * w;
+        x.drawImage(im, 0, 0, im.width, im.height / 2, -off, 0, w, hh);
+        x.drawImage(im, 0, 0, im.width, im.height / 2, w - off, 0, w, hh);
+        const eq = new THREE.CanvasTexture(c);
+        eq.mapping = THREE.EquirectangularReflectionMapping;
+        if ('colorSpace' in eq) eq.colorSpace = THREE.SRGBColorSpace; else eq.encoding = THREE.sRGBEncoding;
+        const pm = new THREE.PMREMGenerator(renderer);
+        const tex = pm.fromEquirectangular(eq).texture;
+        eq.dispose(); pm.dispose();
+        const old = ENV.sky;
+        scene.traverse(o => { if (o.material && o.material.envMap === old) { o.material.envMap = tex; o.material.needsUpdate = true; } });
+        ENV.sky = tex; scene.environment = tex;
+      } catch (e) { /* keep the painted IBL */ }
+    };
+    im.src = 'assets/sky-day-' + ((Q.tier === 'high' && renderer.capabilities.maxTextureSize >= 4096) ? '4k' : '2k') + '.jpg';
+  }
 
   // Two IBL environments: the sky feeds exterior surfaces; interiors reflect
   // a warm neutral room gradient instead of blue sky (indoor counters/floors
@@ -1114,8 +1172,11 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
     skyTop: 0x060a14, skyMid: 0x121a2c, skyBot: 0x1a1820,
     bg: 0x0a0e16, exp: 0.85, lampBoost: 1.55
   };
+  // FULL 2: less flat ambient wash indoors, so walls shade away from the windows
+  if (FULL2) { DAY.warmI = 0.19; DAY.hemiI = 0.33; }
   function applyTimeOfDay(night) {
     isNight = !!night;
+    if (skyMat.uniforms.skyOn) skyMat.uniforms.skyOn.value = (FULL2 && SKY.img && !isNight) ? 1 : 0;
     const S = isNight ? NIGHT : DAY;
     hemi.intensity = S.hemiI;
     hemi.color.setHex(S.hemiSky);
@@ -1232,13 +1293,13 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
   const WT_LAYER = {
     // finishes
     terraceF: 1, balcTile: 1, tOut: 1, pave: 1, paver: 1, paver2: 1, roadLine: 1,
-    tFloor: 1, tTread: 1, stairStone: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
+    tFloor: 1, tUpperMarble: 1, tTread: 1, stairStone: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
     tPooja: 1, tWalk: 1, plinth: 1, soil: 1, grass: 1, rug: 1, tileBath: 1, stoneDk: 1, travertine: 1,
     eastPlaster: 1, curtain2: 1,
     // finishes laid over finishes
     limeWash: 1, limeDusk: 1, limeDuskDk: 1, muralArch: 1, tileShower: 2, quartz: 3,
     // trims
-    paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, skirt: 2, skirtTile: 2, skirtTread: 2, skirtStairStone: 2, stairMetal: 2, woodD: 2, walnut: 2, walnutI: 2, oakDark: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
+    paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, skirt: 2, skirtTile: 2, skirtUpperMarble: 2, skirtTread: 2, skirtStairStone: 2, stairMetal: 2, woodD: 2, walnut: 2, walnutI: 2, oakDark: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
     brass: 2, brassI: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,
     counterTop: 2, tv: 2, solar: 2, solarFrm: 2, msWhite: 2, lacqSage: 2,
     gBlue: 3, alu: 3, aluDark: 4,
@@ -1594,8 +1655,8 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
     refreshShadows();
   });
   window.addEventListener('houseInteriorReady', function (e) {
-    const g = e.detail && e.detail.group;
-    if (g) g.traverse(function (o) {
+    const groups = e.detail ? [e.detail.group, ...(e.detail.moving || [])] : [];
+    for (const group of groups) group.traverse(function (o) {
       if (!o.isMesh || !o.material) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       mats.forEach(function (m) {

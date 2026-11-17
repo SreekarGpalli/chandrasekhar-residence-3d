@@ -97,14 +97,14 @@
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261114_east_bed_lavender"></script>
+<script src="lib/interiorKit.js?v=20261116_upper_interiors"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
 const sceneFile = window.DESIGN === 'full2' ? 'houseScene2.js' : 'houseScene.js';
-document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/script>');
+document.write('<script src="' + sceneFile + '?v=20261116_upper_interiors"><\/script>');
 </script>
 <script>
 /* ============================================================
@@ -917,6 +917,11 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
   /* Interior finishes (lib/interiorKit.js) — shared generators, wrapped
      with this viewer's own texture plumbing. */
   if (window.InteriorKit) {
+    for (const name of InteriorKit.photoNames) {
+      TEX[name] = () => texCache[name] || (texCache[name] = InteriorKit.photoKit(THREE, name, ANISO, () => {
+        window.dispatchEvent(new Event('houseInteriorReady'));
+      }));
+    }
     for (const n in InteriorKit.kits) {
       TEX[n] = function () {
         const ck = 'ik_' + n;
@@ -1216,7 +1221,7 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
       hemiSky: 0xc8cbd4, hemiGnd: 0xc89a68, hemiI: 0.30,
       skyTop: 0x3a6ba2, skyMid: 0xb9bfcb, skyBot: 0xf0cfa4,
       fog: 0xe2cfb4, exp: 0.99, fillC: 0xd0b490, fillI: 0.15,
-      envHz: '#f0dcbc', envGnd: '#a07f56'
+      envHz: '#f0dcbc', envGnd: '#a07f56', skyTint: [1.0, 0.88, 0.74]
     }
   };
   let sunKey = 'morning';
@@ -1260,6 +1265,8 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
       sunDir: { value: SUN_DIR.clone() },
       sunTint: { value: new THREE.Color(0xffeecf) },
       skyGain: { value: 1.15 },
+      tSky: { value: null }, skyOn: { value: 0 }, skyRot: { value: 0 }, skyLin: { value: 0 },
+      skyTint: { value: new THREE.Color(1, 1, 1) }, hazeCol: { value: new THREE.Color(1, 1, 1) },
       tNoise: { value: asTex(cloudNoiseCanvas(512), false) }
     },
     vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
@@ -1267,6 +1274,8 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
       varying vec3 vDir;
       uniform vec3 top; uniform vec3 mid; uniform vec3 bot; uniform vec3 sunDir; uniform vec3 sunTint;
       uniform float skyGain;
+      uniform sampler2D tSky; uniform float skyOn; uniform float skyRot; uniform float skyLin;
+      uniform vec3 skyTint; uniform vec3 hazeCol;
       uniform sampler2D tNoise;
       /* Every colour reaching this shader is LINEAR radiance, converted on the
          JS side. A raw ShaderMaterial is not touched by three's tone mapping or
@@ -1278,6 +1287,21 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
       void main(){
         vec3 d = normalize(vDir);
         float h = clamp(d.y, -1.0, 1.0);
+        if (skyOn > 0.5) {
+          // FULL 2: a photographed sky (Poly Haven CC0), rotated so its sun sits on sunDir.
+          vec2 suv = vec2(atan(d.z, d.x) / 6.2831853 + 0.5 + skyRot, asin(h) / 3.14159265 + 0.5);
+          vec3 p = texture2D(tSky, suv).rgb;
+          if (skyLin > 0.5) {
+            p = pow(p, vec3(2.2));
+            // the JPG is display-referred; undo some of its shoulder so the
+            // pipeline's own tone map does not flatten it a second time
+            p /= (1.0 - 0.6 * min(dot(p, vec3(0.2126, 0.7152, 0.0722)), 0.95));
+          }
+          p *= skyTint;
+          p = mix(p, hazeCol, smoothstep(0.035, -0.02, h));
+          gl_FragColor = vec4(p * skyGain, 1.0);
+          return;
+        }
         vec3 col = h > 0.0 ? mix(mid, top, pow(h, 0.52)) : mix(mid, bot, pow(-h, 0.5));
         // Horizon haze — widened and strengthened to meet the scene fog the
         // distant ground now fades into, so the two arrive at the same colour
@@ -1307,6 +1331,20 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
   const skyDome = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), skyMat);
   skyDome.frustumCulled = false;
   scene.add(skyDome);
+  /* FULL 2 photographed sky. u of the sun in the JPG is 0.599 (elevation 49 deg). */
+  const SKY = { on: window.DESIGN === 'full2', img: null, sunU: 0.599, rot: 0 };
+  if (SKY.on) {
+    const im = new Image();
+    im.onload = () => {
+      SKY.img = im;
+      const t = new THREE.Texture(im);
+      t.wrapS = THREE.RepeatWrapping; t.generateMipmaps = false;
+      t.minFilter = t.magFilter = THREE.LinearFilter; t.needsUpdate = true;
+      skyMat.uniforms.tSky.value = t;
+      applySun(sunKey);
+    };
+    im.src = 'assets/sky-day-' + ((HI && MAXTEX >= 4096) ? '4k' : '2k') + '.jpg';
+  }
 
   // fromEquirectangular is the robust path — pmrem.fromScene() over a custom
   // ShaderMaterial sky yields a malformed env map that NaNs every PBR surface.
@@ -1324,6 +1362,12 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
     g.addColorStop(0.52, S.envGnd);
     g.addColorStop(1.00, S.envGnd);
     x.fillStyle = g; x.fillRect(0, 0, w, h);
+    if (SKY.on && SKY.img && S.photoSky !== false) {
+      // same photo, same rotation as the dome, so reflections and sky light agree with what is seen
+      const off = (((SKY.rot % 1) + 1) % 1) * w, hh = Math.round(h * 0.5);
+      x.drawImage(SKY.img, 0, 0, SKY.img.width, SKY.img.height / 2, -off, 0, w, hh);
+      x.drawImage(SKY.img, 0, 0, SKY.img.width, SKY.img.height / 2, w - off, 0, w, hh);
+    } else
     for (let i = 0; i < 18; i++) {
       const cx = Math.random() * w, cy = h * (0.12 + Math.random() * 0.28);
       const cg = x.createRadialGradient(cx, cy, 0, cx, cy, 26 + Math.random() * 54);
@@ -1335,7 +1379,7 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
     const sx = (az / (Math.PI * 2) + 0.5) * w, sy = (0.5 - el / Math.PI) * h;
     const sg = x.createRadialGradient(sx, sy, 0, sx, sy, w * 0.11);
     sg.addColorStop(0, 'rgba(255,248,228,1)'); sg.addColorStop(1, 'rgba(255,248,228,0)');
-    x.fillStyle = sg; x.fillRect(0, 0, w, h);
+    if (!(SKY.on && SKY.img)) { x.fillStyle = sg; x.fillRect(0, 0, w, h); }
     const eq = new THREE.CanvasTexture(c);
     eq.mapping = THREE.EquirectangularReflectionMapping;
     if ('colorSpace' in eq && THREE.SRGBColorSpace) eq.colorSpace = THREE.SRGBColorSpace; else eq.encoding = THREE.sRGBEncoding;
@@ -1418,6 +1462,8 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
     sun.color.setHex(S.sunC); sun.intensity = S.sunI;
     hemi.color.setHex(S.hemiSky); hemi.groundColor.setHex(S.hemiGnd); hemi.intensity = S.hemiI;
     fill.color.setHex(S.fillC); fill.intensity = S.fillI;
+    // FULL 2: less sun, more sky fill, so sunlit white plaster keeps tone instead of clipping
+    if (SKY.on) { sun.intensity = S.sunI * 0.86; hemi.intensity = S.hemiI * 1.25; }
     // The sky dome, the fog colour and the clear colour all feed a linear HDR
     // buffer when the pipeline is on, so they must be linear radiance. On the
     // fallback path they go straight to an sRGB canvas and must not be.
@@ -1428,6 +1474,16 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
     skyMat.uniforms.sunDir.value.copy(SUN_DIR);
     skyMat.uniforms.sunTint.value.copy(asLin(S.sunC));
     skyMat.uniforms.skyGain.value = POST.on ? 1.15 : 1.0;
+    if (SKY.on && SKY.img) {
+      SKY.rot = SKY.sunU - (Math.atan2(SUN_DIR.z, SUN_DIR.x) / (Math.PI * 2) + 0.5);
+      skyMat.uniforms.skyOn.value = S.photoSky === false ? 0 : 1;
+      skyMat.uniforms.skyRot.value = SKY.rot;
+      skyMat.uniforms.skyLin.value = POST.on ? 1 : 0;
+      skyMat.uniforms.skyGain.value = 1.0;
+      const tt = S.skyTint || [1, 1, 1];
+      skyMat.uniforms.skyTint.value.setRGB(tt[0], tt[1], tt[2]);
+      skyMat.uniforms.hazeCol.value.copy(asLin(S.fog));
+    }
     scene.fog.color.copy(asLin(S.fog));
     scene.background.copy(asLin(S.fog));
     SKY_UP.setHex(S.skyMid).convertSRGBToLinear();
@@ -1511,9 +1567,9 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
      point. */
   const DEPTH_LAYER = {
     terraceF: 1, balcTile: 1, tOut: 1, pave: 1, paver: 1, paver2: 1, roadLine: 1,
-    tFloor: 1, tTread: 1, stairStone: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
+    tFloor: 1, tUpperMarble: 1, tTread: 1, stairStone: 1, tLiving: 1, tBed: 1, tBath: 1, tKitch: 1, tUtil: 1, tCirc: 1, tOffice: 1,
     tPooja: 1, tWalk: 1, copingLight: 1, plinth: 1, soil: 1, grass: 1, rug: 1,
-    paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, limeDusk: 1, limeDuskDk: 1, muralArch: 1, skirt: 2, skirtTile: 2, skirtTread: 2, skirtStairStone: 2, stairMetal: 2, woodD: 2, walnut: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
+    paintSand: 1, arcTone1: 1, arcTone2: 1, arcTone3: 1, arcTone4: 1, paintPeach: 1, paintCream: 1, paintTan: 1, limeSand: 1, limeDusk: 1, limeDuskDk: 1, muralArch: 1, skirt: 2, skirtTile: 2, skirtUpperMarble: 2, skirtTread: 2, skirtStairStone: 2, stairMetal: 2, woodD: 2, walnut: 2, woodF: 2, frame: 2, ms: 2, steel: 2,
     brass: 2, chrome: 2, accentWarm: 2, liftSteel: 2, liftDoor: 2, liftChrome: 2,
     counterTop: 2, tv: 2, solar: 2, solarFrm: 2
   };
@@ -2172,9 +2228,8 @@ document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/sc
      scanned textures — but it must reflect the room, not the sky, and it
      needs normal-buffer materials like everything else (see below). */
   window.addEventListener('houseInteriorReady', (e) => {
-    const g = e.detail && e.detail.group;
-    if (!g) return;
-    g.traverse(o => {
+    if (!e.detail) return;
+    for (const group of [e.detail.group, ...(e.detail.moving || [])]) group.traverse(o => {
       if (!o.isMesh || !o.material) return;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       for (const m of mats) {

@@ -1,2 +1,20 @@
-All models in this folder are from Poly Haven (https://polyhaven.com),
-released under CC0 1.0 (public domain). No attribution required.
+Poly Haven assets are released under CC0 1.0. See https://polyhaven.com/license.
+The scene uses the ceramic vases, wooden bowl, potted plant, dining_chair_02,
+mid_century_lounge_chair, and hanging_picture_frame_01/02.
+The rug textures in assets/upper-linen-*.jpg are reduced from Poly Haven's Rough Linen.
+The upstairs floor textures in assets/upper-marble-*.jpg are from Poly Haven's White Marble.
+
+The draped bed and Murphy bedding, porcelain toilet and vessel, stainless sink,
+and family standing desk and task chair are locally authored House3D models.
+The bedding incorporates CC0 Poly Haven fabric textures.
+
+sofa_oatmeal.glb and theater_upholstery.glb are compressed adaptations of
+Innerscene's HAVEN 224 - Oatmeal Two-Seat Sofa, released under CC0.
+https://www.innerscene.com/tools/library/3d-parts/haven-224-oatmeal-two-seat-sofa-40262c27
+
+The Ganesha mesh is adapted from "Lord-ganesha", credited to Thunk3D Scanner
+and Diana123456, under CC BY 4.0. The scan was simplified and given a brass finish.
+https://sketchfab.com/3d-models/lord-ganesha-1399da994ce54420878133a81f2f8f1e
+https://creativecommons.org/licenses/by/4.0/
+
+assets/sky-day-*.jpg: "Kloofendal 48d Partly Cloudy (Pure Sky)" HDRI, Poly Haven, CC0.
