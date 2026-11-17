@@ -4059,6 +4059,16 @@ window.HouseScene = (function () {
       bag.disc('mirrorI', cx / 1000, zc, -(wallY + s * 19) / 1000, r, 0.004, Math.PI / 2, 0, 0);
     },
 
+    // 6a2. Stone panel: the TV wall's language at room scale. A straight-edged, floor-to-soffit band of the same deep-stone
+    // texture paint on a wall along x at y = wallY, 2 x halfW mm wide, with one brass hairline 90 mm inside each edge.
+    // Paint and two brass flats; no arch, no joinery.
+    stonePanel(bag, cx, halfW, z0, z1, wallY, face) {
+      const s = face === 'S' ? -1 : 1;
+      pb(bag, 'wallLime', cx - halfW, cx + halfW, Math.min(wallY - s, wallY + 2 * s), Math.max(wallY - s, wallY + 2 * s), z0, z1);
+      for (const u of [cx - halfW + 90, cx + halfW - 90])
+        pb(bag, 'brassI', u - 4, u + 4, Math.min(wallY + 2 * s, wallY + 5 * s), Math.max(wallY + 2 * s, wallY + 5 * s), z0, z1);
+    },
+
     // 6a3. Arched paint panel on a wall along x at y = wallY: a 2 mm skin in `mat`, 2 x halfW mm wide, straight from z0 up to zSpring (m),
     // then a semicircular head (apex zSpring + halfW). Paint only, no joinery.
     archSkin(bag, mat, cx, halfW, z0, zSpring, wallY, face, depth) {
@@ -10602,7 +10612,7 @@ window.HouseScene = (function () {
         // stays open.
         Fur.foyerPartition(bag, 10792, 10881, 6815, 7385, fY);
         // Budget wall set (paint + one MDF shelf): foyer south wall arch + key shelf, master bedroom desk-wall arch.
-        Fur.archSkin(bag, 'paintSand', 11650, 480, fY + 0.07, fY + 1.85, 6815, 'N');                                  // foyer south wall (y 6815): 0.96 m paint arch
+        Fur.stonePanel(bag, 11650, 480, fY + 0.07, fY + 3.203 - 0.066, 6815, 'N');   // foyer: straight stone band, echoes the TV wall on arrival                                  // foyer south wall (y 6815): 0.96 m paint arch
         pb(bag, 'white2', 11250, 12050, 6815, 7115, fY + 0.85, fY + 0.89);                                           // 0.8 x 0.3 m floating key shelf (MDF)
         Fur.mural(bag, 'muralArch', 230, 4805, 4432, 'S', fY, fY + 3.203, [{ a0: 3300, a1: 4100, top: fY + 2.1 }]);     // master bedroom north wall (y 4432): owner's arch/pill mural, full wall bar the walk-in door (x 3300..4100)
         Fur.ganeshaShrine(bag, 10879, 7100, fY);
@@ -11225,7 +11235,7 @@ window.HouseScene = (function () {
           [5521 - 380, 1.43, 300, 230, ['artA', 'artC', 'artD']], [5521, 1.43, 230, 310, ['artD', 'artA', 'artB']],
           [5521 + 380, 1.43, 310, 240, ['artB', 'artD', 'artC']]
         ].forEach(([c, height, w, h, scheme]) => upperArt('y', 4920, 'E', c, fY, height, w, h, scheme));
-        Fur.archSkin(bag, 'paintSand', 10980, 1000, fY + 0.07, fY + 1.90, 4546, 'N');                                 // family room south wall: 2.0 m arch on the wall's centre, the desk centred in it
+        Fur.stonePanel(bag, 10980, 1000, fY + 0.07, fY + 3.203 - 0.066, 4546, 'N');   // family room desk wall: 2.0 m stone band, desk centred                                 // family room south wall: 2.0 m arch on the wall's centre, the desk centred in it
       }
 
       const g = bag.build(THREE, materials);
