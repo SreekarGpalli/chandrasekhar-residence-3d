@@ -1174,6 +1174,10 @@ document.write('<script src="' + sceneFile + '?v=20261116_upper_interiors"><\/sc
   };
   // FULL 2: less flat ambient wash indoors, so walls shade away from the windows
   if (FULL2) { DAY.warmI = 0.19; DAY.hemiI = 0.33; }
+  // FULL 2: floor bounce. A pale floor throws light up at the ceiling; without it every
+  // ceiling sat far darker than its walls and read as a grey slab.
+  const ceilBounce = new THREE.HemisphereLight(0x000000, 0xfff3e2, 0);
+  if (FULL2) scene.add(ceilBounce);
   function applyTimeOfDay(night) {
     isNight = !!night;
     if (skyMat.uniforms.skyOn) skyMat.uniforms.skyOn.value = (FULL2 && SKY.img && !isNight) ? 1 : 0;
@@ -1185,6 +1189,7 @@ document.write('<script src="' + sceneFile + '?v=20261116_upper_interiors"><\/sc
     sun.color.setHex(S.sunC);
     fill.intensity = S.fillI;
     warmFill.intensity = S.warmI;
+    ceilBounce.intensity = FULL2 ? (isNight ? 0.1 : 0.6) : 0;
     // Update outdoor + indoor fog presets (frame loop swaps which is active)
     FOG_OUT.color.setHex(S.fogC);
     FOG_OUT.near = S.fogN;
