@@ -398,6 +398,7 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
         renderer.setRenderTarget(rtAO); renderer.render(blurV.scene, fsCam);
       }
       compPass.u.tCol.value = rtScene.texture; compPass.u.tAO.value = rtAO.texture;
+      compPass.u.exposure.value = 0.98 * (POST.adapt || 1);
       renderer.setRenderTarget(rtLDR); renderer.render(compPass.scene, fsCam);
       finalPass.u.tCol.value = rtLDR.texture;
       finalPass.u.t.value = reduceMotion ? 0 : (frameNo = (frameNo + 1) % 1024);
@@ -772,6 +773,18 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
     if (name === 'fanLED') return { emissive: true, led: true };
     if (name === 'lamp' || name === 'downlight') return { emissive: true, strong: name === 'downlight' };
     if (FLOORTINT.has(name)) return { tex: 'tile', tile: 1.8, rough: 0.2, metal: 0.0, env: 0.75, interior: true };
+    // FULL 2: powder-coated / enamelled steel is a smooth satin film (same values as the 3D viewer)
+    if (window.DESIGN === 'full2') {
+      const COAT = {
+        gBlue:   { rough: 0.34, metal: 0.38, env: 1.2 },    // balcony railings + pergola
+        gMetal:  { rough: 0.36, metal: 0.38, env: 1.15 },   // gates
+        steel:   { rough: 0.34, metal: 0.40, env: 1.15 },
+        ms:      { rough: 0.36, metal: 0.36, env: 1.1 },
+        msWhite: { rough: 0.38, metal: 0.10, env: 0.9 },    // white enamelled window grilles
+        rodWood: { rough: 0.40, metal: 0.20, env: 0.95 }    // east box rods
+      };
+      if (COAT[name]) return COAT[name];
+    }
     switch (name) {
       case 'white': case 'white2':
         return { tex: 'plaster', tile: 3.0, rough: 0.88, metal: 0, env: 0.38, interior: true };
@@ -2332,6 +2345,11 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
     // Lighter fog indoors so rooms don't haze; full fog outside
     const outside = isPlayerExterior() || currentFloorIndex() >= 3;
     scene.fog = outside ? FOG_OUT : FOG_IN;
+    // FULL 2: the eye stops down in open sun. Without this the white house clips to a flat cut-out from the street.
+    if (FULL2 && !isNight) {
+      const want = outside ? 0.7 : 1.0; POST.adapt = (POST.adapt || 1) + (want - (POST.adapt || 1)) * Math.min(1, dt * 2.5);
+      if (!POST.on) renderer.toneMappingExposure = DAY.exp * POST.adapt;
+    } else if (POST.adapt && POST.adapt !== 1) { POST.adapt = 1; }
 
     if ((frames & 7) === 0) updateLightPool();
     renderFrame();
