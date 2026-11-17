@@ -103,7 +103,7 @@
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261116_upper_interiors"></script>
+<script src="lib/interiorKit.js?v=20261116_bath_real"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
@@ -1257,6 +1257,7 @@ document.write('<script src="' + sceneFile + '?v=20261116_upper_interiors"><\/sc
       m.roughness = 0.05; m.metalness = 0.0; m.envMapIntensity = 0.9;
       m.transparent = true; m.depthWrite = false;
       if (t.dark) { m.opacity = Math.max(m.opacity != null ? m.opacity : 0.85, 0.82); m.color.setHex(0x20262b); }
+      else if (window.DESIGN === 'full2' && name === 'glass') { m.opacity = 0.2; m.color.setRGB(0.06, 0.11, 0.12); m.envMapIntensity = 1.0; m.roughness = 0.02; }   // FULL 2: clear float glass, not a teal sheet
       else { m.opacity = 0.42; m.color.setRGB(0.10, 0.20, 0.24); m.envMapIntensity = 1.2; }   // dark linear tint: a pale albedo is lit like paint and frosts the pane
       m.needsUpdate = true; return;
     }
@@ -2313,6 +2314,7 @@ document.write('<script src="' + sceneFile + '?v=20261116_upper_interiors"><\/sc
   new ResizeObserver(resize).observe(canvas);
   let last = performance.now(), frames = 0;
   function frame(now) {
+    mirrorTick();
     requestAnimationFrame(frame);
     const frameMs = now - last; last = now;
     if (document.hidden || contextLost) return; // pause when tab hidden / GPU lost
@@ -2361,6 +2363,81 @@ document.write('<script src="' + sceneFile + '?v=20261116_upper_interiors"><\/sc
   /* ---------------- debug / capture hook (tooling only) ----------------
      Renders synchronously on demand so frames can be captured even when
      the tab is hidden (rAF is throttled there and toDataURL would be blank). */
+  /* FULL 2 mirrors. A mirror that only reflects a blurred gradient reads as a grey
+     board. Each mirror on the upper floors gets its own cube map of the room it hangs
+     in, captured once when the walker first comes near (so the fixture light pool is
+     lighting that room). Static, so it costs nothing per frame and runs on phones. */
+  const MIRRORS = [];
+  let mirrorsBuilt = false, mirrorFrame = 0;
+  function buildMirrors() {
+    mirrorsBuilt = true;
+    const src = [];
+    scene.traverse(o => {
+      if (!o.isMesh || !o.geometry || !o.geometry.index) return;
+      const k = o.userData.matKey || (o.material.userData && o.material.userData.name);
+      if (k !== 'mirrorI') return;
+      let g = o.parent; while (g && g.name !== 'floor1' && g.name !== 'floor2') g = g.parent;
+      if (g) src.push(o);
+    });
+    for (const o of src) {
+      const pos = o.geometry.attributes.position, idx = o.geometry.index.array, n = pos.count;
+      const par = new Int32Array(n); for (let i = 0; i < n; i++) par[i] = i;
+      const find = i => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+      for (let i = 0; i < idx.length; i += 3) { const a = find(idx[i]); par[find(idx[i + 1])] = a; par[find(idx[i + 2])] = a; }
+      const boxes = new Map();
+      for (let i = 0; i < n; i++) {
+        const r = find(i); let b = boxes.get(r);
+        if (!b) boxes.set(r, b = new THREE.Box3());
+        b.expandByPoint(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)));
+      }
+      // merge parts that touch (a pane and its backing) into one mirror
+      const groups = [];
+      for (const [r, b] of boxes) {
+        const hit = groups.find(gr => gr.box.clone().expandByScalar(0.06).intersectsBox(b));
+        if (hit) { hit.box.union(b); hit.roots.add(r); } else groups.push({ box: b.clone(), roots: new Set([r]) });
+      }
+      o.updateMatrixWorld(true);
+      for (const gr of groups) {
+        const tri = [];
+        for (let i = 0; i < idx.length; i += 3) if (gr.roots.has(find(idx[i]))) tri.push(idx[i], idx[i + 1], idx[i + 2]);
+        const geo = o.geometry.clone(); geo.setIndex(tri);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x8f9499 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.userData.matKey = 'mirrorI'; mesh.matrixAutoUpdate = false; mesh.matrix.copy(o.matrix);
+        o.parent.add(mesh); mesh.updateMatrixWorld(true);
+        const wb = gr.box.clone().applyMatrix4(o.matrixWorld), c = wb.getCenter(new THREE.Vector3()), sz = wb.getSize(new THREE.Vector3());
+        const ax = sz.x < sz.z ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
+        MIRRORS.push({ mesh, mat, c, ax, done: false });
+      }
+      o.visible = false;
+    }
+  }
+  function mirrorTick() {
+    if (!FULL2 || (mirrorFrame++ % 20)) return;
+    if (!mirrorsBuilt) { if (mirrorFrame > 240) buildMirrors(); return; }
+    let best = null, bd = 5.5 * 5.5;
+    for (const m of MIRRORS) { if (m.done) continue; const d = m.c.distanceToSquared(camera.position); if (d < bd) { bd = d; best = m; } }
+    if (!best) return;
+    best.done = true;
+    // room side = the direction with more free space in front of the pane
+    const rc = new THREE.Raycaster(); rc.far = 6;
+    const free = dir => { rc.set(best.c, dir);   /* from the pane's own centre: the wall behind it is millimetres away, the room is not */ const h = rc.intersectObjects(scene.children, true).find(i => i.object !== best.mesh && i.object !== skyDome && i.object.visible); return h ? h.distance : 6; };
+    const nA = best.ax, nB = best.ax.clone().negate(), nrm = free(nA) >= free(nB) ? nA : nB;
+    const size = Q.tier === 'high' ? 1024 : (Q.tier === 'medium' ? 512 : 256);
+    const rt = new THREE.WebGLCubeRenderTarget(size, { format: THREE.RGBAFormat, type: renderer.capabilities.isWebGL2 ? THREE.HalfFloatType : THREE.UnsignedByteType,
+      generateMipmaps: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+    const cam = new THREE.CubeCamera(0.03, 60, rt);
+    cam.position.copy(best.c).addScaledVector(nrm, 0.05);
+    scene.add(cam);
+    const vis = MIRRORS.map(m => m.mesh.visible); MIRRORS.forEach(m => m.mesh.visible = false);
+    skyDome.position.copy(cam.position);
+    try { cam.update(renderer, scene); } catch (e) {}
+    MIRRORS.forEach((m, i) => m.mesh.visible = vis[i]);
+    scene.remove(cam);
+    best.mat.envMap = rt.texture; best.mat.color.setHex(0xf2f4f4); best.mat.reflectivity = 1; best.mat.combine = THREE.MultiplyOperation;
+    best.mat.needsUpdate = true;
+    if (Q.shadows) renderer.shadowMap.needsUpdate = true;
+  }
   window.__wt = { collisionGrid, colliders,
     renderer, scene, camera, player, spawnTo,
     night(v) { applyTimeOfDay(v === undefined ? true : !!v); return isNight; },
