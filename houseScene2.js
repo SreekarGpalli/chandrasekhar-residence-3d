@@ -9799,7 +9799,9 @@ window.HouseScene = (function () {
     }
     function upperArt(dir, at, face, c, fY, z, w, h, scheme) {
       const id = h > w ? 'hanging_picture_frame_01' : 'hanging_picture_frame_02';
-      stageUpper(id, fY, front[face] + 180, bag => Fur.art(bag, dir, at, face, c, fY, z, w, h, scheme));
+      stageUpper(id, fY, front[face], bag => Fur.art(bag, dir, at, face, c, fY, z, w, h, scheme), {
+        dir, at, face, c, z, w, h, scheme
+      });
     }
     const FLOOR_DEFS = [
       { fY: L.f0, sch: OPEN.f0 },
@@ -11389,14 +11391,143 @@ window.HouseScene = (function () {
       const byFloor = [new THREE.Group(), new THREE.Group(), new THREE.Group()];
       byFloor.forEach((g, i) => { g.name = 'interiorScans' + i; if (floorsOut[i]) floorsOut[i].group.add(g); });
       const movingByFloor = [[], [], []];
+      function makeFrameArtTexture(isVertical, seed, scheme) {
+        const c = document.createElement('canvas');
+        c.width = 1024; c.height = 1024;
+        const g = c.getContext('2d');
+        g.fillStyle = '#f4f0e8';
+        g.fillRect(0, 0, 1024, 1024);
+
+        const imgData = g.getImageData(0, 0, 1024, 1024);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const n = ((Math.random() - 0.5) * 8) | 0;
+          d[i] = Math.max(0, Math.min(255, d[i] + n));
+          d[i+1] = Math.max(0, Math.min(255, d[i+1] + n));
+          d[i+2] = Math.max(0, Math.min(255, d[i+2] + n));
+        }
+        g.putImageData(imgData, 0, 0);
+
+        let rx, ry, rw, rh;
+        if (isVertical) {
+          rx = 175; ry = 10; rw = 674; rh = 1004;
+        } else {
+          rx = 12; ry = 210; rw = 1000; rh = 580;
+        }
+
+        g.save();
+        g.beginPath();
+        g.rect(rx, ry, rw, rh);
+        g.clip();
+
+        const matPad = isVertical ? 45 : 35;
+        const ax = rx + matPad, ay = ry + matPad, aw = rw - matPad * 2, ah = rh - matPad * 2;
+        g.fillStyle = '#fbf9f5';
+        g.fillRect(ax, ay, aw, ah);
+
+        const toHex = v => typeof v === 'number' ? '#' + v.toString(16).padStart(6, '0') : (C[v] ? '#' + C[v].toString(16).padStart(6, '0') : (v || '#b8684b'));
+        const colors = (scheme && scheme.length) ? scheme.map(toHex) : [toHex(C.artA || 0xb8684b), toHex(C.artB || 0xd2b179), toHex(C.artC || 0x33465d), toHex(C.artD || 0x899985)];
+        const c0 = colors[seed % colors.length];
+        const c1 = colors[(seed + 1) % colors.length];
+        const c2 = colors[(seed + 2) % colors.length];
+
+        const type = seed % 4;
+        const cx = ax + aw / 2, cy = ay + ah / 2;
+
+        if (type === 0) {
+          g.fillStyle = c0;
+          g.beginPath();
+          const archR = Math.min(aw, ah) * 0.32;
+          g.arc(cx, cy + archR * 0.4, archR, Math.PI, 0);
+          g.lineTo(cx + archR, cy + ah * 0.35);
+          g.lineTo(cx - archR, cy + ah * 0.35);
+          g.closePath();
+          g.fill();
+
+          g.fillStyle = c1;
+          g.beginPath();
+          g.arc(cx + archR * 0.45, cy - archR * 0.5, archR * 0.38, 0, Math.PI * 2);
+          g.fill();
+
+          g.fillStyle = c2;
+          g.fillRect(cx - archR * 1.1, cy + ah * 0.22, archR * 2.2, 6);
+        } else if (type === 1) {
+          g.fillStyle = c2;
+          g.beginPath();
+          g.ellipse(cx - aw * 0.12, cy, aw * 0.26, ah * 0.34, Math.PI / 12, 0, Math.PI * 2);
+          g.fill();
+
+          g.fillStyle = c0;
+          g.beginPath();
+          g.ellipse(cx + aw * 0.15, cy - ah * 0.1, aw * 0.20, ah * 0.24, -Math.PI / 8, 0, Math.PI * 2);
+          g.fill();
+
+          g.fillStyle = c1;
+          g.beginPath();
+          g.arc(cx - aw * 0.05, cy + ah * 0.2, Math.min(aw, ah) * 0.15, 0, Math.PI * 2);
+          g.fill();
+        } else if (type === 2) {
+          g.fillStyle = c1;
+          g.fillRect(ax + aw * 0.15, ay + ah * 0.15, aw * 0.42, ah * 0.55);
+
+          g.fillStyle = c0;
+          g.beginPath();
+          g.arc(ax + aw * 0.65, ay + ah * 0.42, Math.min(aw, ah) * 0.24, 0, Math.PI * 2);
+          g.fill();
+
+          g.fillStyle = c2;
+          g.fillRect(ax + aw * 0.22, ay + ah * 0.52, aw * 0.56, ah * 0.28);
+        } else {
+          g.fillStyle = c0;
+          g.fillRect(ax + aw * 0.1, cy - ah * 0.05, aw * 0.8, ah * 0.35);
+
+          g.fillStyle = c1;
+          g.beginPath();
+          g.arc(cx, cy - ah * 0.15, Math.min(aw, ah) * 0.22, 0, Math.PI * 2);
+          g.fill();
+
+          g.fillStyle = c2;
+          g.fillRect(ax + aw * 0.1, cy + ah * 0.15, aw * 0.8, ah * 0.25);
+        }
+
+        g.restore();
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.flipY = false;
+        tex.needsUpdate = true;
+        return tex;
+      }
+
       function markMesh(obj, pl) {
         const brass = pl.brass ? new THREE.MeshStandardMaterial({ color: 0xb08a3e, metalness: 0.85, roughness: 0.34 }) : null;
+        const isFrame = pl.id && pl.id.startsWith('hanging_picture_frame');
+        const artSeed = Math.abs(Math.round((pl.c || pl.x || 0) * 11 + (pl.at || pl.y || 0) * 7 + (pl.z || 0) * 100)) || 1;
         obj.traverse(o => {
           if (!o.isMesh) return;
           o.castShadow = true;
           o.receiveShadow = true;
           o.userData.scan = pl.id;
           if (brass) o.material = brass;
+          if (isFrame && o.material) {
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            for (let i = 0; i < mats.length; i++) {
+              const m = mats[i];
+              if (!m) continue;
+              const mn = (m.name || '').toLowerCase(), on = (o.name || '').toLowerCase();
+              if (mn.includes('glass') || on.includes('glass')) {
+                o.visible = false;
+              } else if (mn.includes('artwork') || on.includes('artwork')) {
+                if (pl.scheme || pl.id === 'hanging_picture_frame_01') {
+                  const isVert = pl.id === 'hanging_picture_frame_01';
+                  const newMat = m.clone();
+                  newMat.map = makeFrameArtTexture(isVert, artSeed, pl.scheme);
+                  newMat.needsUpdate = true;
+                  if (Array.isArray(o.material)) o.material[i] = newMat;
+                  else o.material = newMat;
+                }
+              }
+            }
+          }
         });
       }
 
