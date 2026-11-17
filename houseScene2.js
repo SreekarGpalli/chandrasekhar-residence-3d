@@ -10486,7 +10486,7 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
+        // stair walls: plain room white (tonal arches removed Nov 2026: no arch shapes) // Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         const stairWindow = fd.sch.W.find(o => o.c > 6496 && o.c < 8640);
         const landingPaintTop = window.__HOUSE_WALK ? landI(L.f2) - 0.157 : cut;
         Fur.stairLandingPaint(bag, WB[1], stairWindow, fY, landI(fY) + 0.082, landingPaintTop);
@@ -10614,7 +10614,7 @@ window.HouseScene = (function () {
         // Budget wall set (paint + one MDF shelf): foyer south wall arch + key shelf, master bedroom desk-wall arch.
         Fur.stonePanel(bag, 11650, 480, fY + 0.07, fY + 3.203 - 0.066, 6815, 'N');   // foyer: straight stone band, echoes the TV wall on arrival                                  // foyer south wall (y 6815): 0.96 m paint arch
         pb(bag, 'white2', 11250, 12050, 6815, 7115, fY + 0.85, fY + 0.89);                                           // 0.8 x 0.3 m floating key shelf (MDF)
-        Fur.mural(bag, 'muralArch', 230, 4805, 4432, 'S', fY, fY + 3.203, [{ a0: 3300, a1: 4100, top: fY + 2.1 }]);     // master bedroom north wall (y 4432): owner's arch/pill mural, full wall bar the walk-in door (x 3300..4100)
+        Fur.stonePanel(bag, 2700, 500, fY + 0.07, fY + 3.203 - 0.066, 4432, 'S');   // master bedroom north wall: 1.0 m stone band on the bed axis (replaces the arch mural)
         Fur.ganeshaShrine(bag, 10879, 7100, fY);
         Fur.rug(bag, 11750, 12350, 7650, 8350, fY);                  // door mat
         // --- Telugu Hindu pooja (FF) — sacred sanctum facing east ---
@@ -10868,7 +10868,7 @@ window.HouseScene = (function () {
           railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, LANDING_RAIL_IN);
         }
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
+        // stair walls: plain room white (tonal arches removed Nov 2026: no arch shapes) // Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: STAIR_STONE, riser: STAIR_STONE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
