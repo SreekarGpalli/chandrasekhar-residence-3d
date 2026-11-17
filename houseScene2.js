@@ -4191,10 +4191,10 @@ window.HouseScene = (function () {
     },
 
     // One matte paint finish across the west landing wall, stopping at the window opening.
-    stairLandingPaint(bag, wallX, win, floorY, base, top) {
+    stairLandingPaint(bag, wallX, win, floorY, base, top, mat) {
       const left = win.c - win.w / 2, right = win.c + win.w / 2;
       const sill = floorY + win.sill / 1000, head = sill + win.h / 1000;
-      const paint = (a, b, low, high) => pb(bag, 'paintCream', wallX - 1, wallX + 0.8, a, b, low, high);
+      const paint = (a, b, low, high) => pb(bag, mat || 'paintCream', wallX - 1, wallX + 0.8, a, b, low, high);
       paint(6496, 8640, base, sill);
       paint(6496, left, sill, head);
       paint(right, 8640, sill, head);
@@ -10510,7 +10510,7 @@ window.HouseScene = (function () {
         // stair wall: plain white (stepped stone panels rejected by owner) // Fur.stairPanels(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, window.__HOUSE_WALK ? undefined : [fY, cut]);   // (was) Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         const stairWindow = fd.sch.W.find(o => o.c > 6496 && o.c < 8640);
         const landingPaintTop = window.__HOUSE_WALK ? landI(L.f2) - 0.157 : cut;
-        Fur.stairLandingPaint(bag, WB[1], stairWindow, fY, landI(fY) + 0.082, landingPaintTop);
+        Fur.stairLandingPaint(bag, WB[1], stairWindow, fY, landI(fY) + 0.082, landingPaintTop, 'wallLime');   // the window wall: the TV wall's deep stone, full height, the teak window set in it; flights stay white
         plainFlight(bag, 'white2', 'x', 6496, 7496, 4630, fY, 1330, fY + 10 * RISE_I, 10, 0.14,
                     { tread: STAIR_STONE, riser: STAIR_STONE, skirt: 'lo' });
         stairLanding(bag, 230, 1330, 6496, 8641, landI(fY), STAIR_STONE, undefined, undefined, 'WSN');
