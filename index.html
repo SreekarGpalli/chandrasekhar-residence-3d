@@ -1160,6 +1160,8 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
     boug: 0xa8496f, ixora: 0xbc5c33, flowerPink: 0xc06a86
   };
 
+  // FULL 2: white paint reflects ~82 %, not 93 %. At 93 % every sunlit wall sat at pure white with no tone left in it.
+  if (window.DESIGN === 'full2') { COL.white = 0xebe9e5; COL.white2 = 0xf0eeea; }
   const hex2name = {};
   for (const k in C) { if (!(C[k] in hex2name)) hex2name[C[k]] = k; }
 
