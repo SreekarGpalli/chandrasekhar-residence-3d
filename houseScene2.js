@@ -10507,7 +10507,7 @@ window.HouseScene = (function () {
 
         // First floor → its own half-landing (flight B of this pair is drawn by SF)
         stairRailing(bag, 'x', 7496, 4630, -1, 330, 10, fY, RISE_I, 0.95, RAIL_IN);
-        Fur.stairPanels(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, window.__HOUSE_WALK ? undefined : [fY, cut]);   // (was) Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
+        // stair wall: plain white (stepped stone panels rejected by owner) // Fur.stairPanels(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, window.__HOUSE_WALK ? undefined : [fY, cut]);   // (was) Fur.rainbowFlight(bag, 6496, 'N', 4630, 1330, fY, 10 * RISE_I, 780, landI(fY), x => (fY + L.f2f) + 10 * RISE_I * (4630 - x) / 3300 - 0.157 + 0.025, landI(fY + L.f2f) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         const stairWindow = fd.sch.W.find(o => o.c > 6496 && o.c < 8640);
         const landingPaintTop = window.__HOUSE_WALK ? landI(L.f2) - 0.157 : cut;
         Fur.stairLandingPaint(bag, WB[1], stairWindow, fY, landI(fY) + 0.082, landingPaintTop);
@@ -10896,7 +10896,7 @@ window.HouseScene = (function () {
           railing(bag, 'y', 1330, 7496, 7641, midFF, 0.95, LANDING_RAIL_IN);
         }
         stairRailing(bag, 'x', 7641, 1330, 1, 330, 10, midFF, RISE_I, 0.95, RAIL_IN);
-        Fur.stairPanels(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, window.__HOUSE_WALK ? undefined : [fY, cut]);   // (was) Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
+        // stair wall: plain white (stepped stone panels rejected by owner) // Fur.stairPanels(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, window.__HOUSE_WALK ? undefined : [fY, cut]);   // (was) Fur.rainbowFlight(bag, 8640, 'S', 1330, 4630, midFF, 10 * RISE_I, 780, midFF, x => landI(fY) + 10 * RISE_I * (x - 1330) / 3300 - 0.157 + 0.025, landI(fY) - 0.157 + 0.025, window.__HOUSE_WALK ? undefined : [fY, cut]);
         plainFlight(bag, 'white2', 'x', 7641, 8641, 1330, midFF, 4630, midFF + 10 * RISE_I, 10, 0.14,
                     { tread: STAIR_STONE, riser: STAIR_STONE, foot: false, skirt: true });
         // tops at L.f1 + 20*RISE_I = L.f2
