@@ -104,7 +104,7 @@
 <script src="perf.js"></script>
 <script>
 const sceneFile = window.DESIGN === 'full2' ? 'houseScene2.js' : 'houseScene.js';
-document.write('<script src="' + sceneFile + '?v=20261116_window_wall"><\/script>');
+document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>');
 </script>
 <script>
 /* ============================================================
@@ -1295,8 +1295,9 @@ document.write('<script src="' + sceneFile + '?v=20261116_window_wall"><\/script
             p = pow(p, vec3(2.2));
             // the JPG is display-referred; undo some of its shoulder so the
             // pipeline's own tone map does not flatten it a second time
-            p /= (1.0 - 0.6 * min(dot(p, vec3(0.2126, 0.7152, 0.0722)), 0.95));
+            p /= (1.0 - 0.32 * min(dot(p, vec3(0.2126, 0.7152, 0.0722)), 0.95));
           }
+          p = mix(vec3(dot(p, vec3(0.2126, 0.7152, 0.0722))), p, 0.66) * 1.12;   // a touch less saturated than the JPG: real skies are
           p *= skyTint;
           p = mix(p, hazeCol, smoothstep(0.035, -0.02, h));
           gl_FragColor = vec4(p * skyGain, 1.0);
@@ -1463,7 +1464,7 @@ document.write('<script src="' + sceneFile + '?v=20261116_window_wall"><\/script
     hemi.color.setHex(S.hemiSky); hemi.groundColor.setHex(S.hemiGnd); hemi.intensity = S.hemiI;
     fill.color.setHex(S.fillC); fill.intensity = S.fillI;
     // FULL 2: less sun, more sky fill, so sunlit white plaster keeps tone instead of clipping
-    if (SKY.on) { sun.intensity = S.sunI * 0.86; hemi.intensity = S.hemiI * 1.25; }
+    if (SKY.on) { sun.intensity = S.sunI * 0.72; hemi.intensity = S.hemiI * 1.55; }
     // The sky dome, the fog colour and the clear colour all feed a linear HDR
     // buffer when the pipeline is on, so they must be linear radiance. On the
     // fallback path they go straight to an sRGB canvas and must not be.
@@ -1488,8 +1489,9 @@ document.write('<script src="' + sceneFile + '?v=20261116_window_wall"><\/script
     scene.background.copy(asLin(S.fog));
     SKY_UP.setHex(S.skyMid).convertSRGBToLinear();
     SKY_DN.set(S.envGnd).convertSRGBToLinear();
-    POST.exposure = S.exp;
-    if (!POST.on) renderer.toneMappingExposure = S.exp;
+    const EXPO = S.exp * (SKY.on ? 0.9 : 1);   // FULL 2: hold detail in sunlit white plaster
+    POST.exposure = EXPO;
+    if (!POST.on) renderer.toneMappingExposure = EXPO;
     buildEnv(S);
     if (Q.shadows !== false) renderer.shadowMap.needsUpdate = true;
     $('sun').value = key;

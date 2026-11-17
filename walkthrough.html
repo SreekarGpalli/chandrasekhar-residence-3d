@@ -110,7 +110,7 @@
 <script src="perf.js"></script>
 <script>
 const sceneFile = window.DESIGN === 'full2' ? 'houseScene2.js' : 'houseScene.js';
-document.write('<script src="' + sceneFile + '?v=20261116_window_wall"><\/script>');
+document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>');
 </script>
 
 <script>
@@ -999,8 +999,9 @@ document.write('<script src="' + sceneFile + '?v=20261116_window_wall"><\/script
             vec3 hz = hazeCol;
             if (skyLin > 0.5) {
               p = pow(p, vec3(2.2)); hz = pow(hz, vec3(2.2));
-              p /= (1.0 - 0.6 * min(dot(p, vec3(0.2126, 0.7152, 0.0722)), 0.95));
+              p /= (1.0 - 0.32 * min(dot(p, vec3(0.2126, 0.7152, 0.0722)), 0.95));
             }
+            p = mix(vec3(dot(p, vec3(0.2126, 0.7152, 0.0722))), p, 0.7) * 1.08;
             p = mix(p, hz, smoothstep(0.035, -0.02, h));
             gl_FragColor = vec4(p, 1.0);
             return;
@@ -1173,7 +1174,7 @@ document.write('<script src="' + sceneFile + '?v=20261116_window_wall"><\/script
     bg: 0x0a0e16, exp: 0.85, lampBoost: 1.55
   };
   // FULL 2: less flat ambient wash indoors, so walls shade away from the windows
-  if (FULL2) { DAY.warmI = 0.19; DAY.hemiI = 0.33; }
+  if (FULL2) { DAY.warmI = 0.19; DAY.hemiI = 0.33; DAY.sunI = 2.7; }
   // FULL 2: floor bounce. A pale floor throws light up at the ceiling; without it every
   // ceiling sat far darker than its walls and read as a grey slab.
   const ceilBounce = new THREE.HemisphereLight(0x000000, 0xfff3e2, 0);

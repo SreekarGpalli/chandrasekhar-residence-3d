@@ -8095,6 +8095,56 @@ window.HouseScene = (function () {
         im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false; im.name = 'g42_' + name;
         G.add(im);
       });
+      /* Far tree belt. Beyond the compound the model was a bare plain meeting the sky
+         in a ruled line, which is what gave the site away as a table-top. A loose
+         scatter of neem-like trees from 55 m out to 320 m (crossed cards, one draw
+         call, no shadows) gives the horizon a real edge. Roads are kept clear. */
+      (function farTrees() {
+        if (typeof Image === 'undefined' || typeof document === 'undefined') return;
+        // real tree photographs (shot on a magenta key), keyed to alpha here
+        const keyed = img => {
+          const c = document.createElement('canvas'); c.width = 384; c.height = 512;
+          const x = c.getContext('2d'); x.drawImage(img, 0, 0, c.width, c.height);
+          const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+          for (let k = 0; k < a.length; k += 4) {
+            const r = a[k], g = a[k + 1], b = a[k + 2];
+            const mag = Math.min(r, b) - g;                           // how magenta the pixel is
+            if (mag > 40) { a[k] = 58; a[k + 1] = 78; a[k + 2] = 40; a[k + 3] = 0; }
+            else if (mag > 8) { a[k] = Math.min(r, g + 12); a[k + 2] = Math.min(b, g); a[k + 3] = Math.round(255 * (1 - (mag - 8) / 32)); }
+          }
+          x.putImageData(d, 0, 0);
+          const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t;
+        };
+        let sd = 4242; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+        const spots = [];
+        for (let guard = 0; spots.length < 300 && guard < 6000; guard++) {
+          const a = rnd() * 6.2832, rad = 55 + Math.pow(rnd(), 0.7) * 265;
+          const px = 10.5 + Math.cos(a) * rad, pz = -9 + Math.sin(a) * rad;
+          if (px > 21 && px < 42) continue;                           // east road corridor
+          if (pz > 0.5 && pz < 11 && px < 31) continue;                 // south road corridor
+          spots.push([px, pz, 7 + rnd() * 5.5, rnd() * 3.1416, rnd() < 0.62 ? 0 : 1]);
+        }
+        ['assets/tree-neem.jpg', 'assets/tree-mango.jpg'].forEach((src, kind) => {
+          const img = new Image();
+          img.onload = () => {
+            const list = spots.filter(q => q[4] === kind);
+            const m = new THREE.MeshStandardMaterial({ map: keyed(img), color: 0xb4b4b4, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.95, metalness: 0 });
+            const im = new THREE.InstancedMesh(PLANE, m, list.length * 2);
+            const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), P = new THREE.Vector3(), S = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
+            list.forEach((q, n) => {
+              for (let c = 0; c < 2; c++) {
+                Q.setFromAxisAngle(UP, q[3] + c * 1.5708); P.set(q[0], q[2] / 2 - 0.1, q[1]); S.set(q[2] * 0.75, q[2], 1);
+                M.compose(P, Q, S); im.setMatrixAt(n * 2 + c, M);
+              }
+            });
+            im.instanceMatrix.needsUpdate = true;
+            im.castShadow = false; im.receiveShadow = false; im.frustumCulled = false; im.name = 'g42_farTrees' + kind;
+            G.add(im);
+            try { window.dispatchEvent(new CustomEvent('houseGardenReady')); } catch (_) { /* non-DOM */ }
+          };
+          img.src = src;
+        });
+      })();
       try {
         window.__HOUSE3D_GARDEN__ = 'v42-procedural';
         if (window.dispatchEvent) window.dispatchEvent(new CustomEvent('houseGardenReady'));
@@ -8112,31 +8162,31 @@ window.HouseScene = (function () {
       pb(cBag, 'pave', 22280, 23820, S_OUT - 30, 24000, 0.006, 0.055);
       pb(cBag, 'pave', 23820, 23950, S_OUT - 30, 24000, 0.004, 0.062); // kerb
       // near carriageway (2 lanes) between kerb and median
-      pb(cBag, 'road', 23950, 29950, -20000, 38000, 0.004, 0.012);
+      pb(cBag, 'road', 23950, 29950, -400000, 400000, 0.004, 0.012);
       // central median / divider (raised concrete with curbs + greenery)
-      pb(cBag, 'concrete', 29950, 32450, -20000, 38000, 0.004, 0.020);   // median deck
-      pb(cBag, 'copingLight', 29932, 29950, -20000, 38000, 0.020, 0.20); // west curb
-      pb(cBag, 'copingLight', 32450, 32468, -20000, 38000, 0.020, 0.20); // east curb
+      pb(cBag, 'concrete', 29950, 32450, -400000, 400000, 0.004, 0.020);   // median deck
+      pb(cBag, 'copingLight', 29932, 29950, -400000, 400000, 0.020, 0.20); // west curb
+      pb(cBag, 'copingLight', 32450, 32468, -400000, 400000, 0.020, 0.20); // east curb
       // far carriageway (2 lanes) between median and far kerb
-      pb(cBag, 'road', 32450, 38450, -20000, 38000, 0.004, 0.012);
+      pb(cBag, 'road', 32450, 38450, -400000, 400000, 0.004, 0.012);
       // far kerb + footpath
-      pb(cBag, 'pave', 38450, 38580, -20000, 38000, 0.004, 0.062);       // far kerb
-      pb(cBag, 'pave', 38580, 40120, -20000, 38000, 0.006, 0.055);       // far footpath
+      pb(cBag, 'pave', 38450, 38580, -400000, 400000, 0.004, 0.062);       // far kerb
+      pb(cBag, 'pave', 38580, 40120, -400000, 400000, 0.006, 0.055);       // far footpath
       // lane markings: dashed lane dividers + solid median/edge lines
-      for (let ly = -19000; ly < 37000; ly += 3200) {
+      for (let ly = -139000; ly < 157000; ly += 3200) {
         pb(cBag, 'roadLine', 26890, 26910, ly, ly + 1800, 0.011, 0.018); // near lane divider
         pb(cBag, 'roadLine', 35390, 35410, ly, ly + 1800, 0.011, 0.018); // far lane divider
       }
-      for (let ly = -19800; ly < 37800; ly += 600)
+      for (let ly = -139800; ly < 157800; ly += 600)
         pb(cBag, 'roadLine', 29965, 29985, ly, ly + 300, 0.011, 0.018);   // median W edge (solid)
-      for (let ly = -19800; ly < 37800; ly += 600)
+      for (let ly = -139800; ly < 157800; ly += 600)
         pb(cBag, 'roadLine', 32415, 32435, ly, ly + 300, 0.011, 0.018);   // median E edge (solid)
       /* No streetlights. The owner asked for the street furniture to come off:
          the poles stood directly in front of the east elevation and read as
          clutter from every presentation angle. The kerbs, footpaths and
          carriageways they stood on are all still here. */
       // median greenery: low shrubs softening the divider
-      for (let my = -18000; my < 36000; my += 6000)
+      for (let my = -120000; my < 150000; my += 6000)
         plantShrub(cBag, 31200, my, 0.4, (my % 12000 < 6000) ? 'green' : 'ixora', 0.02);
       // ─── South road (corner-plot frontage) — shifted 1 ft with south wall ───
       // Was: footpath -2470..-930, kerb -2600..-2470, road N-edge -2600.
@@ -8147,12 +8197,12 @@ window.HouseScene = (function () {
       const KB_S = KB_N - 130;       // -2905: kerb south
       const RD_N = KB_S;             // road north edge
       const RD_S = -9905;            // road south (was -9600, +1 ft)
-      pb(cBag, 'pave', -6000, 24000, FP_S, FP_N, 0.006, 0.055);
-      pb(cBag, 'pave', -6000, 24000, KB_S, KB_N, 0.004, 0.062); // kerb
-      pb(cBag, 'road', -20000, 29950, RD_S, RD_N, 0.004, 0.012);
+      pb(cBag, 'pave', -400000, 24000, FP_S, FP_N, 0.006, 0.055);
+      pb(cBag, 'pave', -400000, 24000, KB_S, KB_N, 0.004, 0.062); // kerb
+      pb(cBag, 'road', -400000, 29950, RD_S, RD_N, 0.004, 0.012);
       // dashed centre line on south road
       const midY = (RD_S + RD_N) / 2;
-      for (let lx = -19000; lx < 30000; lx += 3200)
+      for (let lx = -139000; lx < 30000; lx += 3200)
         pb(cBag, 'roadLine', lx, lx + 1800, midY - 90, midY + 90, 0.010, 0.017);
       /* No neighbour houses either. The three generic plaster masses to the
          north and south were backdrop filler, and beside a plan-faithful model
