@@ -131,8 +131,15 @@ http.createServer((req, res) => {
     return;
   }
 
-  // Directory without trailing slash → redirect so relative asset URLs resolve
-  // correctly (e.g. /elevations/version-one → /elevations/version-one/).
+  // Redirect bookmarks from the retired elevation pages.
+  if (urlPath === '/elevations' || urlPath.startsWith('/elevations/')) {
+    const full2 = /^\/elevations\/version-forty-two(?:\/|$)/.test(urlPath);
+    res.writeHead(301, { Location: full2 ? '/?v=full2' : '/' });
+    res.end();
+    return;
+  }
+
+  // Directory without trailing slash → redirect so relative asset URLs resolve.
   try {
     const isDir =
       (urlPath !== '/' && !urlPath.endsWith('/') && fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) ||
@@ -165,5 +172,4 @@ http.createServer((req, res) => {
   console.log('Walkthrough   http://localhost:' + PORT + '/walkthrough.html');
   console.log('Blender 3D    http://localhost:' + PORT + '/Blender/');
   console.log('Blender walk  http://localhost:' + PORT + '/Blender/walkthrough.html');
-  console.log('Elevations    http://localhost:' + PORT + '/elevations/');
 });

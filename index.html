@@ -5,386 +5,93 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, interactive-widget=resizes-visual, viewport-fit=cover">
 <title>Chandrasekhar Residence · Anantapur</title>
 <meta name="description" content="Interactive 3D visualization — Mr Chandrasekhar Family Residence, G+2, Anantapur.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#101214; --panel:rgba(22,24,27,.72); --panel-line:rgba(255,255,255,.08);
-    --ink:#e8e6e1; --ink-dim:#9a9890; --brass:#c9a36a; --brass-dim:rgba(201,163,106,.35);
-  }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%;overflow:hidden}
-  body{
-    background:var(--bg); color:var(--ink);
-    font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
-  #c:active{cursor:grabbing}
-  /* vignette */
-  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;
-    background:radial-gradient(120% 90% at 50% 42%, transparent 55%, rgba(0,0,0,.42) 100%)}
-  /* labels */
-  #labels{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
-  .rlabel{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;will-change:transform;
-    display:flex;flex-direction:column;align-items:center;gap:1px;
-    padding:5px 9px 6px;border-radius:7px;
-    background:rgba(18,20,22,.66);border:1px solid rgba(255,255,255,.09);
-    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-    transition:border-color .2s, background .2s;text-align:center;white-space:nowrap;
-    max-width:200px}
-  .rlabel:active{background:rgba(201,163,106,.18);border-color:var(--brass-dim)}
-  .rlabel:hover{border-color:var(--brass-dim);background:rgba(26,27,29,.82)}
-  .rlabel .rn{font-family:Archivo,Inter,sans-serif;font-weight:600;font-size:10.5px;letter-spacing:.14em;
-    overflow:hidden;text-overflow:ellipsis;max-width:180px}
-  .rlabel .rd{font-size:9px;color:var(--ink-dim);letter-spacing:.05em}
-  /* title block */
-  #titleblock{position:fixed;top:max(18px, env(safe-area-inset-top));left:22px;z-index:6;user-select:none}
-  #titleblock h1{font-family:Archivo,Inter,sans-serif;font-weight:700;font-size:17px;letter-spacing:.34em;line-height:1.35}
-  #titleblock p{font-size:10.5px;letter-spacing:.3em;color:var(--ink-dim);margin-top:4px}
-  #titleblock i{display:block;width:46px;height:2px;background:var(--brass);margin-top:10px}
-  /* compass */
-  #compass{position:fixed;top:max(18px, env(safe-area-inset-top));right:20px;z-index:6;
-    width:52px;height:52px;border-radius:50%;
-    background:var(--panel);border:1px solid var(--panel-line);
-    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-  #needle{position:absolute;inset:0;transition:transform .15s ease-out}
-  #needle::before{content:"";position:absolute;left:50%;top:7px;width:2px;height:19px;margin-left:-1px;
-    background:linear-gradient(var(--brass),transparent)}
-  #needle::after{content:"N";position:absolute;left:50%;top:5px;transform:translateX(-50%);
-    font-size:8.5px;font-weight:600;color:var(--brass);letter-spacing:0}
-  #compass b{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:var(--ink-dim)}
-  /* rooms panel */
-  #roomsPanel{position:fixed;top:50%;right:20px;transform:translateY(-50%);z-index:6;width:228px;
-    max-height:min(64vh,560px);display:flex;flex-direction:column;
-    background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    transition:opacity .35s, transform .35s}
-  #roomsPanel.off{opacity:0;pointer-events:none;transform:translateY(-50%) translateX(14px)}
-  #roomsPanel h3{font-family:Archivo;font-size:10.5px;font-weight:600;letter-spacing:.26em;color:var(--brass);
-    padding:14px 16px 10px;border-bottom:1px solid var(--panel-line)}
-  #roomsList{list-style:none;overflow-y:auto;padding:6px 0;scrollbar-width:thin;scrollbar-color:#3a3d41 transparent}
-  #roomsList::-webkit-scrollbar{width:4px}
-  #roomsList::-webkit-scrollbar-thumb{background:#3a3d41;border-radius:2px}
-  #roomsList li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-    padding:8px 16px;cursor:pointer;border-left:2px solid transparent;transition:background .15s,border-color .15s}
-  #roomsList li:hover{background:rgba(255,255,255,.045)}
-  #roomsList li.sel{border-left-color:var(--brass);background:rgba(201,163,106,.08)}
-  #roomsList li span{font-size:11.5px;font-weight:500;letter-spacing:.06em}
-  #roomsList li em{font-style:normal;font-size:9.5px;color:var(--ink-dim);white-space:nowrap}
-  /* info card */
-  #infoCard{position:fixed;left:22px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:7;width:236px;
-    background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:15px 16px 14px;
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    transition:opacity .3s, transform .3s}
-  #infoCard.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
-  #infoCard h4{font-family:Archivo;font-size:13px;font-weight:600;letter-spacing:.18em;padding-right:22px}
-  #infoCard .mm{margin-top:7px;font-size:12px;color:var(--ink)}
-  #infoCard .ft{margin-top:2px;font-size:11px;color:var(--ink-dim)}
-  /* info card */
-  #infoCard{position:fixed;left:22px;bottom:calc(82px + env(safe-area-inset-bottom));z-index:7;width:236px;
-    background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:15px 16px 14px;
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    transition:opacity .3s, transform .3s}
-  #infoCard.hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
-  #infoCard h4{font-family:Archivo;font-size:13px;font-weight:600;letter-spacing:.18em;padding-right:22px}
-  #infoCard .mm{margin-top:7px;font-size:12px;color:var(--ink)}
-  #infoCard .ft{margin-top:2px;font-size:11px;color:var(--ink-dim)}
-  #infoCard .ar{margin-top:8px;font-size:10.5px;letter-spacing:.08em;color:var(--brass)}
-  #cardClose{position:absolute;top:9px;right:11px;background:none;border:none;color:var(--ink-dim);
-    font-size:15px;cursor:pointer;line-height:1;padding:3px}
-  #cardClose:hover{color:var(--ink)}
-
-  /* ==========================================================================
-     TOP DESIGN SELECTOR
-     ========================================================================== */
-  #design{position:fixed;top:max(16px, env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:8;
-    display:flex;align-items:center;background:rgba(18,20,23,.88);border:1px solid var(--panel-line);
-    border-radius:12px;overflow:hidden;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    box-shadow:0 8px 32px rgba(0,0,0,.35);max-width:min(900px, calc(100vw - 32px))}
-  #design .lbl{padding:9px 12px 8px;font-family:Archivo,Inter,sans-serif;font-size:9.5px;font-weight:700;
-    letter-spacing:.22em;color:var(--brass);border-right:1px solid var(--panel-line);flex:none;
-    background:rgba(201,163,106,.06)}
-  #design .scroller{display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  #design .scroller::-webkit-scrollbar{display:none}
-  #design button, #design a.all-link{appearance:none;background:none;border:none;color:var(--ink-dim);cursor:pointer;
-    padding:8px 14px 7px;position:relative;transition:all .2s cubic-bezier(0.16,1,0.3,1);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-    white-space:nowrap;flex:none;text-decoration:none}
-  #design button + button, #design button + a, #design a + button, #design a + a{border-left:1px solid var(--panel-line)}
-  #design button .d-code{font-family:Archivo,Inter,sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;line-height:1}
-  #design button .d-name{font-size:8.5px;letter-spacing:.08em;color:rgba(255,255,255,.45);font-weight:500;line-height:1}
-  #design button:hover{background:rgba(255,255,255,.05);color:var(--ink)}
-  #design button:hover .d-name{color:rgba(255,255,255,.8)}
-  #design button.on{color:var(--ink);background:rgba(201,163,106,.12)}
-  #design button.on .d-code{color:var(--brass)}
-  #design button.on .d-name{color:var(--ink)}
-  #design button.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:2px;
-    background:var(--brass);box-shadow:0 0 8px var(--brass)}
-  #design a.all-link{font-family:Archivo,Inter,sans-serif;font-size:9.5px;font-weight:700;
-    letter-spacing:.16em;color:var(--brass);padding:9px 13px 8px;background:rgba(201,163,106,.04)}
-  #design a.all-link:hover{background:rgba(201,163,106,.15);color:#f0d6a8}
-
-  /* ==========================================================================
-     UNIFIED BOTTOM CONTROL DOCK (FLOORS + SUN + WALKTHROUGH)
-     ========================================================================== */
-  #bottomDock{position:fixed;bottom:max(18px, env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
-    z-index:7;display:flex;align-items:center;background:rgba(18,20,23,.88);border:1px solid var(--panel-line);
-    border-radius:12px;overflow:hidden;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:calc(100vw - 32px)}
-  .dock-group{display:flex;align-items:center}
-  .dock-lbl{padding:12px 10px 11px 13px;font-family:Archivo,Inter,sans-serif;font-size:9px;font-weight:700;
-    letter-spacing:.22em;color:var(--brass);opacity:.85;user-select:none;flex:none}
-  .dock-divider{width:1px;height:22px;background:var(--panel-line);flex:none}
-
-  #views, #sun{display:flex;align-items:center;background:none;border:none;border-radius:0}
-  #views button, #sun button, #bottomDock .wt-link{appearance:none;background:none;border:none;color:var(--ink-dim);
-    cursor:pointer;font-family:Archivo,Inter,sans-serif;font-size:10px;font-weight:600;letter-spacing:.16em;
-    padding:12px 14px 11px;position:relative;transition:all .2s;white-space:nowrap;flex:none;
-    text-decoration:none;display:flex;align-items:center;gap:6px}
-  #views button + button, #sun button + button{border-left:1px solid rgba(255,255,255,.05)}
-  #views button:hover, #sun button:hover, #bottomDock .wt-link:hover{color:var(--ink);background:rgba(255,255,255,.04)}
-  #views button.on, #sun button.on{color:var(--ink)}
-  #views button.on::after, #sun button.on::after{content:"";position:absolute;left:10px;right:10px;bottom:0;
-    height:2px;background:var(--brass);box-shadow:0 0 6px var(--brass)}
-  #views button[disabled]{opacity:.32;cursor:not-allowed}
-  #views button[disabled]:hover{color:var(--ink-dim);background:none}
-
-  #bottomDock .wt-link{color:var(--brass);font-weight:700;padding:12px 15px 11px;background:rgba(201,163,106,.06)}
-  #bottomDock .wt-link:hover{background:rgba(201,163,106,.16);color:#f0d6a8}
-  #bottomDock .wt-link svg{width:12px;height:12px;flex-shrink:0;fill:none;stroke:currentColor;
-    stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-  /* convergence readout */
-  #conv{position:fixed;right:20px;bottom:max(18px, env(safe-area-inset-bottom));z-index:7;
-    font-family:Archivo,Inter,sans-serif;font-size:9.5px;letter-spacing:.16em;color:var(--ink-dim);
-    background:var(--panel);border:1px solid var(--panel-line);border-radius:9px;padding:9px 12px;
-    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:opacity .5s;pointer-events:none}
-  #conv.done{opacity:0}
-
-  /* hint */
-  #hint{position:fixed;left:50%;bottom:calc(74px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;
-    font-size:10.5px;letter-spacing:.12em;color:var(--ink-dim);transition:opacity .8s;white-space:nowrap}
-  #hint.fade{opacity:0}
-  #hint .d{display:none}
-  /* loading */
-  #loading{position:fixed;inset:0;z-index:20;background:var(--bg);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
-    transition:opacity .6s}
-  #loading.done{opacity:0;pointer-events:none}
-  #loading .lt{font-family:Archivo;font-weight:700;font-size:16px;letter-spacing:.4em;text-indent:.4em;text-align:center}
-  #loading .ls{font-size:10px;letter-spacing:.3em;text-indent:.3em;color:var(--ink-dim)}
-  #loading .bar{width:150px;height:2px;background:rgba(255,255,255,.08);border-radius:1px;overflow:hidden;margin-top:8px}
-  #loading .bar i{display:block;width:40%;height:100%;background:var(--brass);border-radius:1px;
-    animation:shimmer 1.2s ease-in-out infinite}
-  @keyframes shimmer{0%{transform:translateX(-110%)}100%{transform:translateX(380%)}}
-  /* mobile room drawer */
-  #mobileRoomBtn{display:none;position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:6;
-    width:42px;height:42px;border-radius:50%;border:1px solid var(--panel-line);
-    background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-    color:var(--brass);font-size:18px;cursor:pointer;align-items:center;justify-content:center;
-    transition:background .2s}
-  #mobileRoomBtn:hover,#mobileRoomBtn:active{background:rgba(201,163,106,.15)}
-  #mobileDrawer{display:none;position:fixed;left:0;right:0;bottom:0;z-index:15;
-    max-height:52vh;background:var(--panel);border-top:1px solid var(--panel-line);
-    border-radius:14px 14px 0 0;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-    flex-direction:column;transform:translateY(100%);transition:transform .35s ease-out}
-  #mobileDrawer.open{transform:translateY(0)}
-  #mobileDrawer .drawer-handle{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);
-    margin:10px auto 6px;flex-shrink:0}
-  #mobileDrawer h3{font-family:Archivo;font-size:10.5px;font-weight:600;letter-spacing:.26em;color:var(--brass);
-    padding:6px 16px 10px;border-bottom:1px solid var(--panel-line);flex-shrink:0}
-  #mobileDrawer ul{list-style:none;overflow-y:auto;padding:6px 0;scrollbar-width:thin;scrollbar-color:#3a3d41 transparent;flex:1}
-  #mobileDrawer ul li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-    padding:12px 20px;cursor:pointer;border-left:2px solid transparent;transition:background .15s,border-color .15s}
-  #mobileDrawer ul li:hover{background:rgba(255,255,255,.045)}
-  #mobileDrawer ul li.sel{border-left-color:var(--brass);background:rgba(201,163,106,.08)}
-  #mobileDrawer ul li span{font-size:12.5px;font-weight:500;letter-spacing:.06em}
-  #drawerOverlay{display:none;position:fixed;inset:0;z-index:14;background:rgba(0,0,0,.35)}
-  /* hint recall */
-  #hintBtn{position:fixed;left:50%;bottom:calc(60px + env(safe-area-inset-bottom));transform:translateX(90px);z-index:7;
-    width:26px;height:26px;border-radius:50%;border:1px solid var(--panel-line);
-    background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-    color:var(--ink-dim);font-size:12px;font-weight:600;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .4s}
-  #hintBtn.show{opacity:1}
-  #hintBtn:hover{color:var(--ink);border-color:var(--brass-dim)}
-  /* aria status */
-  #ariaStatus{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-  @media (max-width:959px){
-    #roomsPanel{display:none}
-    #mobileRoomBtn{display:flex}
-    #mobileDrawer{display:flex}
-    #titleblock h1{font-size:13.5px;letter-spacing:.26em}
-    #titleblock p{font-size:9px}
-    #design{top:max(12px, env(safe-area-inset-top));left:12px;right:12px;transform:none;max-width:none}
-    #design button{padding:6px 9px 5px}
-    #design button .d-code{font-size:10px}
-    #design button .d-name{font-size:7.5px}
-    #bottomDock{bottom:max(12px, env(safe-area-inset-bottom));left:12px;right:12px;transform:none;max-width:none;overflow-x:auto}
-    #views button, #sun button, #bottomDock .wt-link{padding:10px 9px 9px;font-size:9px;letter-spacing:.12em}
-    #infoCard{left:14px;right:14px;width:auto}
-    #hint .d{display:none}#hint .m{display:inline}
-    #hintBtn{transform:translateX(70px)}
-  }
-  @media (min-width:960px){ #hint .m{display:none}#hint .d{display:inline} }
-  @media (prefers-reduced-motion:reduce){
-    *{animation-duration:0.01ms!important;animation-iteration-count:1!important;
-      transition-duration:0.01ms!important}
-    #loading .bar i{animation:none}
-  }
-</style>
-<script>
-/* ============================================================
-   index.html — Main Orbit/Dollhouse Viewer
-   For project overview see .agents/README.md
-
-   SECTION INDEX (approximate line numbers):
-   L1-237     CSS: layout, controls, panels, loading overlay, mobile
-   L238       <script> begins
-   L243-285   Design version system (DESIGNS map, version picker)
-   L286-350   Loading overlay and progress UI
-   L351-700   HTML body: canvas, controls, floor pills, room panel,
-              compass, info card, mobile drawer, bottom dock
-   L700-900   Three.js renderer bootstrap, perf tier, OrbitControls
-   L900-1400  Post-processing pipeline (SSGI, SSR, temporal accum)
-   L1400-1700 Shadow map setup (single bake), tone mapping, exposure
-   L1700-2100 Floor visibility toggling, dollhouse section cut
-   L2100-2500 Room labels (CSS2D), info cards, room click→fly
-   L2500-2800 Sun presets (morning/midday/golden), IBL rebuild
-   L2800-3000 View presets (camera positions), compass needle
-   L3000-3200 Mobile responsive handlers, drawer, touch
-   L3200-3439 Render loop, convergence counter, keyboard shortcuts
-   ============================================================ */
-/* Which scene this page builds. Default is the full V43 house, interiors and
-   all; ?v=v41 / v43 load that elevation version's exterior-only shell.
-   Declared in <head> so the DESIGN chooser can render before the 3D bootstrap
-   at the end of <body> has run. */
-window.DESIGNS = {
-  full: { dir: null,                   code: 'FULL', title: 'FULL HOUSE',       sub: 'With Interiors · V43 Rods', interiors: true  },
-  full2: { dir: null, file: 'houseScene2.js', code: 'FULL 2', title: 'FULL HOUSE 2', sub: 'With Interiors · V42 Exterior', interiors: true },
-  v43:  { dir: 'version-forty-three',  code: 'V43',  title: 'CONTINUOUS RODS',  sub: 'Unbroken Rods · Recessed Slabs', interiors: false },
-  v42:  { dir: 'version-forty-two',    code: 'V42',  title: 'SLEEK CORNERS',    sub: 'V41 · Pillar-free Rail Corners · Continuous SF Parapet', interiors: false },
-  v41:  { dir: 'version-forty-one',    code: 'V41',  title: 'GRAPHITE ROD BOX', sub: 'Splayed Frame · Satin Warm Graphite Rods', interiors: false }
-};
-(function () {
-  var q = (location.search.match(/[?&]v=([A-Za-z0-9]+)/) || [])[1];
-  q = q ? q.toLowerCase() : 'full';
-  // An unknown ?v= falls back to the full house rather than failing to boot.
-  window.DESIGN = window.DESIGNS[q] ? q : 'full';
-})();
-</script>
+<link rel="stylesheet" href="lib/viewer-ui.css?v=20261116">
 </head>
-<body>
-<canvas id="c" aria-label="Interactive 3D model of Chandrasekhar Residence"></canvas>
-<div id="labels"></div>
-
-<header id="titleblock">
-  <h1>CHANDRASEKHAR<br>RESIDENCE</h1>
-  <p>ANANTAPUR · G+2 · EAST FACING</p>
-  <i></i>
-</header>
-
-<div id="compass" aria-hidden="true"><div id="needle"></div><b></b></div>
-
-<aside id="roomsPanel" class="off">
-  <h3 id="panelTitle">ROOMS</h3>
-  <ul id="roomsList"></ul>
-</aside>
-
-<div id="infoCard" class="hidden">
-  <button id="cardClose" aria-label="Close">×</button>
-  <h4 id="cardName"></h4>
-  <div class="mm" id="cardMM"></div>
-  <div class="ft" id="cardFT"></div>
-  <div class="ar" id="cardAR"></div>
-</div>
-
-<!-- Top Design Selector -->
-<nav id="design" aria-label="Design version">
-  <span class="lbl">DESIGN</span>
-  <div class="scroller" id="designPills"></div>
-  <a href="elevations/" class="all-link" title="Compare all elevation versions">ALL DESIGNS →</a>
-</nav>
-<script>
-/* Built outside the 3D bootstrap so the chooser still works if WebGL fails. */
-(function () {
-  var pills = document.getElementById('designPills');
-  Object.keys(window.DESIGNS).forEach(function (key) {
-    var d = window.DESIGNS[key], b = document.createElement('button');
-    b.type = 'button';
-    b.innerHTML = '<span class="d-code">' + d.code + '</span><span class="d-name">' + d.title + '</span>';
-    b.title = d.title + ' (' + d.code + ') — ' + d.sub;
-    b.setAttribute('aria-pressed', String(key === window.DESIGN));
-    if (key === window.DESIGN) b.classList.add('on');
-    b.addEventListener('click', function () {
-      if (key === window.DESIGN) return;
-      if (window.__saveCamera) window.__saveCamera();   // keep the angle across the reload
-      location.href = location.pathname + (key === 'full' ? '' : '?v=' + key);
-    });
-    pills.appendChild(b);
-  });
-  var on = pills.querySelector('button.on');
-  if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
-})();
-</script>
-
-<!-- Unified Bottom Control Dock -->
-<div id="bottomDock" aria-label="Viewer controls">
-  <div class="dock-group">
-    <span class="dock-lbl">LEVEL</span>
-    <nav id="views">
-      <button data-view="exterior" class="on" aria-pressed="true">EXTERIOR</button>
-      <button data-view="floor0" aria-pressed="false">GROUND</button>
-      <button data-view="floor1" aria-pressed="false">FIRST</button>
-      <button data-view="floor2" aria-pressed="false">SECOND</button>
-      <button id="guestLayout" hidden>Bedroom mode</button>
+<body class="orbit">
+<div class="app">
+  <header class="app-header">
+    <div class="project">
+      <h1>Chandrasekhar Residence</h1>
+      <p>Anantapur, India</p>
+    </div>
+    <nav class="segments versions" aria-label="House version">
+      <a href="index.html" data-version="full">Full House</a>
+      <a href="index.html?v=full2" data-version="full2">Full House 2</a>
     </nav>
-  </div>
+    <a class="button primary mode-link" href="walkthrough.html" data-mode="walkthrough.html">
+      Walkthrough <span class="button-icon" aria-hidden="true">↗</span>
+    </a>
+  </header>
 
-  <div class="dock-divider"></div>
+  <main class="workspace" aria-label="3D model">
+    <div class="stage">
+      <canvas id="c" tabindex="0" aria-label="Interactive 3D model" aria-describedby="orbitKeys"></canvas>
+      <div class="compass" aria-hidden="true"><div class="needle" id="needle">N</div></div>
+      <div class="loading" id="loading" role="status">
+        <div class="loading-card">
+          <strong>Loading 3D model</strong>
+          <p id="loadStatus">Preparing the house and its materials.</p>
+          <progress aria-label="Loading 3D model"></progress>
+        </div>
+      </div>
+    </div>
+    <aside class="room-panel" id="roomsPanel" aria-labelledby="panelTitle" hidden>
+      <header class="room-heading">
+        <h2 id="panelTitle" tabindex="-1">Rooms</h2>
+        <button class="button" id="closeRooms" type="button">Close</button>
+      </header>
+      <div class="room-details" id="roomDetails" role="status" hidden>
+        <h3 id="roomTitle"></h3>
+        <p id="roomSize"></p>
+      </div>
+      <div class="room-results" id="roomResults">
+        <div class="room-options" id="guestOptions" hidden>
+          <button class="button" id="guestLayout" type="button">Bedroom mode</button>
+        </div>
+        <ul class="room-list" id="roomsList"></ul>
+      </div>
+    </aside>
+  </main>
 
-  <div class="dock-group">
-    <span class="dock-lbl">SUN</span>
-    <nav id="sun">
-      <button data-sun="morning" class="on" aria-pressed="true">MORNING</button>
-      <button data-sun="midday" aria-pressed="false">MIDDAY</button>
-      <button data-sun="golden" aria-pressed="false">GOLDEN</button>
-    </nav>
-  </div>
-
-  <div class="dock-divider"></div>
-
-  <a href="walkthrough.html" class="wt-link" title="First-person walkthrough" onclick="if (window.DESIGN === 'full2') this.href = 'walkthrough.html?v=full2';">
-    <svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
-    <span>WALKTHROUGH</span>
-  </a>
+  <footer class="controls">
+    <div class="toolbar">
+      <nav class="segments view-switch" id="views" aria-label="Model view">
+        <button type="button" data-view="exterior" aria-pressed="true">Exterior</button>
+        <button type="button" data-view="floor0" aria-pressed="false">Ground</button>
+        <button type="button" data-view="floor1" aria-pressed="false">First</button>
+        <button type="button" data-view="floor2" aria-pressed="false">Second</button>
+      </nav>
+      <div class="control-group viewer-tools">
+        <button class="button" id="roomButton" type="button" aria-expanded="false" aria-controls="roomsPanel" hidden>Rooms</button>
+        <label class="sr-only" for="sun">Sunlight</label>
+        <select id="sun">
+          <option value="morning">Morning light</option>
+          <option value="midday">Midday light</option>
+          <option value="golden">Golden hour</option>
+        </select>
+        <button class="button" id="resetView" type="button">Reset view</button>
+        <button class="button" id="helpButton" type="button" aria-expanded="false" aria-controls="help">Help</button>
+      </div>
+    </div>
+    <section class="help" id="help" aria-labelledby="helpTitle" hidden>
+      <h2 id="helpTitle">Model controls</h2>
+      <dl class="mouse-only">
+        <div><dt>Orbit</dt><dd>Drag, or use arrow keys on the model</dd></div>
+        <div><dt>Zoom</dt><dd>Scroll or press + / −</dd></div>
+        <div><dt>Pan</dt><dd>Right-drag</dd></div>
+      </dl>
+      <dl class="touch-only">
+        <div><dt>Orbit</dt><dd>Drag with one finger</dd></div>
+        <div><dt>Zoom</dt><dd>Pinch with two fingers</dd></div>
+        <div><dt>Pan</dt><dd>Drag with two fingers</dd></div>
+      </dl>
+    </section>
+  </footer>
+  <p class="sr-only" id="orbitKeys">Use the arrow keys to orbit, plus and minus to zoom, or Home to reset the view.</p>
+  <div class="sr-only" id="ariaStatus" role="status"></div>
 </div>
 
-<div id="conv"></div>
-
-<div id="hint">
-  <span class="d">DRAG TO ORBIT · SCROLL TO ZOOM · RIGHT-DRAG TO PAN</span>
-  <span class="m">DRAG TO ORBIT · PINCH TO ZOOM</span>
-</div>
-<button id="hintBtn" aria-label="Show controls hint" title="Show controls">?</button>
-
-<button id="mobileRoomBtn" aria-label="Browse rooms">☰</button>
-<div id="drawerOverlay"></div>
-<div id="mobileDrawer" aria-label="Rooms drawer">
-  <div class="drawer-handle"></div>
-  <h3 id="drawerTitle">ROOMS</h3>
-  <ul id="mobileRoomsList"></ul>
-</div>
-<div id="ariaStatus" aria-live="polite" role="status"></div>
-
-<div id="loading">
-  <div class="lt">CHANDRASEKHAR RESIDENCE</div>
-  <div class="ls">ANANTAPUR · PREPARING 3D MODEL</div>
-  <div class="bar" role="progressbar" aria-label="Loading 3D model"><i></i></div>
-</div>
-
+<script src="lib/viewer-ui.js?v=20261116"></script>
 <!-- Three.js: served locally from the edge (fast, reliable); CDN as fallback -->
 <script src="lib/three.min.js"></script>
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
@@ -396,15 +103,8 @@ window.DESIGNS = {
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
 <script src="perf.js"></script>
 <script>
-/* Loads the scene chosen in the <head> above. document.write keeps it
-   synchronous — the inline viewer below expects window.HouseScene to exist. */
-(function () {
-  var d = window.DESIGNS[window.DESIGN];
-  var src = d.file ? d.file + '?v=20261114_void_rail_white'
-          : d.dir ? 'elevations/' + d.dir + '/houseScene.js?v=20261113_v42_garden42i'
-                  : 'houseScene.js?v=20261114_void_rail_white';
-  document.write('<scr' + 'ipt src="' + src + '"><\/scr' + 'ipt>');
-})();
+const sceneFile = window.DESIGN === 'full2' ? 'houseScene2.js' : 'houseScene.js';
+document.write('<script src="' + sceneFile + '?v=20261114_void_rail_white"><\/script>');
 </script>
 <script>
 /* ============================================================
@@ -413,38 +113,17 @@ window.DESIGNS = {
    ============================================================ */
 (function () {
   'use strict';
-  function bootFail(msg) {
-    var ls = document.querySelector('#loading .ls');
-    var bar = document.querySelector('#loading .bar');
-    if (ls) ls.textContent = msg;
-    if (bar) bar.style.display = 'none';
-  }
-  /* Progress line on the loading screen. The ported pipeline calls this at each
-     stage; building 2K PBR kits and the IBL takes a couple of seconds and a
-     blank screen for that long reads as a hang. */
-  function say(msg) {
-    var ls = document.querySelector('#loading .ls');
-    if (ls) ls.textContent = msg;
+  const $ = id => document.getElementById(id);
+  function bootFail(message) {
+    $('loading').querySelector('strong').textContent = 'Could not open the model';
+    $('loadStatus').textContent = message;
+    $('loading').querySelector('progress').hidden = true;
   }
 
-  if (!window.THREE) {
-    bootFail('FAILED TO LOAD 3D ENGINE — CHECK NETWORK CONNECTION');
+  if (!window.THREE || !window.HouseScene) {
+    bootFail('Reload the page to try again.');
     return;
   }
-  if (!window.HouseScene) {
-    /* The elevation scenes live under elevations/, which is a separate set of
-       files from the main viewer — name the one that is missing rather than
-       showing a generic failure, and offer the way back. */
-    if (window.DESIGN && window.DESIGN !== 'full' && !window.DESIGNS[window.DESIGN].file) {
-      bootFail('COULD NOT LOAD ' + window.DESIGNS[window.DESIGN].name +
-               ' — elevations/' + window.DESIGNS[window.DESIGN].dir + '/houseScene.js IS MISSING. ' +
-               'OPEN THE PAGE WITHOUT ?v= FOR THE FULL HOUSE.');
-    } else {
-      bootFail('FAILED TO INITIALISE SCENE — HOUSESCENE NOT LOADED');
-    }
-    return;
-  }
-  const THREE = window.THREE;
   try {
 
   /* ---------- named constants ---------- */
@@ -452,17 +131,14 @@ window.DESIGNS = {
   const TILT_SENSITIVITY = 0.0042;
   const SCROLL_SENSITIVITY = 0.0012;
   const PAN_FACTOR = 0.0014;
-  const LABEL_Y_OFFSET = 1.55;
   const MIN_RADIUS = 4.5;
   const MAX_RADIUS = 80;
   const MIN_PHI = 0.12;
   const MAX_PHI = 1.52;
   const SHADOW_BIAS = -0.0004;
   const DAMPING_RATE = 8;
-  const AUTO_ROTATE_SPEED = 0.05;
 
   /* ---------- helpers ---------- */
-  const $ = id => document.getElementById(id);
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   function ftin(mm) {
     const tin = mm / 25.4;
@@ -495,18 +171,11 @@ window.DESIGNS = {
   // soon as the real context exists.
   if (Q.webgl2 === false && (POST_MODE === 'full' || POST_MODE === 'lite')) POST_MODE = 'off';
   let HEAVY_POST = POST_MODE === 'full' || POST_MODE === 'lite';
-  let renderer;
-  try {
-    const opts = window.Perf && Perf.rendererOpts
-      ? Perf.rendererOpts(Q, canvas)
-      : { canvas, antialias: Q.antialias, powerPreference: Q.powerPreference || 'high-performance', failIfMajorPerformanceCaveat: false, alpha: false };
-    if (HEAVY_POST) opts.antialias = false;
-    renderer = new THREE.WebGLRenderer(opts);
-  } catch (err) {
-    const lo = document.getElementById('loading');
-    if (lo) lo.innerHTML = '<div style="color:#e8e4da;padding:2rem;text-align:center;font-family:system-ui">WebGL could not start on this device.<br><small>Try updating your browser or graphics drivers.</small></div>';
-    throw err;
-  }
+  const opts = window.Perf && Perf.rendererOpts
+    ? Perf.rendererOpts(Q, canvas)
+    : { canvas, antialias: Q.antialias, powerPreference: Q.powerPreference || 'high-performance', failIfMajorPerformanceCaveat: false, alpha: false };
+  if (HEAVY_POST) opts.antialias = false;
+  const renderer = new THREE.WebGLRenderer(opts);
   // Authoritative WebGL2 check, now that a real context exists.
   if (!renderer.capabilities.isWebGL2 && HEAVY_POST) { POST_MODE = 'off'; HEAVY_POST = false; }
   renderer.setClearColor(0x101214, 1);
@@ -548,9 +217,6 @@ window.DESIGNS = {
   }
 
   const reduceMotion = !!(Q.reducedMotion || (window.Perf && Perf.prefersReducedMotion()));
-  // Auto-rotate exterior briefly on load (disabled when reduced-motion is set)
-  let autoRotateUntil = reduceMotion ? 0 : (performance.now() + 12000);
-
   /* on-demand rendering: only draw when something is moving or the user just
      interacted, so an idle floor view costs ~zero GPU/battery */
   let wakeUntil = 0;
@@ -567,7 +233,8 @@ window.DESIGNS = {
      reconstructs world position from that depth, so the reconstruction was noise
      and the GI/SSR rays hit the wrong surfaces, compositing the scene back over
      itself. That is what made every wall read as semi-transparent. */
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.5, 1200);
+  const frameFov = 50;
+  const camera = new THREE.PerspectiveCamera(frameFov, 1, 0.5, 1200);
 
   /* Constants the ported pipeline expects from its own boot block. */
   const TIER = Q.tier || 'high';
@@ -1364,9 +1031,6 @@ window.DESIGNS = {
       case 'fin':
         return { tex: 'plaster', tile: 1.5, rough: 0.88, metal: 0, env: 0.55, grime: 0.35 };
       case 'fin2':
-        if (window.DESIGN === 'v41') {
-          return { rough: 0.62, metal: 0.08, env: 0.55, reflect: 0.10 };
-        }
         if (C && C.fin2 && C.fin2 !== 0xded2b8) {
           return { rough: 0.44, metal: 0.14, env: 0.75, reflect: 0.15 };
         }
@@ -1483,7 +1147,7 @@ window.DESIGNS = {
     chrome:     0x9aa1a7,
     solarFrm:   0x4a4640,
 
-    ground:  0x9c9078, plotPad: 0xa3977d, soil: (window.DESIGN === 'v42' || window.DESIGN === 'full2' || /version-forty-two/.test(location.pathname)) ? 0x8f6d4f : 0x5d4b34,   // V42: lighter red-brown bed earth
+    ground:  0x9c9078, plotPad: 0xa3977d, soil: (window.DESIGN === 'full2') ? 0x8f6d4f : 0x5d4b34,   // V42: lighter red-brown bed earth
    
     grass:   0x66794a, road: 0x494b4f,
     leafDark: 0x34492a, leafLight: 0x5d7838,
@@ -1772,10 +1436,7 @@ window.DESIGNS = {
     if (!POST.on) renderer.toneMappingExposure = S.exp;
     buildEnv(S);
     if (Q.shadows !== false) renderer.shadowMap.needsUpdate = true;
-    document.querySelectorAll('#sun button').forEach(b => {
-      b.classList.toggle('on', b.getAttribute('data-sun') === key);
-      b.setAttribute('aria-pressed', b.getAttribute('data-sun') === key);
-    });
+    $('sun').value = key;
     resetAccum();
   }
 
@@ -1865,10 +1526,9 @@ window.DESIGNS = {
      arbitrary answer from every camera angle on every device, and that is the
      entire problem being solved here. A stable wrong answer is invisible; an
      unstable right one flickers. */
-  const ELEV_ONLY = !!(window.DESIGNS && window.DESIGNS[window.DESIGN] && !window.DESIGNS[window.DESIGN].interiors);
   // FULL 2 carries the V42 exterior (grass-paver court, flush parapets), whose
   // floors sit a few mm behind other faces — it needs the same units-only offset.
-  const UNITS_ONLY = ELEV_ONLY || window.DESIGN === 'full2';
+  const UNITS_ONLY = window.DESIGN === 'full2';
   function depthOffset(key) {
     const layer = DEPTH_LAYER[key] || 0;
     let h = 0;
@@ -1876,7 +1536,6 @@ window.DESIGNS = {
     return -(DEPTH_STEP * layer + (h / 997) * 0.6);
   }
 
-  say('APPLYING PBR MATERIALS');
   const REFLECTIVE = [];                     // meshes worth tracing reflections for
   const doneMat = new Set();
   const COVERAGE = {};
@@ -2080,43 +1739,27 @@ window.DESIGNS = {
     scene.add(mesh);
   })();
 
-  const FLOOR_NAMES = ['GROUND', 'FIRST', 'SECOND'];
+  const FLOOR_NAMES = ['Ground floor', 'First floor', 'Second floor'];
   const VIEW_KEYS = ['exterior', 'floor0', 'floor1', 'floor2'];
-
-  /* room highlight planes + label elements */
-  const labelsLayer = $('labels');
-  const hlMat = new THREE.MeshBasicMaterial({ color: 0xc9a36a, transparent: true, opacity: 0.33, depthWrite: false });
-  const floorsUI = data.floors.map((f, fi) => {
-    const rooms = f.rooms.map(r => {
-      const w = (r.x1 - r.x0) / 1000, d = (r.y1 - r.y0) / 1000;
-      const hl = new THREE.Mesh(new THREE.PlaneGeometry(w, d), hlMat);
-      hl.rotation.x = -Math.PI / 2;
-      hl.position.set((r.x0 + r.x1) / 2000, f.floorY + 0.02, -(r.y0 + r.y1) / 2000);
-      hl.visible = false; hl.renderOrder = 3;
-      f.group.add(hl);
-      const el = document.createElement('div');
-      el.className = 'rlabel';
-      el.setAttribute('role', 'button');
-      el.setAttribute('tabindex', '0');
-      el.innerHTML = '<span class="rn">' + r.name + '</span>';
-      el.style.display = 'none';
-      labelsLayer.appendChild(el);
-      const room = { r, hl, el, fi, cx: (r.x0 + r.x1) / 2000, cz: -(r.y0 + r.y1) / 2000 };
-      el.addEventListener('click', e => { e.stopPropagation(); selectRoom(room, false); });
-      el.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); selectRoom(room, false); }
-      });
-      return room;
-    });
-    return { rooms, group: f.group, floorY: f.floorY };
-  });
+  const hlMat = new THREE.MeshBasicMaterial({ color: 0xc9a36a, transparent: true, opacity: 0.38, depthWrite: false });
+  const roomsByFloor = data.floors.map((floor, fi) => floor.rooms.map(room => {
+    const w = room.x1 - room.x0, d = room.y1 - room.y0;
+    const cx = (room.x0 + room.x1) / 2000, cz = -(room.y0 + room.y1) / 2000;
+    const hl = new THREE.Mesh(new THREE.PlaneGeometry(w / 1000, d / 1000), hlMat);
+    hl.rotation.x = -Math.PI / 2;
+    hl.position.set(cx, floor.floorY + 0.02, cz);
+    hl.visible = false;
+    hl.renderOrder = 3;
+    floor.group.add(hl);
+    const name = room.name.charAt(0) + room.name.slice(1).toLowerCase();
+    return { name, w, d, hl, fi, cx, cz };
+  }));
 
   /* ---------- camera controls (custom orbit) ---------- */
   const ctl = {
     target: new THREE.Vector3(), tTarget: new THREE.Vector3(),
     theta: 0, phi: 1.1, radius: 30,
-    tTheta: 0, tPhi: 1.1, tRadius: 30,
-    interacted: false
+    tTheta: 0, tPhi: 1.1, tRadius: 30
   };
   /* Pre-allocated Vector3 temporaries for zero-GC path */
   const _tmpP = new THREE.Vector3(), _tmpT = new THREE.Vector3(), _tmpOff = new THREE.Vector3();
@@ -2145,6 +1788,14 @@ window.DESIGNS = {
   /* tween between views */
   let tween = null;
   function flyTo(dest, dur) {
+    if (reduceMotion) {
+      tween = null;
+      ctl.target.copy(dest.target); ctl.tTarget.copy(dest.target);
+      ctl.radius = ctl.tRadius = dest.radius;
+      ctl.phi = ctl.tPhi = dest.phi;
+      ctl.theta = ctl.tTheta = dest.theta;
+      return;
+    }
     const norm = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
     const from = {
       target: ctl.target.clone(), radius: ctl.radius, phi: ctl.phi, theta: ctl.theta
@@ -2168,15 +1819,14 @@ window.DESIGNS = {
 
   /* pointer input — accumulate deltas so high-rate mice don't drop moves */
   const pointers = new Map();
-  let lastPinch = 0, moved = 0, downAt = null;
+  let lastPinch = 0, moved = 0, downAt = false;
   let ptrMoveQueued = false;
   let pendDx = 0, pendDy = 0, pendShift = false, pendBtn = 0;
   let pendPinch = 0, hasPendPinch = false;
   canvas.addEventListener('pointerdown', e => {
     canvas.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, button: e.button });
-    ctl.interacted = true; tween = null; moved = 0; downAt = { x: e.clientX, y: e.clientY };
-    autoRotateUntil = 0; // stop auto-rotate once the user takes control
+    tween = null; moved = 0; downAt = true;
     if (pointers.size === 2) {
       const [a, b] = [...pointers.values()];
       lastPinch = Math.hypot(a.x - b.x, a.y - b.y);
@@ -2220,15 +1870,15 @@ window.DESIGNS = {
   const endPtr = e => {
     pointers.delete(e.pointerId);
     lastPinch = 0;
-    if (downAt && moved < 6 && e.button !== 2) clearSelection();
-    downAt = null;
+    if (downAt && moved < 6 && e.type === 'pointerup' && e.button !== 2) clearSelection();
+    downAt = false;
   };
   canvas.addEventListener('pointerup', endPtr);
   canvas.addEventListener('pointercancel', endPtr);
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
-    ctl.interacted = true; tween = null;
+    tween = null;
     ctl.tRadius = clamp(ctl.tRadius * Math.exp(e.deltaY * SCROLL_SENSITIVITY), MIN_RADIUS, MAX_RADIUS);
   }, { passive: false });
 
@@ -2244,200 +1894,117 @@ window.DESIGNS = {
     ctl.tTarget.y = clamp(ctl.tTarget.y, 0, b.maxY);
   }
 
-  /* ---------- view switching ---------- */
+  /* ---------- views and room inspection ---------- */
   let activeView = 'exterior';
-  const ariaStatus = $('ariaStatus');
-  function announce(msg) { ariaStatus.textContent = msg; }
-  function setView(name, instant) {
-    activeView = name;
-    const fi = VIEW_KEYS.indexOf(name) - 1; // -1 for exterior
-    guestLayout.hidden = fi !== 2 || !data.guestRoom;
-    // Exterior = full multi-storey shell + all outdoor decks.
-    // Floor buttons = that floor's dollhouse rooms + matching outdoor amenity
-    // (portico on G, east/north balconies on 1 & 2). Outdoor decks live in
-    // separate outdoor0/1/2 groups so the shell can hide without losing them.
-    const isExt = name === 'exterior';
-    data.exterior.visible = isExt;
-    data.floors.forEach((f, i) => {
-      f.group.visible = isExt ? false : (i === fi);
-    });
-    if (data.outdoors) {
-      data.outdoors.forEach((g, i) => {
-        g.visible = isExt ? true : (i === fi);
-      });
-    }
-    clearSelection();
-  document.querySelectorAll('#views button[data-view]').forEach(b => {
-      b.classList.toggle('on', b.dataset.view === name);
-      b.setAttribute('aria-pressed', b.dataset.view === name);
-    });
-    buildPanel(fi);
-    labelsLayer.style.display = fi >= 0 ? 'block' : 'none';
-    if (instant) setFromView(data.views[name], true);
-    else flyToView(data.views[name]);
-    $('hint').dataset.mode = name;
-    announce(fi >= 0 ? FLOOR_NAMES[fi] + ' floor view' : 'Exterior view');
-  }
-  document.querySelectorAll('#views button[data-view]').forEach(b =>
-    b.addEventListener('click', () => { if (!b.disabled) setView(b.dataset.view); }));
+  let selected = null;
+  const roomButton = $('roomButton'), roomsPanel = $('roomsPanel'), panelTitle = $('panelTitle');
+  const list = $('roomsList'), details = $('roomDetails');
+  const showRooms = ViewerUI.disclosure(roomButton, roomsPanel);
+  roomButton.addEventListener('click', () => {
+    if (!roomsPanel.hidden) panelTitle.focus();
+  });
+  $('closeRooms').addEventListener('click', () => showRooms(false, true));
 
-  /* The elevation versions are exterior shells — data.floors is empty, so the
-     dollhouse pills have nothing to show and buildPanel() would index into an
-     empty floorsUI. Disable them and stay on the exterior for those scenes. */
-  const hasInteriors = data.floors.length > 0;
-  if (!hasInteriors) {
-    document.querySelectorAll('#views button[data-view]').forEach(b => {
-      if (b.dataset.view !== 'exterior') {
-        b.disabled = true;
-        b.setAttribute('aria-disabled', 'true');
-        b.title = 'Interiors are only modelled on the full house — pick FULL under DESIGN';
-      }
-    });
+  function clearSelection() {
+    if (!selected) return;
+    selected.hl.visible = false;
+    selected.button.setAttribute('aria-pressed', 'false');
+    selected = null;
+    details.hidden = true;
+    resetAccum();
+    wake();
   }
 
-  /* ---------- rooms panel ---------- */
-  const panel = $('roomsPanel'), list = $('roomsList'), panelTitle = $('panelTitle');
-  const mobileBtn = $('mobileRoomBtn'), mobileDrawer = $('mobileDrawer');
-  const mobileList = $('mobileRoomsList'), drawerTitle = $('drawerTitle');
-  const drawerOverlay = $('drawerOverlay');
-
-  function openDrawer() { mobileDrawer.classList.add('open'); drawerOverlay.style.display = 'block'; }
-  function closeDrawer() { mobileDrawer.classList.remove('open'); drawerOverlay.style.display = 'none'; }
-  mobileBtn.addEventListener('click', openDrawer);
-  drawerOverlay.addEventListener('click', closeDrawer);
-
-  function buildPanel(fi) {
-    const frag = document.createDocumentFragment();
-    const mobileFrag = document.createDocumentFragment();
-    if (fi < 0) {
-      panel.classList.add('off');
-      mobileBtn.style.display = 'none';
-      closeDrawer();
-      list.replaceChildren();
-      mobileList.replaceChildren();
+  function selectRoom(room) {
+    if (selected === room) {
+      clearSelection();
       return;
     }
-    panel.classList.remove('off');
-    mobileBtn.style.display = '';
-    panelTitle.textContent = FLOOR_NAMES[fi] + ' FLOOR';
-    drawerTitle.textContent = FLOOR_NAMES[fi] + ' FLOOR';
-    floorsUI[fi].rooms.forEach(room => {
-      const li = document.createElement('li');
-      li.setAttribute('role', 'button');
-      li.setAttribute('tabindex', '0');
-      li.innerHTML = '<span>' + room.r.name + '</span>';
-      li.addEventListener('click', () => selectRoom(room, true));
-      li.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRoom(room, true); }
-      });
-      room.li = li;
-      frag.appendChild(li);
-
-      // mobile drawer clone
-      const mli = document.createElement('li');
-      mli.setAttribute('role', 'button');
-      mli.setAttribute('tabindex', '0');
-      mli.innerHTML = '<span>' + room.r.name + '</span>';
-      mli.addEventListener('click', () => { selectRoom(room, true); closeDrawer(); });
-      mli.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRoom(room, true); closeDrawer(); }
-      });
-      room.mli = mli;
-      mobileFrag.appendChild(mli);
-    });
-    list.replaceChildren(frag);
-    mobileList.replaceChildren(mobileFrag);
-  }
-
-  /* ---------- selection / info card ---------- */
-  const card = $('infoCard');
-  let selected = null;
-  function clearSelection() {
-    if (selected) {
-      selected.hl.visible = false;
-      if (selected.li) selected.li.classList.remove('sel');
-      if (selected.mli) selected.mli.classList.remove('sel');
-    }
-    selected = null;
-    card.classList.add('hidden');
-  }
-  function selectRoom(room, fly) {
     clearSelection();
     selected = room;
     room.hl.visible = true;
-    if (room.li) room.li.classList.add('sel');
-    if (room.mli) room.mli.classList.add('sel');
-    $('cardName').textContent = room.r.name;
-    // Prefer plan coordinates (always present); fall back to dims string
-    let wMM = Math.round(room.r.x1 - room.r.x0);
-    let dMM = Math.round(room.r.y1 - room.r.y0);
-    if (!(wMM > 0 && dMM > 0) && room.r.dims) {
-      const parts = room.r.dims.split(/\s*[×x]\s*/i);
-      if (parts.length === 2) {
-        wMM = parseInt(parts[0], 10);
-        dMM = parseInt(parts[1], 10);
-      }
-    }
-    if (wMM > 0 && dMM > 0) {
-      $('cardMM').textContent = (wMM / 1000).toFixed(2) + ' × ' + (dMM / 1000).toFixed(2) + ' m';
-      $('cardFT').textContent = ftin(wMM) + ' × ' + ftin(dMM);
-      const sqft = (wMM * dMM) / (304.8 * 304.8);
-      $('cardAR').textContent = sqft.toFixed(0) + ' sq ft';
-    }
-    card.classList.remove('hidden');
-    announce('Selected ' + room.r.name);
-    if (fly) {
-      const fY = data.floors[room.fi].floorY;
-      _tmpT.set(room.cx, fY + 0.4, room.cz);
-      flyTo({
-        target: _tmpT.clone(),
-        radius: Math.max(8, ctl.radius * 0.7),
-        phi: clamp(ctl.phi, 0.5, 1.05),
-        theta: ctl.theta
-      }, 0.9);
-    }
+    room.button.setAttribute('aria-pressed', 'true');
+    $('roomTitle').textContent = room.name;
+    const area = (room.w * room.d / (304.8 * 304.8)).toFixed(0);
+    $('roomSize').textContent = (room.w / 1000).toFixed(2) + ' × ' + (room.d / 1000).toFixed(2) +
+      ' m (' + ftin(room.w) + ' × ' + ftin(room.d) + ') · ' + area + ' sq ft';
+    details.hidden = false;
+    flyTo({
+      target: new THREE.Vector3(room.cx, data.floors[room.fi].floorY + 0.4, room.cz),
+      radius: Math.max(8, ctl.radius * 0.74),
+      phi: clamp(ctl.phi, 0.5, 1.05),
+      theta: ctl.theta
+    }, 0.7);
+    resetAccum();
+    wake(800);
   }
-  $('cardClose').addEventListener('click', clearSelection);
 
-  /* ---------- labels ---------- */
-  const v3 = new THREE.Vector3();
-  const _v3b = new THREE.Vector3();
-  function updateLabels(w, h) {
-    const activeFi = VIEW_KEYS.indexOf(activeView) - 1;
-    // Hide all labels for other floors
-    floorsUI.forEach((f, fi) => {
-      if (fi !== activeFi) {
-        f.rooms.forEach(room => {
-          if (room.el.style.display !== 'none') room.el.style.display = 'none';
-        });
-      }
+  function buildPanel(fi) {
+    roomButton.hidden = fi < 0;
+    $('guestOptions').hidden = fi !== 2 || !data.guestRoom;
+    if (fi < 0) {
+      showRooms(false);
+      list.replaceChildren();
+      return;
+    }
+    panelTitle.textContent = FLOOR_NAMES[fi] + ' rooms';
+    const entries = roomsByFloor[fi].map(room => {
+      const li = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = room.name;
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', () => selectRoom(room));
+      room.button = button;
+      li.append(button);
+      return li;
     });
-
-    if (activeFi < 0) return;
-    const fY = data.floors[activeFi].floorY;
-    for (const room of floorsUI[activeFi].rooms) {
-      v3.set(room.cx, fY + LABEL_Y_OFFSET, room.cz).project(camera);
-      const onScreen = v3.z < 1 && v3.x > -1.08 && v3.x < 1.08 && v3.y > -1.1 && v3.y < 1.1;
-      if (!onScreen) {
-        if (room.el.style.display !== 'none') room.el.style.display = 'none';
-        room._lx = room._ly = undefined;
-        continue;
-      }
-      const x = (v3.x * 0.5 + 0.5) * w, y = (-v3.y * 0.5 + 0.5) * h;
-      // Skip DOM writes when the label barely moved (<1px)
-      if (room._lx != null && Math.abs(room._lx - x) < 1 && Math.abs(room._ly - y) < 1
-          && room.el.style.display === 'block') continue;
-      room._lx = x; room._ly = y;
-      _v3b.set(room.cx, fY, room.cz);
-      const d = camera.position.distanceTo(_v3b);
-      const op = clamp((40 - d) / 22, 0, 1) * 0.85 + 0.15;
-      const s = clamp(16 / d, 0.72, 1.12);
-      room.el.style.display = 'block';
-      room.el.style.opacity = op.toFixed(2);
-      room.el.style.transform = 'translate(-50%,-120%) translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) scale(' + s.toFixed(2) + ')';
-      room.el.style.zIndex = (1000 - Math.round(v3.z * 500));
-    }
+    list.replaceChildren(...entries);
+    $('roomResults').scrollTop = 0;
   }
+
+  function setView(name, instant) {
+    if (!VIEW_KEYS.includes(name)) return;
+    activeView = name;
+    const fi = VIEW_KEYS.indexOf(name) - 1;
+    data.exterior.visible = fi < 0;
+    data.floors.forEach((floor, i) => { floor.group.visible = i === fi; });
+    data.outdoors?.forEach((group, i) => { group.visible = fi < 0 || i === fi; });
+    clearSelection();
+    document.querySelectorAll('#views button').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.view === name));
+    });
+    buildPanel(fi);
+    if (instant || reduceMotion) {
+      tween = null;
+      setFromView(data.views[name], true);
+    } else flyToView(data.views[name]);
+    $('ariaStatus').textContent = fi < 0 ? 'Exterior view' : FLOOR_NAMES[fi] + ' view';
+    resetAccum();
+    wake(1200);
+  }
+
+  function resetView() { setView(activeView); }
+
+  document.querySelectorAll('#views button').forEach(button => {
+    button.addEventListener('click', () => setView(button.dataset.view));
+  });
+  $('resetView').addEventListener('click', resetView);
+  canvas.addEventListener('keydown', event => {
+    switch (event.key) {
+      case 'ArrowLeft': ctl.tTheta -= 0.13; break;
+      case 'ArrowRight': ctl.tTheta += 0.13; break;
+      case 'ArrowUp': ctl.tPhi = clamp(ctl.tPhi - 0.09, MIN_PHI, MAX_PHI); break;
+      case 'ArrowDown': ctl.tPhi = clamp(ctl.tPhi + 0.09, MIN_PHI, MAX_PHI); break;
+      case '+': case '=': ctl.tRadius = clamp(ctl.tRadius * 0.9, MIN_RADIUS, MAX_RADIUS); break;
+      case '-': ctl.tRadius = clamp(ctl.tRadius / 0.9, MIN_RADIUS, MAX_RADIUS); break;
+      case 'Home': resetView(); event.preventDefault(); return;
+      default: return;
+    }
+    tween = null;
+    wake();
+    event.preventDefault();
+  });
 
   /* ---------- compass ---------- */
   const needle = $('needle');
@@ -2448,25 +2015,16 @@ window.DESIGNS = {
 
   /* ---------- resize ---------- */
   function resize() {
-    const vv = window.visualViewport;
-    let w = Math.floor((vv && vv.width) || window.innerWidth || 0);
-    let h = Math.floor((vv && vv.height) || window.innerHeight || 0);
-    /* A viewport of 0 is not a 1-pixel viewport.
-       attachViewport() calls this once during boot, and if the embedder has not
-       laid the page out yet, innerWidth/visualViewport can still read 0. The old
-       Math.max(1, …) turned that into a 1×1 drawing buffer stretched across the
-       window — a single flat colour that never changes and never recovers,
-       because nothing resizes again unless the user drags the window. Fall back
-       to the canvas's own CSS box, and if even that is degenerate, retry next
-       frame rather than committing to a broken size. */
-    if (w < 2 || h < 2) {
-      w = canvas.clientWidth || 0;
-      h = canvas.clientHeight || 0;
-    }
-    if (w < 2 || h < 2) { requestAnimationFrame(resize); return; }
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (w < 2 || h < 2) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    // Keep the house framed even when the viewport is taller than it is wide.
+    const halfFov = THREE.MathUtils.degToRad(frameFov / 2);
+    const portraitFov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(halfFov) / camera.aspect));
+    camera.fov = Math.min(105, Math.max(frameFov, portraitFov));
     camera.updateProjectionMatrix();
+    resetAccum();
     /* Whoever owns the pixel ratio has to re-assert it here, because setSize
        does not, and the two owners want different numbers. The screen-space
        pipeline caps itself well below the device ratio — every one of its
@@ -2485,6 +2043,7 @@ window.DESIGNS = {
   }
   if (window.Perf && Perf.attachViewport) Perf.attachViewport(resize);
   else { window.addEventListener('resize', resize); resize(); }
+  new ResizeObserver(resize).observe(canvas);
 
   /* ==========================================================================
      6 · RENDER PIPELINE
@@ -3355,27 +2914,10 @@ window.DESIGNS = {
     if (POST.on && POST.render) POST.render(); else renderer.render(scene, camera);
   }
 
-  /* ---------- sun presets ---------- */
-  document.querySelectorAll('#sun button').forEach(btn => {
-    btn.addEventListener('click', () => { applySun(btn.getAttribute('data-sun')); wake(900); });
+  $('sun').addEventListener('change', event => {
+    applySun(event.target.value);
+    wake(900);
   });
-
-  /* Temporal accumulation converges over POST.max jittered samples, so ANY
-     change to what is on screen has to restart it or the new image is blended
-     into the old one. Camera motion is handled inside the pipeline; these are
-     the two this viewer adds. */
-  const _setView = setView;
-  setView = function (name, instant) { _setView(name, instant); resetAccum(); wake(900); };
-
-  /* Convergence readout */
-  const convEl = $('conv');
-  function updateConv() {
-    if (!convEl) return;
-    if (!POST.on) { convEl.style.display = 'none'; return; }
-    const done = POST.samples >= POST.max;
-    convEl.textContent = done ? 'CONVERGED' : 'REFINING ' + POST.samples + '/' + POST.max;
-    convEl.classList.toggle('done', done);
-  }
 
   /* Handle for offscreen capture + geometry audits (the pane does not always
      composite, so a synchronous render has to be reachable from outside). */
@@ -3400,49 +2942,33 @@ window.DESIGNS = {
     resolve() { for (let i = 0; i < POST.max; i++) renderFrame(); }
   };
 
-  /* ---------- main loop ---------- */
-  setView('exterior', true);
-
-  /* Switching design reloads the page, and each scene has its own exterior
-     preset — so without this the building would jump to a different angle every
-     time you compared two versions. Carry the orbit across the reload instead,
-     so only the building changes. */
-  (function restoreCamera() {
-    let saved = null;
-    try { saved = JSON.parse(sessionStorage.getItem('house3d.cam') || 'null'); } catch (_) {}
+  /* Carry the view and camera to the other version for a direct comparison. */
+  let saved = null;
+  try {
+    saved = JSON.parse(sessionStorage.getItem('house3d.cam') || 'null');
     sessionStorage.removeItem('house3d.cam');
-    if (!saved || typeof saved.radius !== 'number') return;
-    ctl.target.set(saved.tx, saved.ty, saved.tz); ctl.tTarget.copy(ctl.target);
-    ctl.radius = ctl.tRadius = saved.radius;
-    ctl.phi = ctl.tPhi = saved.phi;
-    ctl.theta = ctl.tTheta = saved.theta;
-    ctl.interacted = true;                       // don't auto-rotate away from it
-  })();
-  window.__saveCamera = function () {
+  } catch (_) {}
+  if (saved?.design !== window.DESIGN || !VIEW_KEYS.includes(saved.view)) saved = null;
+  setView(saved?.view || 'exterior', true);
+  if (saved) {
+    const { tx, ty, tz, radius, phi, theta, sun } = saved;
+    ctl.target.set(tx, ty, tz); ctl.tTarget.copy(ctl.target);
+    ctl.radius = ctl.tRadius = radius;
+    ctl.phi = ctl.tPhi = phi;
+    ctl.theta = ctl.tTheta = theta;
+    if (sun !== sunKey) applySun(sun);
+  }
+  window.__saveCamera = design => {
     try {
       sessionStorage.setItem('house3d.cam', JSON.stringify({
-        tx: ctl.target.x, ty: ctl.target.y, tz: ctl.target.z,
-        radius: ctl.radius, phi: ctl.phi, theta: ctl.theta
+        design, view: activeView, sun: sunKey,
+        tx: ctl.tTarget.x, ty: ctl.tTarget.y, tz: ctl.tTarget.z,
+        radius: ctl.tRadius, phi: ctl.tPhi, theta: ctl.tTheta
       }));
     } catch (_) {}
   };
 
   applyCamera();
-
-  /* hint recall */
-  const hintEl = $('hint'), hintBtn = $('hintBtn');
-  let hintHidden = false;
-  function hideHint() {
-    hintEl.classList.add('fade');
-    hintHidden = true;
-    hintBtn.classList.add('show');
-  }
-  hintBtn.addEventListener('click', () => {
-    hintEl.classList.remove('fade');
-    hintBtn.classList.remove('show');
-    hintHidden = false;
-    setTimeout(hideHint, 6000);
-  });
 
   // camera is "settled" when it has finished damping toward its target
   function camSettled() {
@@ -3509,7 +3035,7 @@ window.DESIGNS = {
        still get the scaler. */
     if (!POST.on) scaler.sample(frameMs);
 
-    // advance camera state every frame (cheap); auto-rotate keeps exterior alive briefly
+    // Advance the camera toward its target.
     if (tween) {
       const t = clamp((now - tween.t0) / tween.dur, 0, 1);
       const k = easeInOutCubic(t);
@@ -3520,9 +3046,6 @@ window.DESIGNS = {
       ctl.tTarget.copy(ctl.target); ctl.tRadius = ctl.radius; ctl.tPhi = ctl.phi; ctl.tTheta = ctl.theta;
       if (t >= 1) tween = null;
     } else {
-      if (activeView === 'exterior' && !ctl.interacted && !reduceMotion && now < autoRotateUntil) {
-        ctl.tTheta += dt * AUTO_ROTATE_SPEED;
-      }
       const k = 1 - Math.exp(-dt * DAMPING_RATE);
       ctl.target.lerp(ctl.tTarget, k);
       ctl.radius += (ctl.tRadius - ctl.radius) * k;
@@ -3564,28 +3087,14 @@ window.DESIGNS = {
 
     // render only when needed: moving, mid-tween, or recently interacted
     const converging = POST.on && (POST.moving || POST.samples < POST.max);
-    if (now < wakeUntil || tween || !camSettled() || converging) {
+    if (now < wakeUntil || tween || !camSettled() || converging || !firstFrame) {
       const t0 = POST.on ? performance.now() : 0;
       renderFrame();
       if (POST.on) watchBudget(performance.now() - t0);
-      updateConv();
-      updateLabels(window.innerWidth, window.innerHeight);
       updateCompass();
       if (!firstFrame) {
         firstFrame = true;
-        /* Loading screen dismissal tied to actual first render.
-           Null-guarded: the 2.5 s fail-safe below can have removed the element
-           already. That happens whenever the first frame is late — the tab was
-           backgrounded during boot, so requestAnimationFrame never fired and
-           this branch did not reach the DOM until the user came back to a page
-           whose loading screen was long gone. Dereferencing it there threw
-           inside the rAF callback and killed the render loop outright. */
-        const lo = $('loading');
-        if (lo) {
-          lo.classList.add('done');
-          setTimeout(() => lo.remove(), 650);
-        }
-        setTimeout(hideHint, 6000);
+        $('loading').hidden = true;
         // Re-bake shadows after car may have loaded / first full frame
         requestAnimationFrame(refreshShadows);
       }
@@ -3594,17 +3103,8 @@ window.DESIGNS = {
   wake(1500);                                    // render through startup
   requestAnimationFrame(frame);
 
-  // Fail-safe: dismiss loading screen after boot if firstFrame flag hasn't cleared
-  setTimeout(function () {
-    const lo = $('loading');
-    if (lo && !lo.classList.contains('done')) {
-      lo.classList.add('done');
-      setTimeout(() => lo.remove(), 650);
-    }
-  }, 2500);
-
   } catch (err) {
-    bootFail('FAILED TO RENDER 3D SCENE — ' + (err.message || err));
+    bootFail('Reload the page or try another WebGL-capable browser.');
     console.error('App boot error:', err);
   }
 })();

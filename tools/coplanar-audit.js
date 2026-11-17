@@ -9,7 +9,7 @@
  *   3. each cluster is checked for visibility: a ray from 20 cm in front of the face must meet
  *      the face first, from open air (not from inside a solid, checked by crossing parity).
  *
- * Use (browser console on the walkthrough, after "Enter the house"):
+ * Use in the browser console after the walkthrough loads:
  *     const s = document.createElement('script'); s.src = 'tools/coplanar-audit.js'; document.head.appendChild(s);
  *     // then, once loaded:
  *     await window.coplanarAudit({ top: 40 })      // -> JSON: [group pair face, triangles, clusters, sample plan-mm x,y,height]

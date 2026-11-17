@@ -4,31 +4,15 @@ A plan-faithful, procedurally-built 3D visualization of the Chandrasekhar Family
 Residence (G+2, Anantapur), running entirely in the browser with **Three.js**.
 No build step, no framework — just static files.
 
-- **`index.html`** — orbit / dollhouse viewer: rotate the building, switch
-  between Exterior · Ground · First · Second, and tap rooms to inspect them.
-  A **DESIGN** row swaps the exterior between the full house and any of the
-  four elevation versions without leaving the page (see below).
-- **`walkthrough.html`** — photoreal first-person walkthrough: WASD + mouse to
-  walk the house, with collision, stair-climbing and a fly mode.
-- **`elevations/`** — the exterior-only variants (V38 · V40 · V41 · V43), each with its own `houseScene.js` and a standalone viewer.
-  See [`elevations/README.md`](elevations/README.md) for what each one changes.
+- **`index.html`** is the 3D model viewer. Orbit and zoom around the house, inspect individual floors, and open **Rooms** to see room dimensions.
+- **`walkthrough.html`** is the first-person walkthrough. Walk with WASD and the mouse, use touch gestures on a phone, or take the **Go to level** menu directly to a floor or the roof. Both pages have a **Help** button for controls.
 
 ## Switching design versions
 
-The viewer picks its scene from a `?v=` query parameter and reloads in place:
+- **Full House** uses the V43 exterior and furnished interiors. Open `/` or `/walkthrough.html`.
+- **Full House 2** uses the V42 exterior and the same interiors. Open `/?v=full2` or `/walkthrough.html?v=full2`.
 
-| URL | Code | Design Name | Architecture Highlights |
-|-----|------|-------------|-------------------------|
-| `/` | `FULL` | **Full House** | Complete interactive house with furnished interiors & V43 rods |
-| `/?v=v43` | `V43` | **Continuous Rods** | Extended unbroken vertical rods (~4.87 m) + recessed floor slabs |
-| `/?v=v41` | `V41` | **Clover Jali** | 4-leaf clover heart breeze block screen on East facade |
-| `/?v=v38` | `V38` | **Splayed Rod Box** | Full-height splayed white box frame with vertical rods to SF |
-| `/?v=v40` | `V40` | **Rod Box to Roof** | Continuous East rod box to terrace roof + open SF South railing |
-
-`v43 · v41 · v38 · v40` are all valid. The elevation scenes
-are exterior-only, so the Ground/First/Second floor pills and the room list are
-disabled while one is selected — pick **FULL** to get the interiors back.
-An unknown `?v=` value falls back to the full house rather than failing.
+Use the header to switch between versions or between the 3D model and walkthrough. The 3D model carries your view, orbit, and lighting when you switch versions.
 
 ## Runs on any hardware
 
@@ -78,7 +62,7 @@ misidentified:
 - `?q=high|medium|low|potato` — force the hardware tier
 - `?post=full|lite|off` — force the render path
 
-They combine with `?v=` (`/?v=v43&q=low`).
+They combine with `?v=` (`/?v=full2&q=low`).
 
 ## Run locally
 
@@ -89,9 +73,7 @@ node serve.js
 # then open http://localhost:8080
 ```
 
-(Opening the pages directly via `file://` won't work because the browser blocks
-loading `houseScene.js` cross-origin; use a local server. `serve.js` also
-resolves directory URLs, which the `elevations/version-*/` viewers rely on.)
+Use the local server to load scene scripts and assets over HTTP.
 
 ## Deploy to Vercel
 

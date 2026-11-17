@@ -5,8 +5,8 @@ node_modules/
 # local Claude Code settings (keep launch.json so others can run the preview)
 .claude/settings.local.json
 
-# headless-Chrome profile dirs left behind by the elevation capture scripts
-# (~1.1 GB across elevations/version-*/ — never worth committing)
+# Local render and capture output
+/output/
 .chrome-*/
 **/.chrome-*/
 

@@ -19,20 +19,18 @@ internal + external staircase.
 
 ```
 House3D/
-├── index.html            ← Main orbit/dollhouse viewer (3,439 lines)
-│                           Includes: design version switcher, floor pills,
-│                           room labels, post-processing pipeline (SSGI/SSR),
-│                           sun presets, compass, info cards.
-│                           Loads: houseScene.js, perf.js, lib/three.min.js
+├── index.html            ← 3D model viewer for both full houses
+│                           Orbit, floor views, room details and daylight.
+│                           Shared UI in lib/viewer-ui.js and lib/viewer-ui.css.
 │
 ├── houseScene.js         ← THE SCENE (7,180 lines, 395 KB) ★ SEE SECTION INDEX BELOW
 │                           Exports window.HouseScene.build(THREE) → scene graph.
 │                           Contains ALL geometry: walls, floors, openings, stairs,
 │                           furniture, fixtures, vegetation, site, roads.
 │
-├── walkthrough.html      ← First-person walkthrough (2,086 lines)
+├── walkthrough.html      ← First-person walkthrough for both full houses
 │                           WASD+mouse, collision, stair climbing, fly mode,
-│                           night-mode material remapping. Loads houseScene.js.
+│                           night-mode material remapping.
 │
 ├── perf.js               ← Adaptive quality engine (313 lines)
 │                           GPU detection, tier selection (high/medium/low/potato),
@@ -52,15 +50,6 @@ House3D/
 │   ├── walkthrough.html    FPS walkthrough (WASD, fly, night mode)
 │   ├── *.blend             Blender project files (master + backups)
 │   └── *.glb               Exported GLB model (~11 MB)
-│
-├── elevations/           ← Exterior-only design variants (no interiors)
-│   ├── README.md           Full history of all versions V19→V43
-│   ├── index.html          Elevation gallery landing page
-│   ├── compare-renders.html  Side-by-side render comparison tool
-│   ├── version-thirty-eight/  V38: Splayed Rod Box
-│   ├── version-forty/         V40: Rod Box to Roof
-│   ├── version-forty-one/     V41: Clover Jali
-│   └── version-forty-three/   V43: Continuous Rods
 │
 ├── lib/                  ← Self-hosted Three.js r128 + loaders
 │   ├── three.min.js        Three.js core (603 KB)
@@ -149,17 +138,8 @@ East portico/balcony: 12650–17362 mm × −762–8870 mm.
 
 ## Design Version System
 
-The main `index.html` supports `?v=<code>` to switch between elevation designs:
-
-| `?v=` | Code | Scene Source |
-|-------|------|-------------|
-| *(none)* | FULL | `houseScene.js` (full house with interiors) |
-| `v43` | V43 | `elevations/version-forty-three/houseScene.js` |
-| `v41` | V41 | `elevations/version-forty-one/houseScene.js` |
-| `v38` | V38 | `elevations/version-thirty-eight/houseScene.js` |
-| `v40` | V40 | `elevations/version-forty/houseScene.js` |
-
-Elevation versions are **exterior-only** — no interior walls, no furniture, no floor tiles.
+Both public pages default to Full House (`houseScene.js`). Pass `?v=full2`
+for Full House 2 (`houseScene2.js`).
 
 ---
 
@@ -168,7 +148,7 @@ Elevation versions are **exterior-only** — no interior walls, no furniture, no
 ```
 index.html ──loads──→ perf.js (quality detection)
      │                 lib/three.min.js (renderer)
-     │                 houseScene.js (or elevation variant)
+     │                 houseScene.js or houseScene2.js
      └──calls──→ HouseScene.build(THREE) → scene graph
                         │
                         ├── root (Group: 'residence')
