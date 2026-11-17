@@ -5051,24 +5051,28 @@ window.HouseScene = (function () {
       F.rb(bag, 'chrome', W / 2 - 30, W / 2 + 30, 158, 163, fY + 0.935, fY + 0.968, 2);        // dual flush: half
       F.rb(bag, 'quartz', W / 2 - 410, W / 2 + 410, -10, 160, fY + 1.12, fY + 1.14, 3);        // stone ledge on the cistern box
       const bowl = bag => {
-        // oval bowl: a lathe stretched along the projection axis
+        /* Modern rimless wall-hung pan, lid closed. D-shaped in plan: a straight-sided
+           body off the cistern face that runs into a half-oval nose, sides near vertical
+           with a soft tuck under, then a slim seat and a slim domed lid with a shadow
+           line between them. 360 wide, 540 projection, lid top 440 above the floor. */
         const bc = F.pt(W / 2, 420), alongX = back === 'E' || back === 'W';
-        F.rb(bag, 'whiteG', W / 2 - 150, W / 2 + 150, 150, 330, fY + 0.24, fY + 0.40, 60);
-        bag.latheS('whiteG', bc[0] / 1000, fY + 0.22, -bc[1] / 1000,
-          [[0, 0], [0.11, 0], [0.16, 0.06], [0.18, 0.15], [0.182, 0.18], [0, 0.18]], 40,
-          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-        bag.latheS('whiteG', bc[0] / 1000, fY + 0.40, -bc[1] / 1000,
-          [[0.12, 0], [0.186, 0], [0.19, 0.012], [0.185, 0.022], [0.12, 0.022], [0.115, 0.01]], 40,
-          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-        // soft-close seat on the rim and the lid closed over it, with the hinge block behind
-        bag.latheS('whiteG', bc[0] / 1000, fY + 0.422, -bc[1] / 1000,
-          [[0.115, 0], [0.18, 0], [0.184, 0.01], [0.18, 0.02], [0.115, 0.02]], 40,
-          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-        bag.latheS('whiteG', bc[0] / 1000, fY + 0.442, -bc[1] / 1000,
-          [[0, 0.018], [0.09, 0.02], [0.165, 0.016], [0.18, 0.008], [0.184, 0], [0, 0]], 40,
-          alongX ? 1.5 : 1, 1, alongX ? 1 : 1.5);
-        F.rb(bag, 'whiteG', W / 2 - 105, W / 2 + 105, 160, 205, fY + 0.405, fY + 0.46, 6);       // hinge block
-        for (const du of [-82, 82]) { const q = F.pt(W / 2 + du, 195); bag.cyl('chrome', q[0] / 1000, fY + 0.468, -q[1] / 1000, 0.011, 0.012); }
+        const sx = alongX ? 1.5 : 1, sz = alongX ? 1 : 1.5;
+        const cxm = bc[0] / 1000, czm = -bc[1] / 1000;
+        // body: rear block + nose, same height, same side line
+        F.rb(bag, 'whiteG', W / 2 - 179, W / 2 + 179, 150, 430, fY + 0.222, fY + 0.400, 26);
+        bag.latheS('whiteG', cxm, fY + 0.200, czm,
+          [[0, 0], [0.095, 0], [0.135, 0.012], [0.160, 0.040], [0.174, 0.085], [0.180, 0.140], [0.180, 0.200], [0, 0.200]], 56, sx, 1, sz);
+        // seat: thin, a hair inside the body line
+        F.rb(bag, 'whiteG', W / 2 - 176, W / 2 + 176, 205, 430, fY + 0.402, fY + 0.414, 5);
+        bag.latheS('whiteG', cxm, fY + 0.402, czm,
+          [[0, 0], [0.177, 0], [0.179, 0.004], [0.179, 0.009], [0.176, 0.012], [0, 0.012]], 56, sx, 1, sz);
+        // lid: 3 mm shadow gap above the seat, gently domed, soft edge
+        F.rb(bag, 'whiteG', W / 2 - 175, W / 2 + 175, 205, 430, fY + 0.417, fY + 0.432, 6);
+        bag.latheS('whiteG', cxm, fY + 0.417, czm,
+          [[0, 0], [0.176, 0], [0.178, 0.004], [0.177, 0.011], [0.168, 0.016], [0.120, 0.020], [0, 0.022]], 56, sx, 1, sz);
+        // hinge cover across the back, two chrome caps
+        F.rb(bag, 'whiteG', W / 2 - 150, W / 2 + 150, 158, 206, fY + 0.402, fY + 0.436, 9);
+        for (const du of [-96, 96]) { const q = F.pt(W / 2 + du, 182); bag.cyl('chrome', q[0] / 1000, fY + 0.4385, -q[1] / 1000, 0.012, 0.005); }
       };
       if (install) install(bowl);
       else bowl(bag);
@@ -9715,7 +9719,7 @@ window.HouseScene = (function () {
     }
 
     function upperWC(bag, x, y, fY, facing) {
-      Fur.wc(bag, x, y, fY, facing, draw => stageUpper('wc_porcelain', fY, front[facing], draw));
+      Fur.wc(bag, x, y, fY, facing);   // built in code: the scanned placeholder read as a toy
     }
     function upperSink(bag, x, y, fY, back = 'E') {
       Fur.sink(bag, x, y, fY, back, draw => stageUpper('kitchen_sink_steel', fY, back === 'E' || back === 'W' ? 0 : 90, draw));
