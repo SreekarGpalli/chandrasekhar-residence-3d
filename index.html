@@ -945,6 +945,20 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
   function treatment(name) {
     const ik = window.InteriorKit && InteriorKit.treatment(name);
     if (ik) return ik;
+    /* FULL 2: every steel member on the house is powder-coated or enamelled mild steel. That is a smooth,
+       even film with a satin sheen: no grain, no blotches, and a clear soft highlight where it catches the
+       sky. The shared 'metal' kit gave them a mottled roughness map that read as flat matte grey. */
+    if (window.DESIGN === 'full2') {
+      const COAT = {
+        gBlue:   { rough: 0.34, metal: 0.38, env: 1.30, reflect: 0.32 },   // balcony railings + pergola
+        gMetal:  { rough: 0.36, metal: 0.38, env: 1.25, reflect: 0.30 },   // gates
+        steel:   { rough: 0.34, metal: 0.40, env: 1.25, reflect: 0.32 },
+        ms:      { rough: 0.36, metal: 0.36, env: 1.20, reflect: 0.30 },
+        msWhite: { rough: 0.38, metal: 0.10, env: 0.95, reflect: 0.18 },   // white enamelled window grilles
+        rodWood: { rough: 0.40, metal: 0.20, env: 1.00, reflect: 0.18 }    // east box rods
+      };
+      if (COAT[name]) return COAT[name];
+    }
     switch (name) {
       case 'white':       return { tex: 'plaster', tile: 3.0, rough: 0.93, metal: 0, env: 0.45, grime: 1.0 };
       case 'white2':      return { tex: 'plaster', tile: 2.6, rough: 0.90, metal: 0, env: 0.48, grime: 0.7 };
@@ -1648,7 +1662,7 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
              clearly glazing and not an open hole. */
           m.color.setRGB(0.10, 0.20, 0.24); m.opacity = 0.42; m.envMapIntensity = 1.2;
           // FULL 2: from outside by day a window is dark and mirrors the sky; the room behind is far dimmer than the street
-          if (window.DESIGN === 'full2' && key === 'glass') { m.color.setRGB(0.025, 0.045, 0.05); m.opacity = 0.66; m.envMapIntensity = 1.9; m.roughness = 0.03; }
+          if (window.DESIGN === 'full2' && key === 'glass') { m.color.setRGB(0.025, 0.045, 0.05); m.opacity = 0.72; m.envMapIntensity = 1.05; m.roughness = 0.03; }
         }
       } else if (key === 'lamp' || key === 'downlight') {
         if (m.emissive) m.emissive.setHex(0xffdcae);
