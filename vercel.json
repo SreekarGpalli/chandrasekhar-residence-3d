@@ -5,8 +5,8 @@
   },
   "ignoreCommand": "node tools/deploy-budget.mjs --vercel",
   "redirects": [
-    { "source": "/elevations/version-forty-two/:path*", "destination": "/?v=full2", "permanent": true },
-    { "source": "/elevations/:path*", "destination": "/", "permanent": true }
+    { "source": "/elevations/version-forty-two/:path(.*)?", "destination": "/?v=full2", "permanent": true },
+    { "source": "/elevations/:path(.*)?", "destination": "/", "permanent": true }
   ],
   "headers": [
     {
