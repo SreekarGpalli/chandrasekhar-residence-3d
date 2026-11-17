@@ -249,7 +249,7 @@ window.HouseScene = (function () {
     artC:      0x33465d,  // canvas — indigo
     artD:      0x899985,  // canvas — sage
     mirrorI:   0xa4abb0,  // silvered mirror (reads as glass, not a white board, against the bright rooms)
-    wallLime:  0xc29f82,  // clay limewash: the painted arch on the TV wall
+    wallLime:  0x6b6157,  // deep warm stone: trowelled texture paint on the TV wall
     limeWash:  0xfbfaf6,  // near-white: the limewash shades live in the texture (limewashPaint): SF west bedroom walls
     limeDusk:  0xfaf9f6,  // near-white: the dusk limewash shades live in the texture (limewashDusk): SF east bedroom / theatre walls + ceiling
     muralArch: 0xfcfbf8,  // near-white: the mural's beige tones live in the texture (muralArches): FF master north wall
@@ -2869,22 +2869,22 @@ window.HouseScene = (function () {
       };
 
       const mid = W / 2;                          // pier axis (x = 7130)
-      const aR = 900;                             // arch half-width = crown radius
-      const apex = 1000 * (H + 0.100 + 2.850);    // SF window head: SF sill 100 + h 2850 (6303)
-      const spring = apex - aR;                   // springing line (5403)
       const yPaint = backY - 1.5;                 // a paint film, not a panel
+      const topMM = TOP * 1000;
 
-      // 1. ARCH: straight body floor -> springing, then the round crown
-      box('wallLime', mid - aR, mid + aR, yPaint, backY, 0, spring);
-      if (!isLower) {
-        // crown: a 96-segment disc, centred on the springing line, 0.5 mm
-        // in front of the body so the overlapping lower half cannot z-fight
-        bag.latheS('wallLime', (x0 + mid) / 1000, fY0 + spring / 1000, -(yPaint - 0.5) / 1000,
-          [[0, 0], [aR / 1000, 0]], 96, 1, 1, 1, 0, -Math.PI / 2);
-        return;
-      }
+      /* THE MONOLITH (Nov 2026). One gesture, full height: the whole pier, floor to
+         soffit across both storeys, in a single deep warm-stone texture paint
+         (trowelled stucco effect). The room is white walls, pale marble and teak,
+         so one dark, matte, 6.5 m shaft is what gives it scale; the TV is black on
+         near-black and disappears when off. Two full-height brass hairlines 250 in
+         from each edge are the only ornament: they pull the eye up and frame any
+         TV up to 75". No arch, no niche, no panel, nothing sized to the set.
+         Cost: texture paint on 14.5 m2, 13 m of 8 mm brass flat, one console. */
+      box('wallLime', 0, W, yPaint, backY, 0, topMM);
+      for (const u of [250, W - 250]) box('brassI', u - 4, u + 4, yPaint - 3, yPaint, 0, topMM);
+      if (!isLower) return;
 
-      // 2. TV: flat on the paint, centre 1250 AFF (55" today)
+      // TV: flat on the paint, centre 1250 AFF (55" today)
       const tvW = 1220, tvH = 686, tvC = 1250;
       const tz0 = tvC - tvH / 2, tz1 = tvC + tvH / 2;
       const yTv = yPaint - 32;                    // flat bracket + slim set
@@ -2892,24 +2892,16 @@ window.HouseScene = (function () {
       box('blackM', mid - tvW / 2 - 3, mid + tvW / 2 + 3, yTv + 3, yTv + 12, tz0 - 3, tz1 + 3);
       box('tv', mid - tvW / 2, mid + tvW / 2, yTv, yTv + 3, tz0, tz1);
 
-      // 3. FLOATING CONSOLE (1600 x 300 x 350) in the door teak, inside the arch
-      const cW = 1600, cD = 350, cz0 = 300, cz1 = 600;
-      const c0 = mid - cW / 2, c1 = mid + cW / 2;
+      // ONE low floating console in the door teak, exactly between the brass lines
+      // (1713 x 220 x 320), push-to-open, a soft glow under it. Nothing on top.
+      const c0 = 254, c1 = W - 254, cD = 320, cz0 = 380, cz1 = 600;
       const cy0 = yPaint - cD;
       rbox('walnut', c0, c1, cy0, yPaint, cz0, cz1, 4);
       for (const k of [1, 2]) {                   // push-to-open door joints
-        const ju = c0 + (cW * k) / 3;
+        const ju = c0 + ((c1 - c0) * k) / 3;
         box('woodD', ju - 1.5, ju + 1.5, cy0 - 1, cy0 + 2, cz0 + 8, cz1 - 8);
       }
       box('coveLED', c0 + 40, c1 - 40, cy0 + 40, yPaint - 30, cz0 - 4, cz0);
-
-      // 4. STYLING: soundbar, books left, brass sphere + vase right
-      const sbW = 860, sbH = 50, sbD = 75;
-      box('charDark', mid - sbW / 2, mid + sbW / 2, yPaint - sbD - 20, yPaint - 20, cz1, cz1 + sbH);
-      Fur.books(bag, x0 + c0 + 170, yPaint - 170, fY0 + cz1 / 1000, 3, true);
-      pb(bag, 'brassI', x0 + c1 - 250, x0 + c1 - 120, yPaint - 240, yPaint - 120, fY0 + cz1 / 1000, fY0 + cz1 / 1000 + 0.012);
-      bag.sph('brassI', (x0 + c1 - 185) / 1000, fY0 + cz1 / 1000 + 0.012 + 0.05, -(yPaint - 180) / 1000, 0.05);
-      bag.cyl('ceramic', (x0 + c1 - 80) / 1000, fY0 + cz1 / 1000 + 0.08, -(yPaint - 170) / 1000, 0.035, 0.16);
     },
     counterX(bag, x0, x1, y0, y1, fY) {
       // Full base carcass + toe-kick recess + granite worktop + steel edge trim
@@ -9951,7 +9943,7 @@ window.HouseScene = (function () {
         Lum.downlight(5760, 5790).downlight(8450, 5790);
         Lum.downlight(5760, 7520);
         // WL: two wall sconces flanking the TV on the feature wall, symmetrically centered between TV and arch edges
-        Lum.sconce(6375, 8638, 1.35, 'x', 'S').sconce(7885, 8638, 1.35, 'x', 'S');
+        // (TV wall sconces removed: the wall carries itself)
         /* Corner line: one perimeter round the open living / dining / foyer
            plan, wherever a wall meets the FF ceiling (none on the void, the
            stair or the dining|hall opening). */
