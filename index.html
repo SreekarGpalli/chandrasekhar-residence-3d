@@ -355,7 +355,8 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
        horizontal sweeps at low amplitude. It is what stops a large flat wall
        reading as paint on cardboard, and because it is DIRECTIONAL it adds
        surface without ever looking like staining. */
-    x.globalAlpha = 0.05;
+    const NEWPAINT = window.DESIGN === 'full2';   // a newly painted house: no skim patches, barely any float marks or runs
+    x.globalAlpha = NEWPAINT ? 0.022 : 0.05;
     for (let i = 0; i < 40; i++) {
       const yy = Math.random() * s, hh = s * (0.010 + Math.random() * 0.035);
       const gg = x.createLinearGradient(0, yy - hh, 0, yy + hh);
@@ -367,14 +368,14 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
     }
     x.globalAlpha = 1;
     // patch repairs: a real wall is skimmed in sections and they never match
-    x.globalAlpha = 0.05;
+    x.globalAlpha = NEWPAINT ? 0 : 0.05;
     for (let i = 0; i < 9; i++) {
       x.save(); x.translate(Math.random() * s, Math.random() * s); x.rotate(Math.random() * 0.5 - 0.25);
       x.fillStyle = Math.random() < 0.5 ? '#8d8880' : '#ffffff';
       x.fillRect(0, 0, s * (0.1 + Math.random() * 0.25), s * (0.08 + Math.random() * 0.2));
       x.restore();
     }
-    x.globalAlpha = 0.055;
+    x.globalAlpha = NEWPAINT ? 0.016 : 0.055;
     for (let i = 0; i < 26; i++) {
       const px = Math.random() * s, w = 2 + Math.random() * 9;
       const g = x.createLinearGradient(0, 0, 0, s);
@@ -1646,6 +1647,8 @@ document.write('<script src="' + sceneFile + '?v=20261116_exterior2"><\/script>'
              reads as blue-green float glass: the room shows through, but it is
              clearly glazing and not an open hole. */
           m.color.setRGB(0.10, 0.20, 0.24); m.opacity = 0.42; m.envMapIntensity = 1.2;
+          // FULL 2: from outside by day a window is dark and mirrors the sky; the room behind is far dimmer than the street
+          if (window.DESIGN === 'full2' && key === 'glass') { m.color.setRGB(0.025, 0.045, 0.05); m.opacity = 0.66; m.envMapIntensity = 1.9; m.roughness = 0.03; }
         }
       } else if (key === 'lamp' || key === 'downlight') {
         if (m.emissive) m.emissive.setHex(0xffdcae);
