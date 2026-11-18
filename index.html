@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, interactive-widget=resizes-visual, viewport-fit=cover">
 <title>Chandrasekhar Residence · Anantapur</title>
 <meta name="description" content="Interactive 3D visualization — Mr Chandrasekhar Family Residence, G+2, Anantapur.">
-<link rel="stylesheet" href="lib/viewer-ui.css?v=20261116">
+<meta name="theme-color" content="#151916">
+<link rel="stylesheet" href="lib/viewer-ui.css?v=20261117_dark_overlay">
 </head>
 <body class="orbit">
 <div class="app">
@@ -35,22 +36,6 @@
         </div>
       </div>
     </div>
-    <aside class="room-panel" id="roomsPanel" aria-labelledby="panelTitle" hidden>
-      <header class="room-heading">
-        <h2 id="panelTitle" tabindex="-1">Rooms</h2>
-        <button class="button" id="closeRooms" type="button">Close</button>
-      </header>
-      <div class="room-details" id="roomDetails" role="status" hidden>
-        <h3 id="roomTitle"></h3>
-        <p id="roomSize"></p>
-      </div>
-      <div class="room-results" id="roomResults">
-        <div class="room-options" id="guestOptions" hidden>
-          <button class="button" id="guestLayout" type="button">Bedroom mode</button>
-        </div>
-        <ul class="room-list" id="roomsList"></ul>
-      </div>
-    </aside>
   </main>
 
   <footer class="controls">
@@ -73,6 +58,22 @@
         <button class="button" id="helpButton" type="button" aria-expanded="false" aria-controls="help">Help</button>
       </div>
     </div>
+    <aside class="room-panel" id="roomsPanel" aria-labelledby="panelTitle" hidden>
+      <header class="room-heading">
+        <h2 id="panelTitle" tabindex="-1">Rooms</h2>
+        <button class="button" id="closeRooms" type="button">Close</button>
+      </header>
+      <div class="room-details" id="roomDetails" role="status" hidden>
+        <h3 id="roomTitle"></h3>
+        <p id="roomSize"></p>
+      </div>
+      <div class="room-results" id="roomResults">
+        <div class="room-options" id="guestOptions" hidden>
+          <button class="button" id="guestLayout" type="button">Bedroom mode</button>
+        </div>
+        <ul class="room-list" id="roomsList"></ul>
+      </div>
+    </aside>
     <section class="help" id="help" aria-labelledby="helpTitle" hidden>
       <h2 id="helpTitle">Model controls</h2>
       <dl class="mouse-only">
@@ -91,7 +92,7 @@
   <div class="sr-only" id="ariaStatus" role="status"></div>
 </div>
 
-<script src="lib/viewer-ui.js?v=20261116"></script>
+<script src="lib/viewer-ui.js?v=20261117_dark_overlay"></script>
 <!-- Three.js: served locally from the edge (fast, reliable); CDN as fallback -->
 <script src="lib/three.min.js"></script>
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
