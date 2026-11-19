@@ -14,4 +14,4 @@ https://creativecommons.org/licenses/by/4.0/
 
 assets/sky-day-*.jpg: "Kloofendal 48d Partly Cloudy (Pure Sky)" HDRI, Poly Haven, CC0.
 assets/ext-granite-*.jpg, ext-pavers-*.jpg, ext-footpath-*.jpg, paint-plaster-*.jpg: Poly Haven "granite_tile_04", "concrete_pavers_02", "concrete_tiles", "painted_plaster_wall", CC0 (colour neutralised, 1K).
-assets/coat-metal-*.jpg, garden-grass-*.jpg, garden-soil-*.jpg, garden-ground-*.jpg, lime-*.jpg: Poly Haven "metal_plate_02", "leafy_grass", "red_laterite_soil_stones", "dry_ground_01", "plastered_wall_04", CC0 (1K; metal neutralised, limewash recoloured to the owner's shades).
+assets/coat-metal-*.jpg, garden-grass-*.jpg, garden-soil-*.jpg, garden-ground-*.jpg: Poly Haven "metal_plate_02", "leafy_grass", "red_laterite_soil_stones", "dry_ground_01", CC0 (1K; metal neutralised).
