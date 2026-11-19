@@ -7806,6 +7806,61 @@ window.HouseScene = (function () {
         })
       };
 
+      /* Photo foliage (FULL 2). The drawn leaf clusters read as cartoon; the broadleaf species now wear
+         crowns cut from real tree photographs (assets/tree-*.jpg, shrub-boug.jpg, hedge.jpg, shot on a flat
+         key colour), keyed to alpha. The drawn version shows until the photo loads. Palms and banana keep
+         their drawn leaves: a crown photo cannot stand in for a single leaflet or blade. */
+      (function photoFoliage() {
+        if (typeof Image === 'undefined' || window.DESIGN !== 'full2') return;
+        const SRC = {
+          // an interior patch of each crown (a card is ~1 m, so ~1/6 of a crown), not the whole tree
+          mango: ['assets/tree-mango.jpg', 0.30, 0.20, 0.62, 0.44],
+          neem:  ['assets/tree-neem.jpg', 0.34, 0.10, 0.66, 0.32],
+          boug:  ['assets/shrub-boug.jpg', 0.30, 0.16, 0.64, 0.44],
+          hedge: ['assets/hedge.jpg', 0.28, 0.22, 0.62, 0.50]
+        };
+        const USE = { mango: 'mango', mangoNew: 'mango', frangiLeaf: 'mango', ashoka: 'neem', curry: 'neem',
+                      hibLeaf: 'boug', ixLeaf: 'boug', croton: 'hedge' };
+        Object.keys(SRC).forEach(k => {
+          const [src, u0, v0, u1, v1] = SRC[k], img = new Image();
+          img.onload = () => {
+            const sw = Math.round(img.width * (u1 - u0)), sh = Math.round(img.height * (v1 - v0));
+            const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * sh / sw);
+            const x = c.getContext('2d', { willReadFrequently: true });
+            x.drawImage(img, img.width * u0, img.height * v0, sw, sh, 0, 0, c.width, c.height);
+            // key: distance from the backdrop colour (sampled in the photo's corner)
+            const k0 = document.createElement('canvas'); k0.width = k0.height = 4;
+            const kx = k0.getContext('2d'); kx.drawImage(img, 2, 2, 4, 4, 0, 0, 4, 4);
+            const bg = kx.getImageData(0, 0, 1, 1).data;
+            const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+            const W = c.width, H = c.height;
+            for (let i = 0; i < a.length; i += 4) {
+              const dist = Math.abs(a[i] - bg[0]) + Math.abs(a[i + 1] - bg[1]) + Math.abs(a[i + 2] - bg[2]);
+              // leaves are the lit pixels: the deep shadow between them becomes holes, and the patch fades to a
+              // ragged leafy edge instead of a square
+              const px = (i >> 2) % W, py = (i >> 2) / W | 0, ex = (px / W - 0.5) * 2, ey = (py / H - 0.5) * 2;
+              const lum = 0.3 * a[i] + 0.59 * a[i + 1] + 0.11 * a[i + 2];
+              const rim = Math.max(0, Math.min(1, (1.0 - Math.sqrt(ex * ex + ey * ey)) / 0.35));
+              const leaf = Math.max(0, Math.min(1, (lum - 34 - (1 - rim) * 70) / 22));
+              const t = Math.max(0, Math.min(1, (dist - 70) / 90)) * leaf;
+              if (t < 1) {                                   // pull the key colour out of edge pixels
+                a[i] = Math.min(a[i], a[i + 1] + 20); a[i + 2] = Math.min(a[i + 2], a[i + 1]);
+              }
+              a[i + 3] = Math.round(255 * t);
+            }
+            x.putImageData(d, 0, 0);
+            for (const name in USE) {
+              if (USE[name] !== k || !TX[name]) continue;
+              const cv = TX[name].image, cx = cv.getContext('2d');
+              cx.clearRect(0, 0, cv.width, cv.height);
+              cx.drawImage(c, 0, 0, cv.width, cv.height);
+              TX[name].needsUpdate = true;
+            }
+          };
+          img.src = src;
+        });
+      })();
+
       /* ---------- instanced cards ---------- */
       const SETS = {};
       function set(name) { return SETS[name] || (SETS[name] = []); }
