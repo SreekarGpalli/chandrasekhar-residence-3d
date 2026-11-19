@@ -4518,8 +4518,9 @@ window.HouseScene = (function () {
       const HB = 0.86;
       // recessed plinth so the bed floats
       F.rb(bag, 'oakDark', 90, W - 90, 160, L - 90, fY, fY + 0.10, 8);
-      // upholstered base
-      F.rb(bag, 'linen', 0, W, 70, L, fY + 0.10, fY + 0.37, 38);
+      // upholstered base: drops to 0.316 when draped model installed so mattress sits flush
+      const baseTop = install ? 0.316 : 0.37;
+      F.rb(bag, 'linen', 0, W, 70, L, fY + 0.10, fY + baseTop, 38);
       // headboard: backing + vertical channels
       F.rb(bag, 'linen', -30, W + 30, 0, 80, fY + 0.10, fY + HB - 0.02, 26);
       const nCh = Math.max(4, Math.round((W + 60) / 230)), cw = (W + 60) / nCh;
@@ -10438,7 +10439,8 @@ window.HouseScene = (function () {
            entrance (see IW) sits hard against the bath partition. The FF keeps its 600 deep wardrobe. */
         const WX = sf ? 4305 : 4205, wy = 4547;               // wardrobe front; the walk-in's entrance-wall face
         Fur.rug(bag, 1500, 3900, 400, 2800, fY);
-        Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S');                // queen, headboard on the south wall, 50 short of the window jamb
+        Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S',
+          draw => stageUpper('bed_draped', fY, 0, draw));                // queen, headboard on the south wall, 50 short of the window jamb
         Fur.side(bag, 1500, 1900, 232, 732, fY);                      // west side table
         Fur.side(bag, 3550, 3950, 232, 732, fY);                      // east side table, under the window
         Fur.bench(bag, 2150, 3250, 2190, 2590, fY);                   // bench at the foot of the bed
@@ -11147,20 +11149,23 @@ window.HouseScene = (function () {
           prb(legs, 'blackM', x - 32, x + 32, bedY1 - 141, bedY1 - 54, fY + 0.014, fY + 0.037, 5);
         }
         prb(legs, 'aluDark', left + 112, right - 112, bedY1 - 131, bedY1 - 84, fY + 0.29, fY + 0.34, 8);
-        prb(mattressBag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
-        prb(mattressBag, 'duvet', left + 56, right - 56, hingeY + 705, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
-        prb(mattressBag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
-        prb(mattressBag, 'linenDk', left + 61, right - 61, bedY1 - 39, bedY1 - 22, hingeH + 0.179, hingeH + 0.265, 6);
-        const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
-        for (const fraction of [0.25, 0.75]) {
-          mattress.pillow(mattressBag, 'sheet', mattress.W * fraction, 213, hingeH + 0.275, 610, 390, 124, 0.12, 53);
-        }
-        mattress.pillow(mattressBag, 'terra', mattress.W / 2, 514, hingeH + 0.267, 480, 178, 96, 0.19, 40);
+        const linens = stageUpper('murphy_linen', fY, 0, bag => {
+          prb(bag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
+          prb(bag, 'duvet', left + 56, right - 56, hingeY + 705, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
+          prb(bag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
+          prb(bag, 'linenDk', left + 61, right - 61, bedY1 - 39, bedY1 - 22, hingeH + 0.179, hingeH + 0.265, 6);
+          const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
+          for (const fraction of [0.25, 0.75]) {
+            mattress.pillow(bag, 'sheet', mattress.W * fraction, 213, hingeH + 0.275, 610, 390, 124, 0.12, 53);
+          }
+          mattress.pillow(bag, 'terra', mattress.W / 2, 514, hingeH + 0.267, 480, 178, 96, 0.19, 40);
+        }, { moving: true });
         const pivot = new THREE.Group();
         pivot.position.set(0, hingeH, -hingeY / 1000);
         const deck = mattressBag.build(THREE, materials);
         deck.position.copy(pivot.position).negate();
-        pivot.add(deck);
+        linens.position.copy(deck.position);
+        pivot.add(deck, linens);
         const foot = legs.build(THREE, materials);
         const footHinge = new THREE.Group(), footY = bedY1 - 97.5;
         footHinge.position.set(0, -0.05, -(footY - hingeY) / 1000);
@@ -11585,6 +11590,28 @@ window.HouseScene = (function () {
         const mount = new THREE.Group();
         mount.name = pl.id;
         mount.add(obj);
+
+        if (pl.id === 'bed_draped') {
+          mount.scale.set(1, 1, 1);
+          mount.position.set(2.70 - 2.50, FL[pl.fi] - L.f2, -0.370 - (-0.450));
+          markMesh(mount, pl);
+          byFloor[pl.fi].add(mount);
+          if (pl.host && pl.host.parent) pl.host.parent.remove(pl.host);
+          return;
+        }
+
+        if (pl.id === 'murphy_linen') {
+          mount.scale.set(1, 1, 1);
+          mount.position.set(10.15 - 10.05, (L.f2 + 0.51) - 7.772, -0.740 - (-0.450));
+          markMesh(mount, pl);
+          if (pl.moving) {
+            pl.host.add(mount);
+            pl.host.remove(pl.fallback);
+            movingByFloor[pl.fi].push(mount);
+          }
+          return;
+        }
+
         const source = new THREE.Box3().setFromObject(mount);
         const size = source.getSize(new THREE.Vector3());
         if (Math.min(size.x, size.y, size.z) < 1e-5 || pl.fit.isEmpty()) return;
