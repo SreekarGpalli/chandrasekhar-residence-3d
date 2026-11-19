@@ -18,3 +18,4 @@ https://sketchfab.com/3d-models/lord-ganesha-1399da994ce54420878133a81f2f8f1e
 https://creativecommons.org/licenses/by/4.0/
 
 assets/sky-day-*.jpg: "Kloofendal 48d Partly Cloudy (Pure Sky)" HDRI, Poly Haven, CC0.
+assets/ext-granite-*.jpg, ext-pavers-*.jpg, ext-footpath-*.jpg, paint-plaster-*.jpg: Poly Haven "granite_tile_04", "concrete_pavers_02", "concrete_tiles", "painted_plaster_wall", CC0 (colour neutralised, 1K).

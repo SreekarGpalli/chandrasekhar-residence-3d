@@ -104,7 +104,7 @@
 <script>window.THREE||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>')</script>
 <!-- GLTF/DRACO loaders (r128) for the real car GLB -->
 <script src="lib/GLTFLoader.js"></script>
-<script src="lib/interiorKit.js?v=20261116_wall_family2"></script>
+<script src="lib/interiorKit.js?v=20261118_photo_ext3"></script>
 <script>window.THREE&&THREE.GLTFLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>')</script>
 <script src="lib/DRACOLoader.js"></script>
 <script>window.THREE&&THREE.DRACOLoader||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"><\/script>')</script>
@@ -1290,6 +1290,7 @@ document.write('<script src="' + sceneFile + '?v=20261117_art_orient"><\/script>
     m.envMapIntensity = t.env != null ? t.env : 0.5;
     if (t.interior && ENV.interior) m.envMap = ENV.interior;   // warm room reflections indoors
     if (COL[name] != null && m.color) m.color.setHex(COL[name]);   // curated palette
+    if (t.photo && m.color) m.color.setRGB(1, 1, 1);               // photographed surface: its colour is in the map
     if (t.tex && TEX[t.tex]) {
       const kit = TEX[t.tex]();
       m.map = kit.map;   // albedo = palette colour × light-toned texture detail
