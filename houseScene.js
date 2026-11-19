@@ -9809,8 +9809,7 @@ window.HouseScene = (function () {
            entrance (see IW) sits hard against the bath partition. The FF keeps its 600 deep wardrobe. */
         const WX = sf ? 4305 : 4205, wy = 4547;               // wardrobe front; the walk-in's entrance-wall face
         Fur.rug(bag, 1500, 3900, 400, 2800, fY);
-        Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S',
-          draw => stageUpper('bed_draped', fY, 0, draw));                // queen, headboard on the south wall, 50 short of the window jamb
+        Fur.bed(bag, 1950, 3450, 232, 2132, fY, 'S');                // queen, headboard on the south wall, 50 short of the window jamb
         Fur.side(bag, 1500, 1900, 232, 732, fY);                      // west side table
         Fur.side(bag, 3550, 3950, 232, 732, fY);                      // east side table, under the window
         Fur.bench(bag, 2150, 3250, 2190, 2590, fY);                   // bench at the foot of the bed
@@ -10014,8 +10013,8 @@ window.HouseScene = (function () {
            short of the stair mouth (y 6496) so the stairs stay clear. One small side table
            serves both, in the corner between the three-seater's west arm and the two-seater. */
         Fur.rug(bag, 5750, 8750, 5000, 6500, fY);
-        stageUpper('sofa_oatmeal', fY, 180, bag => Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S', false, false, { acc: ['boucle', 'boucle', 'boucle'] }));              // three-seater, faces TV (moved back, 220 mm)
-        stageUpper('sofa_oatmeal', fY, 90, bag => Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W', false, false, { acc: ['boucle', 'boucle', 'boucle'] }));              // two-seater on the west wall, pushed up to the stair corner (y 6496)
+        Fur.sofa(bag, 6380, 8580, 4580, 5480, fY, 'S', false, false, { acc: ['boucle', 'boucle', 'boucle'] });              // three-seater, faces TV (moved back, 220 mm)
+        Fur.sofa(bag, 4920, 5620, 4890, 6440, fY, 'W', false, false, { acc: ['boucle', 'boucle', 'boucle'] });              // two-seater on the west wall, pushed up to the stair corner (y 6496)
         /* coffee table after the owner's reference: a solid timber open box, 1000 x 520 x 0.42 -
            50 mm top, two 40 mm end slabs, an open lower shelf, open on both long sides. It stands
            in front of the corner between the sofas: 280 mm off the three-seater's front, 210 mm
@@ -10484,19 +10483,18 @@ window.HouseScene = (function () {
         prb(bag, 'oakDark', bedX0 + 26, bedX1 - 26, 485, 1220, fY, fY + 0.10, 8);
         prb(bag, 'linen', bedX0 + 25, bedX1 - 25, 518, 1265, fY + 0.10, fY + 0.29, 34);
 
-        const mattressBag = makeBag(THREE), legs = makeBag(THREE);
-        const sofa = stageUpper('theater_upholstery', fY, front.N, upholstery => {
-          const sofaX0 = bedX0 + 45, sofaX1 = bedX1 - 45;
-          for (const x of [sofaX0, sofaX1 - 138]) {
-            prb(upholstery, 'linen', x, x + 138, 775, 1265, fY + 0.29, fY + 0.64, 28);
-          }
-          const cushionWidth = (sofaX1 - sofaX0 - 276) / 3;
-          for (let i = 0; i < 3; i++) {
-            const x = sofaX0 + 138 + i * cushionWidth;
-            prb(upholstery, 'linen', x + 3, x + cushionWidth - 3, 820, 1245, fY + 0.29, fY + 0.44, 34, 12);
-            prb(upholstery, 'boucle', x + 8, x + cushionWidth - 8, 795, 914, fY + 0.41, fY + 0.88, 38, 12);
-          }
-        }, { moving: true });
+        const upholstery = makeBag(THREE), mattressBag = makeBag(THREE), legs = makeBag(THREE);
+        const sofaX0 = bedX0 + 45, sofaX1 = bedX1 - 45;
+        for (const x of [sofaX0, sofaX1 - 138]) {
+          prb(upholstery, 'linen', x, x + 138, 775, 1265, fY + 0.29, fY + 0.64, 28);
+        }
+        const cushionWidth = (sofaX1 - sofaX0 - 276) / 3;
+        for (let i = 0; i < 3; i++) {
+          const x = sofaX0 + 138 + i * cushionWidth;
+          prb(upholstery, 'linen', x + 3, x + cushionWidth - 3, 820, 1245, fY + 0.29, fY + 0.44, 34, 12);
+          prb(upholstery, 'boucle', x + 8, x + cushionWidth - 8, 795, 914, fY + 0.41, fY + 0.88, 38, 12);
+        }
+        const sofa = upholstery.build(THREE, materials);
 
         const left = bedX0 + 34, right = bedX1 - 34, mid = (left + right) / 2;
         prb(mattressBag, 'walnutI', left, right, hingeY, bedY1, hingeH - 0.086, hingeH - 0.05, 8);
@@ -10513,23 +10511,20 @@ window.HouseScene = (function () {
           prb(legs, 'blackM', x - 32, x + 32, bedY1 - 141, bedY1 - 54, fY + 0.014, fY + 0.037, 5);
         }
         prb(legs, 'aluDark', left + 112, right - 112, bedY1 - 131, bedY1 - 84, fY + 0.29, fY + 0.34, 8);
-        const linens = stageUpper('murphy_linen', fY, 0, bag => {
-          prb(bag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
-          prb(bag, 'duvet', left + 56, right - 56, hingeY + 705, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
-          prb(bag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
-          prb(bag, 'linenDk', left + 61, right - 61, bedY1 - 39, bedY1 - 22, hingeH + 0.179, hingeH + 0.265, 6);
-          const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
-          for (const fraction of [0.25, 0.75]) {
-            mattress.pillow(bag, 'sheet', mattress.W * fraction, 213, hingeH + 0.275, 610, 390, 124, 0.12, 53);
-          }
-          mattress.pillow(bag, 'terra', mattress.W / 2, 514, hingeH + 0.267, 480, 178, 96, 0.19, 40);
-        }, { moving: true });
+        prb(mattressBag, 'sheet', left + 51, right - 51, hingeY + 76, bedY1 - 21, hingeH - 0.016, hingeH + 0.199, 39, 9);
+        prb(mattressBag, 'duvet', left + 56, right - 56, hingeY + 705, bedY1 - 25, hingeH + 0.187, hingeH + 0.243, 33, 13);
+        prb(mattressBag, 'linenDk', left + 58, right - 58, bedY1 - 426, bedY1 - 35, hingeH + 0.242, hingeH + 0.273, 14);
+        prb(mattressBag, 'linenDk', left + 61, right - 61, bedY1 - 39, bedY1 - 22, hingeH + 0.179, hingeH + 0.265, 6);
+        const mattress = frameOf(left + 51, right - 51, hingeY + 76, bedY1 - 21, 'S');
+        for (const fraction of [0.25, 0.75]) {
+          mattress.pillow(mattressBag, 'sheet', mattress.W * fraction, 213, hingeH + 0.275, 610, 390, 124, 0.12, 53);
+        }
+        mattress.pillow(mattressBag, 'terra', mattress.W / 2, 514, hingeH + 0.267, 480, 178, 96, 0.19, 40);
         const pivot = new THREE.Group();
         pivot.position.set(0, hingeH, -hingeY / 1000);
         const deck = mattressBag.build(THREE, materials);
         deck.position.copy(pivot.position).negate();
-        linens.position.copy(deck.position);
-        pivot.add(deck, linens);
+        pivot.add(deck);
         const foot = legs.build(THREE, materials);
         const footHinge = new THREE.Group(), footY = bedY1 - 97.5;
         footHinge.position.set(0, -0.05, -(footY - hingeY) / 1000);
@@ -10715,7 +10710,7 @@ window.HouseScene = (function () {
 
         // Keep the east side of the seating area clear for the glass doors.
         Fur.rug(bag, 9750, 11930, 6510, 7990, fY);
-        stageUpper('sofa_oatmeal', fY, 0, bag => Fur.sofa(bag, 9730, 11950, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] }));
+        Fur.sofa(bag, 9730, 11950, 7750, 8600, fY, 'N', false, false, { acc: ['boucle', 'boucle', 'boucle'] });
         // North wall behind the sofa: the picture is gone; a floor-to-ceiling board-and-batten grid across the WHOLE wall (4 x 4 near-square panels, 80 x 26 mm battens,
         // from the window's east jamb x 9260 to the east wall x 12420, up to the ceiling corner profile; the sofa sits on the wall's centre, x 10840) in the wall's own paint (white2), so the wall colour is unchanged.
         Fur.battenGrid(bag, 'white2', 9260, 12420, 8640, 'S', fY + 0.07, fY + 3.203 - 0.066, 4, 4);

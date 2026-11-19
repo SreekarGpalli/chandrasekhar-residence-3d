@@ -4,13 +4,8 @@ mid_century_lounge_chair, and hanging_picture_frame_01/02.
 The rug textures in assets/upper-linen-*.jpg are reduced from Poly Haven's Rough Linen.
 The upstairs floor textures in assets/upper-marble-*.jpg are from Poly Haven's White Marble.
 
-The draped bed and Murphy bedding, porcelain toilet and vessel, stainless sink,
-and family standing desk and task chair are locally authored House3D models.
-The bedding incorporates CC0 Poly Haven fabric textures.
-
-sofa_oatmeal.glb and theater_upholstery.glb are compressed adaptations of
-Innerscene's HAVEN 224 - Oatmeal Two-Seat Sofa, released under CC0.
-https://www.innerscene.com/tools/library/3d-parts/haven-224-oatmeal-two-seat-sofa-40262c27
+The porcelain toilet and vessel, stainless sink, and family standing desk and
+task chair are locally authored House3D models.
 
 The Ganesha mesh is adapted from "Lord-ganesha", credited to Thunk3D Scanner
 and Diana123456, under CC BY 4.0. The scan was simplified and given a brass finish.
